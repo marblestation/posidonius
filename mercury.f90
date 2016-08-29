@@ -89,6 +89,8 @@ program mercury
     dt = 0.08 ! day (re-write it in user_module)
 
     call mfo_user(time,nbod,nbig,m,x,v,a)
+    write(*,*) a(1,2), a(2,2), a(3,2)
+    write(*,*) a(1,3), a(2,3), a(3,3)
 
     time = time + dt
 end program mercury
