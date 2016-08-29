@@ -162,7 +162,7 @@ fn main() {
     let mut simulation = posidonius::LeapFrog::new(time_step, time_limit, particles);
         
 
-    let path = Path::new("output.txt");
+    let path = Path::new("target/output.txt");
 
     // We create file options to write
     let mut options = OpenOptions::new();
