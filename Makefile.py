@@ -10,24 +10,24 @@ import subprocess
 
 LOG_NAME = 'compilation.log'
 
-#COMPILATOR = "gfortran"
+COMPILATOR = "gfortran"
 
-#DEBUG_OPTIONS = "-pedantic-errors -Wall -Wconversion -Wextra -Wunreachable-code -fbacktrace" + \
-  #" -g3 -fbounds-check -O0" + \
-  #" -fstack-protector-all -fno-automatic -Wuninitialized -ftrapv -fno-automatic -fimplicit-none"
-## commented options : -ffpe-trap=invalid,zero,overflow,underflow because most of the time, this is not a bug.
-#OPTIMIZATIONS = "-O3 -ffast-math -pipe -finit-real=nan"
-#TEST_OPTIONS = "-O3 -pipe -finit-real=nan"
-#GDB_OPTIONS = "-g3"
-#PROFILING_OPTIONS = "-g -pg"
-
-COMPILATOR = "ifort"
-
-DEBUG_OPTIONS = "-g -check all -fpe0 -warn -traceback -debug extended"
-OPTIMIZATIONS = "-O3 -Bstatic"
-TEST_OPTIONS = OPTIMIZATIONS
-GDB_OPTIONS = "-g"
+DEBUG_OPTIONS = "-pedantic-errors -Wall -Wconversion -Wextra -Wunreachable-code -fbacktrace" + \
+  " -g3 -fbounds-check -O0" + \
+  " -fstack-protector-all -fno-automatic -Wuninitialized -ftrapv -fno-automatic -fimplicit-none"
+# commented options : -ffpe-trap=invalid,zero,overflow,underflow because most of the time, this is not a bug.
+OPTIMIZATIONS = "-O3 -ffast-math -pipe -finit-real=nan"
+TEST_OPTIONS = "-O3 -pipe -finit-real=nan"
+GDB_OPTIONS = "-g3"
 PROFILING_OPTIONS = "-g -pg"
+
+#COMPILATOR = "ifort"
+
+#DEBUG_OPTIONS = "-g -check all -fpe0 -warn -traceback -debug extended"
+#OPTIMIZATIONS = "-O3 -Bstatic"
+#TEST_OPTIONS = OPTIMIZATIONS
+#GDB_OPTIONS = "-g"
+#PROFILING_OPTIONS = "-g -pg"
 
 class sourceFile(object):
   """Define an object linked to a fortran 90 source code that will
@@ -583,12 +583,6 @@ if (isManual):
 
 if (isMercury):
   compile_source(filename="mercury.f90")
-
-if (isElement):
-  compile_source(filename="element.f90")
-
-if (isClose):
-  compile_source(filename="close.f90")
 
 if (isModifs):
   print("Warning: There is non committed modifs!")

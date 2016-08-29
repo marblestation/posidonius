@@ -61,7 +61,6 @@ module user_module
     integer, intent(in) :: nbod !< [in] current number of bodies (1: star; 2-nbig: big bodies; nbig+1-nbod: small bodies)
     integer, intent(in) :: nbig !< [in] current number of big bodies (ones that perturb everything else)
     real(double_precision), intent(in) :: time !< [in] current epoch (days)
-    real(double_precision), intent(in) :: jcen(3) !< [in] J2,J4,J6 for central body (units of RCEN^i for Ji)
     real(double_precision), intent(in) :: m(nbod) !< [in] mass (in solar masses * K2)
     real(double_precision), intent(in) :: x(3,nbod)
     real(double_precision), intent(in) :: v(3,nbod)

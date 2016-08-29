@@ -18,15 +18,15 @@ program mercury
 
     implicit none
   
-    integer :: j,nbod
+    integer :: j,nbod,nbig
 
-    real(double_precision) :: time,gm_tmp
+    real(double_precision) :: time,gm_tmp,dt
     real(double_precision) :: q_tmp,e_tmp,i_tmp,p_tmp,n_tmp,l_tmp
     real(double_precision) :: x_tmp,y_tmp,z_tmp,u_tmp,v_tmp,w_tmp
 
     real(double_precision), dimension(:), allocatable :: m,sma,ecc,inc ! (Number of bodies)
     real(double_precision), dimension(:,:), allocatable :: xh,vh ! (3,Number of bodies)
-    real(double_precision), dimension(:,:), allocatable :: x,v ! (3,Number of bodies)
+    real(double_precision), dimension(:,:), allocatable :: x,v,a ! (3,Number of bodies)
   
     !------------------------------------------------------------------------------
 
