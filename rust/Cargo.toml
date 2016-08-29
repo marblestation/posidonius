@@ -1,0 +1,19 @@
+[package]
+name = "posidonius"
+version = "0.0.1"
+authors = ["Sergi Blanco-Cuaresma <marblestation@users.noreply.github.com>"]
+
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+
+[profile.release]
+opt-level = 3
+debug = false
+
+
+[dependencies]
+time = "*"
+itertools = "*"
