@@ -267,21 +267,28 @@ module user_module
 
     ! Timestep calculation
     if (flagtime.eq.0) then 
-        bobo = get_initial_timestep()
-        dt = bobo(2)
+        dt = 0.08
         hdt = 0.5d0*dt
         flagtime = flagtime+1
         if (crash.eq.0) timestep = 0.0d0
         if (crash.eq.1) timestep = time + output * 365.25d0
-        write(*,*) 'integrator',algor
     endif
-    if ((flagtime.ne.0).and.(algor.eq.2)) then
+    if (flagtime.ne.0) then
         dt = time - time_bf
         hdt = 0.5d0*dt
     endif
 
     ! Following calculations in heliocentric coordinates   
-    call conversion_dh2h(nbod,nbig,m,x,v,xh,vh)    
+    !call conversion_dh2h(nbod,nbig,m,x,v,xh,vh)    
+    do j=2,ntid+1
+        xh(1,j) = x(1,j)
+        xh(2,j) = x(2,j)
+        xh(3,j) = x(3,j)
+        vh(1,j) = v(1,j)
+        vh(2,j) = v(2,j)
+        vh(3,j) = v(3,j)
+    enddo
+
     if (ispin.eq.0) then
         do j=2,ntid+1
             xh_bf(1,j) = xh(1,j)
@@ -361,13 +368,7 @@ module user_module
                 !---------------------------------------------------------------
                 !-------------  Initialization of stellar spin (day-1)  --------
                 if (crash.eq.0) then
-                    if (brown_dwarf.eq.1) spin0 = 24.d0*TWOPI/Pst0 
-                    if ((M_dwarf.eq.1).or.(Sun_like_star.eq.1).or.(Rscst.eq.1)) spin0 = TWOPI/Pst 
-                    if (Jupiter_host.eq.1) then 
-                        ! spinJup in s-1, conversion in day-1
-                        call spline_b_val(nptmss,timeJup*365.25-t_init,spinJup,time,spinb0)
-                        spin0 = spinb0*86400.d0
-                    endif
+                    if (Rscst.eq.1) spin0 = TWOPI/Pst 
                     spin(1,1) = 0.d0
                     spin(2,1) = 0.d0
                     spin(3,1) = spin0
@@ -1879,6 +1880,63 @@ module user_module
       !-------------------------------------------------------------------------
       return
   end subroutine conversion_dh2h
+
+subroutine conversion_h2dh (time,nbod,nbig,m,xh,vh,x,v)
+
+
+  implicit none
+
+
+  ! Input/Output
+  integer, intent(in) :: nbod !< [in] current number of bodies (1: star; 2-nbig: big bodies; nbig+1-nbod: small bodies)
+  integer, intent(in) :: nbig !< [in] current number of big bodies (ones that perturb everything else)
+  real(double_precision),intent(in) :: time !< [in] current epoch (days)
+  real(double_precision),intent(in) :: m(nbod) !< [in] mass (in solar masses * K2)
+  real(double_precision),intent(in) :: xh(3,nbod) !< [in] coordinates (x,y,z) with respect to the central body (AU)
+  real(double_precision),intent(in) :: vh(3,nbod) !< [in] velocities (vx,vy,vz) with respect to the central body (AU/day)
+
+  real(double_precision),intent(out) :: v(3,nbod)
+  real(double_precision),intent(out) :: x(3,nbod)
+
+  ! Local
+  integer :: j
+  real(double_precision) :: mtot,temp,mvsum(3)
+
+  !------------------------------------------------------------------------------
+
+  mtot = 0.d0
+  mvsum(1) = 0.d0
+  mvsum(2) = 0.d0
+  mvsum(3) = 0.d0
+
+  do j = 2, nbod
+     x(1,j) = xh(1,j)
+     x(2,j) = xh(2,j)
+     x(3,j) = xh(3,j)
+     mtot = mtot + m(j)
+     mvsum(1) = mvsum(1)  +  m(j) * vh(1,j)
+     mvsum(2) = mvsum(2)  +  m(j) * vh(2,j)
+     mvsum(3) = mvsum(3)  +  m(j) * vh(3,j)
+  end do
+
+  temp = 1.d0 / (m(1) + mtot)
+
+  mvsum(1) = temp * mvsum(1)
+  mvsum(2) = temp * mvsum(2)
+  mvsum(3) = temp * mvsum(3)
+
+  do j = 2, nbod
+     v(1,j) = vh(1,j) - mvsum(1)
+     v(2,j) = vh(2,j) - mvsum(2)
+     v(3,j) = vh(3,j) - mvsum(3)
+  end do
+
+  !------------------------------------------------------------------------------
+
+  return
+end subroutine conversion_h2dh
+
+
 
   !-----------------------------------------------------------------------------
   ! Calculation of r(j), powers of r(j)
