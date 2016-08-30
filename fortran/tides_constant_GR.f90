@@ -20,16 +20,16 @@ module tides_constant_GR
   integer, parameter :: tides = 1
 
   ! Number of planets for which you want these effects
-  integer, parameter :: ntid = 2
+  integer, parameter :: ntid = 1
 
   !-----------------------  Nature of host body  ------------------------------- 
-  integer, parameter :: brown_dwarf = 1
+  integer, parameter :: brown_dwarf = 0
   integer, parameter :: M_dwarf = 0
   integer, parameter :: Sun_like_star = 0  
   integer, parameter :: Jupiter_host = 0  
   ! For an utilization of the code with non-evolving host body
   ! if Rscst = 1, Rs = cst, rg2s = cst
-  integer, parameter :: Rscst = 0
+  integer, parameter :: Rscst = 1
 
   !---------------------  Integration parameters  ------------------------------ 
 
@@ -40,7 +40,7 @@ module tides_constant_GR
   !                           = age of the evolving body at beginning of simu
   ! if crash = 1, then t_init = time of last line of PLANETi.aei
   ! if crash = 1 and evolving body, then t_init = time of last line of PLANETi.aei + t_init(crash=0)
-  real(double_precision), parameter :: t_init = 1.0d6 * 365.25d0
+  real(double_precision), parameter :: t_init = 0.0d6 * 365.25d0
 
   ! if crash = 1, then t_crash = time of last line of spini.out (day)
   real(double_precision), parameter :: t_crash = 0.0d0 * 365.25d0
@@ -67,34 +67,41 @@ module tides_constant_GR
   ! 1: Terrestrial (no mass-radius relationship)
   ! 2: Gas giant
   ! 3: user chooses everything
-  integer, parameter, dimension(ntid) :: planet_type = (/0,3/)
+  integer, parameter, dimension(ntid) :: planet_type = (/3/)
   ! If planet_type ne 0, then indicate radius in Rearth
   ! for ex: 1 or 0.954d0*Rjup
-  real(double_precision), parameter, dimension(ntid) :: radius_p = (/0.d0,1.d0/)
+  real(double_precision), parameter :: planet_radius_factor = 1.d0
+  real(double_precision), parameter, dimension(ntid) :: radius_p = (/planet_radius_factor/)
 
   !---------------------------  initial spin  ----------------------------------
   ! If pseudo_rot eq 0 : initial period as given by Pp0 (in hr)
   ! If pseudo_rot eq toto : initial period = toto*pseudo_synchronization period 
-  real(double_precision), parameter, dimension(ntid) :: pseudo_rot = (/0.d0,1.d0/)
-  real(double_precision), parameter, dimension(ntid) :: Pp0 = (/24.d0,24.d0/)
+  real(double_precision), parameter, dimension(ntid) :: pseudo_rot = (/0.d0/)
+  real(double_precision), parameter :: planet_rotation_period = 24.d0
+  real(double_precision), parameter, dimension(ntid) :: Pp0 = (/planet_rotation_period/)
 
   ! Planets obliquities in rad
-  real(double_precision), parameter, dimension(ntid) :: oblp = (/0.0d0,0.2d0/)
+  real(double_precision), parameter :: planet_obliquity = 11.459156d0*PI/180.d0
+  real(double_precision), parameter, dimension(ntid) :: oblp = (/planet_obliquity/)
 
   !---------------------  for planets with planet_type=3  ----------------------
   !--------------  love number, radius of gyration, dissipation  ---------------
   ! Radius of gyration
-  real(double_precision), parameter, dimension(ntid) :: rg2p_what = (/0.d0,3.308d-1/)
+  real(double_precision), parameter :: planet_radius_of_gyration_2 = 3.308e-1!/ Earth type planet
+  real(double_precision), parameter, dimension(ntid) :: rg2p_what = (/planet_radius_of_gyration_2/)
   ! Tidal love number
-  real(double_precision), parameter, dimension(ntid) :: k2tp_what = (/0.d0,0.299d0/)
+  real(double_precision), parameter :: planet_love_number = 0.305d0 !/ Earth
+  real(double_precision), parameter, dimension(ntid) :: k2tp_what = (/planet_love_number/)
   ! Fluid love number
-  real(double_precision), parameter, dimension(ntid) :: k2fp_what = (/0.d0,0.9532d0/)
+  real(double_precision), parameter, dimension(ntid) :: k2fp_what = (/planet_love_number/)
   ! k2delta_t (day)
-  real(double_precision), parameter, dimension(ntid) :: k2pdeltap_what = (/0.0d0,2.465278d-3/)
+  real(double_precision), parameter :: k2pdelta = 2.465278e-3!/ Terrestrial planets (no gas)
+  real(double_precision), parameter, dimension(ntid) :: k2pdeltap_what = (/k2pdelta/)
 
   !---------------------------  dissipation  -----------------------------------
   ! factor to multiply the value of the dissipation of the planets
-  real(double_precision), parameter, dimension(ntid) :: dissplan = (/1.d0,1.d0/)
+  real(double_precision), parameter :: planet_dissipation_factor_scale = 1.
+  real(double_precision), parameter, dimension(ntid) :: dissplan = (/planet_dissipation_factor_scale/)
 
 
   !----------------------------------------------------------------------------- 
@@ -103,7 +110,8 @@ module tides_constant_GR
 
   ! Star dissipation, and caracteristics in CGS
   ! factor to multiply the value of the dissipation of the host body
-  real(double_precision), parameter :: dissstar = 1.0d0
+  real(double_precision), parameter :: star_dissipation_factor_scale = 1.0d0
+  real(double_precision), parameter :: dissstar = star_dissipation_factor_scale
 
   ! For R=cst
   ! Dissipation, either you give sigma or k2deltat
@@ -113,17 +121,21 @@ module tides_constant_GR
   ! k2delta_t (day), here value of Earth for satellite systems for example 
   real(double_precision), parameter :: k2sdeltats = -2.465277778d-3
   ! Radius of gyration
-  real(double_precision), parameter :: rg2_what = 2.0d-1
+  real(double_precision), parameter :: star_radius_of_gyration_2 = 1.94e-1!/ Brown dwarf
+  real(double_precision), parameter :: rg2_what = star_radius_of_gyration_2
   ! Potential Love number
-  real(double_precision), parameter :: k2st_what = 0.307d0 
+  real(double_precision), parameter :: star_love_number = 0.307!/ M Dwarf
+  real(double_precision), parameter :: k2st_what = star_love_number
   ! Radius of star in Rsun
-  real(double_precision), parameter :: radius_star = 0.943
+  real(double_precision), parameter :: radius_factor = 0.845649342247916
+  real(double_precision), parameter :: radius_star = radius_factor
 
   ! For R=cst, or dM or Suns
   ! Initial period of rotation in day
-  real(double_precision), parameter :: Period_st   = 8.0d0
+  real(double_precision), parameter :: star_rotation_period = 70.d0
+  real(double_precision), parameter :: Period_st   = star_rotation_period
   ! Fluid Love number
-  real(double_precision), parameter :: k2fst_what = 0.307d0 
+  real(double_precision), parameter :: k2fst_what = star_love_number 
   
 
 
