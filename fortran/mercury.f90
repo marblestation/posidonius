@@ -120,7 +120,10 @@ program mercury
     v(2,2) = vh(2,2)
     v(3,2) = vh(3,2)
 
-    call mfo_user(time,nbod,nbig,time_step,m,x,v,a)
+    do j = 0, 5 
+        call mfo_user(time,nbod,nbig,time_step,m,x,v,a)
+        time = time + time_step
+    enddo
 
     !time = time + dt
 end program mercury
