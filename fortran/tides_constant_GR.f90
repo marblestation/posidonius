@@ -198,123 +198,123 @@ contains
 
     !---------------------------------------------------------------------------
     ! function that return the initial timestep of the simulation
-    function get_initial_timestep()
+    !function get_initial_timestep()
 
-        use utilities, only : mio_spl
-        implicit none
-        !Input
-        !None actually
-        ! Outpout
-        real(double_precision), dimension(3) :: get_initial_timestep 
-        !Locals
-        integer :: j, lineno, nsub, lim(2,10), error
-        real(double_precision) :: h0,tstop,mass_star
-        character(len=80) :: c80
-        character(len=150) :: string
-        !-----------------------------------------------------------------------
-        ! the timestep of the simulation as writed in param.in
-        open(13, file='param.in', status='old', iostat=error)
-        if (error /= 0) then
-            write (*,'(/,2a)') " ERROR: Programme terminated. Unable to open ",trim('param.in')
-            stop
-        end if
-        ! Read integration parameters
-        lineno = 0
-        do j = 1, 26
-            ! We want the next non commented line
-            do
-                lineno = lineno + 1
-                read (13,'(a150)') string
-                if (string(1:1).ne.')') exit
-            enddo
+        !use utilities, only : mio_spl
+        !implicit none
+        !!Input
+        !!None actually
+        !! Outpout
+        !real(double_precision), dimension(3) :: get_initial_timestep 
+        !!Locals
+        !integer :: j, lineno, nsub, lim(2,10), error
+        !real(double_precision) :: h0,tstop,mass_star
+        !character(len=80) :: c80
+        !character(len=150) :: string
+        !!-----------------------------------------------------------------------
+        !! the timestep of the simulation as writed in param.in
+        !open(13, file='param.in', status='old', iostat=error)
+        !if (error /= 0) then
+            !write (*,'(/,2a)') " ERROR: Programme terminated. Unable to open ",trim('param.in')
+            !stop
+        !end if
+        !! Read integration parameters
+        !lineno = 0
+        !do j = 1, 26
+            !! We want the next non commented line
+            !do
+                !lineno = lineno + 1
+                !read (13,'(a150)') string
+                !if (string(1:1).ne.')') exit
+            !enddo
 
-            call mio_spl (150,string,nsub,lim)
-            c80(1:3) = '   '
-            c80 = string(lim(1,nsub):lim(2,nsub))
+            !call mio_spl (150,string,nsub,lim)
+            !c80(1:3) = '   '
+            !c80 = string(lim(1,nsub):lim(2,nsub))
 
-            if (j.eq.3) read (c80,*) tstop
-            if (j.eq.5) read (c80,*) h0
-            if (j.eq.18) read (c80,*) mass_star
-        enddo
-        get_initial_timestep = (/tstop,abs(h0),mass_star/)
-        close (13)
-        !-----------------------------------------------------------------------
-        return
-    end function get_initial_timestep
+            !if (j.eq.3) read (c80,*) tstop
+            !if (j.eq.5) read (c80,*) h0
+            !if (j.eq.18) read (c80,*) mass_star
+        !enddo
+        !get_initial_timestep = (/tstop,abs(h0),mass_star/)
+        !close (13)
+        !!-----------------------------------------------------------------------
+        !return
+    !end function get_initial_timestep
 
 !-------------------------------------------------------------------------------
 ! subroutine that write the parameters of the user_module 
 ! into the file 'tidesGR.out'
-subroutine write_simus_properties()
+!subroutine write_simus_properties()
 
-    use git_infos
-    implicit none
-    real(double_precision), dimension(3) :: timestep
-    real(double_precision) :: distance_accuracy
-    integer :: j
-    real(double_precision), parameter :: TWOTHIRD = 2.d0 / 3.d0
-    !---------------------------------------------------------------------------
+    !use git_infos
+    !implicit none
+    !real(double_precision), dimension(3) :: timestep
+    !real(double_precision) :: distance_accuracy
+    !integer :: j
+    !real(double_precision), parameter :: TWOTHIRD = 2.d0 / 3.d0
+    !!---------------------------------------------------------------------------
 
-    timestep = get_initial_timestep()
-    ! below this limit, with this timestep, an orbit will only contain 20 timestep or less, whiis not accurate.
-    !distance_accuracy = (10. * timestep(2) / 365.25)**TWOTHIRD 
-    distance_accuracy = (30. * timestep(2) *sqrt(timestep(3)*K2) / TWOPI)**TWOTHIRD 
+    !timestep = get_initial_timestep()
+    !! below this limit, with this timestep, an orbit will only contain 20 timestep or less, whiis not accurate.
+    !!distance_accuracy = (10. * timestep(2) / 365.25)**TWOTHIRD 
+    !distance_accuracy = (30. * timestep(2) *sqrt(timestep(3)*K2) / TWOPI)**TWOTHIRD 
 
-    open(10, file='tidesGR.out')
+    !open(10, file='tidesGR.out')
 
-    write(10,*) ''
-    write(10,'(a)') '------------------------------------'
-    write(10,'(a)') '|         Timestep stuff           |'
-    write(10,'(a)') '------------------------------------'
-    write(10,'(a,f12.5,a)') 'timestep = ',timestep(2), ' days'
-    write(10,'(a,f12.5,a)') '  with this timestep, the simulation will not be accurate below', distance_accuracy,' AU'
-    write(10,*) ''
-    write(10,*) ''
-    write(10,'(a)') '------------------------------------'
-    write(10,'(a)') '|       Mercury Properties         |'
-    write(10,'(a)') '------------------------------------'
-    write(10,'(a,a)') 'branch = ', branch
-    write(10,'(a,a)') 'commit = ', commit
-    write(10,'(a,a)') 'tags = ', tags
-    write(10,'(a)') modifs
-    write(10,'(a,f12.5,a,f12.5,a)') 'With h=', timestep(2), ' days, simulation is accurate for r > ', distance_accuracy,' AU'
-    write(10,*) ''
-    write(10,*) ''
-    write(10,'(a)') '------------------------------------'
-    write(10,'(a)') '|       Special Effects            |'
-    write(10,'(a)') '------------------------------------'
-    write(10,*) ''
-    if (tides.eq.1) write(10,'(a)') 'Tides are on'
-    if (GenRel.eq.1) write(10,'(a)') 'General Relativity effects taken into account'
-    if (rot_flat.eq.1) write(10,'(a)') 'Effect of rotation-induced flattening taken into account'
-    write(10,*) ''
-    if (brown_dwarf.eq.1) write(10,'(a)') 'The central body is an evolving Brown-dwarf'
-    if (M_dwarf.eq.1) write(10,'(a)') 'The central body is an evolving M-dwarf'
-    if (Sun_like_star.eq.1) write(10,'(a)') 'The central body is an evolving Sun-like star'
-    if (Rscst.eq.1) write(10,'(a)') 'The central body is an non-evolving object'
-    write(10,*) ''
+    !write(10,*) ''
+    !write(10,'(a)') '------------------------------------'
+    !write(10,'(a)') '|         Timestep stuff           |'
+    !write(10,'(a)') '------------------------------------'
+    !write(10,'(a,f12.5,a)') 'timestep = ',timestep(2), ' days'
+    !write(10,'(a,f12.5,a)') '  with this timestep, the simulation will not be accurate below', distance_accuracy,' AU'
+    !write(10,*) ''
+    !write(10,*) ''
+    !write(10,'(a)') '------------------------------------'
+    !write(10,'(a)') '|       Mercury Properties         |'
+    !write(10,'(a)') '------------------------------------'
+    !write(10,'(a,a)') 'branch = ', branch
+    !write(10,'(a,a)') 'commit = ', commit
+    !write(10,'(a,a)') 'tags = ', tags
+    !write(10,'(a)') modifs
+    !write(10,'(a,f12.5,a,f12.5,a)') 'With h=', timestep(2), ' days, simulation is accurate for r > ', distance_accuracy,' AU'
+    !write(10,*) ''
+    !write(10,*) ''
+    !write(10,'(a)') '------------------------------------'
+    !write(10,'(a)') '|       Special Effects            |'
+    !write(10,'(a)') '------------------------------------'
+    !write(10,*) ''
+    !if (tides.eq.1) write(10,'(a)') 'Tides are on'
+    !if (GenRel.eq.1) write(10,'(a)') 'General Relativity effects taken into account'
+    !if (rot_flat.eq.1) write(10,'(a)') 'Effect of rotation-induced flattening taken into account'
+    !write(10,*) ''
+    !if (brown_dwarf.eq.1) write(10,'(a)') 'The central body is an evolving Brown-dwarf'
+    !if (M_dwarf.eq.1) write(10,'(a)') 'The central body is an evolving M-dwarf'
+    !if (Sun_like_star.eq.1) write(10,'(a)') 'The central body is an evolving Sun-like star'
+    !if (Rscst.eq.1) write(10,'(a)') 'The central body is an non-evolving object'
+    !write(10,*) ''
 
-    if (tides.eq.1) then
-       write(10,'(a,i1)') 'Number of planets tidally evolving =',ntid
-       do j = 2, ntid+1
-          write(10,'(a,i1)') 'PLANET',j
-          if ((planet_type(j-1).eq.0).or.(planet_type(j-1).eq.1)) then
-             write(10,'(a,f12.5,a,f12.5)') 'k2fp =',k2fp_terr,'k2p =',k2p_terr,', rg2p =',rg2p_terr
-             write(10,'(a,f12.5,a,f12.5)') 'k2pdeltap =',k2pdeltap_terr,' day, dissplan =',dissplan(j-1)
-          endif
-          if (planet_type(j-1).eq.2) then
-             write(10,'(a,f12.5,a,f12.5)') 'k2p =',k2p_gg,', rg2p =',rg2p_gg
-             write(10,'(a,f12.5,a,f12.5)') 'k2pdeltap =',k2pdeltap_gg,' day, dissplan =',dissplan(j-1)
-          endif
-          if (planet_type(j-1).eq.3) then
-             write(10,'(a,f12.5,a,f12.5)') 'k2p =',k2tp_what(j-1),'k2p =',k2fp_what(j-1),', rg2p =',rg2p_what(j-1)
-             write(10,'(a,es19.9e3,a,f12.5)') 'k2pdeltap =',k2pdeltap_what(j-1),' day, dissplan =',dissplan(j-1)
-          endif
-       enddo
-    endif
-    write(10,*) ''
-    close(10)
-    !---------------------------------------------------------------------------
-end subroutine write_simus_properties
+    !if (tides.eq.1) then
+       !write(10,'(a,i1)') 'Number of planets tidally evolving =',ntid
+       !do j = 2, ntid+1
+          !write(10,'(a,i1)') 'PLANET',j
+          !if ((planet_type(j-1).eq.0).or.(planet_type(j-1).eq.1)) then
+             !write(10,'(a,f12.5,a,f12.5)') 'k2fp =',k2fp_terr,'k2p =',k2p_terr,', rg2p =',rg2p_terr
+             !write(10,'(a,f12.5,a,f12.5)') 'k2pdeltap =',k2pdeltap_terr,' day, dissplan =',dissplan(j-1)
+          !endif
+          !if (planet_type(j-1).eq.2) then
+             !write(10,'(a,f12.5,a,f12.5)') 'k2p =',k2p_gg,', rg2p =',rg2p_gg
+             !write(10,'(a,f12.5,a,f12.5)') 'k2pdeltap =',k2pdeltap_gg,' day, dissplan =',dissplan(j-1)
+          !endif
+          !if (planet_type(j-1).eq.3) then
+             !write(10,'(a,f12.5,a,f12.5)') 'k2p =',k2tp_what(j-1),'k2p =',k2fp_what(j-1),', rg2p =',rg2p_what(j-1)
+             !write(10,'(a,es19.9e3,a,f12.5)') 'k2pdeltap =',k2pdeltap_what(j-1),' day, dissplan =',dissplan(j-1)
+          !endif
+       !enddo
+    !endif
+    !write(10,*) ''
+    !close(10)
+    !!---------------------------------------------------------------------------
+!end subroutine write_simus_properties
 
 end module tides_constant_GR

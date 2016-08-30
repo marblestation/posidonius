@@ -260,10 +260,10 @@ module user_module
         endif
     end do
 
-    if (iwrite.eq.0) then 
-        call write_simus_properties()
-        iwrite = 1
-    endif
+    !if (iwrite.eq.0) then 
+        !call write_simus_properties()
+        !iwrite = 1
+    !endif
 
     ! Timestep calculation
     if (flagtime.eq.0) then 
