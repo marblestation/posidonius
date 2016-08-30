@@ -16,12 +16,14 @@ program mercury
     use user_module
     use physical_constant
     use tides_constant_GR
+    use orbital_elements
 
     implicit none
   
     integer :: j,nbod,nbig
+    integer :: error
 
-    real(double_precision) :: time,gm_tmp,dt
+    real(double_precision) :: time,gm_tmp
     real(double_precision) :: q_tmp,e_tmp,i_tmp,p_tmp,n_tmp,l_tmp
     real(double_precision) :: x_tmp,y_tmp,z_tmp,u_tmp,v_tmp,w_tmp
 
@@ -30,15 +32,8 @@ program mercury
     real(double_precision), dimension(:,:), allocatable :: x,v,a ! (3,Number of bodies)
   
     real(double_precision) :: time_step,time_limit
-    real(double_precision) :: star_mass!, radius_factor, star_radius, star_love_number
-    !real(double_precision) :: star_dissipation_factor_scale,star_dissipation_factor
-    !real(double_precision) :: star_radius_of_gyration_2,planet_dissipation_factor_scale
-    !real(double_precision) :: star_position,star_velocity,star_acceleration
-    !real(double_precision) :: star_rotation_period, star_spin0, star_spin
-
-    real(double_precision) :: planet_mass!,planet_radius_factor,planet_radius
-    !real(double_precision) :: planet_love_number,k2pdelta,planet_dissipation_factor
-    !real(double_precision) :: planet_radius_of_gyration_2
+    real(double_precision) :: star_mass
+    real(double_precision) :: planet_mass
 
     !------------------------------------------------------------------------------
 
@@ -49,17 +44,26 @@ program mercury
 
     ! Initialization
     time        = 0.0d0
+    allocate(m(nbod), stat=error)
+    allocate(sma(nbod), stat=error)
+    allocate(ecc(nbod), stat=error)
+    allocate(inc(nbod), stat=error)
     m(1:nbod)   = 0.0d0
     sma(1:nbod) = 0.0d0
     ecc(1:nbod) = 0.0d0
     inc(1:nbod) = 0.0d0
 
+    allocate(xh(3,nbod), stat=error)
+    allocate(x(3,nbod), stat=error)
     xh(1,1:nbod) = 0.0d0
     xh(2,1:nbod) = 0.0d0
     xh(3,1:nbod) = 0.0d0
-    xh(1,1:nbod) = 0.0d0
-    xh(2,1:nbod) = 0.0d0
-    xh(3,1:nbod) = 0.0d0
+    allocate(vh(3,nbod), stat=error)
+    allocate(v(3,nbod), stat=error)
+    vh(1,1:nbod) = 0.0d0
+    vh(2,1:nbod) = 0.0d0
+    vh(3,1:nbod) = 0.0d0
+    allocate(a(3,nbod), stat=error)
 
     !------------------------------------------------------------------------------
     !---- Simulation
@@ -102,19 +106,19 @@ program mercury
     ! Loop on planets
     call mco_el2x(gm_tmp,q_tmp,e_tmp,i_tmp,p_tmp,n_tmp,l_tmp,x_tmp,y_tmp,z_tmp,u_tmp,v_tmp,w_tmp)
 
-    xh(1,j) = x_tmp
-    xh(2,j) = y_tmp
-    xh(3,j) = z_tmp
-    vh(1,j) = u_tmp
-    vh(2,j) = v_tmp
-    vh(3,j) = w_tmp
+    xh(1,2) = x_tmp
+    xh(2,2) = y_tmp
+    xh(3,2) = z_tmp
+    vh(1,2) = u_tmp
+    vh(2,2) = v_tmp
+    vh(3,2) = w_tmp
 
-    x(1,j) = xh(1,j)
-    x(2,j) = xh(2,j)
-    x(3,j) = xh(3,j)
-    v(1,j) = vh(1,j)
-    v(2,j) = vh(2,j)
-    v(3,j) = vh(3,j)
+    x(1,2) = xh(1,2)
+    x(2,2) = xh(2,2)
+    x(3,2) = xh(3,2)
+    v(1,2) = vh(1,2)
+    v(2,2) = vh(2,2)
+    v(3,2) = vh(3,2)
 
     call mfo_user(time,nbod,nbig,time_step,m,x,v,a)
 
