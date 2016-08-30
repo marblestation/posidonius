@@ -116,9 +116,7 @@ program mercury
     v(2,j) = vh(2,j)
     v(3,j) = vh(3,j)
 
-    call mfo_user(time,nbod,nbig,m,x,v,a)
-    write(*,*) a(1,2), a(2,2), a(3,2)
-    write(*,*) a(1,3), a(2,3), a(3,3)
+    call mfo_user(time,nbod,nbig,time_step,m,x,v,a)
 
     !time = time + dt
 end program mercury

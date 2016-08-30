@@ -9,13 +9,13 @@ module tides_constant_GR
   !
   !----------------------------------------------------------------------------- 
   ! Output of spin every 'output' years
-  real(double_precision), parameter :: output = 100
+  real(double_precision), parameter :: output = 1
 
   !---------------------------  effects  --------------------------------------- 
   ! If you want effect of rotational induced flattening or not
-  integer, parameter :: rot_flat = 1
+  integer, parameter :: rot_flat = 0
   ! If you want General Relativity or not
-  integer, parameter :: GenRel = 1
+  integer, parameter :: GenRel = 0
   ! If you want Tides or not
   integer, parameter :: tides = 1
 

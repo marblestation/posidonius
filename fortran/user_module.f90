@@ -41,7 +41,7 @@ module user_module
 !> @note All coordinates and velocities must be with respect to central body
 !
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-  subroutine mfo_user (time,nbod,nbig,m,x,v,a)
+  subroutine mfo_user (time,nbod,nbig,time_step,m,x,v,a)
 !  m             = mass (in solar masses * K2)
 !  x             = coordinates (x,y,z) with respect to the central body [AU]
 !  v             = velocities (vx,vy,vz) with respect to the central body [AU/day]
@@ -61,6 +61,7 @@ module user_module
     integer, intent(in) :: nbod !< [in] current number of bodies (1: star; 2-nbig: big bodies; nbig+1-nbod: small bodies)
     integer, intent(in) :: nbig !< [in] current number of big bodies (ones that perturb everything else)
     real(double_precision), intent(in) :: time !< [in] current epoch (days)
+    real(double_precision), intent(in) :: time_step !< [in] current epoch (days)
     real(double_precision), intent(in) :: m(nbod) !< [in] mass (in solar masses * K2)
     real(double_precision), intent(in) :: x(3,nbod)
     real(double_precision), intent(in) :: v(3,nbod)
@@ -266,7 +267,7 @@ module user_module
 
     ! Timestep calculation
     if (flagtime.eq.0) then 
-        dt = 0.08
+        dt = time_step
         hdt = 0.5d0*dt
         flagtime = flagtime+1
         if (crash.eq.0) timestep = 0.0d0
@@ -1751,6 +1752,9 @@ module user_module
                         open(13, file=planet_dEdt_filename, access='append')
                         write(13,'(4("  ", es20.10e3))') time/365.25d0,tmp_dEdt
                         close(13)
+                        open(13, file='acceleration.out', access='append')
+                        write(13,'(4("  ", es20.10e3))') time/365.25d0, a(1,j),a(2,j),a(3,j)
+                        close(13)
                     enddo
                     timestep = timestep + output*365.25d0
                 endif
@@ -1777,6 +1781,9 @@ module user_module
                         endif
                         open(13, file=planet_dEdt_filename, access='append')
                         write(13,'(4("  ", es20.10e3))') time/365.25d0,tmp_dEdt
+                        close(13)
+                        open(13, file='acceleration.out', access='append')
+                        write(13,'(4("  ", es20.10e3))') time/365.25d0, a(1,j),a(2,j),a(3,j)
                         close(13)
                     enddo
                     timestep = timestep + output*365.25d0
