@@ -131,7 +131,6 @@ pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: A
 
 
 
-#[allow(dead_code)]
 pub fn calculate_cartesian_coordinates(gm: f64, q: f64, e: f64, i0: f64, p: f64, n0: f64, l: f64)  -> (f64, f64, f64, f64, f64, f64) {
     // Calculates Cartesian coordinates and velocities given Keplerian orbital
     // elements (for elliptical, parabolic or hyperbolic orbits).

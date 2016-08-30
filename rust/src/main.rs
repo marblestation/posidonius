@@ -5,28 +5,14 @@ extern crate time;
 //use std::time::Duration;
 use std::path::Path;
 use std::fs::{OpenOptions};
+use std::io::{BufWriter};
 
 use posidonius::Integrator;
 
 
 fn main() {
-    // Prints each argument on a separate line
-    for argument in std::env::args() {
-        println!("{}", argument);
-    }
-    
     let t1 = time::precise_time_s();
     //timer::sleep(Duration::milliseconds(1000));
-
-    ////////////////////////////////////////////////////////////////////////////
-    //---- Simulation
-    let time_step: f64 = 0.08; // in days
-    //let time_limit: f64 = time_step * 365.25 * 10.0e3;
-    //let time_limit: f64 = time_step * 2.;
-    //let time_limit: f64 = time_step * 365.25 * 10.0e8;
-    let time_limit: f64 = time_step * 365.25 * 10.0e2;
-    //let time_limit: f64 = time_step * 200.;
-    ////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////
     // Initial conditions from CASE 3 in Bolmont et al. 2015
@@ -159,28 +145,39 @@ fn main() {
     //let particles_tmp : [posidonius::Particle; posidonius::N_PARTICLES] = [star, planet];
     let particles = posidonius::Particles::new([star, planet]);
 
-    let mut simulation = posidonius::LeapFrog::new(time_step, time_limit, particles);
-        
 
+    ////////////////////////////////////////////////////////////////////////////
     let path = Path::new("target/output.txt");
-
     // We create file options to write
     let mut options = OpenOptions::new();
     options.create(true).truncate(true).write(true);
-    //options.write(true);
-    //options.write(true).append(true);
 
-
-    let mut output_file = match options.open(&path) {
+    let output_file = match options.open(&path) {
         Ok(f) => f,
         Err(e) => panic!("file error: {}", e),
     };
+    let mut output_writer = BufWriter::new(&output_file);
+    ////////////////////////////////////////////////////////////////////////////
+
+    // TODO: Improve (dynamic dispatching?)
+    let mut leapfrog = posidonius::LeapFrog::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
+    let mut ias15 = posidonius::Ias15::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
 
     loop {
-        match simulation.iterate(&mut output_file) {
-            Ok(_) => {},
-            Err(e) => { println!("{}", e); break; }
-        }
+        match posidonius::constants::INTEGRATOR {
+            posidonius::IntegratorType::LeapFrog => {
+                match leapfrog.iterate(&mut output_writer) {
+                    Ok(_) => {},
+                    Err(e) => { println!("{}", e); break; }
+                };
+            },
+            posidonius::IntegratorType::Ias15 => {
+                match ias15.iterate(&mut output_writer) {
+                    Ok(_) => {},
+                    Err(e) => { println!("{}", e); break; }
+                };
+            }
+        };
     }
 
     let t2 = time::precise_time_s();

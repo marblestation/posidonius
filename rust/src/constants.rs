@@ -1,8 +1,19 @@
 use std;
+use super::integrator::IntegratorType;
 
+//// Simulation
 pub const N_PARTICLES: usize = 2;
-pub const INTEGRATOR : &'static str = "leapfrog";
-//pub const INTEGRATOR : &'static str = "IAS15";
+pub const TIME_STEP: f64 = 0.08; // in days
+pub const TIME_LIMIT: f64 = TIME_STEP * 365.25 * 10.0e2;
+pub const PRINT_EVERY_N_YEARS: f64 = 100.;
+pub const PRINT_EVERY_N_ITERATIONS: u32 = 100_000_000;
+
+
+//// Integrator
+pub const INTEGRATOR: IntegratorType = IntegratorType::LeapFrog;
+//pub const INTEGRATOR: IntegratorType = IntegratorType::Ias15;
+
+//// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).
 pub const INTEGRATOR_EPSILON_GLOBAL : bool = true;  // if true: estimate the fractional error by max(acceleration_error)/max(acceleration), where max is take over all particles.
                                                     // if false: estimate the fractional error by max(acceleration_error/acceleration).
@@ -11,7 +22,8 @@ pub const INTEGRATOR_EPSILON : f64 = 1e-9;          // Precision parameter
 pub const INTEGRATOR_MIN_DT : f64 = 0.;             // Minimum timestep used as a floor when adaptive timestepping is enabled.
 pub const SAFETY_FACTOR : f64 = 0.25;               // Maximum increase/deacrease of consecutve timesteps.
 
-//// Setup constants
+
+//// Physical constants
 // These are the same units as used by the mercury6 code.
 const K  : f64 = 0.01720209895;    // Gaussian constant 
 pub const K2 : f64 = K*K; 
