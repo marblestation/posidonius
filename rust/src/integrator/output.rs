@@ -22,7 +22,7 @@ pub fn print_output<T: Write>(output_writer: &mut BufWriter<T>, particles: &Part
             let _ = output_writer.write(b"acceleration_x\tacceleration_y\tacceleration_z\t");
             let _ = output_writer.write(b"dspin_dt_x\tdspin_dt_y\tdspin_dt_z\t");
             let _ = output_writer.write(b"torque_x\ttorque_y\ttorque_z\t");
-            let _ = output_writer.write(b"orthogonal_component_of_the_tidal_force\t");
+            let _ = output_writer.write(b"orthogonal_component_of_the_tidal_force_due_to_stellar_tide\torthogonal_component_of_the_tidal_force_due_to_planetary_tide\t");
             let _ = output_writer.write(b"radial_component_of_the_tidal_force\tradial_component_of_the_tidal_force_conservative_part\tradial_component_of_the_tidal_force_dissipative_part\t");
             let _ = output_writer.write(b"tidal_acceleration_x\ttidal_acceleration_y\ttidal_acceleration_z\t");
             let _ = output_writer.write(b"radial_velocity\tnorm_velocity_vector\tdistance\t");
@@ -58,7 +58,7 @@ pub fn print_output<T: Write>(output_writer: &mut BufWriter<T>, particles: &Part
             let _ = output_writer.write(format!("{:e}\t{:e}\t{:e}\t", particle.acceleration.x, particle.acceleration.y, particle.acceleration.z).as_bytes());
             let _ = output_writer.write(format!("{:e}\t{:e}\t{:e}\t", particle.dspin_dt.x, particle.dspin_dt.y, particle.dspin_dt.z).as_bytes());
             let _ = output_writer.write(format!("{:e}\t{:e}\t{:e}\t", particle.torque.x, particle.torque.y, particle.torque.z).as_bytes());
-            let _ = output_writer.write(format!("{:e}\t", particle.orthogonal_component_of_the_tidal_force).as_bytes());
+            let _ = output_writer.write(format!("{:e}\t{:e}\t", particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide, particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide).as_bytes());
             let _ = output_writer.write(format!("{:e}\t{:e}\t{:e}\t", particle.radial_component_of_the_tidal_force, particle.radial_component_of_the_tidal_force_conservative_part, particle.radial_component_of_the_tidal_force_dissipative_part).as_bytes());
             let _ = output_writer.write(format!("{:e}\t{:e}\t{:e}\t", particle.tidal_acceleration.x, particle.tidal_acceleration.y, particle.tidal_acceleration.z).as_bytes());
             let _ = output_writer.write(format!("{:e}\t{:e}\t{:e}\t", particle.radial_velocity, particle.norm_velocity_vector, particle.distance).as_bytes());

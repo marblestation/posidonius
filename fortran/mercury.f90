@@ -67,8 +67,8 @@ program mercury
 
     !------------------------------------------------------------------------------
     !---- Simulation
-    time_step = 0.08 ! in days
-    time_limit = time_step * 365.25 * 10.0e2
+    time_step = 0.08d0 ! in days
+    time_limit = time_step * 365.25d0 * 10.0d2
     !------------------------------------------------------------------------------
 
     !------------------------------------------------------------------------------
@@ -77,24 +77,24 @@ program mercury
 
     !------------------------------------------------------------------------------
     !---- Star (central body)
-    star_mass = 0.08 ! Solar masses
+    star_mass = 0.08d0 ! Solar masses
 
     !---------------------------------------------------------------------------
     !---- Planet
-    planet_mass = 3.0e-6!/ Solar masses (3.0e-6 solar masses = 1 earth mass)
+    planet_mass = 3.0d-6!/ Solar masses (3.0e-6 solar masses = 1 earth mass)
 
    !--------- Specify initial position and velocity for a stable orbit
    !----- Keplerian orbital elements, in the `asteroidal' format of Mercury code'
     sma(2) = 0.018d0        !/ semi-major axis (in AU)
     ecc(2) = 0.1d0          !/ eccentricity
     e_tmp = ecc(2)
-    inc(2) = 5.d0           !/ inclination (degrees)
-    i_tmp = inc(j)
-    p_tmp = 0.              !/ argument of pericentre (degrees)
-    n_tmp = 0.              !/ longitude of the ascending node (degrees)
-    l_tmp = 0.              !/ mean anomaly (degrees)
+    inc(2) = 5.d0*PI/180.d0           !/ inclination (degrees)
+    i_tmp = inc(2)
+    p_tmp = 0.d0              !/ argument of pericentre (degrees)
+    n_tmp = 0.d0              !/ longitude of the ascending node (degrees)
+    l_tmp = 0.d0              !/ mean anomaly (degrees)
     p_tmp = (p_tmp + n_tmp)             !/ Convert to longitude of perihelion !!
-    q_tmp = sma(2) * (1.0 - e_tmp)       !/ perihelion distance
+    q_tmp = sma(2) * (1.0d0 - e_tmp)       !/ perihelion distance
     gm_tmp = K2*(planet_mass+star_mass)
     !(x, y, z, vx, vy, vz) = posidonius::general::calculate_cartesian_coordinates(gm, q, e, i, p, n, l)
 

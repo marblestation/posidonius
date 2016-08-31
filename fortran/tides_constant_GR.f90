@@ -87,7 +87,7 @@ module tides_constant_GR
   !---------------------  for planets with planet_type=3  ----------------------
   !--------------  love number, radius of gyration, dissipation  ---------------
   ! Radius of gyration
-  real(double_precision), parameter :: planet_radius_of_gyration_2 = 3.308e-1!/ Earth type planet
+  real(double_precision), parameter :: planet_radius_of_gyration_2 = 3.308d-1!/ Earth type planet
   real(double_precision), parameter, dimension(ntid) :: rg2p_what = (/planet_radius_of_gyration_2/)
   ! Tidal love number
   real(double_precision), parameter :: planet_love_number = 0.305d0 !/ Earth
@@ -95,12 +95,12 @@ module tides_constant_GR
   ! Fluid love number
   real(double_precision), parameter, dimension(ntid) :: k2fp_what = (/planet_love_number/)
   ! k2delta_t (day)
-  real(double_precision), parameter :: k2pdelta = 2.465278e-3!/ Terrestrial planets (no gas)
+  real(double_precision), parameter :: k2pdelta = 2.465278d-3!/ Terrestrial planets (no gas)
   real(double_precision), parameter, dimension(ntid) :: k2pdeltap_what = (/k2pdelta/)
 
   !---------------------------  dissipation  -----------------------------------
   ! factor to multiply the value of the dissipation of the planets
-  real(double_precision), parameter :: planet_dissipation_factor_scale = 1.
+  real(double_precision), parameter :: planet_dissipation_factor_scale = 1.d0
   real(double_precision), parameter, dimension(ntid) :: dissplan = (/planet_dissipation_factor_scale/)
 
 
@@ -121,13 +121,13 @@ module tides_constant_GR
   ! k2delta_t (day), here value of Earth for satellite systems for example 
   real(double_precision), parameter :: k2sdeltats = -2.465277778d-3
   ! Radius of gyration
-  real(double_precision), parameter :: star_radius_of_gyration_2 = 1.94e-1!/ Brown dwarf
+  real(double_precision), parameter :: star_radius_of_gyration_2 = 1.94d-1!/ Brown dwarf
   real(double_precision), parameter :: rg2_what = star_radius_of_gyration_2
   ! Potential Love number
-  real(double_precision), parameter :: star_love_number = 0.307!/ M Dwarf
+  real(double_precision), parameter :: star_love_number = 0.307d0!/ M Dwarf
   real(double_precision), parameter :: k2st_what = star_love_number
   ! Radius of star in Rsun
-  real(double_precision), parameter :: radius_factor = 0.845649342247916
+  real(double_precision), parameter :: radius_factor = 0.845649342247916d0
   real(double_precision), parameter :: radius_star = radius_factor
 
   ! For R=cst, or dM or Suns
@@ -171,7 +171,7 @@ module tides_constant_GR
   real(double_precision), parameter :: k2delta_jup = 2.893519d-7
 
   ! Radius of the Sun in AU 
-  real(double_precision), parameter :: rsun = 4.649130365292d-3
+  real(double_precision), parameter :: rsun = 4.67920694d-3!4.649130365292d-3
   ! Radius of Earth in AU
   real(double_precision), parameter :: rearth = 4.25875047552248d-5
   ! Ratio between mass of the Sun and mass of Earth

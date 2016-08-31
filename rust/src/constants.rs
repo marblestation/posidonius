@@ -5,7 +5,7 @@ use super::integrator::IntegratorType;
 pub const N_PARTICLES: usize = 2;
 pub const TIME_STEP: f64 = 0.08; // in days
 //pub const TIME_LIMIT: f64 = TIME_STEP * 365.25 * 10.0e8;
-pub const TIME_LIMIT: f64 = TIME_STEP*5.;
+pub const TIME_LIMIT: f64 = TIME_STEP*2.;
 pub const PRINT_EVERY_N_YEARS: f64 = 100.;
 pub const PRINT_EVERY_N_ITERATIONS: u32 = 100_000_000;
 

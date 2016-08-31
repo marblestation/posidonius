@@ -25,7 +25,8 @@ pub struct Particle {
     pub norm_velocity_vector: f64,
     pub distance: f64,
     // Tides
-    pub orthogonal_component_of_the_tidal_force: f64,
+    pub orthogonal_component_of_the_tidal_force_due_to_stellar_tide: f64,
+    pub orthogonal_component_of_the_tidal_force_due_to_planetary_tide: f64,
     pub radial_component_of_the_tidal_force: f64,
     pub radial_component_of_the_tidal_force_conservative_part: f64,
     pub radial_component_of_the_tidal_force_dissipative_part: f64,
@@ -44,7 +45,7 @@ impl Particle {
         Particle { mass:mass, mass_g: mass*K2, radius:radius, dissipation_factor:dissipation_factor, radius_of_gyration_2:radius_of_gyration_2, love_number:love_number,
                     position:position, velocity:velocity, acceleration:acceleration, spin:spin,
                     radial_velocity: 0., norm_velocity_vector:0., distance:0.,
-                    orthogonal_component_of_the_tidal_force:0., radial_component_of_the_tidal_force:0., radial_component_of_the_tidal_force_conservative_part:0., radial_component_of_the_tidal_force_dissipative_part:0.,
+                    orthogonal_component_of_the_tidal_force_due_to_stellar_tide:0., orthogonal_component_of_the_tidal_force_due_to_planetary_tide:0., radial_component_of_the_tidal_force:0., radial_component_of_the_tidal_force_conservative_part:0., radial_component_of_the_tidal_force_dissipative_part:0.,
                     denergy_dt:0., torque:torque, dspin_dt:dspin_dt, tidal_acceleration:tidal_acceleration }
     }
 }
@@ -101,13 +102,11 @@ impl Particles {
             particle.acceleration.y -= local_copy_star.acceleration.y;
             particle.acceleration.z -= local_copy_star.acceleration.z;
         }
-        {
-            let star_index = 0;
-            let star = (&mut self.particles[star_index..star_index+1]).iter_mut().next().unwrap();
-            star.acceleration.x = 0.;
-            star.acceleration.y = 0.;
-            star.acceleration.z = 0.;
-        }
+        let star_index = 0;
+        let star = (&mut self.particles[star_index..star_index+1]).iter_mut().next().unwrap();
+        star.acceleration.x = 0.;
+        star.acceleration.y = 0.;
+        star.acceleration.z = 0.;
     }
 
     pub fn calculate_additional_forces(&mut self) {
@@ -119,6 +118,7 @@ impl Particles {
         self.calculate_torque_due_to_tides(!central_body);  // Needed for spin integration
         self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
         self.calculate_tidal_acceleration();
+
         // Add the tidal acceleration to the gravitational one (already computed)
         for particle in self.particles[1..].iter_mut() {
             particle.acceleration.x += particle.tidal_acceleration.x;
@@ -145,10 +145,14 @@ impl Particles {
             spin_index = star_index;
         }
         let mut local_copy_particle_as_ref_spin = &local_copy_particles[spin_index];
+        let mut orthogonal_component_of_the_tidal_force: f64;
         for (i, particle) in self.particles[1..].iter_mut().enumerate() {
             if !central_body {
-                spin_index = i;
+                spin_index = i + 1;
                 local_copy_particle_as_ref_spin = &local_copy_particles[spin_index];
+                orthogonal_component_of_the_tidal_force = particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide;
+            } else {
+                orthogonal_component_of_the_tidal_force = particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide;
             }
             // Calculation of r scalar spin
             let rscalspin = particle.position.x * local_copy_particle_as_ref_spin.spin.x 
@@ -160,25 +164,30 @@ impl Particles {
 
             //// SBC
             //if i == 1 {
-                //println!("Ftdiop {:e}", particle.orthogonal_component_of_the_tidal_force);
+                //println!("Ftdiop {:e}", orthogonal_component_of_the_tidal_force);
             //}
 
             //// Torque calculation (star)
             // - Equation 10 in Bolmont et al. 2015
-            let n_tid_x: f64 = particle.orthogonal_component_of_the_tidal_force * (distance * local_copy_particle_as_ref_spin.spin.x - rscalspin*particle.position.x/distance - 1.0/distance
+            let n_tid_x: f64 = orthogonal_component_of_the_tidal_force * (distance * local_copy_particle_as_ref_spin.spin.x - rscalspin*particle.position.x/distance - 1.0/distance
                             * (particle.position.y*particle.velocity.z - particle.position.z*particle.velocity.y) );
 
-            let n_tid_y :f64 = particle.orthogonal_component_of_the_tidal_force * (distance * local_copy_particle_as_ref_spin.spin.y - rscalspin*particle.position.y/distance - 1.0/distance
+            let n_tid_y :f64 = orthogonal_component_of_the_tidal_force * (distance * local_copy_particle_as_ref_spin.spin.y - rscalspin*particle.position.y/distance - 1.0/distance
                             * (particle.position.z*particle.velocity.x - particle.position.x*particle.velocity.z) );
 
-            let n_tid_z: f64 = particle.orthogonal_component_of_the_tidal_force * (distance * local_copy_particle_as_ref_spin.spin.z - rscalspin*particle.position.z/distance - 1.0/distance
+            let n_tid_z: f64 = orthogonal_component_of_the_tidal_force * (distance * local_copy_particle_as_ref_spin.spin.z - rscalspin*particle.position.z/distance - 1.0/distance
                             * (particle.position.x*particle.velocity.y - particle.position.y*particle.velocity.x) );
-            //// SBC
-            //if i == 1 && !central_body && self.current_time > 0. {
-                ////println!("Ftidos {:e} ", particle.orthogonal_component_of_the_tidal_force);
-                //////println!("Distance {:e} ", distance);
-                //////println!("Rscalspin {:e} ", rscalspin);
-                //////println!("N_tid_z {:e} {:e} {:e} {:e}", n_tid_z, particle.orthogonal_component_of_the_tidal_force, distance, rscalspin);
+            // SBC
+            //if !central_body {
+                //println!("pos  {:e} {:e} {:e}", particle.position.x, particle.position.y, particle.position.z );
+                //println!("vel  {:e} {:e} {:e}", particle.velocity.x, particle.velocity.y, particle.velocity.z );
+                //println!("spin {:e} {:e} {:e}", local_copy_particle_as_ref_spin.spin.x, local_copy_particle_as_ref_spin.spin.y, local_copy_particle_as_ref_spin.spin.z );
+                //println!("Ftidos {:e} ", orthogonal_component_of_the_tidal_force);
+                //println!("Distance {:e} ", distance);
+                //println!("Rscalspin {:e} ", rscalspin);
+                //println!("N_tid_x {:e}", n_tid_x);
+                //println!("N_tid_y {:e}", n_tid_y);
+                //println!("N_tid_z {:e}", n_tid_z);
                 //////println!("Star spin {:e} {:e} {:e}", local_copy_star.spin.x, local_copy_star.spin.y, local_copy_star.spin.z);
                 //////println!("{} Planet spin {:e} {:e} {:e}", self.current_time/365.25, self.particles[1].spin.x, self.particles[1].spin.y, self.particles[1].spin.z);
             //}
@@ -235,18 +244,18 @@ impl Particles {
             // - Ftides in Msun.AU.day-1
             if central_body {
                 // - F_tides_ortho_star
-                particle.orthogonal_component_of_the_tidal_force = 4.5 * (particle.mass_g.powf(2.))
+                particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass_g.powf(2.))
                                                 * (local_copy_star.radius.powf(10.)) 
                                                 * local_copy_star.dissipation_factor / ( (K2.powf(2.)) * distance_7);
-                //particle.orthogonal_component_of_the_tidal_force = 4.5 * (particle.mass.powf(2))
+                //particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass.powf(2))
                                                     //* (local_copy_star.radius.powf(10.)) 
                                                     //* local_copy_star.dissipation_factor / (distance_7);
             } else {
                 // - F_tides_ortho_plan
-                particle.orthogonal_component_of_the_tidal_force = 4.5 * (local_copy_star.mass_g.powf(2.))
+                particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (local_copy_star.mass_g.powf(2.))
                                                 * (particle.radius.powf(10.))
                                                 * particle.dissipation_factor    / ( (K2.powf(2.)) * distance_7);
-                //particle.orthogonal_component_of_the_tidal_force = 4.5 * (local_copy_star.mass.powf(2.))
+                //particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (local_copy_star.mass.powf(2.))
                                                 //* (particle.radius.powf(10.))
                                                 //* particle.dissipation_factor    / (distance_7);
 
@@ -272,10 +281,10 @@ impl Particles {
             // Conservative part of the radial tidal force
             // - Ftidr_cons
 
-            particle.radial_component_of_the_tidal_force_conservative_part = -3.0 / (particle.distance.powf(8.) * K2*K2)
+            particle.radial_component_of_the_tidal_force_conservative_part = -3.0 / (particle.distance.powf(7.) * K2)
                         * (planet_mass_2 * local_copy_star.radius.powf(5.) * local_copy_star.love_number 
                         + star_mass_2 * particle.radius.powf(5.) * particle.love_number);
-            //particle.radial_component_of_the_tidal_force_conservative_part = -3.0 / particle.distance.powf(8.)
+            //particle.radial_component_of_the_tidal_force_conservative_part = -3.0 / particle.distance.powf(7.)
                         //* (planet_mass_2 * local_copy_star.radius.powf(5.) * local_copy_star.love_number 
                         //+ star_mass_2 * particle.radius.powf(5.) * particle.love_number);
 
@@ -300,7 +309,7 @@ impl Particles {
             ////// Instantaneous energy loss dE/dt due to tides
             ////// in Msun.AU^2.day^(-3)
             //radial_tidal_force_for_energy_loss_calculation = factor1 * term2; // Ftidr_diss
-            let factor2 = particle.orthogonal_component_of_the_tidal_force / particle.distance;
+            let factor2 = particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide / particle.distance;
             particle.denergy_dt = -((1.0 / particle.distance * (radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor2 * particle.radial_velocity))
                         * (particle.position.x*particle.velocity.x + particle.position.y*particle.velocity.y + particle.position.z*particle.velocity.z)
                         + factor2 
@@ -334,26 +343,36 @@ impl Particles {
         for particle in self.particles[1..].iter_mut() {
             let factor1 = K2 / particle.mass_g;
             //let factor1 = 1. / particle.mass;
-            let factor2 = particle.radial_component_of_the_tidal_force
-                            + (local_copy_star.orthogonal_component_of_the_tidal_force + particle.orthogonal_component_of_the_tidal_force) * particle.radial_velocity / particle.distance;
-            particle.tidal_acceleration.x = factor1 * (factor2 * particle.position.x / particle.distance
-                                    + local_copy_star.orthogonal_component_of_the_tidal_force / particle.distance 
-                                        * (local_copy_star.spin.y * local_copy_star.position.z  - local_copy_star.spin.z * local_copy_star.position.y - local_copy_star.velocity.x)
-                                    + particle.orthogonal_component_of_the_tidal_force / particle.distance 
-                                        * (particle.spin.y * local_copy_star.position.z  - particle.spin.z * local_copy_star.position.y - local_copy_star.velocity.x)
-                                    );
-            particle.tidal_acceleration.y = factor1 * (factor2 * particle.position.y / particle.distance
-                                    + local_copy_star.orthogonal_component_of_the_tidal_force / particle.distance 
-                                        * (local_copy_star.spin.x * local_copy_star.position.x  - local_copy_star.spin.x * local_copy_star.position.z - local_copy_star.velocity.y)
-                                    + particle.orthogonal_component_of_the_tidal_force / particle.distance 
-                                        * (particle.spin.x * local_copy_star.position.x  - particle.spin.x * local_copy_star.position.z - local_copy_star.velocity.y)
-                                    );
-            particle.tidal_acceleration.z = factor1 * (factor2 * particle.position.z / particle.distance
-                                    + local_copy_star.orthogonal_component_of_the_tidal_force / particle.distance 
-                                        * (local_copy_star.spin.x * local_copy_star.position.y  - local_copy_star.spin.y * local_copy_star.position.x - local_copy_star.velocity.z)
-                                    + particle.orthogonal_component_of_the_tidal_force / particle.distance 
-                                        * (particle.spin.x * local_copy_star.position.y  - particle.spin.y * local_copy_star.position.x - local_copy_star.velocity.z)
-                                    );
+            let factor2 = K2 / local_copy_star.mass_g;
+            //let factor2 = 1 / local_copy_star.mass;
+            let factor0 = factor1+factor2;
+            particle.radial_velocity = 0.;
+            particle.position.y = 0.;
+            particle.position.z = 0.;
+            particle.velocity.x = 0.;
+
+
+            let factor3 = particle.radial_component_of_the_tidal_force
+                            + (particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide + particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide) * particle.radial_velocity / particle.distance;
+            let total_tidal_force_x = factor3 * particle.position.x / particle.distance
+                                    + particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide / particle.distance 
+                                        * (local_copy_star.spin.y * particle.position.z  - local_copy_star.spin.z * particle.position.y - particle.velocity.x)
+                                    + particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide / particle.distance 
+                                        * (particle.spin.y * particle.position.z  - particle.spin.z * particle.position.y - particle.velocity.x);
+            let total_tidal_force_y = factor3 * particle.position.y / particle.distance
+                                    + particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide / particle.distance 
+                                        * (local_copy_star.spin.z * particle.position.x  - local_copy_star.spin.x * particle.position.z - particle.velocity.y)
+                                    + particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide / particle.distance 
+                                        * (particle.spin.z * particle.position.x  - particle.spin.x * particle.position.z - particle.velocity.y);
+            let total_tidal_force_z = factor3 * particle.position.z / particle.distance
+                                    + particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide / particle.distance 
+                                        * (local_copy_star.spin.x * particle.position.y  - local_copy_star.spin.y * particle.position.x - particle.velocity.z)
+                                    + particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide / particle.distance 
+                                        * (particle.spin.x * particle.position.y  - particle.spin.y * particle.position.x - particle.velocity.z);
+
+            particle.tidal_acceleration.x = factor0 * total_tidal_force_x; 
+            particle.tidal_acceleration.y = factor0 * total_tidal_force_y;
+            particle.tidal_acceleration.z = factor0 * total_tidal_force_z;
         }
 
      }
