@@ -94,16 +94,20 @@ impl Particles {
 
         // Tides require heliocentric point of reference, the star should continue in the zero point
         // so we must compensate all the planets:
+        let star_index = 0; // index
+        let local_copy_star = &local_copy_particles[star_index];
         for particle in self.particles.iter_mut() {
-            particle.acceleration.x -= particle.acceleration.x;
-            particle.acceleration.y -= particle.acceleration.y;
-            particle.acceleration.z -= particle.acceleration.z;
+            particle.acceleration.x -= local_copy_star.acceleration.x;
+            particle.acceleration.y -= local_copy_star.acceleration.y;
+            particle.acceleration.z -= local_copy_star.acceleration.z;
         }
-        let star_index = 0;
-        let star = (&mut self.particles[star_index..star_index+1]).iter_mut().next().unwrap();
-        star.acceleration.x = 0.;
-        star.acceleration.y = 0.;
-        star.acceleration.z = 0.;
+        {
+            let star_index = 0;
+            let star = (&mut self.particles[star_index..star_index+1]).iter_mut().next().unwrap();
+            star.acceleration.x = 0.;
+            star.acceleration.y = 0.;
+            star.acceleration.z = 0.;
+        }
     }
 
     pub fn calculate_additional_forces(&mut self) {

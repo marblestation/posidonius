@@ -31,10 +31,13 @@ pub fn print_output<T: Write>(output_writer: &mut BufWriter<T>, particles: &Part
         let _ = output_writer.write(b"orbital_angular_momentum_x\torbital_angular_momentum_y\torbital_angular_momentum_z\torbital_angular_momentum\t");
         let _ = output_writer.write(b"denergy_dt\t");
         let _ = output_writer.write(b"mass\tradius\t");
-        let _ = output_writer.write(b"radius_of_gyration_2\t");
         if debug {
-            let _ = output_writer.write(b"dissipation_factor\tlove_number\t");
+            let _ = output_writer.write(b"radius_of_gyration_2\t");
+            let _ = output_writer.write(b"dissipation_factor\tlove_number");
+        } else {
+            let _ = output_writer.write(b"radius_of_gyration_2");
         }
+
         let _ = output_writer.write(b"\n");
     }
 
@@ -78,9 +81,11 @@ pub fn print_output<T: Write>(output_writer: &mut BufWriter<T>, particles: &Part
             let _ = output_writer.write(b"\t");
         }
         let _ = output_writer.write(format!("{:e}\t{:e}\t", particle.mass, particle.radius).as_bytes());
-        let _ = output_writer.write(format!("{:e}\t", particle.radius_of_gyration_2).as_bytes());
         if debug {
-            let _ = output_writer.write(format!("{:e}\t{:e}\t", particle.dissipation_factor, particle.love_number).as_bytes());
+            let _ = output_writer.write(format!("{:e}\t", particle.radius_of_gyration_2).as_bytes());
+            let _ = output_writer.write(format!("{:e}\t{:e}", particle.dissipation_factor, particle.love_number).as_bytes());
+        } else {
+            let _ = output_writer.write(format!("{:e}", particle.radius_of_gyration_2).as_bytes());
         }
         let _ = output_writer.write(b"\n");
     }
