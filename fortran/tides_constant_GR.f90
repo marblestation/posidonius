@@ -9,7 +9,7 @@ module tides_constant_GR
   !
   !----------------------------------------------------------------------------- 
   ! Output of spin every 'output' years
-  real(double_precision), parameter :: output = 1
+  real(double_precision), parameter :: output = 100
 
   !---------------------------  effects  --------------------------------------- 
   ! If you want effect of rotational induced flattening or not
@@ -74,9 +74,7 @@ module tides_constant_GR
   real(double_precision), parameter, dimension(ntid) :: radius_p = (/planet_radius_factor/)
 
   !---------------------------  initial spin  ----------------------------------
-  ! If pseudo_rot eq 0 : initial period as given by Pp0 (in hr)
-  ! If pseudo_rot eq toto : initial period = toto*pseudo_synchronization period 
-  real(double_precision), parameter, dimension(ntid) :: pseudo_rot = (/0.d0/)
+  ! initial period as given by Pp0 (in hr)
   real(double_precision), parameter :: planet_rotation_period = 24.d0
   real(double_precision), parameter, dimension(ntid) :: Pp0 = (/planet_rotation_period/)
 
@@ -316,5 +314,54 @@ contains
     !close(10)
     !!---------------------------------------------------------------------------
 !end subroutine write_simus_properties
+
+    subroutine gravity_calculate_acceleration (nbod,m,x,v,a_grav)
+
+        implicit none
+        ! Input/Output
+        integer,intent(in) :: nbod
+        real(double_precision),intent(in) :: x(3,nbod),v(3,nbod)
+        real(double_precision),intent(in) :: m(nbod)
+        real(double_precision), intent(out) :: a_grav(3,nbod)
+        ! Local
+        integer :: j,i
+        real(double_precision) :: dx,dy,dz,rr,prefact
+        !-------------------------------------------------------------------------
+
+        do i = 1,nbod
+            ! Initialization
+            a_grav(1,i) = 0.0d0 
+            a_grav(2,i) = 0.0d0 
+            a_grav(3,i) = 0.0d0 
+
+            do j = 1,nbod
+                if (i.ne.j) then
+                    dx = x(1,i) - x(1,j)
+                    dy = x(2,i) - x(2,j)
+                    dz = x(3,i) - x(3,j)
+                    rr = sqrt(dx*dx + dy*dy + dz*dz)
+                    prefact = -m(j)/(rr*rr*rr)
+
+                    a_grav(1,i) =  a_grav(1,i) + prefact * dx 
+                    a_grav(2,i) =  a_grav(2,i) + prefact * dy 
+                    a_grav(3,i) =  a_grav(3,i) + prefact * dz 
+                endif
+            enddo
+        enddo
+
+        do i = 2,nbod
+            a_grav(1,i) =  a_grav(1,i) - a_grav(1,1)
+            a_grav(2,i) =  a_grav(2,i) - a_grav(2,1)
+            a_grav(3,i) =  a_grav(3,i) - a_grav(3,1)
+        enddo
+
+        a_grav(1,1) = 0.0d0 
+        a_grav(2,1) = 0.0d0 
+        a_grav(3,1) = 0.0d0 
+                
+        
+        !-------------------------------------------------------------------------
+        return
+    end subroutine gravity_calculate_acceleration
 
 end module tides_constant_GR
