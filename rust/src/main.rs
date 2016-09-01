@@ -1,5 +1,8 @@
 extern crate posidonius;
 extern crate time;
+extern crate rusqlite;
+
+use rusqlite::Connection;
 //use std::num;
 //use std::io::timer;
 //use std::time::Duration;
@@ -147,16 +150,37 @@ fn main() {
 
 
     ////////////////////////////////////////////////////////////////////////////
-    let path = Path::new("target/output.txt");
+    let path_txt = Path::new("target/output.txt");
     // We create file options to write
-    let mut options = OpenOptions::new();
-    options.create(true).truncate(true).write(true);
+    let mut options_txt = OpenOptions::new();
+    options_txt.create(true).truncate(true).write(true);
 
-    let output_file = match options.open(&path) {
+    let output_txt_file = match options_txt.open(&path_txt) {
         Ok(f) => f,
         Err(e) => panic!("file error: {}", e),
     };
-    let mut output_writer = BufWriter::new(&output_file);
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    let path_bin = Path::new("target/output.bin");
+    // We create file options to write
+    let mut options_bin = OpenOptions::new();
+    options_bin.create(true).truncate(true).write(true);
+
+    let output_bin_file = match options_bin.open(&path_bin) {
+        Ok(f) => f,
+        Err(e) => panic!("file error: {}", e),
+    };
+    ////////////////////////////////////////////////////////////////////////////
+    // Writer should be created together or the compiler will fail incomprehensibly
+    let mut output_txt = BufWriter::new(&output_txt_file);
+    let mut output_bin = BufWriter::new(&output_bin_file);
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    let path = Path::new("target/output.db");
+    let output_db = match  Connection::open(path) {
+        Ok(c) => c,
+        Err(e) => panic!("file error: {}", e),
+    };
     ////////////////////////////////////////////////////////////////////////////
 
     // TODO: Improve (dynamic dispatching?)
@@ -166,13 +190,13 @@ fn main() {
     loop {
         match posidonius::constants::INTEGRATOR {
             posidonius::IntegratorType::LeapFrog => {
-                match leapfrog.iterate(&mut output_writer) {
+                match leapfrog.iterate(&mut output_txt, &mut output_bin, &output_db) {
                     Ok(_) => {},
                     Err(e) => { println!("{}", e); break; }
                 };
             },
             posidonius::IntegratorType::Ias15 => {
-                match ias15.iterate(&mut output_writer) {
+                match ias15.iterate(&mut output_txt, &mut output_bin, &output_db) {
                     Ok(_) => {},
                     Err(e) => { println!("{}", e); break; }
                 };

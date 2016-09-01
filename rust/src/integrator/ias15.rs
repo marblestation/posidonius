@@ -1,8 +1,10 @@
+extern crate rusqlite;
+use std;
 use std::io::{Write, BufWriter};
 use super::Integrator;
-use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_YEARS, PRINT_EVERY_N_ITERATIONS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
+use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, PRINT_EVERY_N_ITERATIONS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
 use super::super::particle::Particles;
-use super::output::print_output;
+use super::output::{write_txt_snapshot, write_bin_snapshot, write_db_snapshot};
 
 
 pub struct Ias15 {
@@ -59,7 +61,7 @@ impl Integrator for Ias15 {
                     }
     }
 
-    fn iterate<T: Write>(&mut self, output_writer: &mut BufWriter<T>) -> Result<(), String> {
+    fn iterate<T: Write>(&mut self, output_txt: &mut BufWriter<T>, output_bin: &mut BufWriter<T>, output_db: &rusqlite::Connection) -> Result<(), String> {
         // Calculate accelerations.
         self.particles.gravity_calculate_acceleration();
         // Calculate non-gravity accelerations.
@@ -68,14 +70,22 @@ impl Integrator for Ias15 {
         self.integrator();
         self.current_iteration += 1;
 
-        let add_header = self.last_print_iteration == 0;
-        if add_header || self.last_print_iteration + PRINT_EVERY_N_ITERATIONS <= self.current_iteration {
-            print_output(output_writer, &self.particles, self.current_time, self.time_step, add_header);
-            self.last_print_iteration = self.current_iteration;
-        } else if self.last_print_time + 365.25*PRINT_EVERY_N_YEARS <= self.current_time {
-            print_output(output_writer, &self.particles, self.current_time, self.time_step, add_header);
-            self.last_print_time = self.current_time;
-        } 
+        let add_header = self.last_print_iteration == 0 && self.last_print_time == 0.;
+        let iteration_triger = self.last_print_iteration + PRINT_EVERY_N_ITERATIONS <= self.current_iteration;
+        let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
+        if add_header || iteration_triger || time_triger {
+            write_txt_snapshot(output_txt, &self.particles, self.current_time, self.time_step, add_header);
+            write_bin_snapshot(output_bin, &self.particles, self.current_time, self.time_step);
+            write_db_snapshot(&output_db, &self.particles, self.current_time, self.time_step, add_header);
+            let current_time_years = self.current_time/365.25;
+            print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
+            let _ = std::io::stdout().flush();
+            if add_header || time_triger {
+                self.last_print_time = self.current_time;
+            } else if iteration_triger {
+                self.last_print_iteration = self.current_iteration;
+            } 
+        }
 
         // Return
         if self.current_time+self.time_step > self.time_limit {
