@@ -90,6 +90,7 @@ module user_module
     ! In case of BS integrator, we need time on previous timestep to know the
     ! current timestep
     real(double_precision) :: time_bf
+    real(double_precision) :: output_tmp
 
     ! Temporary orbital elements needed to calculate pseudo-synchronization for planets:
     real(double_precision) :: gm,qq,ee,ii,pp,nn,ll
@@ -256,6 +257,7 @@ module user_module
         endif
     end do
 
+    output_tmp = output
     !write(*,*) "input mfo_user",time,nbod,nbig,time_step,Rsth,Rsth5,Rsth10
     !write(*,*) "input mfo_user",rg2s,k2s,k2fs,sigmast
     !write(*,*) "input mfo_user",Rp(2),Rp5(2),Rp10(2),k2p(1),k2fp(1),rg2p(1),sigmap(2)
@@ -569,7 +571,12 @@ module user_module
                         !write(13,'(4("  ", es20.10e3))') time/365.25d0, a(1,j),a(2,j),a(3,j)
                         !close(13)
                     enddo
-                    timestep = timestep + output*365.25d0
+                    if (time/365.25d0.ge.10.d0*output_tmp) then
+                        output_tmp = output_tmp * 10.d0
+                        timestep = timestep + output_tmp*365.25d0
+                    else 
+                        timestep = timestep + output_tmp*365.25d0
+                    endif
                 endif
             endif
             if (crash.eq.1) then
@@ -599,7 +606,13 @@ module user_module
                         !write(13,'(4("  ", es20.10e3))') time/365.25d0, a(1,j),a(2,j),a(3,j)
                         !close(13)
                     enddo
-                    timestep = timestep + output*365.25d0
+                    if (time/365.25d0.ge.10.d0*output_tmp) then
+                        output_tmp = output_tmp * 10.d0
+                        timestep = timestep + output_tmp*365.25d0
+                    else 
+                        timestep = timestep + output_tmp*365.25d0
+                    endif
+
                 endif
             endif
         endif    

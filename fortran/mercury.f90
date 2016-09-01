@@ -33,6 +33,8 @@ program mercury
     real(double_precision), dimension(:,:), allocatable :: a_grav,a_tides
 
     real(double_precision) :: time_step,time_limit,half_time_step,time_write
+    real(double_precision) :: output_tmp
+
     real(double_precision) :: star_mass,spin0,Pst
     real(double_precision) :: planet_mass,spinp0
     real(double_precision) :: rg2s,k2s,k2fs,Rsth,Rsth5,Rsth10,sigmast
@@ -53,7 +55,8 @@ program mercury
     !------------------------------------------------------------------------------
     !---- Simulation
     time_step = 0.08d0 ! in days
-    time_limit = 365.25d0 * 1.d8
+    time_limit = 365.25d0 * 1.d3
+    output_tmp = output
     !------------------------------------------------------------------------------
 
 
@@ -431,7 +434,13 @@ program mercury
             open(13, file="aeipnl.out", access="append")
             write(13,'(7("  ", es20.10e3))') time/365.25d0,q_tmp/(1.d0-e_tmp),e_tmp,i_tmp,p_tmp,n_tmp,l_tmp
             close(13)
-            time_write = time_write + output*365.25d0
+            if (time/365.25d0.ge.10.d0*output_tmp) then
+                output_tmp = output_tmp * 10.d0
+                time_write = time_write + output_tmp*365.25d0
+            else 
+                time_write = time_write + output_tmp*365.25d0
+            endif
+
         endif
         time = time + half_time_step
         !write(*,*) ""
