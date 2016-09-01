@@ -33,17 +33,47 @@ impl Integrator for LeapFrog {
     }
 
     fn iterate<T: Write>(&mut self, output_txt: &mut BufWriter<T>, output_bin: &mut BufWriter<T>, output_db: &rusqlite::Connection) -> Result<(), String> {
+        //println!("{} --------------------------------------------------", self.current_iteration);
+        //println!("s {:e} {:e} {:e}", self.particles.particles[0].radius, self.particles.particles[0].radius.powf(5.), self.particles.particles[0].radius.powf(10.));
+        //println!("p {:e} {:e} {:e}", self.particles.particles[1].radius, self.particles.particles[1].radius.powf(5.), self.particles.particles[1].radius.powf(10.));
+        //println!("s {:e} {:e} {:e}", self.particles.particles[0].love_number, self.particles.particles[0].radius_of_gyration_2, self.particles.particles[0].dissipation_factor);
+        //println!("p {:e} {:e} {:e}", self.particles.particles[1].love_number, self.particles.particles[1].radius_of_gyration_2, self.particles.particles[1].dissipation_factor);
+        //println!("m {:?}", self.particles.particles[0].mass_g);
+        //println!("m {:?}", self.particles.particles[1].mass_g);
+        //println!("p {:?}", self.particles.particles[0].position);
+        //println!("p {:?}", self.particles.particles[1].position);
+        //println!("v {:?}", self.particles.particles[0].velocity);
+        //println!("v {:?}", self.particles.particles[1].velocity);
+        //println!("s {:?}", self.particles.particles[0].spin);
+        //println!("s {:?}", self.particles.particles[1].spin);
+
+
+        let only_dspin_dt = true;
+        self.particles.calculate_additional_forces(only_dspin_dt);
+
+        //println!("vel   {:e} {:e} {:e}", self.particles.particles[1].velocity.x, self.particles.particles[1].velocity.y, self.particles.particles[1].velocity.z);
+        //println!("pos   {:e} {:e} {:e}", self.particles.particles[1].position.x, self.particles.particles[1].position.y, self.particles.particles[1].position.z);
+        //println!("spin  {:e} {:e} {:e}", self.particles.particles[1].spin.x, self.particles.particles[1].spin.y, self.particles.particles[1].spin.z);
+        //println!("spin* {:e} {:e} {:e}", self.particles.particles[0].spin.x, self.particles.particles[0].spin.y, self.particles.particles[0].spin.z);
         // A 'DKD'-like integrator will do the first 'D' part.
         self.integrator_part1();
+        //println!("pos   {:e} {:e} {:e}", self.particles.particles[1].position.x, self.particles.particles[1].position.y, self.particles.particles[1].position.z);
+        //println!("spin  {:e} {:e} {:e}", self.particles.particles[1].spin.x, self.particles.particles[1].spin.y, self.particles.particles[1].spin.z);
+        //println!("spin* {:e} {:e} {:e}", self.particles.particles[0].spin.x, self.particles.particles[0].spin.y, self.particles.particles[0].spin.z);
 
         // Calculate accelerations.
         self.particles.gravity_calculate_acceleration();
+        //println!("agrav {:e} {:e} {:e}", self.particles.particles[1].acceleration.x, self.particles.particles[1].acceleration.y, self.particles.particles[1].acceleration.z);
         // Calculate non-gravity accelerations.
-        self.particles.calculate_additional_forces();
+        let only_dspin_dt = false;
+        self.particles.calculate_additional_forces(only_dspin_dt);
+        //println!("atot  {:e} {:e} {:e}", self.particles.particles[1].acceleration.x, self.particles.particles[1].acceleration.y, self.particles.particles[1].acceleration.z);
 
         // A 'DKD'-like integrator will do the 'KD' part.
         self.integrator_part2();
         self.current_iteration += 1;
+        //println!("pos   {:e} {:e} {:e}", self.particles.particles[1].position.x, self.particles.particles[1].position.y, self.particles.particles[1].position.z);
+
 
         let add_header = self.last_print_iteration == 0 && self.last_print_time == 0.;
         let iteration_triger = self.last_print_iteration + PRINT_EVERY_N_ITERATIONS <= self.current_iteration;
