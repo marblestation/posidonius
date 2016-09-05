@@ -75,12 +75,13 @@ impl Integrator for Ias15 {
         let iteration_triger = self.last_print_iteration + PRINT_EVERY_N_ITERATIONS <= self.current_iteration;
         let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
         if add_header || iteration_triger || time_triger {
-            write_txt_snapshot(output_txt, &self.particles, self.current_time, self.time_step, add_header);
+            //write_txt_snapshot(output_txt, &self.particles, self.current_time, self.time_step, add_header);
             write_bin_snapshot(output_bin, &self.particles, self.current_time, self.time_step);
-            write_db_snapshot(&output_db, &self.particles, self.current_time, self.time_step, add_header);
+            //write_db_snapshot(&output_db, &self.particles, self.current_time, self.time_step, add_header);
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
             let _ = std::io::stdout().flush();
+
             if add_header || time_triger {
                 self.last_print_time = self.current_time;
             } else if iteration_triger {
