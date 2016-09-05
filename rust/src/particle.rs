@@ -230,7 +230,6 @@ impl Particles {
             // (using a slice of 1 element):
             let star = (&mut self.particles[star_index..star_index+1]).iter_mut().next().unwrap();
             star.torque.x = torque.x;
-            star.torque.x = torque.x;
             star.torque.y = torque.y;
             star.torque.z = torque.z;
             star.dspin_dt.x = factor * torque.x;

@@ -342,16 +342,6 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &P
                     );
         bincode::rustc_serialize::encode_into(&output, output_bin, bincode::SizeLimit::Infinite).unwrap();
 
-        let output = (
-                        particle.denergy_dt,
-                        particle.mass,
-                        particle.radius,
-                        particle.radius_of_gyration_2,
-                        particle.dissipation_factor,
-                        particle.love_number
-                    );
-        bincode::rustc_serialize::encode_into(&output, output_bin, bincode::SizeLimit::Infinite).unwrap();
-
         if i > 0 {
             //// Only for planets
             let star = 0;
@@ -373,6 +363,7 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &P
                             horb_y/horbn,
                             horb_z/horbn,
                             horbn,
+                            particle.denergy_dt,
                         );
             bincode::rustc_serialize::encode_into(&output, output_bin, bincode::SizeLimit::Infinite).unwrap();
         } else {
@@ -388,9 +379,19 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &P
                             0.,
                             0.,
                             0.,
+                            0.,
                         );
             bincode::rustc_serialize::encode_into(&output, output_bin, bincode::SizeLimit::Infinite).unwrap();
         }
+
+        let output = (
+                        particle.mass,
+                        particle.radius,
+                        particle.radius_of_gyration_2,
+                        particle.dissipation_factor,
+                        particle.love_number
+                    );
+        bincode::rustc_serialize::encode_into(&output, output_bin, bincode::SizeLimit::Infinite).unwrap();
 
     }
 }
