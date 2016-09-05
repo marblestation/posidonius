@@ -218,6 +218,7 @@ module user_module
 
     ! Flags
     save flagrg2,flagtime,ispin,flagbug,charge_data
+    save output_tmp
 
     !------------------------------------------------------------------------------
     ! superzoyotte
@@ -257,7 +258,6 @@ module user_module
         endif
     end do
 
-    output_tmp = output
     !write(*,*) "input mfo_user",time,nbod,nbig,time_step,Rsth,Rsth5,Rsth10
     !write(*,*) "input mfo_user",rg2s,k2s,k2fs,sigmast
     !write(*,*) "input mfo_user",Rp(2),Rp5(2),Rp10(2),k2p(1),k2fp(1),rg2p(1),sigmap(2)
@@ -277,7 +277,8 @@ module user_module
         hdt = 0.5d0*dt
         flagtime = flagtime+1
         if (crash.eq.0) timestep = 0.0d0
-        if (crash.eq.1) timestep = time + output * 365.25d0
+        if (crash.eq.1) timestep = time + output_tmp * 365.25d0
+        output_tmp = output
     endif
     if (flagtime.ne.0) then
         dt = time - time_bf
