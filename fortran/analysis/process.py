@@ -5,16 +5,8 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 #from astropy.io import ascii
 
-raw = np.loadtxt("../aeipnl.out")
-ref = pd.DataFrame(raw, columns=("current_time", "semi-major_axis", "eccentricity", "inclination", "longitude_of_perihelion", "longitude_of_ascending_node", "mean_anomaly"))
-ref = ref[['current_time']]
-ref['ref'] = True
-ref = ref.set_index('current_time')
-
 raw = np.loadtxt("../spins.out")
 star1 = pd.DataFrame(raw, columns=("current_time", "spin_x", "spin_y", "spin_z", "radius", "radius_of_gyration_2", "love_number", "dissipation_factor"))
-star1 = star1.set_index('current_time')
-star1['select'] = ref['ref']np
 
 
 raw = np.loadtxt("../horb1.out")
@@ -242,7 +234,7 @@ ax = fig.add_subplot(4,3,1)
 field = 'semi-major_axis'
 ax.plot(planet_data['current_time'], planet_data[field])
 ax.set_ylabel(field+" (AU)")
-ax.set_ylim([0.015, 0.028])
+ax.set_ylim([0.005, 0.028])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
@@ -338,8 +330,8 @@ plt.tight_layout()
 plt.savefig("output.png")
 #plt.show()
 
-import pudb
-pudb.set_trace()
+#import pudb
+#pudb.set_trace()
 
 
 #fig = plt.figure()
