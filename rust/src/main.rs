@@ -43,8 +43,8 @@ fn main() {
     let star_velocity = posidonius::Axes{x:0., y:0., z:0.};
     let star_acceleration = posidonius::Axes{x:0., y:0., z:0.};
     ////// Initialization of stellar spin
-    let star_rotation_period: f64 = 70.0; // days
-    let star_spin0 = posidonius::constants::TWO_PI/star_rotation_period; // days^-1
+    let star_rotation_period: f64 = 70.0; // hours
+    let star_spin0 = posidonius::constants::TWO_PI/(star_rotation_period/24.); // days^-1
     let star_spin = posidonius::Axes{x:0., y:0., z:star_spin0 };
 
     let star = posidonius::Particle::new(star_mass, star_radius, star_dissipation_factor, star_radius_of_gyration_2, star_love_number,

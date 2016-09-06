@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from astropy.io import ascii
 
 import struct
-filename = "output.bin"
+filename = "../target/output.bin"
 
 f = open(filename, "rb")
 # (np.floor(np.log10(np.max((100., 10.)))) - 2.)*10.
@@ -194,13 +194,17 @@ conservation_of_angular_momentum[0] = conservation_of_angular_momentum[1]
 #conservation_of_angular_momentum = (current-previous)/previous
 #conservation_of_angular_momentum = np.hstack(([conservation_of_angular_momentum[0]], conservation_of_angular_momentum))
 
+planet_mass = planet_data['mass'][0]
+norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
+corrotation_radius = ((G*Msun*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/86400.)**(-2./3.))/AU
 
 fig = plt.figure(figsize=(16, 10))
 ax = fig.add_subplot(4,3,1)
 field = 'semi-major_axis'
 ax.plot(planet_data['current_time'], planet_data[field])
+ax.plot(planet_data['current_time'], corrotation_radius, color="red")
 ax.set_ylabel(field+" (AU)")
-ax.set_ylim([0.015, 0.028])
+ax.set_ylim([0.005, 0.028])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
