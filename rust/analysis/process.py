@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 from astropy.io import ascii
 
 import struct
-filename = "../target/output.bin"
+#filename = "../target/output.bin"
+filename = "../target/output_leapfrog.bin"
+#filename = "../target/output_ias15.bin"
 
 f = open(filename, "rb")
 # (np.floor(np.log10(np.max((100., 10.)))) - 2.)*10.
@@ -14,7 +16,6 @@ f = open(filename, "rb")
 fields = ('current_time', 'time_step', 'particle', 'position_x', 'position_y', 'position_z', 'spin_x', 'spin_y', 'spin_z', 'velocity_x', 'velocity_y', 'velocity_z', 'acceleration_x', 'acceleration_y', 'acceleration_z', 'dspin_dt_x', 'dspin_dt_y', 'dspin_dt_z', 'torque_x', 'torque_y', 'torque_z', 'orthogonal_component_of_the_tidal_force_due_to_stellar_tide', 'orthogonal_component_of_the_tidal_force_due_to_planetary_tide', 'radial_component_of_the_tidal_force', 'radial_component_of_the_tidal_force_conservative_part', 'radial_component_of_the_tidal_force_dissipative_part', 'tidal_acceleration_x', 'tidal_acceleration_y', 'tidal_acceleration_z', 'radial_velocity', 'norm_velocity_vector', 'distance', 'semi-major_axis', 'perihelion_distance', 'eccentricity', 'inclination', 'longitude_of_perihelion', 'longitude_of_ascending_node', 'mean_anomaly', 'orbital_angular_momentum_x', 'orbital_angular_momentum_y', 'orbital_angular_momentum_z', 'orbital_angular_momentum', 'denergy_dt', 'mass', 'radius', 'radius_of_gyration_2', 'dissipation_factor', 'love_number')
 
 data = []
-#i = 0
 while True:
     try:
         row = f.read(8+8+4+8*46)
@@ -23,11 +24,7 @@ while True:
         break
     else:
         data.append(vrow)
-        #if data is None:
-            #data = pd.DataFrame(dict(zip(fields, vrow)), columns=fields, index=(i,))
-        #else:
-            #data = pd.concat((data, pd.DataFrame(dict(zip(fields, vrow)), columns=fields, index=(i,))))
-        #i += 1
+
 data = pd.DataFrame(data, columns=fields, index=np.arange(len(data)))
 if len(data) % 2:
     # Force to have two lines per snapshot because there are 2 particles (sun+planet)
@@ -198,6 +195,11 @@ planet_mass = planet_data['mass'][0]
 norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
 corrotation_radius = ((G*Msun*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/86400.)**(-2./3.))/AU
 
+e = planet_data['eccentricity']
+alpha = (1.+15./2.*e**2+45./8.*e**4+5./16.*e**6)*1./(1.+3.*e**2+3./8.*e**4)*1./(1.-e**2)**1.5
+pseudo_rot = alpha * np.sqrt(G*Msun*(star_mass+planet_mass))
+pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * hr)
+
 fig = plt.figure(figsize=(16, 10))
 ax = fig.add_subplot(4,3,1)
 field = 'semi-major_axis'
@@ -247,6 +249,7 @@ ax.set_xscale('log')
 ax = fig.add_subplot(4,3,6, sharex=ax)
 field = 'planet_rotation_period (hr)'
 ax.plot(planet_data['current_time'], planet_rotation_period*24.)
+ax.plot(planet_data['current_time'], pseudo_synchronization_period, color="red")
 ax.set_ylabel(field)
 #ax.set_ylim([40, 150.0])
 ax.set_xscale('log')
@@ -303,16 +306,3 @@ plt.savefig("output.png")
 import pudb
 pudb.set_trace()
 
-
-#fig = plt.figure()
-#ax = fig.add_subplot(1,1,1)
-#field = 'eccentricity'
-#ax.plot(np.log10(planet_data['current_time']), planet_data[field])
-#ax.set_ylim([np.min(planet_data[field]), np.max(planet_data[field]) ])
-#plt.show()
-
-
-
-#tidefluxi(i,j) = enerdot(ai(i,j)*AU,ei(i,j),rotpi(i,j),oblpi(i,j)*!Pi/180.d0,G $
-    #,mb(i,0)*Msun,Ms,Rpi(i,j)*Rearth,k2pDeltap(i)*day)/(4.d0*!Pi*(Rpi(i,j)*Rearth)^2)
-#Ip(i) = rg2p(i,0)*mb(i,0)*Msun*(Rp(i,0)*rsun)^2
