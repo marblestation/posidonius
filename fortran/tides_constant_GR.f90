@@ -130,7 +130,7 @@ module tides_constant_GR
 
   ! For R=cst, or dM or Suns
   ! Initial period of rotation in day
-  real(double_precision), parameter :: star_rotation_period = 70.d0
+  real(double_precision), parameter :: star_rotation_period = 70.d0/24.d0
   real(double_precision), parameter :: Period_st   = star_rotation_period
   ! Fluid Love number
   real(double_precision), parameter :: k2fst_what = star_love_number 
