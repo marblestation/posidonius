@@ -4,17 +4,16 @@ use super::integrator::IntegratorType;
 //// Simulation
 pub const N_PARTICLES: usize = 2;
 pub const TIME_STEP: f64 = 0.08; // in days
-pub const TIME_LIMIT: f64 = 365.25 * 10.0e8;
+pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;
 //pub const TIME_LIMIT: f64 = 365.25 * 10.0e6;
 //pub const TIME_LIMIT: f64 = 365.25 * 10.0e0;
 //pub const TIME_LIMIT: f64 = TIME_STEP*2.;
 pub const PRINT_EVERY_N_DAYS: f64 = 100.*365.25;
-pub const PRINT_EVERY_N_ITERATIONS: u32 = 100_000_000;
 
 
 //// Integrator
 pub const INTEGRATOR: IntegratorType = IntegratorType::LeapFrog;
-//pub const INTEGRATOR: IntegratorType = IntegratorType::Ias15;
+//pub const INTEGRATOR: IntegratorType = IntegratorType::Ias16;
 
 //// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).

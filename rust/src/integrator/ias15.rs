@@ -2,7 +2,7 @@ extern crate rusqlite;
 use std;
 use std::io::{Write, BufWriter};
 use super::Integrator;
-use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, PRINT_EVERY_N_ITERATIONS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
+use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
 use super::super::particle::Particles;
 use super::output::{write_txt_snapshot, write_bin_snapshot, write_db_snapshot};
 
@@ -72,9 +72,8 @@ impl Integrator for Ias15 {
         self.current_iteration += 1;
 
         let add_header = self.last_print_iteration == 0 && self.last_print_time == 0.;
-        let iteration_triger = self.last_print_iteration + PRINT_EVERY_N_ITERATIONS <= self.current_iteration;
         let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
-        if add_header || iteration_triger || time_triger {
+        if add_header || time_triger {
             //write_txt_snapshot(output_txt, &self.particles, self.current_time, self.time_step, add_header);
             write_bin_snapshot(output_bin, &self.particles, self.current_time, self.time_step);
             //write_db_snapshot(&output_db, &self.particles, self.current_time, self.time_step, add_header);
@@ -84,8 +83,6 @@ impl Integrator for Ias15 {
 
             if add_header || time_triger {
                 self.last_print_time = self.current_time;
-            } else if iteration_triger {
-                self.last_print_iteration = self.current_iteration;
             } 
         }
 

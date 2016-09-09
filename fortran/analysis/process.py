@@ -289,7 +289,7 @@ ax.set_ylabel(field)
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
-ax.set_xlim([100.0, 1.0e7])
+ax.set_xlim([100.0, 1.0e8])
 
 plt.tight_layout()
 #plt.savefig("../target/output.png")
