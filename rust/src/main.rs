@@ -73,7 +73,7 @@ fn main() {
     //let planet_dissipation_factor: f64 = planet_dissipation_factor_scale * 2.006*3.845764d4;
     //// Terrestrial:
     let k2pdelta: f64 = 2.465278e-3; // Terrestrial planets (no gas)
-    let planet_dissipation_factor: f64 = planet_dissipation_factor_scale * 2. * posidonius::constants::K2 * k2pdelta/(3. * planet_radius.powf(5.));
+    let planet_dissipation_factor: f64 = planet_dissipation_factor_scale * 2. * posidonius::constants::K2 * k2pdelta/(3. * planet_radius.powi(5));
     ////// Radius of gyration
     let planet_radius_of_gyration_2: f64 = 3.308e-1; // Earth type planet
     //let planet_radius_of_gyration_2: f64 = 2.54e-1; // Gas planet
@@ -104,6 +104,15 @@ fn main() {
     let planet_position = posidonius::Axes{x:x, y:y, z:z};
     let planet_velocity = posidonius::Axes{x:vx, y:vy, z:vz};
     let planet_acceleration = posidonius::Axes{x:0., y:0., z:0.};
+    
+    //// t: Orbital period
+    //// https://en.wikipedia.org/wiki/Orbital_period#Small_body_orbiting_a_central_body
+    //let Msun      =  1.98892e30;               // kg
+    //let G         =  6.6742367e-11;            // m^3.kg^-1.s^-2
+    //let AU        =  1.49598e11;               // m
+    //let t = posidonius::constants::TWO_PI * ((a*AU).powi(3)/(star_mass*Msun*G)).sqrt(); // seconds
+    //let t = t/(60.*60.*24.); // days
+    //println!("++++ {:e} {}", t, t);
 
     ////// Initialization of planetary spin
     // Planets obliquities in rad
@@ -132,7 +141,7 @@ fn main() {
         let horb_x = planet_position.y * planet_velocity.z - planet_position.z * planet_velocity.y;
         let horb_y = planet_position.z * planet_velocity.x - planet_position.x * planet_velocity.z;
         let horb_z = planet_position.x * planet_velocity.y - planet_position.y * planet_velocity.x;
-        let horbn = (horb_x.powf(2.) + horb_y.powf(2.) + horb_z.powf(2.)).sqrt();
+        let horbn = (horb_x.powi(2) + horb_y.powi(2) + horb_z.powi(2)).sqrt();
         // Spin taking into consideration the inclination:
         planet_spin.x = planet_spin0 * (horb_x / (horbn * inclination.sin())) * (planet_obliquity+inclination).sin();
         planet_spin.y = planet_spin0 * (horb_y / (horbn * inclination.sin())) * (planet_obliquity+inclination).sin();
@@ -146,7 +155,7 @@ fn main() {
 
 
     //let particles_tmp : [posidonius::Particle; posidonius::N_PARTICLES] = [star, planet];
-    let particles = posidonius::Particles::new([star, planet]);
+    let particles = posidonius::Particles::new([star, planet], posidonius::constants::INTEGRATOR);
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -186,6 +195,7 @@ fn main() {
     // TODO: Improve (dynamic dispatching?)
     let mut leapfrog = posidonius::LeapFrog::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
     let mut ias15 = posidonius::Ias15::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
+    let mut whfasthelio = posidonius::WHFastHelio::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
 
     loop {
         match posidonius::constants::INTEGRATOR {
@@ -197,6 +207,12 @@ fn main() {
             },
             posidonius::IntegratorType::Ias15 => {
                 match ias15.iterate(&mut output_txt, &mut output_bin, &output_db) {
+                    Ok(_) => {},
+                    Err(e) => { println!("{}", e); break; }
+                };
+            },
+            posidonius::IntegratorType::WHFastHelio => {
+                match whfasthelio.iterate(&mut output_txt, &mut output_bin, &output_db) {
                     Ok(_) => {},
                     Err(e) => { println!("{}", e); break; }
                 };

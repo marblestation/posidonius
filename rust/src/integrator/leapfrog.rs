@@ -6,16 +6,38 @@ use super::super::constants::PRINT_EVERY_N_DAYS;
 use super::super::particle::Particles;
 use super::output::{write_txt_snapshot, write_bin_snapshot, write_db_snapshot};
 
+/// LeapFrog is a second order symplectic integrator
+/// http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:astro-ph/9710043
+///
+/// http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:1411.6671
+/// Time-reversible, symplectic integrators should in principle conserve energy to a better level
+/// than non-symplectic integrators, since there is no drift present in the energy error.
+/// Therefore, by using a symplectic integrator, the number of simulations with large energy error
+/// could be reduced. Using a Leapfrog integrator with constant time-steps, we tested this
+/// assumption and we find that for resonant 3-body interactions, it is challenging to obtain
+/// accurate solutions. The main reason is that, contrary to regular systems like, for example, the
+/// Solar System, resonant 3-body interactions often include very close encounters, which need a
+/// very small time-step size to be resolved accurately. 
+///
+///https://arxiv.org/pdf/1110.4876v2.pdf
+///Leap-frog is a second-order accurate and symplectic integrator
+///for non-rotating frames. Here, the Hamiltonian is split into the
+///kinetic part and the potential part. Both
+///the drift and kick sub-steps are simple Euler steps. First the positions
+///of all particles are advanced for half a time-step while keeping
+///the velocities fixed. Then the velocities are advanced for one
+///time-step while keeping the positions fixed. In the last sub-step
+///the velocities are again advanced for half a time-step. L
 
 
 pub struct LeapFrog {
     time_step: f64,
+    half_time_step: f64,
     time_limit: f64,
     particles: Particles,
     current_time: f64,
     current_iteration: u32,
     last_print_time: f64,
-    last_print_iteration: u32,
 }
 
 impl Integrator for LeapFrog {
@@ -23,9 +45,9 @@ impl Integrator for LeapFrog {
     fn new(time_step: f64, time_limit: f64, particles: Particles) -> LeapFrog {
         LeapFrog {
                     time_step:time_step,
+                    half_time_step:0.5*time_step,
                     time_limit:time_limit,
-                    last_print_time:0.,
-                    last_print_iteration:0,
+                    last_print_time:-1.,
                     particles:particles,
                     current_time:0.,
                     current_iteration:0,
@@ -33,49 +55,8 @@ impl Integrator for LeapFrog {
     }
 
     fn iterate<T: Write>(&mut self, output_txt: &mut BufWriter<T>, output_bin: &mut BufWriter<T>, output_db: &rusqlite::Connection) -> Result<(), String> {
-        //println!("{} --------------------------------------------------", self.current_iteration);
-        //println!("s {:e} {:e} {:e}", self.particles.particles[0].radius, self.particles.particles[0].radius.powf(5.), self.particles.particles[0].radius.powf(10.));
-        //println!("p {:e} {:e} {:e}", self.particles.particles[1].radius, self.particles.particles[1].radius.powf(5.), self.particles.particles[1].radius.powf(10.));
-        //println!("s {:e} {:e} {:e}", self.particles.particles[0].love_number, self.particles.particles[0].radius_of_gyration_2, self.particles.particles[0].dissipation_factor);
-        //println!("p {:e} {:e} {:e}", self.particles.particles[1].love_number, self.particles.particles[1].radius_of_gyration_2, self.particles.particles[1].dissipation_factor);
-        //println!("m {:?}", self.particles.particles[0].mass_g);
-        //println!("m {:?}", self.particles.particles[1].mass_g);
-        //println!("p {:?}", self.particles.particles[0].position);
-        //println!("p {:?}", self.particles.particles[1].position);
-        //println!("v {:?}", self.particles.particles[0].velocity);
-        //println!("v {:?}", self.particles.particles[1].velocity);
-        //println!("s {:?}", self.particles.particles[0].spin);
-        //println!("s {:?}", self.particles.particles[1].spin);
-
-
-        let only_dspin_dt = true;
-        self.particles.calculate_additional_forces(only_dspin_dt);
-
-        //println!("vel   {:e} {:e} {:e}", self.particles.particles[1].velocity.x, self.particles.particles[1].velocity.y, self.particles.particles[1].velocity.z);
-        //println!("pos   {:e} {:e} {:e}", self.particles.particles[1].position.x, self.particles.particles[1].position.y, self.particles.particles[1].position.z);
-        //println!("spin  {:e} {:e} {:e}", self.particles.particles[1].spin.x, self.particles.particles[1].spin.y, self.particles.particles[1].spin.z);
-        //println!("spin* {:e} {:e} {:e}", self.particles.particles[0].spin.x, self.particles.particles[0].spin.y, self.particles.particles[0].spin.z);
-        // A 'DKD'-like integrator will do the first 'D' part.
-        self.integrator_part1();
-        //println!("pos   {:e} {:e} {:e}", self.particles.particles[1].position.x, self.particles.particles[1].position.y, self.particles.particles[1].position.z);
-        //println!("spin  {:e} {:e} {:e}", self.particles.particles[1].spin.x, self.particles.particles[1].spin.y, self.particles.particles[1].spin.z);
-        //println!("spin* {:e} {:e} {:e}", self.particles.particles[0].spin.x, self.particles.particles[0].spin.y, self.particles.particles[0].spin.z);
-
-        // Calculate accelerations.
-        self.particles.gravity_calculate_acceleration();
-        //println!("agrav {:e} {:e} {:e}", self.particles.particles[1].acceleration.x, self.particles.particles[1].acceleration.y, self.particles.particles[1].acceleration.z);
-        // Calculate non-gravity accelerations.
-        let only_dspin_dt = false;
-        self.particles.calculate_additional_forces(only_dspin_dt);
-        //println!("atot  {:e} {:e} {:e}", self.particles.particles[1].acceleration.x, self.particles.particles[1].acceleration.y, self.particles.particles[1].acceleration.z);
-
-        // A 'DKD'-like integrator will do the 'KD' part.
-        self.integrator_part2();
-        self.current_iteration += 1;
-        //println!("pos   {:e} {:e} {:e}", self.particles.particles[1].position.x, self.particles.particles[1].position.y, self.particles.particles[1].position.z);
-
-
-        let add_header = self.last_print_iteration == 0 && self.last_print_time == 0.;
+        // Output
+        let add_header = self.last_print_time < 0.;
         let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
         if add_header || time_triger {
             //write_txt_snapshot(output_txt, &self.particles, self.current_time, self.time_step, add_header);
@@ -89,6 +70,23 @@ impl Integrator for LeapFrog {
                 self.last_print_time = self.current_time;
             } 
         }
+
+        // Calculate non-gravity accelerations.
+        let only_dspin_dt = true;
+        self.particles.calculate_additional_forces(only_dspin_dt);
+
+        // A 'DKD'-like integrator will do the first 'D' part.
+        self.integrator_part1();
+
+        // Calculate accelerations.
+        self.particles.gravity_calculate_acceleration();
+        // Calculate non-gravity accelerations.
+        let only_dspin_dt = false;
+        self.particles.calculate_additional_forces(only_dspin_dt);
+
+        // A 'DKD'-like integrator will do the 'KD' part.
+        self.integrator_part2();
+        self.current_iteration += 1;
 
         // Return
         if self.current_time+self.time_step > self.time_limit {
@@ -105,48 +103,33 @@ impl LeapFrog {
     // for non-rotating frame.
     #[allow(dead_code)]
     fn integrator_part1(&mut self) {
-        let half_time_step = 0.5 * self.time_step;
         for particle in self.particles.particles.iter_mut() {
-            particle.position.x += half_time_step * particle.velocity.x;
-            particle.position.y += half_time_step * particle.velocity.y;
-            particle.position.z += half_time_step * particle.velocity.z;
+            particle.position.x += self.half_time_step * particle.velocity.x;
+            particle.position.y += self.half_time_step * particle.velocity.y;
+            particle.position.z += self.half_time_step * particle.velocity.z;
 
-            particle.spin.x += half_time_step * particle.dspin_dt.x;
-            particle.spin.y += half_time_step * particle.dspin_dt.y;
-            particle.spin.z += half_time_step * particle.dspin_dt.z;
+            particle.spin.x += self.half_time_step * particle.dspin_dt.x;
+            particle.spin.y += self.half_time_step * particle.dspin_dt.y;
+            particle.spin.z += self.half_time_step * particle.dspin_dt.z;
         }
-        self.current_time += half_time_step;
+        self.current_time += self.half_time_step;
     }
 
     #[allow(dead_code)]
     fn integrator_part2(&mut self) {
-        let half_time_step = 0.5 * self.time_step;
         for particle in self.particles.particles.iter_mut() {
             particle.velocity.x += self.time_step * particle.acceleration.x;
             particle.velocity.y += self.time_step * particle.acceleration.y;
             particle.velocity.z += self.time_step * particle.acceleration.z;
-            particle.position.x += half_time_step * particle.velocity.x;
-            particle.position.y += half_time_step * particle.velocity.y;
-            particle.position.z += half_time_step * particle.velocity.z;
+            particle.position.x += self.half_time_step * particle.velocity.x;
+            particle.position.y += self.half_time_step * particle.velocity.y;
+            particle.position.z += self.half_time_step * particle.velocity.z;
 
-            //// SBC
-            //if i == 1 {
-                ////println!("--- {}", self.current_time);
-                //println!("{:e} {:e} {:e}", particle.spin.x, particle.spin.y, particle.spin.z);
-            //}
-            //particle.spin.x += self.time_step * particle.dspin_dt.x;
-            //particle.spin.y += self.time_step * particle.dspin_dt.y;
-            //particle.spin.z += self.time_step * particle.dspin_dt.z;
-            particle.spin.x += half_time_step * particle.dspin_dt.x;
-            particle.spin.y += half_time_step * particle.dspin_dt.y;
-            particle.spin.z += half_time_step * particle.dspin_dt.z;
-
-            //// SBC
-            //if i == 1 {
-                //println!(":: {:e} {:e} {:e}", particle.spin.x, particle.spin.y, particle.spin.z);
-            //}
+            particle.spin.x += self.half_time_step * particle.dspin_dt.x;
+            particle.spin.y += self.half_time_step * particle.dspin_dt.y;
+            particle.spin.z += self.half_time_step * particle.dspin_dt.z;
         }
-        self.current_time += half_time_step;
+        self.current_time += self.half_time_step;
     }
 
 }

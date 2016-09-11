@@ -6,6 +6,13 @@ use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_
 use super::super::particle::Particles;
 use super::output::{write_txt_snapshot, write_bin_snapshot, write_db_snapshot};
 
+///https://arxiv.org/abs/1409.4779
+///IAS15: A fast, adaptive, high-order integrator for gravitational dynamics, accurate to machine
+///precision over a billion orbits
+///
+/// https://arxiv.org/pdf/1110.4876v2.pdf
+/// variable time-steps also
+/// break the symplectic nature of an integrator.
 
 pub struct Ias15 {
     time_step: f64,
@@ -14,7 +21,6 @@ pub struct Ias15 {
     current_time: f64,
     current_iteration: u32,
     last_print_time: f64,
-    last_print_iteration: u32,
     //// Integrator IAS15 data:
     integrator_iterations_max_exceeded : i32,  // Count how many times the iteration did not converge
     time_step_last_success: f64,			// Last accepted timestep (corresponding to br and er)
@@ -39,8 +45,7 @@ impl Integrator for Ias15 {
         Ias15 {
                     time_step:time_step,
                     time_limit:time_limit,
-                    last_print_time:0.,
-                    last_print_iteration:0,
+                    last_print_time: -1.,
                     particles:particles,
                     current_time:0.,
                     current_iteration:0,
@@ -62,16 +67,8 @@ impl Integrator for Ias15 {
     }
 
     fn iterate<T: Write>(&mut self, output_txt: &mut BufWriter<T>, output_bin: &mut BufWriter<T>, output_db: &rusqlite::Connection) -> Result<(), String> {
-        // Calculate accelerations.
-        self.particles.gravity_calculate_acceleration();
-        // Calculate non-gravity accelerations.
-        let only_dspin_dt = false;
-        self.particles.calculate_additional_forces(only_dspin_dt);
-
-        self.integrator();
-        self.current_iteration += 1;
-
-        let add_header = self.last_print_iteration == 0 && self.last_print_time == 0.;
+        // Output
+        let add_header = self.last_print_time < 0.;
         let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
         if add_header || time_triger {
             //write_txt_snapshot(output_txt, &self.particles, self.current_time, self.time_step, add_header);
@@ -85,6 +82,15 @@ impl Integrator for Ias15 {
                 self.last_print_time = self.current_time;
             } 
         }
+
+        // Calculate accelerations.
+        self.particles.gravity_calculate_acceleration();
+        // Calculate non-gravity accelerations.
+        let only_dspin_dt = false;
+        self.particles.calculate_additional_forces(only_dspin_dt);
+
+        self.integrator();
+        self.current_iteration += 1;
 
         // Return
         if self.current_time+self.time_step > self.time_limit {

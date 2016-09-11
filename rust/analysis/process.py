@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from astropy.io import ascii
 
 import struct
-#filename = "../target/output.bin"
-filename = "../target/output_leapfrog.bin"
+filename = "../target/output.bin"
+#filename = "../target/output_leapfrog.bin"
 #filename = "../target/output_ias15.bin"
 
 f = open(filename, "rb")
@@ -240,6 +240,7 @@ ax.set_xscale('log')
 ax = fig.add_subplot(4,3,5, sharex=ax)
 field = 'tidal_flux (W/m^2)'
 ax.plot(planet_data['current_time'], tidal_flux)
+#ax.plot(planet_data['current_time'], np.zeros(len(planet_data)))
 #ax.plot(planet_data['current_time'], inst_tidal_flux)
 ax.set_ylabel(field)
 #ax.set_ylim([0.001, 10000.0])
