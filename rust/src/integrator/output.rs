@@ -11,31 +11,30 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &P
     //
     // The buffer will be written out when the writer is dropped.
 
-    let current_time_years = current_time/365.25;
     let total_energy = particles.compute_total_energy();
     let total_angular_momentum = particles.compute_total_angular_momentum();
     for (i, particle) in particles.particles.iter().enumerate() {
         // Serialize in chunks of maximum 12 elements or it fails
         let output = (
-                        current_time_years, 
-                        time_step, 
+                        current_time,                           // days
+                        time_step,                              // days
                         (i as i32),
-                        particle.position.x,
+                        particle.position.x,                    // AU
                         particle.position.y,
                         particle.position.z,
-                        particle.spin.x,
+                        particle.spin.x,                        // AU/days
                         particle.spin.y,
                         particle.spin.z,
-                        particle.velocity.x,
+                        particle.velocity.x,                    // AU/days
                         particle.velocity.y,
                         particle.velocity.z,
                     );
         bincode::rustc_serialize::encode_into(&output, output_bin, bincode::SizeLimit::Infinite).unwrap();
         let output = (
-                        particle.acceleration.x,
+                        particle.acceleration.x,                // AU^2/days
                         particle.acceleration.y,
                         particle.acceleration.z,
-                        particle.dspin_dt.x,
+                        particle.dspin_dt.x,                    // AU^2/days
                         particle.dspin_dt.y,
                         particle.dspin_dt.z,
                         particle.torque.x,
@@ -49,12 +48,12 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &P
                         particle.radial_component_of_the_tidal_force,
                         particle.radial_component_of_the_tidal_force_conservative_part,
                         particle.radial_component_of_the_tidal_force_dissipative_part,
-                        particle.tidal_acceleration.x,
+                        particle.tidal_acceleration.x,          // AU^2/days
                         particle.tidal_acceleration.y,
                         particle.tidal_acceleration.z,
-                        particle.radial_velocity,
+                        particle.radial_velocity,               // AU/days
                         particle.norm_velocity_vector,
-                        particle.distance,
+                        particle.distance,                      // AU
                     );
         bincode::rustc_serialize::encode_into(&output, output_bin, bincode::SizeLimit::Infinite).unwrap();
 
@@ -68,10 +67,10 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &P
             let horb_z = particle.position.x * particle.velocity.y - particle.position.y * particle.velocity.x;
             let horbn = (horb_x.powf(2.) + horb_y.powf(2.) + horb_z.powf(2.)).sqrt();
             let output = (
-                            semimajor_axis,
-                            perihelion_distance,
+                            semimajor_axis,                     // AU
+                            perihelion_distance,                // AU
                             eccentricity,
-                            inclination,
+                            inclination,                        // Degrees
                             longitude_of_perihelion,
                             longitude_of_ascending_node,
                             mean_anomaly,
@@ -79,7 +78,7 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &P
                             horb_y,
                             horb_z,
                             horbn,
-                            particle.denergy_dt,
+                            particle.denergy_dt,                // Msun.AU^2.day^-3
                         );
             bincode::rustc_serialize::encode_into(&output, output_bin, bincode::SizeLimit::Infinite).unwrap();
         } else {
@@ -103,8 +102,8 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &P
         let output = (
                         total_energy,
                         total_angular_momentum,
-                        particle.mass,
-                        particle.radius,
+                        particle.mass,                          // Msun
+                        particle.radius,                        // Rsun
                         particle.radius_of_gyration_2,
                         particle.dissipation_factor,
                         particle.love_number

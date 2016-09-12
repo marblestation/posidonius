@@ -50,46 +50,14 @@ Mjup      =  9.5511e-4 * Msun         # kg
 Mearth    =  3.e-6 * Msun             # kg
 Rjup      =  69173.e3                 # m
 
-#-------------------------------------------------------------------------------
-# Functions
-#-------------------------------------------------------------------------------
-# The 2 eccentricity dependant factors in the equation in a
-def Na1(e):
-    return (1.0+31.0/2.0*(e*e)+255.0/8.0*np.power(e, 4) \
-            + 185.0/16.0* np.power(e, 6) + 25.0/64.0* np.power(e,8)) / np.power((1.0- (e*e)), (15.0/2.0))
-
-def Na2(e):
-    return (1.+15./2.0*(e*e) + 45./8.0 * np.power(e, 4) + 5./16.0* np.power(e, 6)) / np.power((1.0- (e*e)), 6)
-
-def No2(e):
-    return (1.0 + 3.0 * (e*e) + 3.0/8.0 * np.power(e, 4)) / np.power((1.0- (e*e)), 5)
-
-def energydot(a, e, rotp, oblp, G, Mp, Ms, Rp, k2deltat_plan):
-    return 2. * Kplan(k2deltat_plan, G, Mp, Ms, Rp, a) \
-            * (Na1(e) - 2.0*Na2(e) * np.cos(oblp) * (rotp/(norb(G, Mp, Ms)*np.power(a, -1.5))) \
-            + (1.0 + np.power(np.cos(oblp),2))/2.0 * No2(e) * np.sqrt(1.0-(e*e)) * np.power(rotp/(norb(G, Mp, Ms)* np.power(a, -1.5)), 2))
-
-# Jeremys Ki factor :
-def Kplan(k2deltat_plan, G, Mp, Ms, Rp, a):
-    return 3./2. * k2deltat_plan * (G*(Mp*Mp)/Rp) * np.power(Ms/Mp,2) \
-            * np.power(Rp/a, 6) * np.power(norb(G,Mp,Ms) * np.power(a, -1.5), 2)
-
-# Mean orbital angular velocity without the a dependance         (m^3/2.s-1)
-def norb(G, Mp, Ms):
-    return np.sqrt(G) * np.sqrt(Mp+Ms)
-
 
 
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
-
-#data = pd.read_csv("output.txt", sep="\t")
-#data = ascii.read("../posidonius.ias15/output.txt", delimiter="\t")
-#data = ascii.read("../target/output.txt", delimiter="\t")
-#data = ascii.read("output.txt", delimiter="\t")
-#data = data.as_array()
-#data = data[data['current_time'] >= 100.]
+# Ignore first 100 years
+data['current_time'] /= 362.25 # From days to years
+data = data[data['current_time'] >= 100.]
 
 star = data['particle'] == 0
 star_data = data[star]
@@ -121,6 +89,10 @@ planet_obliquity[ofilter] = np.arccos(planet_obliquity[ofilter])*180./np.pi
 planet_obliquity[np.logical_not(ofilter)] = 1.e-6
 
 ## Star obliquity
+# https://en.wikipedia.org/wiki/Axial_tilt
+# Angle between the spin axis of the star and the planet's orbital plane (in other words, it's the inclination of the planet)
+# or, equivalently, the angle between its equatorial plane and orbital plane
+# At an obliquity of zero, the two axes point in the same direction; i.e., the rotational axis is perpendicular to the orbital plane.
 numerator = relative_orbital_angular_momentum_x * star_data['spin_x'] + \
                     relative_orbital_angular_momentum_y * star_data['spin_y'] + \
                     relative_orbital_angular_momentum_z * star_data['spin_z']
@@ -134,39 +106,19 @@ star_obliquity[ofilter] = np.arccos(star_obliquity[ofilter])*180./np.pi
 star_obliquity[np.logical_not(ofilter)] = 1.e-6
 
 ## Planet precession angle
+# https://en.wikipedia.org/wiki/Apsidal_precession
+# Angle defined between an arbitrary direction and the semi-major axis direction
 numerator = 1./np.sin(planet_obliquity) \
             *(planet_data['position_x']*planet_data['spin_x'] \
                 + planet_data['position_y']*planet_data['spin_y'] \
                 + planet_data['position_z']*planet_data['spin_z'])
 
-denominator = np.sqrt(np.power(star_data['position_x'], 2) + np.power(star_data['position_y'], 2) + np.power(star_data['position_z'], 2)) \
+denominator = np.sqrt(np.power(planet_data['position_x'], 2) + np.power(planet_data['position_y'], 2) + np.power(planet_data['position_z'], 2)) \
                 * planet_norm_spin
 planet_precession_angle = numerator / denominator
 ofilter = planet_precession_angle <= 1.
 planet_precession_angle[ofilter] = np.arccos(planet_precession_angle[ofilter])*180./np.pi
 planet_precession_angle[np.logical_not(ofilter)] = 1.e-6
-
-
-
-
-k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
-
-### Calculation of energydot and tidal flux, in W/m2
-# Gravitationl energy lost of the system due to dissipation
-# Masses in kg
-gravitational_energy_lost = energydot(planet_data['semi-major_axis']*AU, \
-                                        planet_data['eccentricity'], \
-                                        planet_norm_spin / day, \
-                                        planet_obliquity * np.pi/180.0, \
-                                        G, \
-                                        planet_data['mass'] * Msun, \
-                                        star_mass * Msun, \
-                                        planet_data['radius'] * Rsun, \
-                                        k2pdelta * day)
-
-# The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
-# If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
-tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * Rsun, 2))
 
 denergy_dt = planet_data['denergy_dt'] * 6.90125e37 # conversation from Msun.AU^2.day^-3 to W
 inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * Rsun, 2))
@@ -191,7 +143,7 @@ conservation_of_angular_momentum[0] = conservation_of_angular_momentum[1]
 
 planet_mass = planet_data['mass'][0]
 norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
-corrotation_radius = ((G*Msun*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/86400.)**(-2./3.))/AU
+corrotation_radius = ((G*Msun*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/day)**(-2./3.))/AU
 
 e = planet_data['eccentricity']
 alpha = (1.+15./2.*e**2+45./8.*e**4+5./16.*e**6)*1./(1.+3.*e**2+3./8.*e**4)*1./(1.-e**2)**1.5
@@ -230,23 +182,22 @@ ax.set_yscale('log')
 ax = fig.add_subplot(4,3,4, sharex=ax)
 field = 'inclination'
 ax.plot(planet_data['current_time'], planet_data[field] * (180 / np.pi)) # From rad to degrees
-ax.set_ylabel(field+ " (deg)")
+ax.set_ylabel('planet '+field+ " (deg)")
 ax.set_ylim([2.5, 5.5])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,5, sharex=ax)
-field = 'tidal_flux (W/m^2)'
-ax.plot(planet_data['current_time'], tidal_flux)
-#ax.plot(planet_data['current_time'], np.zeros(len(planet_data)))
-#ax.plot(planet_data['current_time'], inst_tidal_flux)
+# Instantaneous energy loss dE/dt due to tides per planet surface
+field = 'Energy lost\ndue to tides (W/m^2)'
+ax.plot(planet_data['current_time'], inst_tidal_flux)
 ax.set_ylabel(field)
 #ax.set_ylim([0.001, 10000.0])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,6, sharex=ax)
-field = 'planet_rotation_period (hr)'
+field = 'planet_rotation_period\n(hr)'
 ax.plot(planet_data['current_time'], planet_rotation_period*24.)
 ax.plot(planet_data['current_time'], pseudo_synchronization_period, color="red")
 ax.set_ylabel(field)
@@ -263,7 +214,8 @@ ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
 ax = fig.add_subplot(4,3,8, sharex=ax)
-field = 'denergy_dt (W)'
+# Instantaneous energy loss dE/dt due to tides
+field = 'Energy lost\ndue to tides (W)'
 #ax.plot(planet_data['current_time'], planet_data[field])
 ax.plot(planet_data['current_time'], denergy_dt)
 ax.set_ylabel(field)
@@ -272,7 +224,7 @@ ax.set_xscale('log')
 ax.set_yscale('symlog')
 
 ax = fig.add_subplot(4,3,9, sharex=ax)
-field = 'star_rotation_period (days)'
+field = 'star_rotation_period\n(days)'
 ax.plot(planet_data['current_time'], star_rotation_period)
 ax.set_ylabel(field)
 #ax.set_ylim([40, 150.0])
@@ -288,15 +240,33 @@ ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
 ax = fig.add_subplot(4,3,11, sharex=ax)
-field = 'planet_precession_angle (deg)'
+field = 'planet_precession_angle\n(deg)'
 ax.plot(planet_data['current_time'], planet_precession_angle)
 ax.set_ylabel(field)
 #ax.set_ylim([2.5, 5.5])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
+# How to compute the total energy if it is not provided:
+#star_e_kin = 0.5 * star_data['mass'] * (np.power(star_data['velocity_x'], 2) + \
+                                        #np.power(star_data['velocity_y'], 2) + \
+                                        #np.power(star_data['velocity_z'], 2))
+#planet_e_kin = 0.5 * planet_data['mass'] * (np.power(planet_data['velocity_x'], 2) + \
+                                        #np.power(planet_data['velocity_y'], 2) + \
+                                        #np.power(planet_data['velocity_z'], 2))
+#e_kin = star_e_kin + planet_e_kin
+#dx = planet_data['position_x'] - star_data['position_x']
+#dy = planet_data['position_y'] - star_data['position_y']
+#dz = planet_data['position_z'] - star_data['position_z']
+#K2 = 0.01720209895**2
+#e_pot = (-1. * K2 * (planet_data['mass']) * (star_data['mass']))  / np.sqrt(np.power(dx, 2) + np.power(dy, 2) + np.power(dz, 2))
+#total_energy = e_kin + e_pot
+## conservation of energy (kinetic+potential)
+#relative_energy_error = (total_energy - total_energy[0]) / total_energy[0]
+
 # conservation of energy (kinetic+potential)
 relative_energy_error = (star_data['total_energy'] - star_data['total_energy'][0]) / star_data['total_energy'][0]
+
 ax = fig.add_subplot(4,3,12, sharex=ax)
 field = '$\Delta E/E_{0}$'
 ax.plot(planet_data['current_time'], relative_energy_error)

@@ -5,8 +5,8 @@ use super::integrator::IntegratorType;
 pub const N_PARTICLES: usize = 2;
 pub const TIME_STEP: f64 = 0.08; // in days
 //pub const TIME_STEP: f64 = 0.003; // in days
-pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;
-//pub const TIME_LIMIT: f64 = 365.25 * 1.0e3;
+//pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;
+pub const TIME_LIMIT: f64 = 365.25 * 1.0e3;
 //pub const TIME_LIMIT: f64 = TIME_STEP*4.;
 pub const PRINT_EVERY_N_DAYS: f64 = 100.*365.25;
 //pub const PRINT_EVERY_N_DAYS: f64 = TIME_STEP;
@@ -21,10 +21,10 @@ pub const INTEGRATOR: IntegratorType = IntegratorType::Ias15;
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).
 pub const INTEGRATOR_EPSILON_GLOBAL : bool = true;  // if true: estimate the fractional error by max(acceleration_error)/max(acceleration), where max is take over all particles.
                                                     // if false: estimate the fractional error by max(acceleration_error/acceleration).
-pub const INTEGRATOR_EPSILON : f64 = 1e-9;          // Precision parameter 
+pub const INTEGRATOR_EPSILON : f64 = 1e-6;          // Precision parameter (default: 1e-9)
     							                    // If it is zero, then a constant timestep is used. 
-pub const INTEGRATOR_MIN_DT : f64 = 0.;             // Minimum timestep used as a floor when adaptive timestepping is enabled.
-pub const SAFETY_FACTOR : f64 = 0.25;               // Maximum increase/deacrease of consecutve timesteps.
+pub const INTEGRATOR_MIN_DT : f64 = 0.;             // Minimum timestep used as a floor when adaptive timestepping is enabled (default: 0.).
+pub const SAFETY_FACTOR : f64 = 0.25;               // Maximum increase/deacrease of consecutve timesteps (default: 0.25).
 
 ///// Constants for WHFastHelio
 pub const WHFAST_NMAX_QUART : usize = 64;               // Maximum number of iterations for quartic solver
