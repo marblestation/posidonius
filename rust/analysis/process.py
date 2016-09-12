@@ -53,6 +53,34 @@ Mjup      =  9.5511e-4 * Msun         # kg
 Mearth    =  3.e-6 * Msun             # kg
 Rjup      =  69173.e3                 # m
 
+#-------------------------------------------------------------------------------
+# Functions
+#-------------------------------------------------------------------------------
+# The 2 eccentricity dependant factors in the equation in a
+def Na1(e):
+    return (1.0+31.0/2.0*(e*e)+255.0/8.0*np.power(e, 4) \
+            + 185.0/16.0* np.power(e, 6) + 25.0/64.0* np.power(e,8)) / np.power((1.0- (e*e)), (15.0/2.0))
+
+def Na2(e):
+    return (1.+15./2.0*(e*e) + 45./8.0 * np.power(e, 4) + 5./16.0* np.power(e, 6)) / np.power((1.0- (e*e)), 6)
+
+def No2(e):
+    return (1.0 + 3.0 * (e*e) + 3.0/8.0 * np.power(e, 4)) / np.power((1.0- (e*e)), 5)
+
+def energydot(a, e, rotp, oblp, G, Mp, Ms, Rp, k2deltat_plan):
+    return 2. * Kplan(k2deltat_plan, G, Mp, Ms, Rp, a) \
+            * (Na1(e) - 2.0*Na2(e) * np.cos(oblp) * (rotp/(norb(G, Mp, Ms)*np.power(a, -1.5))) \
+            + (1.0 + np.power(np.cos(oblp),2))/2.0 * No2(e) * np.sqrt(1.0-(e*e)) * np.power(rotp/(norb(G, Mp, Ms)* np.power(a, -1.5)), 2))
+
+# Jeremys Ki factor :
+def Kplan(k2deltat_plan, G, Mp, Ms, Rp, a):
+    return 3./2. * k2deltat_plan * (G*(Mp*Mp)/Rp) * np.power(Ms/Mp,2) \
+            * np.power(Rp/a, 6) * np.power(norb(G,Mp,Ms) * np.power(a, -1.5), 2)
+
+# Mean orbital angular velocity without the a dependance         (m^3/2.s-1)
+def norb(G, Mp, Ms):
+    return np.sqrt(G) * np.sqrt(Mp+Ms)
+
 
 
 #-------------------------------------------------------------------------------
@@ -123,12 +151,32 @@ ofilter = planet_precession_angle <= 1.
 planet_precession_angle[ofilter] = np.arccos(planet_precession_angle[ofilter])*180./np.pi
 planet_precession_angle[np.logical_not(ofilter)] = 1.e-6
 
+
+### Calculation of energydot and tidal flux, in W/m2
+# Gravitationl energy lost of the system due to dissipation
+# Masses in kg
+k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
+gravitational_energy_lost = energydot(planet_data['semi-major_axis']*AU, \
+                                        planet_data['eccentricity'], \
+                                        planet_norm_spin / day, \
+                                        planet_obliquity * np.pi/180.0, \
+                                        G, \
+                                        planet_data['mass'] * Msun, \
+                                        star_mass * Msun, \
+                                        planet_data['radius'] * AU, \
+                                        k2pdelta * day)
+
+# The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
+# If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
+mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
+
+
 denergy_dt = planet_data['denergy_dt'] * 6.90125e37 # conversation from Msun.AU^2.day^-3 to W
-inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * Rsun, 2))
+inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
 
 
-star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*Msun) * np.power(star_data['radius']*Rsun, 2) * (star_norm_spin/day)
-planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*Msun) * np.power(planet_data['radius']*Rsun, 2) * (planet_norm_spin/day)
+star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*Msun) * np.power(star_data['radius']*AU, 2) * (star_norm_spin/day)
+planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*Msun) * np.power(planet_data['radius']*AU, 2) * (planet_norm_spin/day)
 total_planets_angular_momentum = planet_angular_momentum # If more than one planet is present, all of them should be added
 
 # Sum on number of planets to have total orbital momentum
@@ -191,12 +239,14 @@ ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,5, sharex=ax)
-# Instantaneous energy loss dE/dt due to tides per planet surface
+# Energy loss dE/dt due to tides per planet surface
 field = 'Energy lost\ndue to tides (W/m^2)'
-ax.plot(planet_data['current_time'], inst_tidal_flux)
+ax.plot(planet_data['current_time'], inst_tidal_flux) # Instantaneous energy loss
+ax.plot(planet_data['current_time'], mean_tidal_flux, color="red") # Mean energy loss
 ax.set_ylabel(field)
 #ax.set_ylim([0.001, 10000.0])
 ax.set_xscale('log')
+ax.set_yscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,6, sharex=ax)
@@ -217,10 +267,11 @@ ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
 ax = fig.add_subplot(4,3,8, sharex=ax)
-# Instantaneous energy loss dE/dt due to tides
+# Energy loss dE/dt due to tides
 field = 'Energy lost\ndue to tides (W)'
 #ax.plot(planet_data['current_time'], planet_data[field])
-ax.plot(planet_data['current_time'], denergy_dt)
+ax.plot(planet_data['current_time'], denergy_dt) # Instantaneous energy loss
+ax.plot(planet_data['current_time'], gravitational_energy_lost, color="red") # Mean energy loss
 ax.set_ylabel(field)
 #ax.set_ylim([2.5, 5.5])
 ax.set_xscale('log')
