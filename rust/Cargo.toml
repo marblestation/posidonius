@@ -16,7 +16,4 @@ debug = false
 
 [dependencies]
 time = "*"
-itertools = "*"
-rusqlite = "*"
-rustc-serialize = "*"
 bincode = "*"

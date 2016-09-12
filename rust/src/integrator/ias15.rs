@@ -1,10 +1,9 @@
-extern crate rusqlite;
 use std;
 use std::io::{Write, BufWriter};
 use super::Integrator;
 use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
 use super::super::particle::Particles;
-use super::output::{write_txt_snapshot, write_bin_snapshot, write_db_snapshot};
+use super::output::{write_bin_snapshot};
 
 ///https://arxiv.org/abs/1409.4779
 ///IAS15: A fast, adaptive, high-order integrator for gravitational dynamics, accurate to machine
@@ -66,14 +65,12 @@ impl Integrator for Ias15 {
                     }
     }
 
-    fn iterate<T: Write>(&mut self, output_txt: &mut BufWriter<T>, output_bin: &mut BufWriter<T>, output_db: &rusqlite::Connection) -> Result<(), String> {
+    fn iterate<T: Write>(&mut self, output_bin: &mut BufWriter<T>) -> Result<(), String> {
         // Output
         let add_header = self.last_print_time < 0.;
         let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
         if add_header || time_triger {
-            //write_txt_snapshot(output_txt, &self.particles, self.current_time, self.time_step, add_header);
             write_bin_snapshot(output_bin, &self.particles, self.current_time, self.time_step);
-            //write_db_snapshot(&output_db, &self.particles, self.current_time, self.time_step, add_header);
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
             let _ = std::io::stdout().flush();

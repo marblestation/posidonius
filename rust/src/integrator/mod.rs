@@ -1,5 +1,3 @@
-extern crate rusqlite;
-
 mod leapfrog;
 mod ias15;
 mod whfasthelio;
@@ -21,5 +19,5 @@ pub enum IntegratorType {
 
 pub trait Integrator {
     fn new(time_step: f64, time_limit: f64, particles: Particles) -> Self;
-    fn iterate<T: Write>(&mut self, output_text: &mut BufWriter<T>, output_bin: &mut BufWriter<T>, output_db: &rusqlite::Connection) -> Result<(), String>;
+    fn iterate<T: Write>(&mut self, output_bin: &mut BufWriter<T>) -> Result<(), String>;
 }

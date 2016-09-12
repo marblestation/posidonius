@@ -1,8 +1,6 @@
 extern crate posidonius;
 extern crate time;
-extern crate rusqlite;
 
-use rusqlite::Connection;
 //use std::num;
 //use std::io::timer;
 //use std::time::Duration;
@@ -105,14 +103,19 @@ fn main() {
     let planet_velocity = posidonius::Axes{x:vx, y:vy, z:vz};
     let planet_acceleration = posidonius::Axes{x:0., y:0., z:0.};
     
-    //// t: Orbital period
-    //// https://en.wikipedia.org/wiki/Orbital_period#Small_body_orbiting_a_central_body
-    //let Msun      =  1.98892e30;               // kg
-    //let G         =  6.6742367e-11;            // m^3.kg^-1.s^-2
-    //let AU        =  1.49598e11;               // m
-    //let t = posidonius::constants::TWO_PI * ((a*AU).powi(3)/(star_mass*Msun*G)).sqrt(); // seconds
-    //let t = t/(60.*60.*24.); // days
-    //println!("++++ {:e} {}", t, t);
+    // t: Orbital period
+    // https://en.wikipedia.org/wiki/Orbital_period#Small_body_orbiting_a_central_body
+    let sun_mass      =  1.98892e30;               // kg
+    let gravitational_constant         =  6.6742367e-11;            // m^3.kg^-1.s^-2
+    let astronomical_units        =  1.49598e11;               // m
+    let t = posidonius::constants::TWO_PI * ((a*astronomical_units).powi(3)/(star_mass*sun_mass*gravitational_constant)).sqrt(); // seconds
+    let t = t/(60.*60.*24.); // days
+    println!("Orbital period in days: {:e} {}", t, t);
+    // Fig. 2
+    // https://arxiv.org/pdf/1506.01084v1.pdf
+    let recommended_timestep = t/1000.;
+    println!("Recommended time step in days for WHFastHelio: {:e} {}", recommended_timestep, recommended_timestep);
+    println!("Current time step in days: {:e} {}", posidonius::constants::TIME_STEP, posidonius::constants::TIME_STEP);
 
     ////// Initialization of planetary spin
     // Planets obliquities in rad
@@ -159,17 +162,6 @@ fn main() {
 
 
     ////////////////////////////////////////////////////////////////////////////
-    let path_txt = Path::new("target/output.txt");
-    // We create file options to write
-    let mut options_txt = OpenOptions::new();
-    options_txt.create(true).truncate(true).write(true);
-
-    let output_txt_file = match options_txt.open(&path_txt) {
-        Ok(f) => f,
-        Err(e) => panic!("file error: {}", e),
-    };
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
     let path_bin = Path::new("target/output.bin");
     // We create file options to write
     let mut options_bin = OpenOptions::new();
@@ -180,16 +172,7 @@ fn main() {
         Err(e) => panic!("file error: {}", e),
     };
     ////////////////////////////////////////////////////////////////////////////
-    // Writer should be created together or the compiler will fail incomprehensibly
-    let mut output_txt = BufWriter::new(&output_txt_file);
     let mut output_bin = BufWriter::new(&output_bin_file);
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-    let path = Path::new("target/output.db");
-    let output_db = match  Connection::open(path) {
-        Ok(c) => c,
-        Err(e) => panic!("file error: {}", e),
-    };
     ////////////////////////////////////////////////////////////////////////////
 
     // TODO: Improve (dynamic dispatching?)
@@ -200,19 +183,19 @@ fn main() {
     loop {
         match posidonius::constants::INTEGRATOR {
             posidonius::IntegratorType::LeapFrog => {
-                match leapfrog.iterate(&mut output_txt, &mut output_bin, &output_db) {
+                match leapfrog.iterate(&mut output_bin) {
                     Ok(_) => {},
                     Err(e) => { println!("{}", e); break; }
                 };
             },
             posidonius::IntegratorType::Ias15 => {
-                match ias15.iterate(&mut output_txt, &mut output_bin, &output_db) {
+                match ias15.iterate(&mut output_bin) {
                     Ok(_) => {},
                     Err(e) => { println!("{}", e); break; }
                 };
             },
             posidonius::IntegratorType::WHFastHelio => {
-                match whfasthelio.iterate(&mut output_txt, &mut output_bin, &output_db) {
+                match whfasthelio.iterate(&mut output_bin) {
                     Ok(_) => {},
                     Err(e) => { println!("{}", e); break; }
                 };

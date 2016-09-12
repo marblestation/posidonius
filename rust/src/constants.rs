@@ -4,6 +4,7 @@ use super::integrator::IntegratorType;
 //// Simulation
 pub const N_PARTICLES: usize = 2;
 pub const TIME_STEP: f64 = 0.08; // in days
+//pub const TIME_STEP: f64 = 0.003; // in days
 pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;
 //pub const TIME_LIMIT: f64 = 365.25 * 1.0e3;
 //pub const TIME_LIMIT: f64 = TIME_STEP*4.;
@@ -13,8 +14,8 @@ pub const PRINT_EVERY_N_DAYS: f64 = 100.*365.25;
 
 //// Integrator
 //pub const INTEGRATOR: IntegratorType = IntegratorType::LeapFrog;
-//pub const INTEGRATOR: IntegratorType = IntegratorType::Ias15;
-pub const INTEGRATOR: IntegratorType = IntegratorType::WHFastHelio;
+pub const INTEGRATOR: IntegratorType = IntegratorType::Ias15;
+//pub const INTEGRATOR: IntegratorType = IntegratorType::WHFastHelio;
 
 //// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).

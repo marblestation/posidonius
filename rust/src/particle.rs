@@ -459,4 +459,37 @@ impl Particles {
         }
     }
 
+    pub fn compute_total_energy(&self) -> f64 {
+        let mut e_kin = 0.;
+        let mut e_pot = 0.;
+        let e_offset = 0.; // Energy offset due to collisions and ejections
+
+        // Kinectic energy
+        for particle in self.particles.iter() {
+            e_kin += 0.5 * particle.mass * (particle.velocity.x.powi(2) + particle.velocity.y.powi(2) + particle.velocity.z.powi(2));
+        }
+        // Gravitationl potential energy
+        for (i, particle_a) in self.particles.iter().enumerate() {
+            for particle_b in self.particles[i+1..].iter() {
+                let dx = particle_a.position.x - particle_b.position.x;
+                let dy = particle_a.position.y - particle_b.position.y;
+                let dz = particle_a.position.z - particle_b.position.z;
+                e_pot -= particle_b.mass_g*particle_a.mass/(dx.powi(2) + dy.powi(2) + dz.powi(2)).sqrt();
+            }
+        }
+        
+        e_kin + e_pot + e_offset
+    }
+
+    pub fn compute_total_angular_momentum(&self) -> f64 {
+        let mut total_angular_momentum = Axes{x:0., y:0., z:0.}; // L
+        for particle in self.particles.iter() {
+            total_angular_momentum.x += particle.mass*(particle.position.y*particle.velocity.z - particle.position.z*particle.velocity.y);
+            total_angular_momentum.y += particle.mass*(particle.position.z*particle.velocity.x - particle.position.x*particle.velocity.z);
+            total_angular_momentum.z += particle.mass*(particle.position.x*particle.velocity.y - particle.position.y*particle.velocity.x);
+        }
+        let total_angular_momentum = (total_angular_momentum.x.powf(2.) + total_angular_momentum.y.powf(2.) + total_angular_momentum.z.powf(2.)).sqrt();
+        total_angular_momentum
+    }
+
 }

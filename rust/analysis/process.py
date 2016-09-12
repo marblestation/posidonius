@@ -9,17 +9,18 @@ import struct
 filename = "../target/output.bin"
 #filename = "../target/output_leapfrog.bin"
 #filename = "../target/output_ias15.bin"
+#filename = "../target/output_whfasthelio.bin"
 
 f = open(filename, "rb")
 # (np.floor(np.log10(np.max((100., 10.)))) - 2.)*10.
 
-fields = ('current_time', 'time_step', 'particle', 'position_x', 'position_y', 'position_z', 'spin_x', 'spin_y', 'spin_z', 'velocity_x', 'velocity_y', 'velocity_z', 'acceleration_x', 'acceleration_y', 'acceleration_z', 'dspin_dt_x', 'dspin_dt_y', 'dspin_dt_z', 'torque_x', 'torque_y', 'torque_z', 'orthogonal_component_of_the_tidal_force_due_to_stellar_tide', 'orthogonal_component_of_the_tidal_force_due_to_planetary_tide', 'radial_component_of_the_tidal_force', 'radial_component_of_the_tidal_force_conservative_part', 'radial_component_of_the_tidal_force_dissipative_part', 'tidal_acceleration_x', 'tidal_acceleration_y', 'tidal_acceleration_z', 'radial_velocity', 'norm_velocity_vector', 'distance', 'semi-major_axis', 'perihelion_distance', 'eccentricity', 'inclination', 'longitude_of_perihelion', 'longitude_of_ascending_node', 'mean_anomaly', 'orbital_angular_momentum_x', 'orbital_angular_momentum_y', 'orbital_angular_momentum_z', 'orbital_angular_momentum', 'denergy_dt', 'mass', 'radius', 'radius_of_gyration_2', 'dissipation_factor', 'love_number')
+fields = ('current_time', 'time_step', 'particle', 'position_x', 'position_y', 'position_z', 'spin_x', 'spin_y', 'spin_z', 'velocity_x', 'velocity_y', 'velocity_z', 'acceleration_x', 'acceleration_y', 'acceleration_z', 'dspin_dt_x', 'dspin_dt_y', 'dspin_dt_z', 'torque_x', 'torque_y', 'torque_z', 'orthogonal_component_of_the_tidal_force_due_to_stellar_tide', 'orthogonal_component_of_the_tidal_force_due_to_planetary_tide', 'radial_component_of_the_tidal_force', 'radial_component_of_the_tidal_force_conservative_part', 'radial_component_of_the_tidal_force_dissipative_part', 'tidal_acceleration_x', 'tidal_acceleration_y', 'tidal_acceleration_z', 'radial_velocity', 'norm_velocity_vector', 'distance', 'semi-major_axis', 'perihelion_distance', 'eccentricity', 'inclination', 'longitude_of_perihelion', 'longitude_of_ascending_node', 'mean_anomaly', 'orbital_angular_momentum_x', 'orbital_angular_momentum_y', 'orbital_angular_momentum_z', 'orbital_angular_momentum', 'denergy_dt', 'total_energy', 'total_angular_momentum', 'mass', 'radius', 'radius_of_gyration_2', 'dissipation_factor', 'love_number')
 
 data = []
 while True:
     try:
-        row = f.read(8+8+4+8*46)
-        vrow = struct.unpack('> d d i' + ' d'*46, row)
+        row = f.read(8+8+4+8*48)
+        vrow = struct.unpack('> d d i' + ' d'*48, row)
     except:
         break
     else:
@@ -104,10 +105,15 @@ planet_rotation_period = 2*np.pi / planet_norm_spin
 star_rotation_period = 2*np.pi / star_norm_spin
 
 ## Planet obliquity
-numerator = planet_data['orbital_angular_momentum_x'] * planet_data['spin_x'] + \
-                    planet_data['orbital_angular_momentum_y'] * planet_data['spin_y'] + \
-                    planet_data['orbital_angular_momentum_z'] * planet_data['spin_z']
-denominator= np.sqrt(np.power(planet_data['orbital_angular_momentum_x'], 2) + np.power(planet_data['orbital_angular_momentum_y'], 2) + np.power(planet_data['orbital_angular_momentum_z'], 2)) * \
+relative_orbital_angular_momentum_x = planet_data['orbital_angular_momentum_x']/planet_data['orbital_angular_momentum']
+relative_orbital_angular_momentum_y = planet_data['orbital_angular_momentum_y']/planet_data['orbital_angular_momentum']
+relative_orbital_angular_momentum_z = planet_data['orbital_angular_momentum_z']/planet_data['orbital_angular_momentum']
+numerator = relative_orbital_angular_momentum_x * planet_data['spin_x'] + \
+                    relative_orbital_angular_momentum_y * planet_data['spin_y'] + \
+                    relative_orbital_angular_momentum_z * planet_data['spin_z']
+denominator= np.sqrt(np.power(relative_orbital_angular_momentum_x, 2) + \
+                        np.power(relative_orbital_angular_momentum_y, 2) + \
+                        np.power(relative_orbital_angular_momentum_z, 2)) * \
                         np.sqrt(np.power(planet_data['spin_x'], 2) + np.power(planet_data['spin_y'], 2) + np.power(planet_data['spin_z'], 2))
 planet_obliquity = numerator / denominator
 ofilter = planet_obliquity <= 1.
@@ -115,10 +121,12 @@ planet_obliquity[ofilter] = np.arccos(planet_obliquity[ofilter])*180./np.pi
 planet_obliquity[np.logical_not(ofilter)] = 1.e-6
 
 ## Star obliquity
-numerator = planet_data['orbital_angular_momentum_x'] * star_data['spin_x'] + \
-                    planet_data['orbital_angular_momentum_y'] * star_data['spin_y'] + \
-                    planet_data['orbital_angular_momentum_z'] * star_data['spin_z']
-denominator= np.sqrt(np.power(planet_data['orbital_angular_momentum_x'], 2) + np.power(planet_data['orbital_angular_momentum_y'], 2) + np.power(planet_data['orbital_angular_momentum_z'], 2)) * \
+numerator = relative_orbital_angular_momentum_x * star_data['spin_x'] + \
+                    relative_orbital_angular_momentum_y * star_data['spin_y'] + \
+                    relative_orbital_angular_momentum_z * star_data['spin_z']
+denominator= np.sqrt(np.power(relative_orbital_angular_momentum_x, 2) + \
+                        np.power(relative_orbital_angular_momentum_y, 2) + \
+                        np.power(relative_orbital_angular_momentum_z, 2)) * \
                         np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
 star_obliquity = numerator / denominator
 ofilter = star_obliquity <= 1.
@@ -169,10 +177,7 @@ planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['ma
 total_planets_angular_momentum = planet_angular_momentum # If more than one planet is present, all of them should be added
 
 # Sum on number of planets to have total orbital momentum
-#planet_orbital_angular_momentum = (star_mass*Msun) * (planet_data['mass']*Msun) / ((star_mass*Msun) + (planet_data['mass']*Msun)) * planet_data['orbital_angular_momentum'] * ((AU*AU)/day) # kg.m^2.s-1
-planet_orbital_angular_momentum = (star_mass*Msun) * (planet_data['mass']*Msun) / ((star_mass*Msun) + (planet_data['mass']*Msun)) \
-                            * np.sqrt(np.power(planet_data['orbital_angular_momentum_x'], 2) + np.power(planet_data['orbital_angular_momentum_y'], 2) + np.power(planet_data['orbital_angular_momentum_z'], 2)) \
-                            * ((AU*AU)/day) # kg.m^2.s-1
+planet_orbital_angular_momentum = (star_mass*Msun) * (planet_data['mass']*Msun) / ((star_mass*Msun) + (planet_data['mass']*Msun)) * planet_data['orbital_angular_momentum'] * ((AU*AU)/day) # kg.m^2.s-1
 total_planets_orbital_angular_momentum = planet_orbital_angular_momentum # If more than one planet is present, all of them should be added
 
 
@@ -181,15 +186,8 @@ total_planets_orbital_angular_momentum = planet_orbital_angular_momentum # If mo
 initial_total_angular_momentum = total_planets_orbital_angular_momentum[0] + total_planets_angular_momentum[0] + star_angular_momentum[0]
 conservation_of_angular_momentum = np.abs(((total_planets_orbital_angular_momentum + total_planets_angular_momentum + star_angular_momentum) - initial_total_angular_momentum) / initial_total_angular_momentum)
 conservation_of_angular_momentum[0] = conservation_of_angular_momentum[1]
+#conservation_of_angular_momentum = np.abs(star_data['total_angular_momentum'] - star_data['total_angular_momentum'][0]) / star_data['total_angular_momentum'][0]
 
-#conservation_of_angular_momentum = np.abs(total_planets_orbital_angular_momentum - total_planets_orbital_angular_momentum[0]) / total_planets_orbital_angular_momentum[0]
-#conservation_of_angular_momentum = np.abs(total_planets_angular_momentum + star_angular_momentum - (total_planets_angular_momentum[0] + star_angular_momentum[0])) / (total_planets_angular_momentum[0] + star_angular_momentum[0])
-#m = total_planets_angular_momentum + star_angular_momentum
-#current = m[1:]
-#previous = m[:-1]
-#first = m[0]
-#conservation_of_angular_momentum = (current-previous)/previous
-#conservation_of_angular_momentum = np.hstack(([conservation_of_angular_momentum[0]], conservation_of_angular_momentum))
 
 planet_mass = planet_data['mass'][0]
 norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
@@ -223,7 +221,7 @@ ax = fig.add_subplot(4,3,3, sharex=ax)
 field = 'eccentricity'
 ax.plot(planet_data['current_time'], planet_data[field])
 ax.set_ylabel(field)
-ax.set_ylim([0.001, 0.110])
+ax.set_ylim([0.01, 1.000])
 ax.set_xscale('log')
 ax.set_yscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
@@ -294,6 +292,16 @@ field = 'planet_precession_angle (deg)'
 ax.plot(planet_data['current_time'], planet_precession_angle)
 ax.set_ylabel(field)
 #ax.set_ylim([2.5, 5.5])
+ax.set_xscale('log')
+#ax.set_yscale('symlog')
+
+# conservation of energy (kinetic+potential)
+relative_energy_error = (star_data['total_energy'] - star_data['total_energy'][0]) / star_data['total_energy'][0]
+ax = fig.add_subplot(4,3,12, sharex=ax)
+field = '$\Delta E/E_{0}$'
+ax.plot(planet_data['current_time'], relative_energy_error)
+ax.set_ylabel(field)
+#ax.set_ylim([40, 150.0])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
