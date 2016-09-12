@@ -8,8 +8,11 @@ from astropy.io import ascii
 import struct
 filename = "../target/output.bin"
 #filename = "../target/output_leapfrog.bin"
+#filename = "../target/output_leapfrog_notides.bin"
 #filename = "../target/output_ias15.bin"
+#filename = "../target/output_ias15_notides.bin"
 #filename = "../target/output_whfasthelio.bin"
+#filename = "../target/output_whfasthelio_notides.bin"
 
 f = open(filename, "rb")
 # (np.floor(np.log10(np.max((100., 10.)))) - 2.)*10.

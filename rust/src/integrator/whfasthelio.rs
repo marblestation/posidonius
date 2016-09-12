@@ -126,23 +126,12 @@ pub struct WHFastHelio {
     ///< Counter of heliocentric synchronization errors
     recalculate_heliocentric_but_not_synchronized_warning: usize,
     timestep_warning: usize ,
-    center_of_mass: Particle
+    set_to_center_of_mass: bool
 }
 
 impl Integrator for WHFastHelio {
 
     fn new(time_step: f64, time_limit: f64, particles: Particles) -> WHFastHelio {
-        let mass = 0.;
-        let radius = 0.;
-        let dissipation_factor = 0.;
-        let radius_of_gyration_2 = 0.;
-        let love_number = 0.;
-        let position = Axes{x:0., y:0., z:0. };
-        let velocity = Axes{x:0., y:0., z:0. };
-        let acceleration = Axes{x:0., y:0., z:0. };
-        let spin = Axes{x:0., y:0., z:0. };
-        let center_of_mass = Particle::new(mass, radius, dissipation_factor, radius_of_gyration_2, love_number,
-                                                position, velocity, acceleration, spin);
         WHFastHelio {
                     time_step:time_step,
                     half_time_step:0.5*time_step,
@@ -159,7 +148,7 @@ impl Integrator for WHFastHelio {
                     is_synchronized: true,
                     recalculate_heliocentric_but_not_synchronized_warning: 0,
                     timestep_warning: 0,
-                    center_of_mass: center_of_mass,
+                    set_to_center_of_mass: false,
                     }
     }
 
@@ -168,6 +157,9 @@ impl Integrator for WHFastHelio {
         let add_header = self.last_print_time < 0.;
         let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
         if add_header || time_triger {
+            if self.set_to_center_of_mass {
+                self.move_to_star_center();
+            }
             write_bin_snapshot(output_bin, &self.particles, self.current_time, self.time_step);
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
@@ -178,28 +170,34 @@ impl Integrator for WHFastHelio {
             } 
         }
 
-        // Calculate non-gravity accelerations.
+        //// Calculate non-gravity accelerations.
+        if self.set_to_center_of_mass {
+            self.move_to_star_center();
+        }
         let only_dspin_dt = true;
         self.particles.calculate_additional_forces(only_dspin_dt);
         
-        if self.current_iteration == 0 {
-            self.compute_center_of_mass();
+        // A 'DKD'-like integrator will do the first 'D' part.
+        if !self.set_to_center_of_mass {
+            self.move_to_center_of_mass();
         }
-        self.move_to_center_of_mass();
         self.integrator_part1();
-        self.move_to_star_center();
 
         // Calculate accelerations.
         self.particles.gravity_calculate_acceleration();
         
-        // Calculate non-gravity accelerations.
+        //// Calculate non-gravity accelerations.
+        if self.set_to_center_of_mass {
+            self.move_to_star_center();
+        }
         let only_dspin_dt = false;
         self.particles.calculate_additional_forces(only_dspin_dt);
 
         // A 'DKD'-like integrator will do the 'KD' part.
-        self.move_to_center_of_mass();
+        if !self.set_to_center_of_mass {
+            self.move_to_center_of_mass();
+        }
         self.integrator_part2();
-        self.move_to_star_center();
         self.current_iteration += 1;
 
         // Return
@@ -250,6 +248,12 @@ impl WHFastHelio {
         } else {
             self.to_inertial_pos();
         }
+
+        for particle in self.particles.particles.iter_mut() {
+            particle.spin.x += self.half_time_step * particle.dspin_dt.x;
+            particle.spin.y += self.half_time_step * particle.dspin_dt.y;
+            particle.spin.z += self.half_time_step * particle.dspin_dt.z;
+        }
     
         self.current_time += self.half_time_step;
     }
@@ -263,6 +267,12 @@ impl WHFastHelio {
         self.is_synchronized = false;
         if self.safe_mode {
             self.synchronize();
+        }
+
+        for particle in self.particles.particles.iter_mut() {
+            particle.spin.x += self.half_time_step * particle.dspin_dt.x;
+            particle.spin.y += self.half_time_step * particle.dspin_dt.y;
+            particle.spin.z += self.half_time_step * particle.dspin_dt.z;
         }
 
         self.current_time += self.half_time_step;
@@ -643,7 +653,16 @@ impl WHFastHelio {
         }
     }
 
-    fn compute_center_of_mass(&mut self) {
+
+    fn move_to_center_of_mass(&mut self) {
+        if self.set_to_center_of_mass {
+            return;
+        }
+        if !self.is_synchronized {
+            panic!("Non synchronized particles cannot be moved to center of mass.")
+        }
+
+        // Compute center of mass
         let mass = 0.;
         let radius = 0.;
         let dissipation_factor = 0.;
@@ -659,44 +678,44 @@ impl WHFastHelio {
         for particle in self.particles.particles.iter() {
             self.get_center_of_mass_of_pair(&mut center_of_mass, &particle);
         }
-        self.center_of_mass = center_of_mass;
-    }
 
-    fn move_to_center_of_mass(&mut self) {
-        for (particle_heliocentric, particle) in self.particles_heliocentric.particles[0..].iter_mut().zip(self.particles.particles[0..].iter_mut()) {
-            particle.position.x  -= self.center_of_mass.position.x;
-            particle.position.y  -= self.center_of_mass.position.y;
-            particle.position.z  -= self.center_of_mass.position.z;
-            particle.velocity.x -= self.center_of_mass.velocity.x;
-            particle.velocity.y -= self.center_of_mass.velocity.y;
-            particle.velocity.z -= self.center_of_mass.velocity.z;
-            //
-            particle_heliocentric.position.x  -= self.center_of_mass.position.x;
-            particle_heliocentric.position.y  -= self.center_of_mass.position.y;
-            particle_heliocentric.position.z  -= self.center_of_mass.position.z;
-            particle_heliocentric.velocity.x -= self.center_of_mass.velocity.x;
-            particle_heliocentric.velocity.y -= self.center_of_mass.velocity.y;
-            particle_heliocentric.velocity.z -= self.center_of_mass.velocity.z;
+        // Move
+        for particle in self.particles.particles[0..].iter_mut() {
+            particle.position.x  -= center_of_mass.position.x;
+            particle.position.y  -= center_of_mass.position.y;
+            particle.position.z  -= center_of_mass.position.z;
+            particle.velocity.x -= center_of_mass.velocity.x;
+            particle.velocity.y -= center_of_mass.velocity.y;
+            particle.velocity.z -= center_of_mass.velocity.z;
+            //particle.acceleration.x -= center_of_mass.acceleration.x; // Always zero
+            //particle.acceleration.y -= center_of_mass.acceleration.y;
+            //particle.acceleration.z -= center_of_mass.acceleration.z;
         }
+        self.to_helio_posvel();
+        self.set_to_center_of_mass = true;
     }
 
     fn move_to_star_center(&mut self) {
+        if !self.set_to_center_of_mass {
+            return;
+        }
+        if !self.is_synchronized {
+            panic!("Non synchronized particles cannot be moved to star center.")
+        }
         let center = self.particles.particles[0];
-        for (particle_heliocentric, particle) in self.particles_heliocentric.particles[0..].iter_mut().zip(self.particles.particles[0..].iter_mut()) {
+        for particle in self.particles.particles[0..].iter_mut() {
             particle.position.x  -= center.position.x;
             particle.position.y  -= center.position.y;
             particle.position.z  -= center.position.z;
             particle.velocity.x -= center.velocity.x;
             particle.velocity.y -= center.velocity.y;
             particle.velocity.z -= center.velocity.z;
-            //
-            particle_heliocentric.position.x  -= center.position.x;
-            particle_heliocentric.position.y  -= center.position.y;
-            particle_heliocentric.position.z  -= center.position.z;
-            particle_heliocentric.velocity.x -= center.velocity.x;
-            particle_heliocentric.velocity.y -= center.velocity.y;
-            particle_heliocentric.velocity.z -= center.velocity.z;
+            //particle.acceleration.x -= center.acceleration.x; // Should be always zero
+            //particle.acceleration.y -= center.acceleration.y;
+            //particle.acceleration.z -= center.acceleration.z;
         }
+        self.to_helio_posvel();
+        self.set_to_center_of_mass = false;
     }
 
 }
