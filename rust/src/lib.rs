@@ -8,7 +8,7 @@ pub use self::particle::Axes;
 mod integrator;
 pub use self::integrator::*;
 
-pub mod general;
+pub mod tools;
 
 
 

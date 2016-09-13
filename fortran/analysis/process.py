@@ -95,6 +95,9 @@ def norb(G, Mp, Ms):
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
+star_data = star_data[star_data['current_time'] >= 100.]
+planet_data = planet_data[planet_data['current_time'] >= 100.]
+
 star_mass = star_data['mass'][0]
 star_norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
 planet_norm_spin = np.sqrt(np.power(planet_data['spin_x'], 2) + np.power(planet_data['spin_y'], 2) + np.power(planet_data['spin_z'], 2))
@@ -129,7 +132,7 @@ numerator = 1./np.sin(planet_obliquity) \
                 + planet_data['position_y']*planet_data['spin_y'] \
                 + planet_data['position_z']*planet_data['spin_z'])
 
-denominator = np.sqrt(np.power(star_data['position_x'], 2) + np.power(star_data['position_y'], 2) + np.power(star_data['position_z'], 2)) \
+denominator = np.sqrt(np.power(planet_data['position_x'], 2) + np.power(planet_data['position_y'], 2) + np.power(planet_data['position_z'], 2)) \
                 * planet_norm_spin
 planet_precession_angle = numerator / denominator
 ofilter = planet_precession_angle <= 1.
@@ -138,12 +141,10 @@ planet_precession_angle[np.logical_not(ofilter)] = 1.e-6
 
 
 
-
-k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
-
 ### Calculation of energydot and tidal flux, in W/m2
 # Gravitationl energy lost of the system due to dissipation
 # Masses in kg
+k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
 gravitational_energy_lost = energydot(planet_data['semi-major_axis']*AU, \
                                         planet_data['eccentricity'], \
                                         planet_norm_spin / day, \
@@ -151,19 +152,19 @@ gravitational_energy_lost = energydot(planet_data['semi-major_axis']*AU, \
                                         G, \
                                         planet_data['mass'] * Msun, \
                                         star_mass * Msun, \
-                                        planet_data['radius'] * Rsun, \
+                                        planet_data['radius'] * AU, \
                                         k2pdelta * day)
 
 # The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
 # If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
-tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * Rsun, 2))
+tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
 
 denergy_dt = planet_data['denergy_dt'] * 6.90125e37 # conversation from Msun.AU^2.day^-3 to W
-inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * Rsun, 2))
+inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
 
 
-star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*Msun) * np.power(star_data['radius']*Rsun, 2) * (star_norm_spin/day)
-planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*Msun) * np.power(planet_data['radius']*Rsun, 2) * (planet_norm_spin/day)
+star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*Msun) * np.power(star_data['radius']*AU, 2) * (star_norm_spin/day)
+planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*Msun) * np.power(planet_data['radius']*AU, 2) * (planet_norm_spin/day)
 total_planets_angular_momentum = planet_angular_momentum # If more than one planet is present, all of them should be added
 
 # Sum on number of planets to have total orbital momentum
@@ -221,7 +222,7 @@ ax = fig.add_subplot(4,3,3, sharex=ax)
 field = 'eccentricity'
 ax.plot(planet_data['current_time'], planet_data[field])
 ax.set_ylabel(field)
-ax.set_ylim([0.001, 0.110])
+ax.set_ylim([0.01, 1.000])
 ax.set_xscale('log')
 ax.set_yscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
@@ -230,22 +231,24 @@ ax.set_yscale('log')
 ax = fig.add_subplot(4,3,4, sharex=ax)
 field = 'inclination'
 ax.plot(planet_data['current_time'], planet_data[field] * (180 / np.pi)) # From rad to degrees
-ax.set_ylabel(field+ " (deg)")
+ax.set_ylabel('planet '+field+ " (deg)")
 ax.set_ylim([2.5, 5.5])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,5, sharex=ax)
-field = 'tidal_flux (W/m^2)'
-ax.plot(planet_data['current_time'], tidal_flux)
-#ax.plot(planet_data['current_time'], inst_tidal_flux)
+# Energy loss dE/dt due to tides per planet surface
+field = 'Energy lost\ndue to tides (W/m^2)'
+ax.plot(planet_data['current_time'], inst_tidal_flux) # Instantaneous energy loss
+ax.plot(planet_data['current_time'], mean_tidal_flux, color="red") # Mean energy loss
 ax.set_ylabel(field)
 #ax.set_ylim([0.001, 10000.0])
 ax.set_xscale('log')
+ax.set_yscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,6, sharex=ax)
-field = 'planet_rotation_period (hr)'
+field = 'planet_rotation_period\n(hr)'
 ax.plot(planet_data['current_time'], planet_rotation_period*24.)
 ax.plot(planet_data['current_time'], pseudo_synchronization_period, color="red")
 ax.set_ylabel(field)
@@ -262,16 +265,18 @@ ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
 ax = fig.add_subplot(4,3,8, sharex=ax)
-field = 'denergy_dt (W)'
+# Energy loss dE/dt due to tides
+field = 'Energy lost\ndue to tides (W)'
 #ax.plot(planet_data['current_time'], planet_data[field])
-ax.plot(planet_data['current_time'], denergy_dt)
+ax.plot(planet_data['current_time'], denergy_dt) # Instantaneous energy loss
+ax.plot(planet_data['current_time'], gravitational_energy_lost, color="red") # Mean energy loss
 ax.set_ylabel(field)
 #ax.set_ylim([2.5, 5.5])
 ax.set_xscale('log')
 ax.set_yscale('symlog')
 
 ax = fig.add_subplot(4,3,9, sharex=ax)
-field = 'star_rotation_period (days)'
+field = 'star_rotation_period\n(days)'
 ax.plot(planet_data['current_time'], star_rotation_period)
 ax.set_ylabel(field)
 #ax.set_ylim([40, 150.0])
@@ -287,7 +292,7 @@ ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
 ax = fig.add_subplot(4,3,11, sharex=ax)
-field = 'planet_precession_angle (deg)'
+field = 'planet_precession_angle\n(deg)'
 ax.plot(planet_data['current_time'], planet_precession_angle)
 ax.set_ylabel(field)
 #ax.set_ylim([2.5, 5.5])

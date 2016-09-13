@@ -1,20 +1,25 @@
-extern crate rusqlite;
 use std;
 use std::io::{Write, BufWriter};
 use super::Integrator;
-use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, PRINT_EVERY_N_ITERATIONS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
+use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
 use super::super::particle::Particles;
-use super::output::{write_txt_snapshot, write_bin_snapshot, write_db_snapshot};
+use super::output::{write_bin_snapshot};
 
+///https://arxiv.org/abs/1409.4779
+///IAS15: A fast, adaptive, high-order integrator for gravitational dynamics, accurate to machine
+///precision over a billion orbits
+///
+/// https://arxiv.org/pdf/1110.4876v2.pdf
+/// variable time-steps also
+/// break the symplectic nature of an integrator.
 
 pub struct Ias15 {
     time_step: f64,
     time_limit: f64,
-    particles: Particles,
+    universe: Particles,
     current_time: f64,
     current_iteration: u32,
     last_print_time: f64,
-    last_print_iteration: u32,
     //// Integrator IAS15 data:
     integrator_iterations_max_exceeded : i32,  // Count how many times the iteration did not converge
     time_step_last_success: f64,			// Last accepted timestep (corresponding to br and er)
@@ -39,9 +44,8 @@ impl Integrator for Ias15 {
         Ias15 {
                     time_step:time_step,
                     time_limit:time_limit,
-                    last_print_time:0.,
-                    last_print_iteration:0,
-                    particles:particles,
+                    last_print_time: -1.,
+                    universe:particles,
                     current_time:0.,
                     current_iteration:0,
                     integrator_iterations_max_exceeded:0,
@@ -61,33 +65,29 @@ impl Integrator for Ias15 {
                     }
     }
 
-    fn iterate<T: Write>(&mut self, output_txt: &mut BufWriter<T>, output_bin: &mut BufWriter<T>, output_db: &rusqlite::Connection) -> Result<(), String> {
-        // Calculate accelerations.
-        self.particles.gravity_calculate_acceleration();
-        // Calculate non-gravity accelerations.
-        let only_dspin_dt = false;
-        self.particles.calculate_additional_forces(only_dspin_dt);
-
-        self.integrator();
-        self.current_iteration += 1;
-
-        let add_header = self.last_print_iteration == 0 && self.last_print_time == 0.;
-        let iteration_triger = self.last_print_iteration + PRINT_EVERY_N_ITERATIONS <= self.current_iteration;
+    fn iterate<T: Write>(&mut self, output_bin: &mut BufWriter<T>) -> Result<(), String> {
+        // Output
+        let add_header = self.last_print_time < 0.;
         let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
-        if add_header || iteration_triger || time_triger {
-            //write_txt_snapshot(output_txt, &self.particles, self.current_time, self.time_step, add_header);
-            write_bin_snapshot(output_bin, &self.particles, self.current_time, self.time_step);
-            //write_db_snapshot(&output_db, &self.particles, self.current_time, self.time_step, add_header);
+        if add_header || time_triger {
+            write_bin_snapshot(output_bin, &self.universe, self.current_time, self.time_step);
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
             let _ = std::io::stdout().flush();
 
             if add_header || time_triger {
                 self.last_print_time = self.current_time;
-            } else if iteration_triger {
-                self.last_print_iteration = self.current_iteration;
             } 
         }
+
+        // Calculate accelerations.
+        self.universe.gravity_calculate_acceleration();
+        // Calculate non-gravity accelerations.
+        let only_dspin_dt = false;
+        self.universe.calculate_additional_forces(only_dspin_dt);
+
+        self.integrator();
+        self.current_iteration += 1;
 
         // Return
         if self.current_time+self.time_step > self.time_limit {
@@ -149,7 +149,7 @@ impl Ias15 {
 
         loop {
 
-            for (k, particle) in self.particles.particles.iter().enumerate() {
+            for (k, particle) in self.universe.particles.iter().enumerate() {
                 self.x0[3*k]   = particle.position.x;
                 self.x0[3*k+1] = particle.position.y;
                 self.x0[3*k+2] = particle.position.z;
@@ -224,7 +224,7 @@ impl Ias15 {
 
                     //// Prepare particles arrays for force calculation
                     // Predict positions at interval n using self.b values
-                    for (i, particle) in self.particles.particles.iter_mut().enumerate() {
+                    for (i, particle) in self.universe.particles.iter_mut().enumerate() {
                         let k0 : usize = 3*i+0;
                         let k1 : usize = 3*i+1;
                         let k2 : usize = 3*i+2;
@@ -252,7 +252,7 @@ impl Ias15 {
                         self.s[7] = 7. * self.s[6] * h[n] / 8.;
 
                         // Predict velocities at interval n using self.b values
-                        for (i, particle) in self.particles.particles.iter_mut().enumerate() {
+                        for (i, particle) in self.universe.particles.iter_mut().enumerate() {
                             let k0 = 3*i+0;
                             let k1 = 3*i+1;
                             let k2 = 3*i+2;
@@ -269,12 +269,12 @@ impl Ias15 {
 
 
                     // Calculate accelerations.
-                    self.particles.gravity_calculate_acceleration();
+                    self.universe.gravity_calculate_acceleration();
                     // Calculate non-gravity accelerations.
                     let only_dspin_dt = false;
-                    self.particles.calculate_additional_forces(only_dspin_dt);
+                    self.universe.calculate_additional_forces(only_dspin_dt);
 
-                    for (k, particle) in self.particles.particles.iter().enumerate() {
+                    for (k, particle) in self.universe.particles.iter().enumerate() {
                         self.at[3*k]   = particle.acceleration.x;
                         self.at[3*k+1] = particle.acceleration.y;  
                         self.at[3*k+2] = particle.acceleration.z;
@@ -416,7 +416,7 @@ impl Ias15 {
                     let mut maxak: f64 = 0.0;
                     let mut maxb6k: f64 = 0.0;
                     // Looping over all particles and all 3 components of the acceleration. 
-                    for (i, particle) in self.particles.particles.iter().enumerate() {
+                    for (i, particle) in self.universe.particles.iter().enumerate() {
                         let v2 = particle.velocity.x*particle.velocity.x
                                     +particle.velocity.y*particle.velocity.y
                                     +particle.velocity.z*particle.velocity.z;
@@ -475,7 +475,7 @@ impl Ias15 {
                 
                 if (dt_new/dt_done).abs() < SAFETY_FACTOR {	// New timestep is significantly smaller.
                     // Reset particles
-                    for (k, particle) in self.particles.particles.iter_mut().enumerate() {
+                    for (k, particle) in self.universe.particles.iter_mut().enumerate() {
                         particle.position.x = self.x0[3*k+0];	// Set inital position
                         particle.position.y = self.x0[3*k+1];
                         particle.position.z = self.x0[3*k+2];
@@ -532,7 +532,7 @@ impl Ias15 {
             self.current_time += dt_done;
 
             // Swap particle buffers
-            for (k, particle) in self.particles.particles.iter_mut().enumerate() {
+            for (k, particle) in self.universe.particles.iter_mut().enumerate() {
                 particle.position.x = self.x0[3*k+0];	// Set final position
                 particle.position.y = self.x0[3*k+1];
                 particle.position.z = self.x0[3*k+2];

@@ -1,8 +1,6 @@
 extern crate posidonius;
 extern crate time;
-extern crate rusqlite;
 
-use rusqlite::Connection;
 //use std::num;
 //use std::io::timer;
 //use std::time::Duration;
@@ -73,7 +71,7 @@ fn main() {
     //let planet_dissipation_factor: f64 = planet_dissipation_factor_scale * 2.006*3.845764d4;
     //// Terrestrial:
     let k2pdelta: f64 = 2.465278e-3; // Terrestrial planets (no gas)
-    let planet_dissipation_factor: f64 = planet_dissipation_factor_scale * 2. * posidonius::constants::K2 * k2pdelta/(3. * planet_radius.powf(5.));
+    let planet_dissipation_factor: f64 = planet_dissipation_factor_scale * 2. * posidonius::constants::K2 * k2pdelta/(3. * planet_radius.powi(5));
     ////// Radius of gyration
     let planet_radius_of_gyration_2: f64 = 3.308e-1; // Earth type planet
     //let planet_radius_of_gyration_2: f64 = 2.54e-1; // Gas planet
@@ -89,7 +87,7 @@ fn main() {
     p = (p + n) * posidonius::constants::DEG2RAD;          // Convert to longitude of perihelion !!
     let q = a * (1.0 - e);                          // perihelion distance
     let gm: f64 = posidonius::constants::G*(planet_mass+star_mass);
-    let (x, y, z, vx, vy, vz) = posidonius::general::calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
+    let (x, y, z, vx, vy, vz) = posidonius::tools::calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
 
     //////// Cartesian coordinates
     //let gm: f64 = posidonius::constants::G*(planet_mass+star_mass);
@@ -104,6 +102,20 @@ fn main() {
     let planet_position = posidonius::Axes{x:x, y:y, z:z};
     let planet_velocity = posidonius::Axes{x:vx, y:vy, z:vz};
     let planet_acceleration = posidonius::Axes{x:0., y:0., z:0.};
+    
+    // t: Orbital period
+    // https://en.wikipedia.org/wiki/Orbital_period#Small_body_orbiting_a_central_body
+    let sun_mass      =  1.98892e30;               // kg
+    let gravitational_constant         =  6.6742367e-11;            // m^3.kg^-1.s^-2
+    let astronomical_units        =  1.49598e11;               // m
+    let t = posidonius::constants::TWO_PI * ((a*astronomical_units).powi(3)/(star_mass*sun_mass*gravitational_constant)).sqrt(); // seconds
+    let t = t/(60.*60.*24.); // days
+    println!("Orbital period in days: {:e} {}", t, t);
+    // Fig. 2
+    // https://arxiv.org/pdf/1506.01084v1.pdf
+    let recommended_timestep = t/1000.;
+    println!("Recommended time step in days for WHFastHelio: {:e} {}", recommended_timestep, recommended_timestep);
+    println!("Current time step in days: {:e} {}", posidonius::constants::TIME_STEP, posidonius::constants::TIME_STEP);
 
     ////// Initialization of planetary spin
     // Planets obliquities in rad
@@ -111,7 +123,7 @@ fn main() {
     //// Custom period
     let planet_rotation_period: f64 = 24.; // hours
     let planet_spin0 = posidonius::constants::TWO_PI/(planet_rotation_period/24.); // days^-1
-    let keplerian_orbital_elements = posidonius::general::calculate_keplerian_orbital_elements(posidonius::constants::G*star_mass*planet_mass, planet_position, planet_velocity);
+    let keplerian_orbital_elements = posidonius::tools::calculate_keplerian_orbital_elements(posidonius::constants::G*star_mass*planet_mass, planet_position, planet_velocity);
     let inclination = keplerian_orbital_elements.3;
     //// Pseudo-synchronization period
     //let pseudo_sync_period_scale = 1.;
@@ -132,7 +144,7 @@ fn main() {
         let horb_x = planet_position.y * planet_velocity.z - planet_position.z * planet_velocity.y;
         let horb_y = planet_position.z * planet_velocity.x - planet_position.x * planet_velocity.z;
         let horb_z = planet_position.x * planet_velocity.y - planet_position.y * planet_velocity.x;
-        let horbn = (horb_x.powf(2.) + horb_y.powf(2.) + horb_z.powf(2.)).sqrt();
+        let horbn = (horb_x.powi(2) + horb_y.powi(2) + horb_z.powi(2)).sqrt();
         // Spin taking into consideration the inclination:
         planet_spin.x = planet_spin0 * (horb_x / (horbn * inclination.sin())) * (planet_obliquity+inclination).sin();
         planet_spin.y = planet_spin0 * (horb_y / (horbn * inclination.sin())) * (planet_obliquity+inclination).sin();
@@ -146,20 +158,9 @@ fn main() {
 
 
     //let particles_tmp : [posidonius::Particle; posidonius::N_PARTICLES] = [star, planet];
-    let particles = posidonius::Particles::new([star, planet]);
+    let particles = posidonius::Particles::new([star, planet], posidonius::constants::INTEGRATOR);
 
 
-    ////////////////////////////////////////////////////////////////////////////
-    let path_txt = Path::new("target/output.txt");
-    // We create file options to write
-    let mut options_txt = OpenOptions::new();
-    options_txt.create(true).truncate(true).write(true);
-
-    let output_txt_file = match options_txt.open(&path_txt) {
-        Ok(f) => f,
-        Err(e) => panic!("file error: {}", e),
-    };
-    ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     let path_bin = Path::new("target/output.bin");
     // We create file options to write
@@ -171,32 +172,30 @@ fn main() {
         Err(e) => panic!("file error: {}", e),
     };
     ////////////////////////////////////////////////////////////////////////////
-    // Writer should be created together or the compiler will fail incomprehensibly
-    let mut output_txt = BufWriter::new(&output_txt_file);
     let mut output_bin = BufWriter::new(&output_bin_file);
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-    let path = Path::new("target/output.db");
-    let output_db = match  Connection::open(path) {
-        Ok(c) => c,
-        Err(e) => panic!("file error: {}", e),
-    };
     ////////////////////////////////////////////////////////////////////////////
 
     // TODO: Improve (dynamic dispatching?)
     let mut leapfrog = posidonius::LeapFrog::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
     let mut ias15 = posidonius::Ias15::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
+    let mut whfasthelio = posidonius::WHFastHelio::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
 
     loop {
         match posidonius::constants::INTEGRATOR {
             posidonius::IntegratorType::LeapFrog => {
-                match leapfrog.iterate(&mut output_txt, &mut output_bin, &output_db) {
+                match leapfrog.iterate(&mut output_bin) {
                     Ok(_) => {},
                     Err(e) => { println!("{}", e); break; }
                 };
             },
             posidonius::IntegratorType::Ias15 => {
-                match ias15.iterate(&mut output_txt, &mut output_bin, &output_db) {
+                match ias15.iterate(&mut output_bin) {
+                    Ok(_) => {},
+                    Err(e) => { println!("{}", e); break; }
+                };
+            },
+            posidonius::IntegratorType::WHFastHelio => {
+                match whfasthelio.iterate(&mut output_bin) {
                     Ok(_) => {},
                     Err(e) => { println!("{}", e); break; }
                 };

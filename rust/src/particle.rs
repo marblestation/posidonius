@@ -1,4 +1,5 @@
 use super::constants::{K2, G, N_PARTICLES};
+use super::integrator::IntegratorType;
 
 #[derive(Debug,Copy, Clone)]
 pub struct Axes {
@@ -54,12 +55,20 @@ impl Particle {
 #[derive(Copy, Clone)]
 pub struct Particles {
     pub particles : [Particle; N_PARTICLES],
+    integrator_type: IntegratorType,
+    integrator_is_whfasthelio: bool,
 }
 
 impl Particles {
-    pub fn new(particles: [Particle; N_PARTICLES]) -> Particles {
+    pub fn new(particles: [Particle; N_PARTICLES], integrator_type: IntegratorType) -> Particles {
+        let integrator_is_whfasthelio = match integrator_type {
+            IntegratorType::WHFastHelio => { true },
+            _ => { false }
+        };
         Particles {
                     particles:particles,
+                    integrator_type:integrator_type,
+                    integrator_is_whfasthelio:integrator_is_whfasthelio,
                     }
     }
 
@@ -71,6 +80,10 @@ impl Particles {
 			particle_a.acceleration.y = 0.;
 			particle_a.acceleration.z = 0.;
             for (j, particle_b) in local_copy_particles.iter().enumerate() {
+                if self.integrator_is_whfasthelio && (i == 0 || j == 0) {
+                    // For WHFastHelio, ignore central body
+                    continue
+                }
                 if i == j {
                     continue;
                 }
@@ -93,20 +106,45 @@ impl Particles {
             }
         }
 
-        // Tides require heliocentric point of reference, the star should continue in the zero point
-        // so we must compensate all the planets:
-        let star_index = 0; // index
-        let local_copy_star = &local_copy_particles[star_index];
-        for particle in self.particles.iter_mut() {
-            particle.acceleration.x -= local_copy_star.acceleration.x;
-            particle.acceleration.y -= local_copy_star.acceleration.y;
-            particle.acceleration.z -= local_copy_star.acceleration.z;
+        if !self.integrator_is_whfasthelio {
+            // Tides require heliocentric point of reference, the star should continue in the zero point
+            // so we must compensate all the planets (but if WHFastHelio is being used, it is
+            // automatically done by the integrator):
+            let star_index = 0; // index
+            let local_copy_star = &local_copy_particles[star_index];
+            for particle in self.particles.iter_mut() {
+                particle.acceleration.x -= local_copy_star.acceleration.x;
+                particle.acceleration.y -= local_copy_star.acceleration.y;
+                particle.acceleration.z -= local_copy_star.acceleration.z;
+            }
+            let star_index = 0;
+            //let star = (&mut self.particles[star_index..star_index+1]).iter_mut().next().unwrap();
+            let star = &mut self.particles[star_index];
+            star.acceleration.x = 0.;
+            star.acceleration.y = 0.;
+            star.acceleration.z = 0.;
         }
-        let star_index = 0;
-        let star = (&mut self.particles[star_index..star_index+1]).iter_mut().next().unwrap();
-        star.acceleration.x = 0.;
-        star.acceleration.y = 0.;
-        star.acceleration.z = 0.;
+    }
+
+    pub fn gravity_calculate_acceleration2(&mut self) {
+        // https://www.cs.utoronto.ca/~wayne/research/thesis/msc/node5.html
+        // force softening, i.e.,  replacing  tex2html_wrap_inline2549 with  tex2html_wrap_inline2551 in
+        // the denominator of the gravitational force computation for some small constant
+        // tex2html_wrap_inline2553 , usually chosen to approximate the average inter-particle separation.
+        // This is done because it allows a smaller N to approximate a larger N, and also to eliminate the
+        // singularity at r=0 [6].
+        // [6] James Binney and Scott Tremaine. Galactic Dynamics. Princeton Series in Astrophysics.
+        //      Princeton University Press, 1987.
+        //
+        //  https://en.wikipedia.org/wiki/N-body_problem#Few_bodies
+        //  For a small number of bodies, an n-body problem can be solved using direct methods,
+        //  also called particle-particle methods. These methods numerically integrate the
+        //  differential equations of motion. Numerical integration for this problem can be a
+        //  challenge for several reasons. First, the gravitational potential is singular; it goes
+        //  to infinity as the distance between two particles goes to zero. The gravitational
+        //  potential may be softened to remove the singularity at small distances
+        //
+        // TODO: Check rebound
     }
 
     pub fn calculate_additional_forces(&mut self, only_dspin_dt: bool) {
@@ -211,9 +249,9 @@ impl Particles {
                 torque.z += factor * n_tid_z;
             } else {
                 let factor = - K2 * local_copy_star.mass_g / (particle.mass_g * (particle.mass_g + local_copy_star.mass_g) 
-                                * particle.radius_of_gyration_2 * particle.radius.powf(2.));
+                                * particle.radius_of_gyration_2 * particle.radius.powi(2));
                 //let factor = - 1. * local_copy_star.mass / (particle.mass * (particle.mass + local_copy_star.mass) 
-                                //* particle.radius_of_gyration_2 * particle.radius.powf(2.));
+                                //* particle.radius_of_gyration_2 * particle.radius.powi(2));
                 particle.torque.x = n_tid_x;
                 particle.torque.y = n_tid_y;
                 particle.torque.z = n_tid_z;
@@ -225,10 +263,11 @@ impl Particles {
         }
 
         if central_body {
-            let factor = - 1. / (local_copy_star.radius_of_gyration_2 * local_copy_star.radius.powf(2.));
+            let factor = - 1. / (local_copy_star.radius_of_gyration_2 * local_copy_star.radius.powi(2));
             // Get only the particle that corresponds to the star in mutable form 
             // (using a slice of 1 element):
-            let star = (&mut self.particles[star_index..star_index+1]).iter_mut().next().unwrap();
+            //let star = (&mut self.particles[star_index..star_index+1]).iter_mut().next().unwrap();
+            let star = &mut self.particles[star_index];
             star.torque.x = torque.x;
             star.torque.y = torque.y;
             star.torque.z = torque.z;
@@ -246,30 +285,30 @@ impl Particles {
 
         for particle in self.particles[1..].iter_mut() {
             // (distance to star)^7
-            let distance_7 = particle.distance.powf(7.);
+            let distance_7 = particle.distance.powi(7);
 
             //// Tidal force calculation (star) :: Only orthogonal component is needed
             // - Equation 6 from Bolmont et al. 2015
             // - Ftides in Msun.AU.day-1
             if central_body {
                 // - F_tides_ortho_star
-                particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass_g.powf(2.))
-                                                * (local_copy_star.radius.powf(10.)) 
-                                                * local_copy_star.dissipation_factor / ( (K2.powf(2.)) * distance_7);
-                //particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass.powf(2))
-                                                    //* (local_copy_star.radius.powf(10.)) 
+                particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass_g.powi(2))
+                                                * (local_copy_star.radius.powi(10)) 
+                                                * local_copy_star.dissipation_factor / ( (K2.powi(2)) * distance_7);
+                //particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass.powi(2))
+                                                    //* (local_copy_star.radius.powi(10)) 
                                                     //* local_copy_star.dissipation_factor / (distance_7);
             } else {
                 // - F_tides_ortho_plan
-                particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (local_copy_star.mass_g.powf(2.))
-                                                * (particle.radius.powf(10.))
-                                                * particle.dissipation_factor    / ( (K2.powf(2.)) * distance_7);
-                //particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (local_copy_star.mass.powf(2.))
-                                                //* (particle.radius.powf(10.))
+                particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (local_copy_star.mass_g.powi(2))
+                                                * (particle.radius.powi(10))
+                                                * particle.dissipation_factor    / ( (K2.powi(2)) * distance_7);
+                //particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (local_copy_star.mass.powi(2))
+                                                //* (particle.radius.powi(10))
                                                 //* particle.dissipation_factor    / (distance_7);
 
                 // SBC
-                //println!("> {:e} {:e} {:e} {:e}", local_copy_star.mass_g, particle.radius.powf(10.), particle.dissipation_factor, distance_7);
+                //println!("> {:e} {:e} {:e} {:e}", local_copy_star.mass_g, particle.radius.powi(10), particle.dissipation_factor, distance_7);
                 //println!("> {:e} {:e} {:e}", particle.position.x, particle.position.y, particle.position.z);
             }
         }
@@ -290,22 +329,22 @@ impl Particles {
             // Conservative part of the radial tidal force
             // - Ftidr_cons
 
-            particle.radial_component_of_the_tidal_force_conservative_part = -3.0 / (particle.distance.powf(7.) * K2)
-                        * (planet_mass_2 * local_copy_star.radius.powf(5.) * local_copy_star.love_number 
-                        + star_mass_2 * particle.radius.powf(5.) * particle.love_number);
-            //particle.radial_component_of_the_tidal_force_conservative_part = -3.0 / particle.distance.powf(7.)
-                        //* (planet_mass_2 * local_copy_star.radius.powf(5.) * local_copy_star.love_number 
-                        //+ star_mass_2 * particle.radius.powf(5.) * particle.love_number);
+            particle.radial_component_of_the_tidal_force_conservative_part = -3.0 / (particle.distance.powi(7) * K2)
+                        * (planet_mass_2 * local_copy_star.radius.powi(5) * local_copy_star.love_number 
+                        + star_mass_2 * particle.radius.powi(5) * particle.love_number);
+            //particle.radial_component_of_the_tidal_force_conservative_part = -3.0 / particle.distance.powi(7)
+                        //* (planet_mass_2 * local_copy_star.radius.powi(5) * local_copy_star.love_number 
+                        //+ star_mass_2 * particle.radius.powi(5) * particle.love_number);
 
             // Dissipative part of the radial tidal force
             // - Ftidr_diss
-            let factor1 = -13.5 * particle.radial_velocity / (particle.distance.powf(8.) * K2*K2);
-            //let factor1 = -13.5 * particle.radial_velocity / particle.distance.powf(8.);
+            let factor1 = -13.5 * particle.radial_velocity / (particle.distance.powi(8) * K2*K2);
+            //let factor1 = -13.5 * particle.radial_velocity / particle.distance.powi(8);
             let term1 = planet_mass_2
-                        * local_copy_star.radius.powf(10.)
+                        * local_copy_star.radius.powi(10)
                         * local_copy_star.dissipation_factor;
             let term2 = star_mass_2
-                        * particle.radius.powf(10.)
+                        * particle.radius.powi(10)
                         * particle.dissipation_factor;
             particle.radial_component_of_the_tidal_force_dissipative_part = factor1 * (term1 + term2 );
 
@@ -391,16 +430,16 @@ impl Particles {
         // velocities in AU/day
         for particle in self.particles[1..].iter_mut() {
             // Norm of the velocity
-            let v_2 = (particle.velocity.x.powf(2.)) 
-                                + (particle.velocity.y.powf(2.))
-                                + (particle.velocity.z.powf(2.));
+            let v_2 = (particle.velocity.x.powi(2)) 
+                                + (particle.velocity.y.powi(2))
+                                + (particle.velocity.z.powi(2));
             let norm_vel = v_2.sqrt();
             particle.norm_velocity_vector = norm_vel;
 
             // (distance to star)^2
-            let distance_2 = (particle.position.x.powf(2.)) 
-                                + (particle.position.y.powf(2.))
-                                + (particle.position.z.powf(2.));
+            let distance_2 = (particle.position.x.powi(2)) 
+                                + (particle.position.y.powi(2))
+                                + (particle.position.z.powi(2));
             let distance = distance_2.sqrt();
             particle.distance = distance;
 
@@ -418,6 +457,39 @@ impl Particles {
             //println!(">p {:e} {:e} {:e}", particle.position.x, particle.position.y, particle.position.z);
             //println!(">v {:e} {:e} {:e}", particle.velocity.x, particle.velocity.y, particle.velocity.z);
         }
+    }
+
+    pub fn compute_total_energy(&self) -> f64 {
+        let mut e_kin = 0.;
+        let mut e_pot = 0.;
+        let e_offset = 0.; // Energy offset due to collisions and ejections
+
+        // Kinectic energy
+        for particle in self.particles.iter() {
+            e_kin += 0.5 * particle.mass * (particle.velocity.x.powi(2) + particle.velocity.y.powi(2) + particle.velocity.z.powi(2));
+        }
+        // Gravitationl potential energy
+        for (i, particle_a) in self.particles.iter().enumerate() {
+            for particle_b in self.particles[i+1..].iter() {
+                let dx = particle_a.position.x - particle_b.position.x;
+                let dy = particle_a.position.y - particle_b.position.y;
+                let dz = particle_a.position.z - particle_b.position.z;
+                e_pot -= particle_b.mass_g*particle_a.mass/(dx.powi(2) + dy.powi(2) + dz.powi(2)).sqrt();
+            }
+        }
+        
+        e_kin + e_pot + e_offset
+    }
+
+    pub fn compute_total_angular_momentum(&self) -> f64 {
+        let mut total_angular_momentum = Axes{x:0., y:0., z:0.}; // L
+        for particle in self.particles.iter() {
+            total_angular_momentum.x += particle.mass*(particle.position.y*particle.velocity.z - particle.position.z*particle.velocity.y);
+            total_angular_momentum.y += particle.mass*(particle.position.z*particle.velocity.x - particle.position.x*particle.velocity.z);
+            total_angular_momentum.z += particle.mass*(particle.position.x*particle.velocity.y - particle.position.y*particle.velocity.x);
+        }
+        let total_angular_momentum = (total_angular_momentum.x.powf(2.) + total_angular_momentum.y.powf(2.) + total_angular_momentum.z.powf(2.)).sqrt();
+        total_angular_momentum
     }
 
 }
