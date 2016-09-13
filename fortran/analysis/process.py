@@ -5,11 +5,13 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 #from astropy.io import ascii
 
-raw = np.loadtxt("../spins.out")
+#raw = np.loadtxt("../spins.out")
+raw = np.loadtxt("../spins.dat")
 star1 = pd.DataFrame(raw, columns=("current_time", "spin_x", "spin_y", "spin_z", "radius", "radius_of_gyration_2", "love_number", "dissipation_factor"))
 
 
-raw = np.loadtxt("../horb1.out")
+#raw = np.loadtxt("../horb1.out")
+raw = np.loadtxt("../horb1.dat")
 star2 = pd.DataFrame(raw, columns=("current_time", "orbital_angular_momentum_x", "orbital_angular_momentum_y", "orbital_angular_momentum_z"))
 del star2['current_time']
 
@@ -20,14 +22,17 @@ star_data['position_y'] = 0.
 star_data['position_z'] = 0.
 
 
-raw = np.loadtxt("../spinp1.out")
+#raw = np.loadtxt("../spinp1.out")
+raw = np.loadtxt("../spinp1.dat")
 planet1 = pd.DataFrame(raw, columns=("current_time", "spin_x", "spin_y", "spin_z", "radius", "radius_of_gyration_2"))
 
-raw = np.loadtxt("../horb1.out")
+#raw = np.loadtxt("../horb1.out")
+raw = np.loadtxt("../horb1.dat")
 planet2 = pd.DataFrame(raw, columns=("current_time", "orbital_angular_momentum_x", "orbital_angular_momentum_y", "orbital_angular_momentum_z"))
 del planet2['current_time']
 
-raw = np.loadtxt("../aeipnl.out")
+#raw = np.loadtxt("../aeipnl.out")
+raw = np.loadtxt("../aeipnl.dat")
 planet3 = pd.DataFrame(raw, columns=("current_time", "semi-major_axis", "eccentricity", "inclination", "longitude_of_perihelion", "longitude_of_ascending_node", "mean_anomaly"))
 del planet3['current_time']
 
@@ -199,7 +204,7 @@ field = 'semi-major_axis'
 ax.plot(planet_data['current_time'], planet_data[field])
 ax.plot(planet_data['current_time'], corrotation_radius, color="red")
 ax.set_ylabel(field+" (AU)")
-ax.set_ylim([0.005, 0.028])
+ax.set_ylim([0.015, 0.028])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
@@ -289,7 +294,7 @@ ax.set_ylabel(field)
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
-ax.set_xlim([100.0, 1.0e7])
+ax.set_xlim([100.0, 1.0e8])
 
 plt.tight_layout()
 #plt.savefig("../target/output.png")

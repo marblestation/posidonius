@@ -572,12 +572,12 @@ module user_module
                         !write(13,'(4("  ", es20.10e3))') time/365.25d0, a(1,j),a(2,j),a(3,j)
                         !close(13)
                     enddo
-                    if (time/365.25d0.ge.10.d0*output_tmp) then
-                        output_tmp = output_tmp * 10.d0
+                    !if (time/365.25d0.ge.10.d0*output_tmp) then
+                        !output_tmp = output_tmp * 10.d0
+                        !timestep = timestep + output_tmp*365.25d0
+                    !else 
                         timestep = timestep + output_tmp*365.25d0
-                    else 
-                        timestep = timestep + output_tmp*365.25d0
-                    endif
+                    !endif
                 endif
             endif
             if (crash.eq.1) then
