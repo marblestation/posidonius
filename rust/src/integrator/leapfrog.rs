@@ -33,7 +33,7 @@ pub struct LeapFrog {
     time_step: f64,
     half_time_step: f64,
     time_limit: f64,
-    particles: Particles,
+    universe: Particles,
     current_time: f64,
     current_iteration: u32,
     last_print_time: f64,
@@ -47,7 +47,7 @@ impl Integrator for LeapFrog {
                     half_time_step:0.5*time_step,
                     time_limit:time_limit,
                     last_print_time:-1.,
-                    particles:particles,
+                    universe:particles,
                     current_time:0.,
                     current_iteration:0,
                     }
@@ -58,7 +58,7 @@ impl Integrator for LeapFrog {
         let add_header = self.last_print_time < 0.;
         let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
         if add_header || time_triger {
-            write_bin_snapshot(output_bin, &self.particles, self.current_time, self.time_step);
+            write_bin_snapshot(output_bin, &self.universe, self.current_time, self.time_step);
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
             let _ = std::io::stdout().flush();
@@ -70,17 +70,17 @@ impl Integrator for LeapFrog {
 
         // Calculate non-gravity accelerations.
         let only_dspin_dt = true;
-        self.particles.calculate_additional_forces(only_dspin_dt);
+        self.universe.calculate_additional_forces(only_dspin_dt);
 
         // A 'DKD'-like integrator will do the first 'D' part.
         self.integrator_part1();
 
         // Calculate accelerations.
-        self.particles.gravity_calculate_acceleration();
+        self.universe.gravity_calculate_acceleration();
 
         // Calculate non-gravity accelerations.
         let only_dspin_dt = false;
-        self.particles.calculate_additional_forces(only_dspin_dt);
+        self.universe.calculate_additional_forces(only_dspin_dt);
 
         // A 'DKD'-like integrator will do the 'KD' part.
         self.integrator_part2();
@@ -101,7 +101,7 @@ impl LeapFrog {
     // for non-rotating frame.
     #[allow(dead_code)]
     fn integrator_part1(&mut self) {
-        for particle in self.particles.particles.iter_mut() {
+        for particle in self.universe.particles.iter_mut() {
             particle.position.x += self.half_time_step * particle.velocity.x;
             particle.position.y += self.half_time_step * particle.velocity.y;
             particle.position.z += self.half_time_step * particle.velocity.z;
@@ -115,7 +115,7 @@ impl LeapFrog {
 
     #[allow(dead_code)]
     fn integrator_part2(&mut self) {
-        for particle in self.particles.particles.iter_mut() {
+        for particle in self.universe.particles.iter_mut() {
             particle.velocity.x += self.time_step * particle.acceleration.x;
             particle.velocity.y += self.time_step * particle.acceleration.y;
             particle.velocity.z += self.time_step * particle.acceleration.z;

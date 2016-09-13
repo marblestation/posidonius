@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
@@ -333,7 +334,9 @@ ax.set_xlim([100.0, 1.0e8])
 
 plt.tight_layout()
 #plt.savefig("../target/output.png")
-plt.savefig("output.png")
+#plt.savefig("output.png")
+#plt.savefig(os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + ".png")
+plt.savefig(os.path.splitext(os.path.basename(filename))[0] + ".png")
 #plt.show()
 
 import pudb

@@ -1,19 +1,19 @@
 extern crate bincode;
 use std::io::{Write, BufWriter};
 use super::super::particle::Particles;
-use super::super::general::calculate_keplerian_orbital_elements;
+use super::super::tools::calculate_keplerian_orbital_elements;
 
 
-pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &Particles, current_time: f64, time_step: f64) {
+pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, universe: &Particles, current_time: f64, time_step: f64) {
     // It can be excessively inefficient to work directly with something that implements Write. For
     // example, every call to write on File results in a system call. A BufWriter keeps an
     // in-memory buffer of data and writes it to an underlying writer in large, infrequent batches.
     //
     // The buffer will be written out when the writer is dropped.
 
-    let total_energy = particles.compute_total_energy();
-    let total_angular_momentum = particles.compute_total_angular_momentum();
-    for (i, particle) in particles.particles.iter().enumerate() {
+    let total_energy = universe.compute_total_energy();
+    let total_angular_momentum = universe.compute_total_angular_momentum();
+    for (i, particle) in universe.particles.iter().enumerate() {
         // Serialize in chunks of maximum 12 elements or it fails
         let output = (
                         current_time,                           // days
@@ -60,7 +60,7 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, particles: &P
         if i > 0 {
             //// Only for planets
             let star = 0;
-            let (semimajor_axis, perihelion_distance, eccentricity, inclination, longitude_of_perihelion, longitude_of_ascending_node, mean_anomaly) = calculate_keplerian_orbital_elements(particles.particles[star].mass_g+particle.mass_g, particle.position, particle.velocity);
+            let (semimajor_axis, perihelion_distance, eccentricity, inclination, longitude_of_perihelion, longitude_of_ascending_node, mean_anomaly) = calculate_keplerian_orbital_elements(universe.particles[star].mass_g+particle.mass_g, particle.position, particle.velocity);
             // Calculation of orbital angular momentum (without mass and in AU^2/day)
             let horb_x = particle.position.y * particle.velocity.z - particle.position.z * particle.velocity.y;
             let horb_y = particle.position.z * particle.velocity.x - particle.position.x * particle.velocity.z;

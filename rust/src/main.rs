@@ -87,7 +87,7 @@ fn main() {
     p = (p + n) * posidonius::constants::DEG2RAD;          // Convert to longitude of perihelion !!
     let q = a * (1.0 - e);                          // perihelion distance
     let gm: f64 = posidonius::constants::G*(planet_mass+star_mass);
-    let (x, y, z, vx, vy, vz) = posidonius::general::calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
+    let (x, y, z, vx, vy, vz) = posidonius::tools::calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
 
     //////// Cartesian coordinates
     //let gm: f64 = posidonius::constants::G*(planet_mass+star_mass);
@@ -123,7 +123,7 @@ fn main() {
     //// Custom period
     let planet_rotation_period: f64 = 24.; // hours
     let planet_spin0 = posidonius::constants::TWO_PI/(planet_rotation_period/24.); // days^-1
-    let keplerian_orbital_elements = posidonius::general::calculate_keplerian_orbital_elements(posidonius::constants::G*star_mass*planet_mass, planet_position, planet_velocity);
+    let keplerian_orbital_elements = posidonius::tools::calculate_keplerian_orbital_elements(posidonius::constants::G*star_mass*planet_mass, planet_position, planet_velocity);
     let inclination = keplerian_orbital_elements.3;
     //// Pseudo-synchronization period
     //let pseudo_sync_period_scale = 1.;

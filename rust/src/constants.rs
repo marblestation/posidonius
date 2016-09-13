@@ -41,6 +41,6 @@ pub const TWO_PI : f64 = std::f64::consts::PI * 2.;
 pub const DEG2RAD : f64 = std::f64::consts::PI / 180.; // conversion factor from degrees to radians
 
 // Solar system
-pub const R_SUN : f64 = 4.67920694e-3;
+pub const R_SUN : f64 = 4.67920694e-3;  // AU
 pub const R_EARTH : f64 = 4.25874677e-5; // AU
 pub const M2EARTH : f64 = (1.9891e6/5.9794); // Factor for mass-radius relation (valid only for earth type planets)
