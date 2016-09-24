@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 #from astropy.io import ascii
 
 dirname = "../"
-dirname = "fortran_leapfrog/"
+#dirname = "fortran_leapfrog/"
 
 raw = np.loadtxt(dirname+"/spins.out")
 star1 = pd.DataFrame(raw, columns=("current_time", "spin_x", "spin_y", "spin_z", "radius", "radius_of_gyration_2", "love_number", "dissipation_factor"))
