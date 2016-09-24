@@ -434,12 +434,12 @@ program mercury
             open(13, file="aeipnl.out", access="append")
             write(13,'(7("  ", es20.10e3))') time/365.25d0,q_tmp/(1.d0-e_tmp),e_tmp,i_tmp,p_tmp,n_tmp,l_tmp
             close(13)
-            if (time/365.25d0.ge.10.d0*output_tmp) then
-                output_tmp = output_tmp * 10.d0
+            !if (time/365.25d0.ge.10.d0*output_tmp) then
+                !output_tmp = output_tmp * 10.d0
+                !time_write = time_write + output_tmp*365.25d0
+            !else 
                 time_write = time_write + output_tmp*365.25d0
-            else 
-                time_write = time_write + output_tmp*365.25d0
-            endif
+            !endif
 
         endif
         time = time + half_time_step
