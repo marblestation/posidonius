@@ -5,11 +5,14 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 #from astropy.io import ascii
 
-raw = np.loadtxt("../spins.out")
+dirname = "../"
+dirname = "fortran_leapfrog/"
+
+raw = np.loadtxt(dirname+"/spins.out")
 star1 = pd.DataFrame(raw, columns=("current_time", "spin_x", "spin_y", "spin_z", "radius", "radius_of_gyration_2", "love_number", "dissipation_factor"))
 
 
-raw = np.loadtxt("../horb1.out")
+raw = np.loadtxt(dirname+"/horb1.out")
 star2 = pd.DataFrame(raw, columns=("current_time", "orbital_angular_momentum_x", "orbital_angular_momentum_y", "orbital_angular_momentum_z"))
 del star2['current_time']
 
@@ -18,16 +21,19 @@ star_data['mass'] = 0.08
 star_data['position_x'] = 0.
 star_data['position_y'] = 0.
 star_data['position_z'] = 0.
+#star_data['velocity_x'] = 0.
+#star_data['velocity_y'] = 0.
+#star_data['velocity_z'] = 0.
 
 
-raw = np.loadtxt("../spinp1.out")
+raw = np.loadtxt(dirname+"/spinp1.out")
 planet1 = pd.DataFrame(raw, columns=("current_time", "spin_x", "spin_y", "spin_z", "radius", "radius_of_gyration_2"))
 
-raw = np.loadtxt("../horb1.out")
+raw = np.loadtxt(dirname+"/horb1.out")
 planet2 = pd.DataFrame(raw, columns=("current_time", "orbital_angular_momentum_x", "orbital_angular_momentum_y", "orbital_angular_momentum_z"))
 del planet2['current_time']
 
-raw = np.loadtxt("../aeipnl.out")
+raw = np.loadtxt(dirname+"/aeipnl.out")
 planet3 = pd.DataFrame(raw, columns=("current_time", "semi-major_axis", "eccentricity", "inclination", "longitude_of_perihelion", "longitude_of_ascending_node", "mean_anomaly"))
 del planet3['current_time']
 
@@ -37,6 +43,9 @@ planet_data['mass'] = 3.e-6
 planet_data['position_x'] = 0.
 planet_data['position_y'] = 0.
 planet_data['position_z'] = 0.
+#planet_data['velocity_x'] = 0.
+#planet_data['velocity_y'] = 0.
+#planet_data['velocity_z'] = 0.
 planet_data['denergy_dt'] = 0.
 
 #-------------------------------------------------------------------------------
@@ -90,10 +99,12 @@ def norb(G, Mp, Ms):
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
+star_data = star_data.to_records()
+planet_data = planet_data.to_records()
 star_data = star_data[star_data['current_time'] >= 100.]
 planet_data = planet_data[planet_data['current_time'] >= 100.]
 
-star_mass = star_data['mass'][0]
+star_mass = star_data['mass']
 star_norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
 planet_norm_spin = np.sqrt(np.power(planet_data['spin_x'], 2) + np.power(planet_data['spin_y'], 2) + np.power(planet_data['spin_z'], 2))
 planet_rotation_period = 2*np.pi / planet_norm_spin
@@ -152,7 +163,8 @@ gravitational_energy_lost = energydot(planet_data['semi-major_axis']*AU, \
 
 # The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
 # If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
-tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
+mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
+
 
 denergy_dt = planet_data['denergy_dt'] * 6.90125e37 # conversation from Msun.AU^2.day^-3 to W
 inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
@@ -217,7 +229,7 @@ ax = fig.add_subplot(4,3,3, sharex=ax)
 field = 'eccentricity'
 ax.plot(planet_data['current_time'], planet_data[field])
 ax.set_ylabel(field)
-ax.set_ylim([0.01, 1.000])
+ax.set_ylim([0.001, 1.000])
 ax.set_xscale('log')
 ax.set_yscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
@@ -237,7 +249,7 @@ field = 'Energy lost\ndue to tides (W/m^2)'
 ax.plot(planet_data['current_time'], inst_tidal_flux) # Instantaneous energy loss
 ax.plot(planet_data['current_time'], mean_tidal_flux, color="red") # Mean energy loss
 ax.set_ylabel(field)
-#ax.set_ylim([0.001, 10000.0])
+ax.set_ylim([1e-2, 1e5])
 ax.set_xscale('log')
 ax.set_yscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
@@ -247,7 +259,7 @@ field = 'planet_rotation_period\n(hr)'
 ax.plot(planet_data['current_time'], planet_rotation_period*24.)
 ax.plot(planet_data['current_time'], pseudo_synchronization_period, color="red")
 ax.set_ylabel(field)
-#ax.set_ylim([40, 150.0])
+ax.set_ylim([40, 160.0])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
@@ -255,7 +267,7 @@ ax = fig.add_subplot(4,3,7, sharex=ax)
 field = '$\Delta L/L_{0}$'
 ax.plot(planet_data['current_time'], conservation_of_angular_momentum)
 ax.set_ylabel(field)
-#ax.set_ylim([40, 150.0])
+ax.set_ylim([0., 0.000007])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
@@ -266,7 +278,7 @@ field = 'Energy lost\ndue to tides (W)'
 ax.plot(planet_data['current_time'], denergy_dt) # Instantaneous energy loss
 ax.plot(planet_data['current_time'], gravitational_energy_lost, color="red") # Mean energy loss
 ax.set_ylabel(field)
-#ax.set_ylim([2.5, 5.5])
+ax.set_ylim([1e12, 1e19])
 ax.set_xscale('log')
 ax.set_yscale('symlog')
 
@@ -274,7 +286,7 @@ ax = fig.add_subplot(4,3,9, sharex=ax)
 field = 'star_rotation_period\n(days)'
 ax.plot(planet_data['current_time'], star_rotation_period)
 ax.set_ylabel(field)
-#ax.set_ylim([40, 150.0])
+ax.set_ylim([2.915, 2.92])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
@@ -282,7 +294,7 @@ ax = fig.add_subplot(4,3,10, sharex=ax)
 field = 'star_obliquity (deg)'
 ax.plot(planet_data['current_time'], star_obliquity)
 ax.set_ylabel(field)
-#ax.set_ylim([40, 150.0])
+ax.set_ylim([2.5, 5.5])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
@@ -290,16 +302,93 @@ ax = fig.add_subplot(4,3,11, sharex=ax)
 field = 'planet_precession_angle\n(deg)'
 ax.plot(planet_data['current_time'], planet_precession_angle)
 ax.set_ylabel(field)
-#ax.set_ylim([2.5, 5.5])
+ax.set_ylim([80., 100.])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
+
+if False: # It requires positions and velocities!
+    ## The following calculation is equivalent to the next one (using different units but final relative result will be the same)
+    #star_e_kin = 0.5 * star_data['mass'] * Msun * (np.power(star_data['velocity_x'] * AU/day, 2) + \
+                                            #np.power(star_data['velocity_y'] * AU/day, 2) + \
+                                            #np.power(star_data['velocity_z'] * AU/day, 2))
+    #planet_e_kin = 0.5 * planet_data['mass'] * Msun * (np.power(planet_data['velocity_x'] * AU/day, 2) + \
+                                            #np.power(planet_data['velocity_y'] * AU/day, 2) + \
+                                            #np.power(planet_data['velocity_z'] * AU/day, 2))
+    #e_kin = star_e_kin + planet_e_kin
+
+    #dx = planet_data['position_x'] - star_data['position_x']
+    #dy = planet_data['position_y'] - star_data['position_y']
+    #dz = planet_data['position_z'] - star_data['position_z']
+    #dx *= AU
+    #dy *= AU
+    #dz *= AU
+    #e_pot = (-1. * G * (planet_data['mass'] * Msun) * (star_data['mass'] * Msun))  / np.sqrt(np.power(dx, 2) + np.power(dy, 2) + np.power(dz, 2))
+
+    # The following calculation is equivalent to the previous one (using different units but final relative result will be the same)
+    star_e_kin = 0.5 * star_data['mass'] * (np.power(star_data['velocity_x'], 2) + \
+                                            np.power(star_data['velocity_y'], 2) + \
+                                            np.power(star_data['velocity_z'], 2))
+    planet_e_kin = 0.5 * planet_data['mass'] * (np.power(planet_data['velocity_x'], 2) + \
+                                            np.power(planet_data['velocity_y'], 2) + \
+                                            np.power(planet_data['velocity_z'], 2))
+    e_kin = star_e_kin + planet_e_kin
+    dx = planet_data['position_x'] - star_data['position_x']
+    dy = planet_data['position_y'] - star_data['position_y']
+    dz = planet_data['position_z'] - star_data['position_z']
+    K2 = 0.01720209895**2
+    e_pot = (-1. * K2 * (planet_data['mass']) * (star_data['mass']))  / np.sqrt(np.power(dx, 2) + np.power(dy, 2) + np.power(dz, 2))
+
+    total_energy = e_kin + e_pot
+
+    # conservation of energy (kinetic+potential)
+    relative_energy_error = (total_energy - total_energy[0]) / total_energy[0]
+    ax = fig.add_subplot(4,3,12, sharex=ax)
+    field = '$\Delta E/E_{0}$'
+    ax.plot(planet_data['current_time'], relative_energy_error)
+    ax.set_ylabel(field)
+    #ax.set_ylim([40, 150.0])
+    ax.set_xscale('log')
+    #ax.set_yscale('symlog')
+else:
+    relative_energy_error = np.zeros(len(planet_data['current_time']))
+
+    ax = fig.add_subplot(4,3,12, sharex=ax)
+    field = '$\Delta L/L_{0}$'
+    ax.plot(planet_data['current_time'], conservation_of_angular_momentum)
+    ax.set_ylabel(field)
+    #ax.set_ylim([0., 0.000007])
+    ax.set_xscale('log')
+    #ax.set_yscale('symlog')
+
 
 ax.set_xlim([100.0, 1.0e8])
 
 plt.tight_layout()
-#plt.savefig("../target/output.png")
-plt.savefig("output.png")
+#plt.savefig("../target/output_fortran_leapfrog.png")
+plt.savefig("output_fortran_leapfrog.png")
 #plt.show()
+
+
+
+data = pd.DataFrame(planet_data['current_time'], columns=['current_time'])
+data['semi-major_axis_AU'] = planet_data['semi-major_axis']
+data['corrotation_radius_AU'] = corrotation_radius
+data['planet_obliquity_deg'] = planet_obliquity
+data['eccentricity'] = planet_data['eccentricity']
+data['inclination_deg'] = planet_data['inclination'] * (180 / np.pi)
+data['energy_lost_due_to_tides_W_per_m2'] = inst_tidal_flux
+data['mean_energy_lost_due_to_tides_W_per_m2'] = mean_tidal_flux
+data['planet_rotation_period_hours'] = planet_rotation_period*24
+data['planet_pseudo_synchronization_period'] = pseudo_synchronization_period
+data['conservation_of_angular_momentum'] = conservation_of_angular_momentum
+data['energy_lost_due_to_tides_W'] = denergy_dt
+data['mean_energy_lost_due_to_tides_W'] = gravitational_energy_lost
+data['star_rotation_period_days'] = star_rotation_period
+data['star_obliquity_deg'] = star_obliquity
+data['planet_precession_angle_deg'] = planet_precession_angle
+data['conservation_of_energy'] = relative_energy_error
+data.to_csv("output_fortran_leapfrog.txt", sep="\t")
+
 
 #import pudb
 #pudb.set_trace()

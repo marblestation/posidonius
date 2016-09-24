@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 from astropy.io import ascii
 
 import struct
-filename = "../target/output.bin"
+#filename = "../target/output.bin"
 #filename = "../target/output_leapfrog.bin"
 #filename = "../target/output_leapfrog_notides.bin"
-#filename = "../target/output_ias15.bin"
+filename = "../target/output_ias15.bin"
 #filename = "../target/output_ias15_notides.bin"
 #filename = "../target/output_whfasthelio.bin"
 #filename = "../target/output_whfasthelio_notides.bin"
@@ -225,7 +225,7 @@ ax = fig.add_subplot(4,3,3, sharex=ax)
 field = 'eccentricity'
 ax.plot(planet_data['current_time'], planet_data[field])
 ax.set_ylabel(field)
-ax.set_ylim([0.01, 1.000])
+ax.set_ylim([0.001, 1.000])
 ax.set_xscale('log')
 ax.set_yscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
@@ -245,7 +245,7 @@ field = 'Energy lost\ndue to tides (W/m^2)'
 ax.plot(planet_data['current_time'], inst_tidal_flux) # Instantaneous energy loss
 ax.plot(planet_data['current_time'], mean_tidal_flux, color="red") # Mean energy loss
 ax.set_ylabel(field)
-#ax.set_ylim([0.001, 10000.0])
+ax.set_ylim([1e-2, 1e5])
 ax.set_xscale('log')
 ax.set_yscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
@@ -255,7 +255,7 @@ field = 'planet_rotation_period\n(hr)'
 ax.plot(planet_data['current_time'], planet_rotation_period*24.)
 ax.plot(planet_data['current_time'], pseudo_synchronization_period, color="red")
 ax.set_ylabel(field)
-#ax.set_ylim([40, 150.0])
+ax.set_ylim([40, 160.0])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
@@ -263,7 +263,7 @@ ax = fig.add_subplot(4,3,7, sharex=ax)
 field = '$\Delta L/L_{0}$'
 ax.plot(planet_data['current_time'], conservation_of_angular_momentum)
 ax.set_ylabel(field)
-#ax.set_ylim([40, 150.0])
+ax.set_ylim([0., 0.000007])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
@@ -274,7 +274,7 @@ field = 'Energy lost\ndue to tides (W)'
 ax.plot(planet_data['current_time'], denergy_dt) # Instantaneous energy loss
 ax.plot(planet_data['current_time'], gravitational_energy_lost, color="red") # Mean energy loss
 ax.set_ylabel(field)
-#ax.set_ylim([2.5, 5.5])
+ax.set_ylim([1e12, 1e19])
 ax.set_xscale('log')
 ax.set_yscale('symlog')
 
@@ -282,7 +282,7 @@ ax = fig.add_subplot(4,3,9, sharex=ax)
 field = 'star_rotation_period\n(days)'
 ax.plot(planet_data['current_time'], star_rotation_period)
 ax.set_ylabel(field)
-#ax.set_ylim([40, 150.0])
+ax.set_ylim([2.915, 2.92])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
@@ -290,7 +290,7 @@ ax = fig.add_subplot(4,3,10, sharex=ax)
 field = 'star_obliquity (deg)'
 ax.plot(planet_data['current_time'], star_obliquity)
 ax.set_ylabel(field)
-#ax.set_ylim([40, 150.0])
+ax.set_ylim([2.5, 5.5])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
@@ -298,7 +298,7 @@ ax = fig.add_subplot(4,3,11, sharex=ax)
 field = 'planet_precession_angle\n(deg)'
 ax.plot(planet_data['current_time'], planet_precession_angle)
 ax.set_ylabel(field)
-#ax.set_ylim([2.5, 5.5])
+ax.set_ylim([80., 100.])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
@@ -326,7 +326,7 @@ ax = fig.add_subplot(4,3,12, sharex=ax)
 field = '$\Delta E/E_{0}$'
 ax.plot(planet_data['current_time'], relative_energy_error)
 ax.set_ylabel(field)
-#ax.set_ylim([40, 150.0])
+ax.set_ylim([-0.35, 0.05])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
@@ -338,6 +338,26 @@ plt.tight_layout()
 #plt.savefig(os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + ".png")
 plt.savefig(os.path.splitext(os.path.basename(filename))[0] + ".png")
 #plt.show()
+
+
+data = pd.DataFrame(planet_data['current_time'], columns=['current_time'])
+data['semi-major_axis_AU'] = planet_data['semi-major_axis']
+data['corrotation_radius_AU'] = corrotation_radius
+data['planet_obliquity_deg'] = planet_obliquity
+data['eccentricity'] = planet_data['eccentricity']
+data['inclination_deg'] = planet_data['inclination'] * (180 / np.pi)
+data['energy_lost_due_to_tides_W_per_m2'] = inst_tidal_flux
+data['mean_energy_lost_due_to_tides_W_per_m2'] = mean_tidal_flux
+data['planet_rotation_period_hours'] = planet_rotation_period*24
+data['planet_pseudo_synchronization_period'] = pseudo_synchronization_period
+data['conservation_of_angular_momentum'] = conservation_of_angular_momentum
+data['energy_lost_due_to_tides_W'] = denergy_dt
+data['mean_energy_lost_due_to_tides_W'] = gravitational_energy_lost
+data['star_rotation_period_days'] = star_rotation_period
+data['star_obliquity_deg'] = star_obliquity
+data['planet_precession_angle_deg'] = planet_precession_angle
+data['conservation_of_energy'] = relative_energy_error
+data.to_csv(os.path.splitext(os.path.basename(filename))[0] + ".txt", sep="\t")
 
 import pudb
 pudb.set_trace()
