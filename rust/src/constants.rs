@@ -5,9 +5,9 @@ use super::integrator::IntegratorType;
 pub const N_PARTICLES: usize = 2;
 pub const TIME_STEP: f64 = 0.08; // in days
 //pub const TIME_STEP: f64 = 0.003; // in days
-pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;
+//pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;
 //pub const TIME_LIMIT: f64 = 365.25 * 1.0e3;
-//pub const TIME_LIMIT: f64 = TIME_STEP*4.;
+pub const TIME_LIMIT: f64 = TIME_STEP*4.;
 pub const PRINT_EVERY_N_DAYS: f64 = 100.*365.25;
 //pub const PRINT_EVERY_N_DAYS: f64 = TIME_STEP;
 
@@ -51,4 +51,5 @@ pub const SPEED_OF_LIGHT_2 : f64 = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
 
 //// Others
 pub const TIDES: bool = true;
+pub const ROTATIONAL_FLATTENING: bool = true;
 pub const GENERAL_RELATIVITY: bool = true;

@@ -496,6 +496,7 @@ module user_module
                 call F_rotation (nbod,m,xh(1,j),xh(2,j),xh(3,j),spin &
                      ,Rsth5,k2fs,Rp5(j),k2fp(j-1) &
                      ,j,F_rot_tot_x,F_rot_tot_y,F_rot_tot_z)
+                 !write(*,*) "Rot force =", F_rot_tot_x,F_rot_tot_y,F_rot_tot_z
                 ! Calculation of the acceleration     
                 a2(1,j) = tmp*F_rot_tot_x
                 a2(2,j) = tmp*F_rot_tot_y
@@ -537,7 +538,8 @@ module user_module
             a(1,j) = tides*(a1(1,j)+sum_F_tid_x)+rot_flat*(a2(1,j)+sum_F_rot_x)+GenRel*(a3(1,j)+sum_F_GR_x)
             a(2,j) = tides*(a1(2,j)+sum_F_tid_y)+rot_flat*(a2(2,j)+sum_F_rot_y)+GenRel*(a3(2,j)+sum_F_GR_y)
             a(3,j) = tides*(a1(3,j)+sum_F_tid_z)+rot_flat*(a2(3,j)+sum_F_rot_z)+GenRel*(a3(3,j)+sum_F_GR_z)
-            !write(*,*) "tidal acceleration =", a1(1,j)+sum_F_tid_x, a1(2,j)+sum_F_tid_y, a1(3,j)+sum_F_tid_z
+            !write(*,*) "Tides acceleration =", a1(1,j)+sum_F_tid_x, a1(2,j)+sum_F_tid_y, a1(3,j)+sum_F_tid_z
+            !write(*,*) "Rot acceleration =", a2(1,j)+sum_F_rot_x, a2(2,j)+sum_F_rot_y, a2(3,j)+sum_F_rot_z
             !write(*,*) "GR acceleration =", a3(1,j)+sum_F_GR_x, a3(2,j)+sum_F_GR_y, a3(3,j)+sum_F_GR_z
         end do
 
@@ -1167,6 +1169,7 @@ end subroutine conversion_h2dh
 
       Cpi = m(1)*k2_plan*normspin_2p*R_plan5/(6.d0*K2)
       Csi = m(j)*k2_star*normspin_2s*R_star5/(6.d0*K2)
+      !write(*,*) "cpi, csi =", cpi, csi
 
       Frot_r = -3.d0/r_5*(Csi+Cpi) &
            + 15.d0/r_7*(Csi*rscalspins*rscalspins/normspin_2s &

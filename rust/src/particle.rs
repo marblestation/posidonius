@@ -1,4 +1,4 @@
-use super::constants::{K2, G, N_PARTICLES, TIDES, GENERAL_RELATIVITY, SPEED_OF_LIGHT_2};
+use super::constants::{K2, G, N_PARTICLES, TIDES, ROTATIONAL_FLATTENING, GENERAL_RELATIVITY, SPEED_OF_LIGHT_2};
 use super::integrator::IntegratorType;
 
 #[derive(Debug,Copy, Clone)]
@@ -37,9 +37,11 @@ pub struct Particle {
     pub spin: Axes,
     pub dspin_dt: Axes,
     pub tidal_acceleration: Axes,
-    pub general_relativity_acceleration: Axes,
+    // Rotational flattening
+    pub acceleration_induced_by_rotational_flattering: Axes,
     // General Relativity
     pub general_relativity_factor: f64,
+    pub general_relativity_acceleration: Axes,
 }
 
 impl Particle {
@@ -47,13 +49,16 @@ impl Particle {
         let torque = Axes{x: 0., y: 0., z: 0.};
         let dspin_dt = Axes{x: 0., y: 0., z: 0.};
         let tidal_acceleration = Axes{x: 0., y: 0., z: 0.};
+        let acceleration_induced_by_rotational_flattering = Axes{x: 0., y: 0., z: 0.};
         let general_relativity_acceleration = Axes{x: 0., y: 0., z: 0.};
         Particle { mass:mass, mass_g: mass*K2, radius:radius, dissipation_factor:dissipation_factor, radius_of_gyration_2:radius_of_gyration_2, love_number:love_number,
                     position:position, velocity:velocity, acceleration:acceleration, spin:spin,
                     radial_velocity: 0., norm_velocity_vector:0., norm_velocity_vector_2:0., distance:0.,
                     orthogonal_component_of_the_tidal_force_due_to_stellar_tide:0., orthogonal_component_of_the_tidal_force_due_to_planetary_tide:0., radial_component_of_the_tidal_force:0., radial_component_of_the_tidal_force_conservative_part:0., radial_component_of_the_tidal_force_dissipative_part:0.,
                     denergy_dt:0., torque:torque, dspin_dt:dspin_dt, 
-                    tidal_acceleration:tidal_acceleration, general_relativity_acceleration:general_relativity_acceleration,
+                    tidal_acceleration:tidal_acceleration, 
+                    acceleration_induced_by_rotational_flattering:acceleration_induced_by_rotational_flattering,
+                    general_relativity_acceleration:general_relativity_acceleration,
                     general_relativity_factor: 0.}
     }
 }
@@ -170,11 +175,14 @@ impl Particles {
         self.calculate_torque_due_to_tides(central_body);   // Needed for spin integration
         self.calculate_torque_due_to_tides(!central_body);  // Needed for spin integration
 
-
         if !only_dspin_dt {
             if TIDES {
                 self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
                 self.calculate_tidal_acceleration();
+            }
+
+            if ROTATIONAL_FLATTENING {
+                self.calculate_acceleration_induced_by_rotational_flattering()
             }
 
             if GENERAL_RELATIVITY {
@@ -187,12 +195,21 @@ impl Particles {
                     particle.acceleration.x += particle.tidal_acceleration.x;
                     particle.acceleration.y += particle.tidal_acceleration.y;
                     particle.acceleration.z += particle.tidal_acceleration.z;
+                    //println!("Tides acceleration {:e} {:e} {:e}", particle.tidal_acceleration.x, particle.tidal_acceleration.y, particle.tidal_acceleration.z);
+                }
+
+                if ROTATIONAL_FLATTENING {
+                    particle.acceleration.x += particle.acceleration_induced_by_rotational_flattering.x;
+                    particle.acceleration.y += particle.acceleration_induced_by_rotational_flattering.y;
+                    particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z;
+                    //println!("Rot acceleration {:e} {:e} {:e}", particle.acceleration_induced_by_rotational_flattering.x, particle.acceleration_induced_by_rotational_flattering.y, particle.acceleration_induced_by_rotational_flattering.z);
                 }
 
                 if GENERAL_RELATIVITY {
                     particle.acceleration.x += particle.general_relativity_acceleration.x;
                     particle.acceleration.y += particle.general_relativity_acceleration.y;
                     particle.acceleration.z += particle.general_relativity_acceleration.z;
+                    //println!("GR acceleration {:e} {:e} {:e}", particle.general_relativity_acceleration.x, particle.general_relativity_acceleration.y, particle.general_relativity_acceleration.z);
                 }
             }
         } 
@@ -492,14 +509,14 @@ impl Particles {
             // Total General Relativity force
             // - Equation 10 from Bolmont et al. 2015
             let total_general_relativity_force_x = particle.mass_g 
-                    * (radial_component_of_the_general_relativity_force * particle.position.x / particle.norm_velocity_vector 
-                    + orthogonal_component_of_the_general_relativity_force * particle.velocity.x / particle.distance);
+                    * (radial_component_of_the_general_relativity_force * particle.position.x / particle.distance
+                    + orthogonal_component_of_the_general_relativity_force * particle.velocity.x / particle.norm_velocity_vector);
             let total_general_relativity_force_y = particle.mass_g 
-                    * (radial_component_of_the_general_relativity_force * particle.position.y / particle.norm_velocity_vector
-                    + orthogonal_component_of_the_general_relativity_force * particle.velocity.y / particle.distance);
+                    * (radial_component_of_the_general_relativity_force * particle.position.y / particle.distance
+                    + orthogonal_component_of_the_general_relativity_force * particle.velocity.y / particle.norm_velocity_vector);
             let total_general_relativity_force_z = particle.mass_g 
-                    * (radial_component_of_the_general_relativity_force * particle.position.z / particle.norm_velocity_vector
-                    + orthogonal_component_of_the_general_relativity_force * particle.velocity.z / particle.distance);
+                    * (radial_component_of_the_general_relativity_force * particle.position.z / particle.distance
+                    + orthogonal_component_of_the_general_relativity_force * particle.velocity.z / particle.norm_velocity_vector);
             
             sum_total_general_relativity_force.x += total_general_relativity_force_x;
             sum_total_general_relativity_force.y += total_general_relativity_force_y;
@@ -518,6 +535,80 @@ impl Particles {
             particle.general_relativity_acceleration.y += factor2 * sum_total_general_relativity_force.y;
             particle.general_relativity_acceleration.z += factor2 * sum_total_general_relativity_force.z;
         }
+    }
+
+
+    fn calculate_acceleration_induced_by_rotational_flattering(&mut self) {
+		let local_copy_particles = self.particles;
+        let star_index = 0;
+        let local_copy_star = &local_copy_particles[star_index];
+        let factor2 = K2 / local_copy_star.mass_g;
+        //let factor2 = 1 / local_copy_star.mass;
+
+        // Calculation of the norm square of the spin for the star
+        let normspin_2_star = local_copy_star.spin.x.powi(2) + local_copy_star.spin.y.powi(2) + local_copy_star.spin.z.powi(2);
+
+        let mut sum_total_force_induced_by_rotation = Axes{x:0., y:0., z:0.};
+        for particle in self.particles[1..].iter_mut() {
+            let factor1 = K2 / particle.mass_g;
+            
+            // Calculation of the norm square of the spin for the planet
+            let normspin_2_planet = particle.spin.x.powi(2) + particle.spin.y.powi(2) + particle.spin.z.powi(2);
+
+            // - Equation 16 from Bolmont et al. 2015
+            let cpi = local_copy_star.mass_g * particle.love_number * normspin_2_planet * particle.radius.powi(5) / (6. * K2); // Msun.AU^5.day-2
+            let csi = particle.mass_g * local_copy_star.love_number * normspin_2_star * local_copy_star.radius.powi(5) / (6. * K2); // Msun.AU^5.day-2
+            //println!("cpi, csi = {:e} {:e}", cpi, csi);
+            
+            // Calculation of r scalar spin for planet
+            let rscalspin_planet = particle.position.x * particle.spin.x 
+                            + particle.position.y * particle.spin.y
+                            + particle.position.z * particle.spin.z;
+            // Calculation of r scalar spin for the star
+            let rscalspin_star = particle.position.x * local_copy_star.spin.x 
+                            + particle.position.y * local_copy_star.spin.y
+                            + particle.position.z * local_copy_star.spin.z;
+      
+            // - Equation 15 from Bolmont et al. 2015
+            let radial_component_of_the_force_induced_by_rotation = -3./particle.distance.powi(5) * (cpi + csi)
+                + 15./particle.distance.powi(7) * (csi * rscalspin_star * rscalspin_star/normspin_2_star
+                    + cpi * rscalspin_planet * rscalspin_planet/normspin_2_planet); // Msun.AU.day-1
+                
+            // - Equation 15 from Bolmont et al. 2015
+            let orthogonal_component_of_the_force_induced_by_star_rotation = -6. * csi * rscalspin_star / (normspin_2_star * particle.distance.powi(5));
+
+            // - Equation 15 from Bolmont et al. 2015
+            let orthogonal_component_of_the_force_induced_by_planet_rotation = -6. * cpi * rscalspin_planet / (normspin_2_planet * particle.distance.powi(5));
+
+            // - Equation 15 from Bolmont et al. 2015
+            let total_force_induced_by_rotation_x = radial_component_of_the_force_induced_by_rotation * particle.position.x
+                + orthogonal_component_of_the_force_induced_by_planet_rotation * particle.spin.x
+                + orthogonal_component_of_the_force_induced_by_star_rotation * local_copy_star.spin.x;
+            let total_force_induced_by_rotation_y = radial_component_of_the_force_induced_by_rotation * particle.position.y
+                + orthogonal_component_of_the_force_induced_by_planet_rotation * particle.spin.y
+                + orthogonal_component_of_the_force_induced_by_star_rotation * local_copy_star.spin.y;
+            let total_force_induced_by_rotation_z = radial_component_of_the_force_induced_by_rotation * particle.position.z
+                + orthogonal_component_of_the_force_induced_by_planet_rotation * particle.spin.z
+                + orthogonal_component_of_the_force_induced_by_star_rotation * local_copy_star.spin.z;
+            //println!("Rot force = {:e} {:e} {:e}", total_force_induced_by_rotation_x, total_force_induced_by_rotation_y, total_force_induced_by_rotation_z);
+
+            sum_total_force_induced_by_rotation.x += total_force_induced_by_rotation_x;
+            sum_total_force_induced_by_rotation.y += total_force_induced_by_rotation_y;
+            sum_total_force_induced_by_rotation.z += total_force_induced_by_rotation_z;
+              
+            // - Equation 19 from Bolmont et al. 2015 (first term)
+            particle.acceleration_induced_by_rotational_flattering.x = factor1 * total_force_induced_by_rotation_x; 
+            particle.acceleration_induced_by_rotational_flattering.y = factor1 * total_force_induced_by_rotation_y;
+            particle.acceleration_induced_by_rotational_flattering.z = factor1 * total_force_induced_by_rotation_z;
+        }
+        
+        // - Equation 19 from Bolmont et al. 2015 (second term)
+        for particle in self.particles[1..].iter_mut() {
+            particle.acceleration_induced_by_rotational_flattering.x += factor2 * sum_total_force_induced_by_rotation.x;
+            particle.acceleration_induced_by_rotational_flattering.y += factor2 * sum_total_force_induced_by_rotation.y;
+            particle.acceleration_induced_by_rotational_flattering.z += factor2 * sum_total_force_induced_by_rotation.z;
+        }
+
     }
 
     fn calculate_distance_and_velocities(&mut self) {

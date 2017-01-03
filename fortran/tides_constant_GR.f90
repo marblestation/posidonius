@@ -13,7 +13,7 @@ module tides_constant_GR
 
   !---------------------------  effects  --------------------------------------- 
   ! If you want effect of rotational induced flattening or not
-  integer, parameter :: rot_flat = 0
+  integer, parameter :: rot_flat = 1
   ! If you want General Relativity or not
   integer, parameter :: GenRel = 1
   ! If you want Tides or not
