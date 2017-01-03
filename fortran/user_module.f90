@@ -516,6 +516,7 @@ module user_module
                 ! Here I call subroutine that gives the total GR force
                 call F_GenRel (nbod,m,xh(1,j),xh(2,j),xh(3,j),vh(1,j),vh(2,j),vh(3,j) &
                      ,tintin(j),C2,j,F_GR_tot_x,F_GR_tot_y,F_GR_tot_z)
+                !write(*,*) "GR force =", F_GR_tot_x, F_GR_tot_y, F_GR_tot_z
                 ! Calculation of the acceleration     
                 a3(1,j) = tmp*F_GR_tot_x
                 a3(2,j) = tmp*F_GR_tot_y
@@ -536,6 +537,8 @@ module user_module
             a(1,j) = tides*(a1(1,j)+sum_F_tid_x)+rot_flat*(a2(1,j)+sum_F_rot_x)+GenRel*(a3(1,j)+sum_F_GR_x)
             a(2,j) = tides*(a1(2,j)+sum_F_tid_y)+rot_flat*(a2(2,j)+sum_F_rot_y)+GenRel*(a3(2,j)+sum_F_GR_y)
             a(3,j) = tides*(a1(3,j)+sum_F_tid_z)+rot_flat*(a2(3,j)+sum_F_rot_z)+GenRel*(a3(3,j)+sum_F_GR_z)
+            !write(*,*) "tidal acceleration =", a1(1,j)+sum_F_tid_x, a1(2,j)+sum_F_tid_y, a1(3,j)+sum_F_tid_z
+            !write(*,*) "GR acceleration =", a3(1,j)+sum_F_GR_x, a3(2,j)+sum_F_GR_y, a3(3,j)+sum_F_GR_z
         end do
 
         !---------------------------------------------------------------------------
@@ -1388,6 +1391,8 @@ end subroutine conversion_h2dh
       !-------------------------------------------------------------------------
       call F_GR_rad (nbod,m,xhx,xhy,xhz,vhx,vhy,vhz,GRparam,C2,j,FGR_rad)
       call F_GR_ortho (nbod,m,xhx,xhy,xhz,vhx,vhy,vhz,GRparam,C2,j,FGR_ort)
+      !write(*,*) "Radial component GR force =", FGR_rad
+      !write(*,*) "Ortho component GR force =", FGR_ort
 
       tmp  = sqrt(xhx*xhx+xhy*xhy+xhz*xhz)
       tmp1 = sqrt(vhx*vhx+vhy*vhy+vhz*vhz)

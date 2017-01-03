@@ -1,4 +1,4 @@
-use super::constants::{K2, G, N_PARTICLES};
+use super::constants::{K2, G, N_PARTICLES, TIDES, GENERAL_RELATIVITY, SPEED_OF_LIGHT_2};
 use super::integrator::IntegratorType;
 
 #[derive(Debug,Copy, Clone)]
@@ -24,6 +24,7 @@ pub struct Particle {
     //
     pub radial_velocity: f64,
     pub norm_velocity_vector: f64,
+    pub norm_velocity_vector_2: f64,
     pub distance: f64,
     // Tides
     pub orthogonal_component_of_the_tidal_force_due_to_stellar_tide: f64,
@@ -36,6 +37,9 @@ pub struct Particle {
     pub spin: Axes,
     pub dspin_dt: Axes,
     pub tidal_acceleration: Axes,
+    pub general_relativity_acceleration: Axes,
+    // General Relativity
+    pub general_relativity_factor: f64,
 }
 
 impl Particle {
@@ -43,11 +47,14 @@ impl Particle {
         let torque = Axes{x: 0., y: 0., z: 0.};
         let dspin_dt = Axes{x: 0., y: 0., z: 0.};
         let tidal_acceleration = Axes{x: 0., y: 0., z: 0.};
+        let general_relativity_acceleration = Axes{x: 0., y: 0., z: 0.};
         Particle { mass:mass, mass_g: mass*K2, radius:radius, dissipation_factor:dissipation_factor, radius_of_gyration_2:radius_of_gyration_2, love_number:love_number,
                     position:position, velocity:velocity, acceleration:acceleration, spin:spin,
-                    radial_velocity: 0., norm_velocity_vector:0., distance:0.,
+                    radial_velocity: 0., norm_velocity_vector:0., norm_velocity_vector_2:0., distance:0.,
                     orthogonal_component_of_the_tidal_force_due_to_stellar_tide:0., orthogonal_component_of_the_tidal_force_due_to_planetary_tide:0., radial_component_of_the_tidal_force:0., radial_component_of_the_tidal_force_conservative_part:0., radial_component_of_the_tidal_force_dissipative_part:0.,
-                    denergy_dt:0., torque:torque, dspin_dt:dspin_dt, tidal_acceleration:tidal_acceleration }
+                    denergy_dt:0., torque:torque, dspin_dt:dspin_dt, 
+                    tidal_acceleration:tidal_acceleration, general_relativity_acceleration:general_relativity_acceleration,
+                    general_relativity_factor: 0.}
     }
 }
 
@@ -60,15 +67,23 @@ pub struct Particles {
 }
 
 impl Particles {
-    pub fn new(particles: [Particle; N_PARTICLES], integrator_type: IntegratorType) -> Particles {
+    pub fn new(mut particles: [Particle; N_PARTICLES], integrator_type: IntegratorType) -> Particles {
         let integrator_is_whfasthelio = match integrator_type {
             IntegratorType::WHFastHelio => { true },
             _ => { false }
         };
+        if GENERAL_RELATIVITY {
+            let star_index = 0; // index
+			let local_copy_particles = particles;
+            let local_copy_star = &local_copy_particles[star_index];
+            for particle in particles[1..].iter_mut() {
+                particle.general_relativity_factor =  local_copy_star.mass_g*particle.mass_g / (local_copy_star.mass_g + particle.mass_g).powi(2)
+            }
+        }
         Particles {
-                    particles:particles,
-                    integrator_type:integrator_type,
-                    integrator_is_whfasthelio:integrator_is_whfasthelio,
+                    particles: particles,
+                    integrator_type: integrator_type,
+                    integrator_is_whfasthelio: integrator_is_whfasthelio,
                     }
     }
 
@@ -155,18 +170,31 @@ impl Particles {
         self.calculate_torque_due_to_tides(central_body);   // Needed for spin integration
         self.calculate_torque_due_to_tides(!central_body);  // Needed for spin integration
 
-        if !only_dspin_dt {
-            self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
-            self.calculate_tidal_acceleration();
-            //println!("atide   {:e} {:e} {:e}", self.particles[1].tidal_acceleration.x, self.particles[1].tidal_acceleration.y, self.particles[1].tidal_acceleration.z);
 
-            // Add the tidal acceleration to the gravitational one (already computed)
-            for particle in self.particles[1..].iter_mut() {
-                particle.acceleration.x += particle.tidal_acceleration.x;
-                particle.acceleration.y += particle.tidal_acceleration.y;
-                particle.acceleration.z += particle.tidal_acceleration.z;
+        if !only_dspin_dt {
+            if TIDES {
+                self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
+                self.calculate_tidal_acceleration();
             }
 
+            if GENERAL_RELATIVITY {
+                self.calculate_general_relativity_acceleration()
+            }
+
+            // Add the tidal+flattening+general relativity accelerations to the gravitational one (already computed)
+            for particle in self.particles[1..].iter_mut() {
+                if TIDES {
+                    particle.acceleration.x += particle.tidal_acceleration.x;
+                    particle.acceleration.y += particle.tidal_acceleration.y;
+                    particle.acceleration.z += particle.tidal_acceleration.z;
+                }
+
+                if GENERAL_RELATIVITY {
+                    particle.acceleration.x += particle.general_relativity_acceleration.x;
+                    particle.acceleration.y += particle.general_relativity_acceleration.y;
+                    particle.acceleration.z += particle.general_relativity_acceleration.z;
+                }
+            }
         } 
         //else {
             //self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
@@ -216,7 +244,7 @@ impl Particles {
             //}
 
             //// Torque calculation (star)
-            // - Equation 10 in Bolmont et al. 2015
+            // - Equation 8-9 from Bolmont et al. 2015
             let n_tid_x: f64 = orthogonal_component_of_the_tidal_force * (distance * local_copy_particle_as_ref_spin.spin.x - rscalspin*particle.position.x/distance - 1.0/distance
                             * (particle.position.y*particle.velocity.z - particle.position.z*particle.velocity.y) );
 
@@ -288,7 +316,7 @@ impl Particles {
             let distance_7 = particle.distance.powi(7);
 
             //// Tidal force calculation (star) :: Only orthogonal component is needed
-            // - Equation 6 from Bolmont et al. 2015
+            // - Equation 5 from Bolmont et al. 2015
             // - Ftides in Msun.AU.day-1
             if central_body {
                 // - F_tides_ortho_star
@@ -383,19 +411,18 @@ impl Particles {
 
 
     fn calculate_tidal_acceleration(&mut self) {
-        //// acc_tides
 		let local_copy_particles = self.particles;
         let star_index = 0;
         let local_copy_star = &local_copy_particles[star_index];
+        let factor2 = K2 / local_copy_star.mass_g;
+        //let factor2 = 1 / local_copy_star.mass;
 
+        let mut sum_total_tidal_force = Axes{x:0., y:0., z:0.};
         for particle in self.particles[1..].iter_mut() {
             let factor1 = K2 / particle.mass_g;
             //let factor1 = 1. / particle.mass;
-            let factor2 = K2 / local_copy_star.mass_g;
-            //let factor2 = 1 / local_copy_star.mass;
-            let factor0 = factor1+factor2;
 
-
+            // - Equation 6 from Bolmont et al. 2015
             let factor3 = particle.radial_component_of_the_tidal_force
                             + (particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide + particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide) * particle.radial_velocity / particle.distance;
             let total_tidal_force_x = factor3 * particle.position.x / particle.distance
@@ -417,13 +444,81 @@ impl Particles {
             //println!("d {:e} vrad {:e}", particle.distance, particle.radial_velocity);
             //println!("total {:e} {:e} {:e}", total_tidal_force_x, total_tidal_force_y, total_tidal_force_z);
 
-            particle.tidal_acceleration.x = factor0 * total_tidal_force_x; 
-            particle.tidal_acceleration.y = factor0 * total_tidal_force_y;
-            particle.tidal_acceleration.z = factor0 * total_tidal_force_z;
+            sum_total_tidal_force.x += total_tidal_force_x;
+            sum_total_tidal_force.y += total_tidal_force_y;
+            sum_total_tidal_force.z += total_tidal_force_z;
+
+            // - Equation 19 from Bolmont et al. 2015 (first term)
+            particle.tidal_acceleration.x = factor1 * total_tidal_force_x; 
+            particle.tidal_acceleration.y = factor1 * total_tidal_force_y;
+            particle.tidal_acceleration.z = factor1 * total_tidal_force_z;
         }
+        
+        // - Equation 19 from Bolmont et al. 2015 (second term)
+        for particle in self.particles[1..].iter_mut() {
+            particle.tidal_acceleration.x += factor2 * sum_total_tidal_force.x;
+            particle.tidal_acceleration.y += factor2 * sum_total_tidal_force.y;
+            particle.tidal_acceleration.z += factor2 * sum_total_tidal_force.z;
+        }
+    }
 
-     }
+    fn calculate_general_relativity_acceleration(&mut self) {
+		let local_copy_particles = self.particles;
+        let star_index = 0;
+        let local_copy_star = &local_copy_particles[star_index];
+        let factor2 = K2 / local_copy_star.mass_g;
+        //let factor2 = 1 / local_copy_star.mass;
 
+        let mut sum_total_general_relativity_force = Axes{x:0., y:0., z:0.};
+        for particle in self.particles[1..].iter_mut() {
+            let factor1 = K2 / particle.mass_g;
+            //let factor1 = 1. / particle.mass;
+
+            // Radial part of the GR force (Kidder 1995, Mardling & Lin 2002)
+            // - Equation 11 from Bolmont et al. 2015
+            let star_planet_mass_g = local_copy_star.mass_g + particle.mass_g;
+            let distance_2 = particle.distance.powi(2);
+            let radial_velocity_2 = particle.radial_velocity.powi(2);
+            let radial_component_of_the_general_relativity_force = -star_planet_mass_g / (distance_2 * SPEED_OF_LIGHT_2)
+                * ( (1.0 + 3.0 * particle.general_relativity_factor) * particle.norm_velocity_vector_2
+                -2.0 * (2.0 + particle.general_relativity_factor) * star_planet_mass_g/particle.distance
+                -1.5 * particle.general_relativity_factor * radial_velocity_2);
+            //println!("Radial component GR force {:e}", radial_component_of_the_general_relativity_force);
+            // Orthoradial part of the GR force
+            // - Equation 11 from Bolmont et al. 2015
+            let orthogonal_component_of_the_general_relativity_force = star_planet_mass_g / (distance_2 * SPEED_OF_LIGHT_2)
+                * 2.0 * (2.0 - particle.general_relativity_factor) * particle.radial_velocity * particle.norm_velocity_vector;
+            //println!("Ortho component GR force {:e}", orthogonal_component_of_the_general_relativity_force);
+            // Total General Relativity force
+            // - Equation 10 from Bolmont et al. 2015
+            let total_general_relativity_force_x = particle.mass_g 
+                    * (radial_component_of_the_general_relativity_force * particle.position.x / particle.norm_velocity_vector 
+                    + orthogonal_component_of_the_general_relativity_force * particle.velocity.x / particle.distance);
+            let total_general_relativity_force_y = particle.mass_g 
+                    * (radial_component_of_the_general_relativity_force * particle.position.y / particle.norm_velocity_vector
+                    + orthogonal_component_of_the_general_relativity_force * particle.velocity.y / particle.distance);
+            let total_general_relativity_force_z = particle.mass_g 
+                    * (radial_component_of_the_general_relativity_force * particle.position.z / particle.norm_velocity_vector
+                    + orthogonal_component_of_the_general_relativity_force * particle.velocity.z / particle.distance);
+            
+            sum_total_general_relativity_force.x += total_general_relativity_force_x;
+            sum_total_general_relativity_force.y += total_general_relativity_force_y;
+            sum_total_general_relativity_force.z += total_general_relativity_force_z;
+
+            // - Equation 19 from Bolmont et al. 2015 (first term)
+            particle.general_relativity_acceleration.x = factor1 * total_general_relativity_force_x;
+            particle.general_relativity_acceleration.y = factor1 * total_general_relativity_force_y;
+            particle.general_relativity_acceleration.z = factor1 * total_general_relativity_force_z;
+            //println!("GR force {:e} {:e} {:e}", total_general_relativity_force_x, total_general_relativity_force_y, total_general_relativity_force_z);
+        }
+        
+        // - Equation 19 from Bolmont et al. 2015 (second term)
+        for particle in self.particles[1..].iter_mut() {
+            particle.general_relativity_acceleration.x += factor2 * sum_total_general_relativity_force.x;
+            particle.general_relativity_acceleration.y += factor2 * sum_total_general_relativity_force.y;
+            particle.general_relativity_acceleration.z += factor2 * sum_total_general_relativity_force.z;
+        }
+    }
 
     fn calculate_distance_and_velocities(&mut self) {
         // Calculation of velocity vv(j), radial velocity vrad(j)
@@ -434,6 +529,7 @@ impl Particles {
                                 + (particle.velocity.y.powi(2))
                                 + (particle.velocity.z.powi(2));
             let norm_vel = v_2.sqrt();
+            particle.norm_velocity_vector_2 = v_2;
             particle.norm_velocity_vector = norm_vel;
 
             // (distance to star)^2

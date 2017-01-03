@@ -56,6 +56,7 @@ program mercury
     !---- Simulation
     time_step = 0.08d0 ! in days
     time_limit = 365.25d0 * 1.d8
+    !time_limit = time_step*4.
     output_tmp = output
     !------------------------------------------------------------------------------
 

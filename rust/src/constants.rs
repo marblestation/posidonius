@@ -13,9 +13,9 @@ pub const PRINT_EVERY_N_DAYS: f64 = 100.*365.25;
 
 
 //// Integrator
-//pub const INTEGRATOR: IntegratorType = IntegratorType::LeapFrog;
+pub const INTEGRATOR: IntegratorType = IntegratorType::LeapFrog;
 //pub const INTEGRATOR: IntegratorType = IntegratorType::Ias15;
-pub const INTEGRATOR: IntegratorType = IntegratorType::WHFastHelio;
+//pub const INTEGRATOR: IntegratorType = IntegratorType::WHFastHelio;
 
 //// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).
@@ -44,3 +44,11 @@ pub const DEG2RAD : f64 = std::f64::consts::PI / 180.; // conversion factor from
 pub const R_SUN : f64 = 4.67920694e-3;  // AU
 pub const R_EARTH : f64 = 4.25874677e-5; // AU
 pub const M2EARTH : f64 = (1.9891e6/5.9794); // Factor for mass-radius relation (valid only for earth type planets)
+
+// Speed of light in AU/day
+pub const SPEED_OF_LIGHT : f64 = 173.1444830225;
+pub const SPEED_OF_LIGHT_2 : f64 = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
+
+//// Others
+pub const TIDES: bool = true;
+pub const GENERAL_RELATIVITY: bool = true;
