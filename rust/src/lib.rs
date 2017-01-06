@@ -3,19 +3,16 @@ extern crate rand;
 
 pub mod constants;
 
-mod particle;
-pub use self::particle::Particles;
-pub use self::particle::Particle;
-pub use self::particle::Axes;
+mod particles;
+pub use self::particles::Universe;
+pub use self::particles::Particle;
+pub use self::particles::Axes;
+pub use self::particles::Evolver;
+pub use self::particles::EvolutionType;
 
 mod integrator;
 pub use self::integrator::*;
 
 pub mod tools;
 
-mod evolver;
-pub use self::evolver::Evolver;
-pub use self::evolver::EvolutionType;
-
-
-
+pub mod cases;

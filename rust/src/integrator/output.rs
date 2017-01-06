@@ -1,10 +1,10 @@
 extern crate bincode;
 use std::io::{Write, BufWriter};
-use super::super::particle::Particles;
+use super::super::particles::Universe;
 use super::super::tools::calculate_keplerian_orbital_elements;
 
 
-pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, universe: &Particles, current_time: f64, time_step: f64) {
+pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, universe: &Universe, current_time: f64, time_step: f64) {
     // It can be excessively inefficient to work directly with something that implements Write. For
     // example, every call to write on File results in a system call. A BufWriter keeps an
     // in-memory buffer of data and writes it to an underlying writer in large, infrequent batches.

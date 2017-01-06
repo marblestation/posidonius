@@ -1,6 +1,6 @@
 use std;
 use super::constants::*;
-use super::particle::Axes;
+use super::particles::Axes;
 
 pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: Axes) -> (f64, f64, f64, f64, f64, f64, f64) {
     // ! Based on the implementation of Chambers in Mercury

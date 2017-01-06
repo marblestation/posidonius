@@ -2,7 +2,7 @@ use std;
 use std::io::{Write, BufWriter};
 use super::Integrator;
 use super::super::constants::PRINT_EVERY_N_DAYS;
-use super::super::particle::Particles;
+use super::super::particles::Universe;
 use super::output::{write_bin_snapshot};
 
 /// LeapFrog is a second order symplectic integrator
@@ -33,7 +33,7 @@ pub struct LeapFrog {
     time_step: f64,
     half_time_step: f64,
     time_limit: f64,
-    universe: Particles,
+    universe: Universe,
     current_time: f64,
     current_iteration: u32,
     last_print_time: f64,
@@ -41,13 +41,13 @@ pub struct LeapFrog {
 
 impl Integrator for LeapFrog {
 
-    fn new(time_step: f64, time_limit: f64, particles: Particles) -> LeapFrog {
+    fn new(time_step: f64, time_limit: f64, universe: Universe) -> LeapFrog {
         LeapFrog {
                     time_step:time_step,
                     half_time_step:0.5*time_step,
                     time_limit:time_limit,
                     last_print_time:-1.,
-                    universe:particles,
+                    universe:universe,
                     current_time:0.,
                     current_iteration:0,
                     }

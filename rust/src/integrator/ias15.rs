@@ -2,7 +2,7 @@ use std;
 use std::io::{Write, BufWriter};
 use super::Integrator;
 use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
-use super::super::particle::Particles;
+use super::super::particles::Universe;
 use super::output::{write_bin_snapshot};
 
 ///https://arxiv.org/abs/1409.4779
@@ -16,7 +16,7 @@ use super::output::{write_bin_snapshot};
 pub struct Ias15 {
     time_step: f64,
     time_limit: f64,
-    universe: Particles,
+    universe: Universe,
     current_time: f64,
     current_iteration: u32,
     last_print_time: f64,
@@ -40,12 +40,12 @@ pub struct Ias15 {
 
 impl Integrator for Ias15 {
 
-    fn new(time_step: f64, time_limit: f64, particles: Particles) -> Ias15 {
+    fn new(time_step: f64, time_limit: f64, universe: Universe) -> Ias15 {
         Ias15 {
                     time_step:time_step,
                     time_limit:time_limit,
                     last_print_time: -1.,
-                    universe:particles,
+                    universe:universe,
                     current_time:0.,
                     current_iteration:0,
                     integrator_iterations_max_exceeded:0,

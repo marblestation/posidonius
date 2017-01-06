@@ -7,7 +7,7 @@ pub use self::leapfrog::*;
 pub use self::ias15::*;
 pub use self::whfasthelio::*;
 
-use super::particle::Particles;
+use super::particles::Universe;
 use std::io::{Write, BufWriter};
 
 #[derive(Debug,Copy, Clone)]
@@ -18,6 +18,6 @@ pub enum IntegratorType {
 }
 
 pub trait Integrator {
-    fn new(time_step: f64, time_limit: f64, particles: Particles) -> Self;
+    fn new(time_step: f64, time_limit: f64, universe: Universe) -> Self;
     fn iterate<T: Write>(&mut self, output_bin: &mut BufWriter<T>) -> Result<(), String>;
 }

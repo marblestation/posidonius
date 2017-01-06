@@ -2,10 +2,10 @@ use std;
 use std::io::{Write, BufWriter};
 use super::Integrator;
 use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT};
-use super::super::particle::Particles;
-use super::super::particle::Particle;
-use super::super::particle::Axes;
-use super::super::evolver::EvolutionType;
+use super::super::particles::Universe;
+use super::super::particles::Particle;
+use super::super::particles::Axes;
+use super::super::particles::EvolutionType;
 use super::output::{write_bin_snapshot};
 
 /// WHFastHelio (symplectic integrator) to be used always in safe mode (always sync because it is required by tides)
@@ -91,7 +91,7 @@ pub struct WHFastHelio {
     time_step: f64,
     half_time_step: f64,
     time_limit: f64,
-    universe: Particles,
+    universe: Universe,
     current_time: f64,
     current_iteration: usize,
     last_print_time: f64,
@@ -127,7 +127,7 @@ pub struct WHFastHelio {
      * It is automatically filled and updated by WHfastDemocratic.
      * Access this array with caution.
      */
-    universe_heliocentric: Particles,
+    universe_heliocentric: Universe,
 
     /**
      * @cond PRIVATE
@@ -143,20 +143,20 @@ pub struct WHFastHelio {
 
 impl Integrator for WHFastHelio {
 
-    fn new(time_step: f64, time_limit: f64, particles: Particles) -> WHFastHelio {
+    fn new(time_step: f64, time_limit: f64, universe: Universe) -> WHFastHelio {
         WHFastHelio {
                     time_step:time_step,
                     half_time_step:0.5*time_step,
                     time_limit:time_limit,
                     last_print_time:-1.,
-                    universe:particles.clone(),
+                    universe:universe.clone(),
                     current_time:0.,
                     current_iteration:0,
                     // WHFastHelio specifics:
                     corrector: 0, 
                     recalculate_heliocentric_this_timestep: true,
                     safe_mode: true,
-                    universe_heliocentric: particles,
+                    universe_heliocentric: universe,
                     is_synchronized: true,
                     recalculate_heliocentric_but_not_synchronized_warning: 0,
                     timestep_warning: 0,

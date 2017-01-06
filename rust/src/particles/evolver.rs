@@ -1,6 +1,6 @@
-use super::constants::{R_SUN, M2AU, INITIAL_TIME, TIME_LIMIT};
-use super::tools::{interpolate_b_spline};
-use super::{csv};
+use super::super::constants::{R_SUN, M2AU, INITIAL_TIME, TIME_LIMIT};
+use super::super::tools::{interpolate_b_spline};
+use super::super::{csv};
 
 #[derive(Debug, Copy, Clone)]
 pub enum SolarEvolutionType {
@@ -109,9 +109,8 @@ impl Evolver {
                 String::from("input/data_host_body/Empty.dat")
             }
         };
-
+        //println!("Filename {}", filename);
         
-        println!("Filename {}", filename);
         let mut rdr = csv::Reader::from_file(filename).unwrap().has_headers(false).delimiter(b' ').flexible(true);
         for row in rdr.records().map(|r| r.unwrap()) {
             let raw_time = row[0].parse::<f64>().unwrap();
