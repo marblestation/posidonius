@@ -84,7 +84,7 @@ impl Integrator for Ias15 {
         self.universe.gravity_calculate_acceleration();
         // Calculate non-gravity accelerations.
         let only_dspin_dt = false;
-        self.universe.calculate_additional_forces(only_dspin_dt);
+        self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
 
         self.integrator();
         self.current_iteration += 1;
@@ -272,7 +272,7 @@ impl Ias15 {
                     self.universe.gravity_calculate_acceleration();
                     // Calculate non-gravity accelerations.
                     let only_dspin_dt = false;
-                    self.universe.calculate_additional_forces(only_dspin_dt);
+                    self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
 
                     for (k, particle) in self.universe.particles.iter().enumerate() {
                         self.at[3*k]   = particle.acceleration.x;

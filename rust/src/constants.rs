@@ -2,7 +2,7 @@ use std;
 use super::integrator::IntegratorType;
 
 //// Simulation
-pub const N_PARTICLES: usize = 2;
+pub const N_PARTICLES: usize = 2; // required by IAS15
 pub const TIME_STEP: f64 = 0.08; // in days
 //pub const TIME_STEP: f64 = 0.003; // in days
 //pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;
@@ -10,7 +10,8 @@ pub const TIME_STEP: f64 = 0.08; // in days
 pub const TIME_LIMIT: f64 = TIME_STEP*4.;
 pub const PRINT_EVERY_N_DAYS: f64 = 100.*365.25;
 //pub const PRINT_EVERY_N_DAYS: f64 = TIME_STEP;
-
+pub const INITIAL_TIME: f64 = 1.0e6*365.25; // time [days] where simulation starts
+//pub const INITIAL_TIME: f64 = 2.5e6*365.25; // time [days] where simulation starts (value for SolarLike or MathisSolarLike)
 
 //// Integrator
 pub const INTEGRATOR: IntegratorType = IntegratorType::LeapFrog;
@@ -39,9 +40,11 @@ pub const G  : f64 = K2;  // Gravitational constant
 pub const PI : f64 = std::f64::consts::PI;
 pub const TWO_PI : f64 = std::f64::consts::PI * 2.;
 pub const DEG2RAD : f64 = std::f64::consts::PI / 180.; // conversion factor from degrees to radians
+pub const M2AU  : f64 = 6.684587153547e-12; // 1 meter in AU
 
 // Solar system
 pub const R_SUN : f64 = 4.67920694e-3;  // AU
+pub const SUN_DYN_FREQ : f64 = K2/(R_SUN*R_SUN*R_SUN); // Needed for MathisSolarLike
 pub const R_EARTH : f64 = 4.25874677e-5; // AU
 pub const M2EARTH : f64 = (1.9891e6/5.9794); // Factor for mass-radius relation (valid only for earth type planets)
 
@@ -53,3 +56,5 @@ pub const SPEED_OF_LIGHT_2 : f64 = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
 pub const TIDES: bool = true;
 pub const ROTATIONAL_FLATTENING: bool = true;
 pub const GENERAL_RELATIVITY: bool = true;
+
+

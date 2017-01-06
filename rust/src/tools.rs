@@ -682,3 +682,108 @@ fn modulus(a: f64, b: f64) -> f64 {
     return a - (a / b).floor() * b;
 }
 
+pub fn interpolate_b_spline(tdata: &Vec<f64>, ydata: &Vec<f64>, tval: f64) -> f64 {
+    // Based on: 
+    //
+    //    SPLINE_B_VAL evaluates a cubic B spline approximant.
+    //
+    //  Discussion:
+    //
+    //    The cubic B spline will approximate the data, but is not
+    //    designed to interpolate it.
+    //
+    //    In effect, two "phantom" data values are appended to the data,
+    //    so that the spline will interpolate the first and last data values.
+    //
+    //  Licensing:
+    //
+    //    This code is distributed under the GNU LGPL license.
+    //
+    //  Modified:
+    //
+    //    14 August 2005
+    //
+    //  Author:
+    //
+    //    John Burkardt
+    //
+    //  Reference:
+    //
+    //    Carl de Boor,
+    //    A Practical Guide to Splines,
+    //    Springer Verlag, 1978.
+
+    let mut yval : f64 = 0.;
+    
+    // Find the nearest interval [ TDATA(LEFT), TDATA(RIGHT) ] to TVAL.
+    let (left, right) = find_indices_around_target_value(&tdata, tval);
+
+    if left == right {
+        // Target value out of range, use limit values
+        yval = ydata[left];
+    } else {
+        // Evaluate the 5 nonzero B spline basis functions in the interval,
+        // weighted by their corresponding data values.
+        let u = (tval - tdata[left]) / (tdata[right] - tdata[left]);
+        
+        // B function associated with node LEFT - 1, (or "phantom node"),
+        // evaluated in its 4th interval.
+        let bval = ( 1.0 - 3.0 * u + 3.0 * u.powi(2) - u.powi(3) ) / 6.0;
+        if left > 0 {
+           yval = yval + ydata[left - 1] * bval;
+        } else {
+           yval = yval + ( 2.0 * ydata[0] - ydata[1] ) * bval;
+        }
+        
+        // B function associated with node LEFT,
+        // evaluated in its third interval.
+        let bval = ( 4.0 - 6.0 * u.powi(2) + 3.0 * u.powi(3) ) / 6.0;
+        yval = yval + ydata[left] * bval;
+        
+        // B function associated with node RIGHT,
+        // evaluated in its second interval.
+        let bval = ( 1.0 + 3.0 * u + 3.0 * u.powi(2) - 3.0 * u.powi(3) ) / 6.0;
+        yval = yval + ydata[right] * bval;
+        
+        // B function associated with node RIGHT+1, (or "phantom node"),
+        // evaluated in its first interval.
+        let bval = u.powi(3) / 6.0;
+        let ndata = ydata.len();
+        if right + 1 < ndata {
+           yval = yval + ydata[right + 1] * bval;
+        } else if ndata >= 2 {
+           yval = yval + ( 2.0 * ydata[ndata - 1] - ydata[ndata - 2] ) * bval;
+        }
+
+    }
+
+    return yval;
+}
+
+fn find_indices_around_target_value(data: &Vec<f64>, target_value: f64) -> (usize, usize) {
+    // Find the nearest interval [ x(LEFT), x(RIGHT) ] to XVAL.
+    let ndata = data.len();
+    let last_idx = ndata.wrapping_sub(1);
+    let (left_idx, right_right) = match data.iter().position(|&r| r > target_value) {
+        None => {
+                    if data[last_idx] > target_value {
+                        (0, 0)
+                    } else {
+                        (last_idx, last_idx)
+                    }
+                }
+        Some(i) => {
+                if i == 0 {
+                    (0, 0)
+                } else if i == ndata { 
+                    (last_idx, last_idx)
+                } else {
+                    (i-1, i)
+                }
+            },
+    };
+    return (left_idx, right_right)
+}
+
+
+

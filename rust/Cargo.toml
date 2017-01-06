@@ -17,3 +17,5 @@ debug = false
 [dependencies]
 time = "*"
 bincode = "*"
+csv = "*"
+rand = "*"

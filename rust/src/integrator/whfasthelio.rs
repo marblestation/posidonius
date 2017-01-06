@@ -5,10 +5,22 @@ use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_
 use super::super::particle::Particles;
 use super::super::particle::Particle;
 use super::super::particle::Axes;
+use super::super::evolver::EvolutionType;
 use super::output::{write_bin_snapshot};
 
 /// WHFastHelio (symplectic integrator) to be used always in safe mode (always sync because it is required by tides)
 /// and without correction (i.e. 2nd order integrator, comparable to mercury symplectic part of the hybrid integrator)
+///
+/// "The original WHFast algorithm described in Rein & Tamayo
+/// (2015) was implemented in Jacobi coordinates. Jacobi coordinates
+/// lead to a better precision compared to heliocentric
+/// coordinates if orbits are well separated and do not cross each
+/// other. If close encounter occur, then heliocentric coordinates
+/// can help improve the integrator’s accuracy. For that reason we
+/// implemented a heliocentric version of WHFast in REBOUND. We
+/// call it WHFastHelio"
+/// Source: HERMES: a hybrid integrator for simulating close encounters and planetesimal migration
+///         Ari Silburt, Hanno Rein & Dan Tamayo
 ///
 ///  https://en.wikipedia.org/wiki/N-body_problem#Few_bodies
 ///  for N > 2, the N-body problem is chaotic,[37] which means that even small errors in
@@ -137,7 +149,7 @@ impl Integrator for WHFastHelio {
                     half_time_step:0.5*time_step,
                     time_limit:time_limit,
                     last_print_time:-1.,
-                    universe:particles,
+                    universe:particles.clone(),
                     current_time:0.,
                     current_iteration:0,
                     // WHFastHelio specifics:
@@ -175,7 +187,7 @@ impl Integrator for WHFastHelio {
             self.move_to_star_center();
         }
         let only_dspin_dt = true;
-        self.universe.calculate_additional_forces(only_dspin_dt);
+        self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
         
         // A 'DKD'-like integrator will do the first 'D' part.
         if !self.set_to_center_of_mass {
@@ -191,7 +203,7 @@ impl Integrator for WHFastHelio {
             self.move_to_star_center();
         }
         let only_dspin_dt = false;
-        self.universe.calculate_additional_forces(only_dspin_dt);
+        self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
 
         // A 'DKD'-like integrator will do the 'KD' part.
         if !self.set_to_center_of_mass {
@@ -341,7 +353,7 @@ impl WHFastHelio {
             true => self.half_time_step,
             false => self.time_step
         };
-        let p1 = self.universe_heliocentric.particles[i];
+        let p1 = self.universe_heliocentric.particles[i].clone();
 
         let r0 = (p1.position.x.powi(2) + p1.position.y.powi(2) + p1.position.z.powi(2)).sqrt();
         let r0i = 1./r0;
@@ -564,8 +576,8 @@ impl WHFastHelio {
             star_heliocentric.velocity.y /= star_heliocentric.mass;
             star_heliocentric.velocity.z /= star_heliocentric.mass;
         }
-        let local_copy_star = self.universe.particles[0];
-        let local_copy_star_heliocentric = self.universe_heliocentric.particles[0];
+        let local_copy_star = self.universe.particles[0].clone();
+        let local_copy_star_heliocentric = self.universe_heliocentric.particles[0].clone();
         for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..].iter_mut().zip(self.universe.particles[1..].iter()) {
             particle_heliocentric.position.x  = particle.position.x  - local_copy_star.position.x ; 
             particle_heliocentric.position.y  = particle.position.y  - local_copy_star.position.y ;
@@ -591,7 +603,7 @@ impl WHFastHelio {
             star.position.y  = new_star_position.y;
             star.position.z  = new_star_position.z;
         }
-        let local_copy_star = self.universe.particles[0];
+        let local_copy_star = self.universe.particles[0].clone();
         for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..].iter().zip(self.universe.particles[1..].iter_mut()) {
             particle.position.x = particle_heliocentric.position.x+local_copy_star.position.x;
             particle.position.y = particle_heliocentric.position.y+local_copy_star.position.y;
@@ -603,7 +615,7 @@ impl WHFastHelio {
         let mtot = self.universe_heliocentric.particles[0].mass;
         let m0 = self.universe.particles[0].mass;
         let factor = mtot/m0;
-        let local_copy_star_heliocentric = self.universe_heliocentric.particles[0];
+        let local_copy_star_heliocentric = self.universe_heliocentric.particles[0].clone();
         for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..].iter().zip(self.universe.particles[1..].iter_mut()) {
             particle.velocity.x = particle_heliocentric.velocity.x+local_copy_star_heliocentric.velocity.x;
             particle.velocity.y = particle_heliocentric.velocity.y+local_copy_star_heliocentric.velocity.y;
@@ -666,14 +678,16 @@ impl WHFastHelio {
         let mass = 0.;
         let radius = 0.;
         let dissipation_factor = 0.;
+        let dissipation_factor_scale = 0.;
         let radius_of_gyration_2 = 0.;
         let love_number = 0.;
+        let fluid_love_number = 0.;
         let position = Axes{x:0., y:0., z:0. };
         let velocity = Axes{x:0., y:0., z:0. };
         let acceleration = Axes{x:0., y:0., z:0. };
         let spin = Axes{x:0., y:0., z:0. };
-        let mut center_of_mass = Particle::new(mass, radius, dissipation_factor, radius_of_gyration_2, love_number,
-                                                position, velocity, acceleration, spin);
+        let mut center_of_mass = Particle::new(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number,
+                                                position, velocity, acceleration, spin, EvolutionType::NonEvolving);
 
         for particle in self.universe.particles.iter() {
             self.get_center_of_mass_of_pair(&mut center_of_mass, &particle);
@@ -702,7 +716,7 @@ impl WHFastHelio {
         if !self.is_synchronized {
             panic!("Non synchronized particles cannot be moved to star center.")
         }
-        let center = self.universe.particles[0];
+        let center = self.universe.particles[0].clone();
         for particle in self.universe.particles[0..].iter_mut() {
             particle.position.x  -= center.position.x;
             particle.position.y  -= center.position.y;

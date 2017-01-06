@@ -46,8 +46,6 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, universe: &Pa
                         particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide,
                         particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide,
                         particle.radial_component_of_the_tidal_force,
-                        particle.radial_component_of_the_tidal_force_conservative_part,
-                        particle.radial_component_of_the_tidal_force_dissipative_part,
                         particle.tidal_acceleration.x,          // AU^2/days
                         particle.tidal_acceleration.y,
                         particle.tidal_acceleration.z,
@@ -105,7 +103,7 @@ pub fn write_bin_snapshot<T: Write>(output_bin: &mut BufWriter<T>, universe: &Pa
                         particle.mass,                          // Msun
                         particle.radius,                        // Rsun
                         particle.radius_of_gyration_2,
-                        particle.dissipation_factor,
+                        particle.scaled_dissipation_factor,
                         particle.love_number
                     );
         bincode::rustc_serialize::encode_into(&output, output_bin, bincode::SizeLimit::Infinite).unwrap();

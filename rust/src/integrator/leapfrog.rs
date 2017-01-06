@@ -70,7 +70,7 @@ impl Integrator for LeapFrog {
 
         // Calculate non-gravity accelerations.
         let only_dspin_dt = true;
-        self.universe.calculate_additional_forces(only_dspin_dt);
+        self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
 
         // A 'DKD'-like integrator will do the first 'D' part.
         self.integrator_part1();
@@ -80,7 +80,7 @@ impl Integrator for LeapFrog {
 
         // Calculate non-gravity accelerations.
         let only_dspin_dt = false;
-        self.universe.calculate_additional_forces(only_dspin_dt);
+        self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
 
         // A 'DKD'-like integrator will do the 'KD' part.
         self.integrator_part2();

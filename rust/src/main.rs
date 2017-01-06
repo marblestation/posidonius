@@ -11,6 +11,7 @@ use std::io::{BufWriter};
 use posidonius::Integrator;
 
 
+
 fn main() {
     let t1 = time::precise_time_s();
     //timer::sleep(Duration::milliseconds(1000));
@@ -26,12 +27,13 @@ fn main() {
     let star_radius: f64 = radius_factor * posidonius::constants::R_SUN;
     let star_love_number: f64 = 0.307; // M Dwarf
     //let star_love_number: f64 = 0.03;  // Sun
+    let star_fluid_love_number: f64 = star_love_number;
     ////// Disipation factor (sigma)
     let star_dissipation_factor_scale: f64 = 1.;
     //// Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
-    //let star_dissipation_factor: f64 = star_dissipation_factor_scale * 4.992*3.845764e-2; // -66+64
+    //let star_dissipation_factor: f64 = 4.992*3.845764e-2; // -66+64
     // BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
-    let star_dissipation_factor: f64 = star_dissipation_factor_scale * 2.006*3.845764e4; // -60+64
+    let star_dissipation_factor: f64 = 2.006*3.845764e4; // -60+64
     ////// Radius of gyration
     //let star_radius_of_gyration_2: f64 = 5.9e-2; // Sun
     //let star_radius_of_gyration_2: f64 = 2.0e-1; // M-dwarf
@@ -45,8 +47,16 @@ fn main() {
     let star_spin0 = posidonius::constants::TWO_PI/(star_rotation_period/24.); // days^-1
     let star_spin = posidonius::Axes{x:0., y:0., z:star_spin0 };
 
-    let star = posidonius::Particle::new(star_mass, star_radius, star_dissipation_factor, star_radius_of_gyration_2, star_love_number,
-                                            star_position, star_velocity, star_acceleration, star_spin);
+    //let stellar_evolution_type = posidonius::EvolutionType::BrownDwarf(star_mass);
+    //let stellar_evolution_type = posidonius::EvolutionType::MDwarf;
+    //let stellar_evolution_type = posidonius::EvolutionType::SolarLike(posidonius::SolarEvolutionType::ConstantDissipation);
+    //let stellar_evolution_type = posidonius::EvolutionType::SolarLike(posidonius::SolarEvolutionType::EvolvingDissipation(star_mass));
+    //let star_mass = 1.0;
+    //let stellar_evolution_type = posidonius::EvolutionType::Jupiter;
+    let stellar_evolution_type = posidonius::EvolutionType::NonEvolving;
+    let star = posidonius::Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
+                                            star_love_number, star_fluid_love_number,
+                                            star_position, star_velocity, star_acceleration, star_spin, stellar_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
 
@@ -65,13 +75,14 @@ fn main() {
     let planet_radius: f64 = planet_radius_factor * posidonius::constants::R_EARTH;
     let planet_love_number: f64 = 0.305; // Earth
     //let planet_love_number: f64 = 0.38; // Gas
+    let planet_fluid_love_number: f64 = planet_love_number;
     ////// Disipation factor (sigma)
     let planet_dissipation_factor_scale: f64 = 1.;
     //// Hot Gas Giant:
-    //let planet_dissipation_factor: f64 = planet_dissipation_factor_scale * 2.006*3.845764d4;
+    //let planet_dissipation_factor: f64 = 2.006*3.845764d4;
     //// Terrestrial:
     let k2pdelta: f64 = 2.465278e-3; // Terrestrial planets (no gas)
-    let planet_dissipation_factor: f64 = planet_dissipation_factor_scale * 2. * posidonius::constants::K2 * k2pdelta/(3. * planet_radius.powi(5));
+    let planet_dissipation_factor: f64 = 2. * posidonius::constants::K2 * k2pdelta/(3. * planet_radius.powi(5));
     ////// Radius of gyration
     let planet_radius_of_gyration_2: f64 = 3.308e-1; // Earth type planet
     //let planet_radius_of_gyration_2: f64 = 2.54e-1; // Gas planet
@@ -151,14 +162,16 @@ fn main() {
         planet_spin.z = planet_spin0 * (planet_obliquity+inclination).cos();
     }
 
-    let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_radius_of_gyration_2, planet_love_number,
-                                            planet_position, planet_velocity, planet_acceleration, planet_spin);
+    //let planetary_evolution_type = posidonius::EvolutionType::Jupiter;
+    let planetary_evolution_type = posidonius::EvolutionType::NonEvolving;
+    let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
+                                            planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
+                                            planet_position, planet_velocity, planet_acceleration, planet_spin, planetary_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
 
 
-    //let particles_tmp : [posidonius::Particle; posidonius::N_PARTICLES] = [star, planet];
-    let particles = posidonius::Particles::new([star, planet], posidonius::constants::INTEGRATOR);
+    let particles = posidonius::Particles::new(vec![star, planet], posidonius::constants::INTEGRATOR);
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -176,9 +189,9 @@ fn main() {
     ////////////////////////////////////////////////////////////////////////////
 
     // TODO: Improve (dynamic dispatching?)
-    let mut leapfrog = posidonius::LeapFrog::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
-    let mut ias15 = posidonius::Ias15::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
-    let mut whfasthelio = posidonius::WHFastHelio::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles);
+    let mut leapfrog = posidonius::LeapFrog::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles.clone());
+    let mut ias15 = posidonius::Ias15::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles.clone());
+    let mut whfasthelio = posidonius::WHFastHelio::new(posidonius::constants::TIME_STEP, posidonius::constants::TIME_LIMIT, particles.clone());
 
     loop {
         match posidonius::constants::INTEGRATOR {
