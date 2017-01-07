@@ -2,7 +2,6 @@ use std;
 use super::integrator::IntegratorType;
 
 //// Simulation
-pub const N_PARTICLES: usize = 2; // required by IAS15
 pub const TIME_STEP: f64 = 0.08; // in days
 //pub const TIME_STEP: f64 = 0.003; // in days
 //pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;

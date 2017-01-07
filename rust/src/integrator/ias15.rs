@@ -1,7 +1,7 @@
 use std;
 use std::io::{Write, BufWriter};
 use super::Integrator;
-use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
+use super::super::constants::{PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
 use super::super::particles::Universe;
 use super::output::{write_bin_snapshot};
 
@@ -21,26 +21,30 @@ pub struct Ias15 {
     current_iteration: u32,
     last_print_time: f64,
     //// Integrator IAS15 data:
+    n_particles: usize,
     integrator_iterations_max_exceeded : i32,  // Count how many times the iteration did not converge
     time_step_last_success: f64,			// Last accepted timestep (corresponding to br and er)
-    b: [[f64; 3*N_PARTICLES]; 7], // Coefficient b: acceleration dimension
-    br: [[f64; 3*N_PARTICLES]; 7], // Previous b
-    g: [[f64; 3*N_PARTICLES]; 7], // Coefficient g (it can also be expressed in terms of b)
-    e: [[f64; 3*N_PARTICLES]; 7],
-    er: [[f64; 3*N_PARTICLES]; 7], // Previous g
-    at: [f64; 3*N_PARTICLES], // Temporary buffer for acceleration
-    x0: [f64; 3*N_PARTICLES], // Temporary buffer for position (used for initial values at h=0)
-    v0: [f64; 3*N_PARTICLES], // Temporary buffer for velcoity (used for initial values at h=0)
-    a0: [f64; 3*N_PARTICLES], // Temporary buffer for acceleration (used for initial values at h=0)
+    b: Vec<Vec<f64>>, // Coefficient b: acceleration dimension
+    br: Vec<Vec<f64>>, // Previous b
+    g: Vec<Vec<f64>>, // Coefficient g (it can also be expressed in terms of b)
+    e: Vec<Vec<f64>>,
+    er: Vec<Vec<f64>>, // Previous g
+    at: Vec<f64>, // Temporary buffer for acceleration
+    x0: Vec<f64>, // Temporary buffer for position (used for initial values at h=0)
+    v0: Vec<f64>, // Temporary buffer for velcoity (used for initial values at h=0)
+    a0: Vec<f64>, // Temporary buffer for acceleration (used for initial values at h=0)
     // Compensated summation coefficients
-    csx : [f64; 3*N_PARTICLES],
-    csv : [f64; 3*N_PARTICLES],
+    csx : Vec<f64>,
+    csv : Vec<f64>,
     s: [f64; 9], // Summation coefficients
 }
 
 impl Integrator for Ias15 {
 
+
+
     fn new(time_step: f64, time_limit: f64, universe: Universe) -> Ias15 {
+        let n_particles = universe.particles.len();
         Ias15 {
                     time_step:time_step,
                     time_limit:time_limit,
@@ -48,19 +52,20 @@ impl Integrator for Ias15 {
                     universe:universe,
                     current_time:0.,
                     current_iteration:0,
+                    n_particles:n_particles,
                     integrator_iterations_max_exceeded:0,
                     time_step_last_success:0.,
-                    b  :  [[0.; 3*N_PARTICLES]; 7],
-                    g  :  [[0.; 3*N_PARTICLES]; 7],
-                    e  :  [[0.; 3*N_PARTICLES]; 7],
-                    br :  [[0.; 3*N_PARTICLES]; 7],
-                    er :  [[0.; 3*N_PARTICLES]; 7],
-                    at  : [0.; 3*N_PARTICLES],
-                    x0  : [0.; 3*N_PARTICLES],
-                    v0  : [0.; 3*N_PARTICLES],
-                    a0  : [0.; 3*N_PARTICLES],
-                    csx : [0.; 3*N_PARTICLES],
-                    csv : [0.; 3*N_PARTICLES],
+                    b :   (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    g  :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    e  :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    br :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    er :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    at  : vec![0.; 3*n_particles],
+                    x0  : vec![0.; 3*n_particles],
+                    v0  : vec![0.; 3*n_particles],
+                    a0  : vec![0.; 3*n_particles],
+                    csx : vec![0.; 3*n_particles],
+                    csv : vec![0.; 3*n_particles],
                     s   : [0.; 9],
                     }
     }
@@ -162,7 +167,7 @@ impl Ias15 {
             }
 
             // Find g values from b values predicted at the last call (Eqs. 7 of Everhart)
-            for k in 0..3*N_PARTICLES {
+            for k in 0..3*self.n_particles {
                 self.g[0][k] = self.b[6][k]*d[15] + self.b[5][k]*d[10] + self.b[4][k]*d[6] + self.b[3][k]*d[3]  + self.b[2][k]*d[1]  + self.b[1][k]*d[0]  + self.b[0][k];
                 self.g[1][k] = self.b[6][k]*d[16] + self.b[5][k]*d[11] + self.b[4][k]*d[7] + self.b[3][k]*d[4]  + self.b[2][k]*d[2]  + self.b[1][k];
                 self.g[2][k] = self.b[6][k]*d[17] + self.b[5][k]*d[12] + self.b[4][k]*d[8] + self.b[3][k]*d[5]  + self.b[2][k];
@@ -283,14 +288,14 @@ impl Ias15 {
                     // Update G values using Eqs. 4 of Everhart, and update B values using Eqs. 5
                     match n {
                         1 => {
-                                for k in 0..3*N_PARTICLES {
+                                for k in 0..3*self.n_particles {
                                     let tmp = self.g[0][k];
                                     self.g[0][k]  = (self.at[k] - self.a0[k]) / r[0];
                                     self.b[0][k] += self.g[0][k] - tmp;
                                 }
                             },
                         2 => {
-                                for k in 0..3*N_PARTICLES {
+                                for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[1][k];
                                     let gk = self.at[k] - self.a0[k];
                                     self.g[1][k] = (gk/r[1] - self.g[0][k])/r[2];
@@ -300,7 +305,7 @@ impl Ias15 {
                                 }
                             },
                         3 => {
-                                for k in 0..3*N_PARTICLES {
+                                for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[2][k];
                                     let gk = self.at[k] - self.a0[k];
                                     self.g[2][k] = ((gk/r[3] - self.g[0][k])/r[4] - self.g[1][k])/r[5];
@@ -311,7 +316,7 @@ impl Ias15 {
                                 }
                             },
                         4 => {
-                                for k in 0..3*N_PARTICLES {
+                                for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[3][k];
                                     let gk = self.at[k] - self.a0[k];
                                     self.g[3][k] = (((gk/r[6] - self.g[0][k])/r[7] - self.g[1][k])/r[8] - self.g[2][k])/r[9];
@@ -323,7 +328,7 @@ impl Ias15 {
                                 }
                             },
                         5 => {
-                                for k in 0..3*N_PARTICLES {
+                                for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[4][k];
                                     let gk = self.at[k] - self.a0[k];
                                     self.g[4][k] = ((((gk/r[10] - self.g[0][k])/r[11] - self.g[1][k])/r[12] - self.g[2][k])/r[13] - self.g[3][k])/r[14];
@@ -336,7 +341,7 @@ impl Ias15 {
                                 }
                             },
                         6 => {
-                                for k in 0..3*N_PARTICLES {
+                                for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[5][k];
                                     let gk = self.at[k] - self.a0[k];
                                     self.g[5][k] = (((((gk/r[15] - self.g[0][k])/r[16] - self.g[1][k])/r[17] - self.g[2][k])/r[18] - self.g[3][k])/r[19] - self.g[4][k])/r[20];
@@ -352,7 +357,7 @@ impl Ias15 {
                         7 => {
                                 let mut maxak: f64 = 0.0;
                                 let mut maxb6ktmp: f64 = 0.0;
-                                for k in 0..3*N_PARTICLES {
+                                for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[6][k];
                                     let gk = self.at[k] - self.a0[k];
                                     self.g[6][k] = ((((((gk/r[21] - self.g[0][k])/r[22] - self.g[1][k])/r[23] - self.g[2][k])/r[24] - self.g[3][k])/r[25] - self.g[4][k])/r[26] - self.g[5][k])/r[27];
@@ -442,7 +447,7 @@ impl Ias15 {
                     }
                     integrator_error = maxb6k/maxak;
                 } else {
-                    for k in 0..3*N_PARTICLES {
+                    for k in 0..3*self.n_particles {
                         let ak  = self.at[k];
                         let b6k = self.b[6][k]; 
                         let errork = (b6k/ak).abs();
@@ -510,7 +515,7 @@ impl Ias15 {
             // (Eqs. 11, 12 of Everhart)
             ////////////////////////////////////////////////////////////////////
             let dt_done2 = dt_done * dt_done;
-            for k in 0..3*N_PARTICLES {
+            for k in 0..3*self.n_particles {
                 {
                     let a = self.x0[k];
                     self.csx[k]  +=  (self.b[6][k]/72. + self.b[5][k]/56. + self.b[4][k]/42. 
@@ -577,7 +582,7 @@ impl Ias15 {
         let q6 = q3 * q3;
         let q7 = q3 * q4;
 
-        for k in 0..3*N_PARTICLES {
+        for k in 0..3*self.n_particles {
             let be0 = self.br[0][k] - self.er[0][k];
             let be1 = self.br[1][k] - self.er[1][k];
             let be2 = self.br[2][k] - self.er[2][k];

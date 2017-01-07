@@ -1,7 +1,7 @@
 use std;
 use std::io::{Write, BufWriter};
 use super::Integrator;
-use super::super::constants::{N_PARTICLES, PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT};
+use super::super::constants::{PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT};
 use super::super::particles::Universe;
 use super::super::particles::Particle;
 use super::super::particles::Axes;
@@ -333,7 +333,7 @@ impl WHFastHelio {
     fn kepler_steps(&mut self, half_time_step: bool){
         let star_mass_g = self.universe.particles[0].mass_g;
 
-        for i in 1..N_PARTICLES {
+        for i in 1..self.universe.particles.len() {
             self.kepler_individual_step(i, star_mass_g, half_time_step);
         }
         let time_step = match half_time_step {
