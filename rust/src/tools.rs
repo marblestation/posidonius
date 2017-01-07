@@ -785,5 +785,34 @@ fn find_indices_around_target_value(data: &Vec<f64>, target_value: f64) -> (usiz
     return (left_idx, right_right)
 }
 
+pub fn calculate_pseudo_synchronization_period(semi_major_axis: f64, eccentricity: f64, star_mass: f64, planet_mass: f64) -> f64 {
+    let alpha = (1.+15./2.*eccentricity.powi(2)+45./8.*eccentricity.powi(4)+5./16.
+                 * eccentricity.powi(6))*1./(1.+3.*eccentricity.powi(2)+3./8.
+                 * eccentricity.powi(4))*1./(1.-eccentricity.powi(2)).powf(1.5);
+    let pseudo_rot = alpha * (G*M_SUN*(star_mass+planet_mass)).sqrt();
+    let pseudo_synchronization_period = pseudo_rot * (semi_major_axis*AU).powf(-3./2.) * HR; // In hours
+    pseudo_synchronization_period
+}
+
+pub fn calculate_spin(angular_frequency: f64, inclination: f64, obliquity: f64, position: Axes, velocity: Axes) -> Axes {
+    let mut spin = Axes{x:0., y:0., z:0. };
+    if inclination == 0. {
+        // No inclination, spin can already be calculated:
+        spin.x = angular_frequency * obliquity.sin(); // zero if there is no obliquity
+        spin.y = 0.;
+        spin.z = angular_frequency * obliquity.cos();
+    } else {
+        // Calculation of orbital angular momentum (without mass and in AU^2/day)
+        let horb_x = position.y * velocity.z - position.z * velocity.y;
+        let horb_y = position.z * velocity.x - position.x * velocity.z;
+        let horb_z = position.x * velocity.y - position.y * velocity.x;
+        let horbn = (horb_x.powi(2) + horb_y.powi(2) + horb_z.powi(2)).sqrt();
+        // Spin taking into consideration the inclination:
+        spin.x = angular_frequency * (horb_x / (horbn * inclination.sin())) * (obliquity+inclination).sin();
+        spin.y = angular_frequency * (horb_y / (horbn * inclination.sin())) * (obliquity+inclination).sin();
+        spin.z = angular_frequency * (obliquity+inclination).cos();
+    }
+    spin
+}
 
 

@@ -17,6 +17,7 @@ fn main() {
     //timer::sleep(Duration::milliseconds(1000));
 
     let universe = posidonius::cases::case3();
+    //let universe = posidonius::cases::case3_without_helpers();
 
 
     ////////////////////////////////////////////////////////////////////////////

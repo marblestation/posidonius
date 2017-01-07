@@ -41,8 +41,11 @@ pub const PI : f64 = std::f64::consts::PI;
 pub const TWO_PI : f64 = std::f64::consts::PI * 2.;
 pub const DEG2RAD : f64 = std::f64::consts::PI / 180.; // conversion factor from degrees to radians
 pub const M2AU  : f64 = 6.684587153547e-12; // 1 meter in AU
+pub const AU : f64 = 1.49598e11; // m
+pub const HR: f64 = 3600.; // s
 
 // Solar system
+pub const M_SUN : f64 =  1.98892e30; // Kg
 pub const R_SUN : f64 = 4.67920694e-3;  // AU
 pub const SUN_DYN_FREQ : f64 = K2/(R_SUN*R_SUN*R_SUN); // Needed for MathisSolarLike
 pub const R_EARTH : f64 = 4.25874677e-5; // AU

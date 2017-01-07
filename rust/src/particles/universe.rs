@@ -4,7 +4,7 @@ use super::{Particle};
 use super::{EvolutionType, SolarEvolutionType};
 use super::{Axes};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Universe {
     pub particles: Vec<Particle>,
     integrator_type: IntegratorType,
