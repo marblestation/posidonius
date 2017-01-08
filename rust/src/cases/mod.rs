@@ -1,4 +1,5 @@
-mod case3;
+pub mod bolmont_et_al_2015;
 
-pub use self::case3::*;
+mod example;
+pub use self::example::*;
 

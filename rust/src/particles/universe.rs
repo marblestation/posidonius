@@ -1,4 +1,4 @@
-use super::super::constants::{K2, G, TIDES, ROTATIONAL_FLATTENING, GENERAL_RELATIVITY, SPEED_OF_LIGHT_2};
+use super::super::constants::{K2, G, TIDES, ROTATIONAL_FLATTENING, GENERAL_RELATIVITY, SPEED_OF_LIGHT_2, CONSIDER_EVERY_BODY_COMBINATIONS};
 use super::super::integrator::IntegratorType;
 use super::{Particle};
 use super::{EvolutionType, SolarEvolutionType};
@@ -25,6 +25,7 @@ impl Universe {
                 particle.general_relativity_factor =  local_copy_star.mass_g*particle.mass_g / (local_copy_star.mass_g + particle.mass_g).powi(2)
             }
         }
+
         Universe {
                     particles: particles,
                     integrator_type: integrator_type,
@@ -108,11 +109,152 @@ impl Universe {
     }
 
     pub fn calculate_additional_forces(&mut self, current_time: f64, only_dspin_dt: bool) {
-        let central_body = true;
+        ////////////////////////////////////////////////////////////////////////
+        // Parallel universes: Copies of the current universe but without the
+        // first central body
+        //  1.- First parallel universe removes first body and uses the second 
+        //      body as point of reference (central body)
+        //  2.- Second parallel universe removes first and second body, it uses 
+        //      the third body as point of reference (central body)
+        //  3.- Third parallel universe...
+        ////////////////////////////////////////////////////////////////////////
+        // Dependencies for Parallel Computation
+        // NOTE: tests show that this parallel approach leads to slower results)
+        //
+        //extern crate threadpool;
+        //use self::threadpool::ThreadPool;
+        //use std::sync::mpsc;
+        //let n_workers = 10;
+        //let thread_pool: ThreadPool::new(n_workers),
+        //let (tx, rx) = mpsc::channel();
+        ////////////////////////////////////////////////////////////////////////
 
         for particle in self.particles.iter_mut() {
             particle.evolve(current_time);
         }
+
+        let n_original_particles = self.particles.len();
+        let n_parallel_universes;
+        if CONSIDER_EVERY_BODY_COMBINATIONS {
+            n_parallel_universes = n_original_particles - 2;
+        } else {
+            n_parallel_universes = 0;
+        }
+
+        // Build parallel universes if needed
+        let mut parallel_universes : Vec<Universe> = Vec::with_capacity(n_parallel_universes);
+        for id in 0..n_parallel_universes {
+            let mut parallel_universe = self.clone();
+            parallel_universe.particles.reverse();
+            parallel_universe.particles.truncate(n_original_particles - (id+1)); // retain first N elements
+            parallel_universe.particles.reverse();
+            // Forget accelerations from the original universe
+            for particle in parallel_universe.particles.iter_mut() {
+                particle.acceleration.x = 0.0;
+                particle.acceleration.y = 0.0;
+                particle.acceleration.z = 0.0;
+            }
+            // Re-center system over the new first body
+            let reference_particle = parallel_universe.particles[0].clone();
+            parallel_universe.move_to(&reference_particle);
+            parallel_universes.push(parallel_universe)
+        }
+
+        // Compute parallel universes
+        for parallel_universe in parallel_universes.iter_mut() {
+            parallel_universe.calculate_dspin_dt();
+            if !only_dspin_dt {
+                parallel_universe.calculate_acceleration_corrections();
+            }
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+        ////// Execute in parallel
+        //for parallel_universe in parallel_universes.iter_mut() {
+            //let tx = tx.clone();
+            //let mut parallel_universe = parallel_universe.clone();
+
+            //thread_pool.execute(move || {
+                //parallel_universe.particles[0].acceleration.x = 1.;
+                //parallel_universe.calculate_dspin_dt();
+                //if !only_dspin_dt {
+                    //parallel_universe.calculate_acceleration_corrections();
+                //}
+                
+                //tx.send(parallel_universe).unwrap();
+            //});
+        //}
+        ////////////////////////////////////////////////////////////////////////
+
+        // Compute this universe
+        self.calculate_dspin_dt();
+        if !only_dspin_dt {
+            self.calculate_acceleration_corrections();
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+        ////// Collect results from parallel threads
+        //parallel_universes.clear();
+        //for _ in 0..n_parallel_universes {
+            //// It will block the current thread if there no messages available
+            //let parallel_universe = rx.recv().unwrap();
+            //parallel_universes.push(parallel_universe);
+        //}
+        ////////////////////////////////////////////////////////////////////////
+
+
+        // Integrate results from all parallel universes into this universe
+        for parallel_universe in parallel_universes.iter() {
+            //let mut num = 0;
+            let id = n_original_particles - parallel_universe.particles.len() - 1;
+
+            for (particle, particle_parallel_universe) in self.particles[1+id..].iter_mut().zip(parallel_universe.particles.iter()) {
+                //println!("Body {}:", num);
+                if !only_dspin_dt {
+                    //println!("      Acceleration {:e} {:e} {:e}", particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
+                    particle.acceleration.x += particle_parallel_universe.acceleration.x;
+                    particle.acceleration.y += particle_parallel_universe.acceleration.y;
+                    particle.acceleration.z += particle_parallel_universe.acceleration.z; 
+                    //println!("      Acceleration {:e} {:e} {:e}", particle_parallel_universe.acceleration.x, particle_parallel_universe.acceleration.y, particle_parallel_universe.acceleration.z);
+                    //println!("Added              {:e} {:e} {:e}", particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
+                }
+                //println!("      dspin_dt {:e} {:e} {:e}", particle.dspin_dt.x, particle.dspin_dt.y, particle.dspin_dt.z);
+                particle.dspin_dt.x += particle_parallel_universe.dspin_dt.x;
+                particle.dspin_dt.y += particle_parallel_universe.dspin_dt.y;
+                particle.dspin_dt.z += particle_parallel_universe.dspin_dt.z;
+                //println!("      dspin_dt {:e} {:e} {:e}", particle_parallel_universe.dspin_dt.x, particle_parallel_universe.dspin_dt.y, particle_parallel_universe.dspin_dt.z);
+                //println!("Added          {:e} {:e} {:e}", particle.dspin_dt.x, particle.dspin_dt.y, particle.dspin_dt.z);
+                //num += 1;
+            }
+            //println!("--------------------------------------------");
+        }
+
+        // Recover first original body as frame of reference
+        let reference_particle = self.particles[0].clone();
+        self.move_to(&reference_particle);
+        //for (i, particle) in self.particles[1..].iter().enumerate() {
+            //println!("{} - Acceleration {:e} {:e} {:e}", i, particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
+        //}
+    }
+
+
+    pub fn move_to(&mut self, center: &Particle) {
+        for particle in self.particles.iter_mut() {
+            particle.position.x  -= center.position.x;
+            particle.position.y  -= center.position.y;
+            particle.position.z  -= center.position.z;
+            particle.velocity.x -= center.velocity.x;
+            particle.velocity.y -= center.velocity.y;
+            particle.velocity.z -= center.velocity.z;
+            particle.acceleration.x -= center.acceleration.x;
+            particle.acceleration.y -= center.acceleration.y;
+            particle.acceleration.z -= center.acceleration.z;
+        }
+    }
+
+    fn calculate_dspin_dt(&mut self) {
+        let central_body = true;
+
         self.calculate_distance_and_velocities(); // Needed for calculate_torque_due_to_tides and calculate_planet_dependent_dissipation_factors
         self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if MathisSolarLike
 
@@ -120,50 +262,46 @@ impl Universe {
         self.calculate_orthogonal_component_of_the_tidal_force(!central_body);  // Needed for calculate_torque_due_to_tides and calculate_tidal_acceleration
         self.calculate_torque_due_to_tides(central_body);   // Needed for spin integration
         self.calculate_torque_due_to_tides(!central_body);  // Needed for spin integration
+    }
 
-        if !only_dspin_dt {
+    fn calculate_acceleration_corrections(&mut self) {
+        if TIDES {
+            self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
+            self.calculate_tidal_acceleration();
+        }
+
+        if ROTATIONAL_FLATTENING {
+            self.calculate_acceleration_induced_by_rotational_flattering();
+        }
+
+        if GENERAL_RELATIVITY {
+            self.calculate_general_relativity_acceleration();
+        }
+
+        // Add the tidal+flattening+general relativity accelerations to the gravitational one (already computed)
+        //for particle in self.particles[1..].iter_mut() {
+        for particle in self.particles.iter_mut() {
             if TIDES {
-                self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
-                self.calculate_tidal_acceleration();
+                particle.acceleration.x += particle.tidal_acceleration.x;
+                particle.acceleration.y += particle.tidal_acceleration.y;
+                particle.acceleration.z += particle.tidal_acceleration.z;
+                //println!("Tides acceleration {:e} {:e} {:e}", particle.tidal_acceleration.x, particle.tidal_acceleration.y, particle.tidal_acceleration.z);
             }
 
             if ROTATIONAL_FLATTENING {
-                self.calculate_acceleration_induced_by_rotational_flattering()
+                particle.acceleration.x += particle.acceleration_induced_by_rotational_flattering.x;
+                particle.acceleration.y += particle.acceleration_induced_by_rotational_flattering.y;
+                particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z;
+                //println!("Rot acceleration {:e} {:e} {:e}", particle.acceleration_induced_by_rotational_flattering.x, particle.acceleration_induced_by_rotational_flattering.y, particle.acceleration_induced_by_rotational_flattering.z);
             }
 
             if GENERAL_RELATIVITY {
-                self.calculate_general_relativity_acceleration()
-            }
-
-            // Add the tidal+flattening+general relativity accelerations to the gravitational one (already computed)
-            for particle in self.particles[1..].iter_mut() {
-                if TIDES {
-                    particle.acceleration.x += particle.tidal_acceleration.x;
-                    particle.acceleration.y += particle.tidal_acceleration.y;
-                    particle.acceleration.z += particle.tidal_acceleration.z;
-                    //println!("Tides acceleration {:e} {:e} {:e}", particle.tidal_acceleration.x, particle.tidal_acceleration.y, particle.tidal_acceleration.z);
-                }
-
-                if ROTATIONAL_FLATTENING {
-                    particle.acceleration.x += particle.acceleration_induced_by_rotational_flattering.x;
-                    particle.acceleration.y += particle.acceleration_induced_by_rotational_flattering.y;
-                    particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z;
-                    //println!("Rot acceleration {:e} {:e} {:e}", particle.acceleration_induced_by_rotational_flattering.x, particle.acceleration_induced_by_rotational_flattering.y, particle.acceleration_induced_by_rotational_flattering.z);
-                }
-
-                if GENERAL_RELATIVITY {
-                    particle.acceleration.x += particle.general_relativity_acceleration.x;
-                    particle.acceleration.y += particle.general_relativity_acceleration.y;
-                    particle.acceleration.z += particle.general_relativity_acceleration.z;
-                    //println!("GR acceleration {:e} {:e} {:e}", particle.general_relativity_acceleration.x, particle.general_relativity_acceleration.y, particle.general_relativity_acceleration.z);
-                }
-            }
-        } 
-        //else {
-            //self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
-            //self.calculate_tidal_acceleration();
-            //println!("atide!  {:e} {:e} {:e}", self.particles[1].tidal_acceleration.x, self.particles[1].tidal_acceleration.y, self.particles[1].tidal_acceleration.z);
-        //}
+                particle.acceleration.x += particle.general_relativity_acceleration.x;
+                particle.acceleration.y += particle.general_relativity_acceleration.y;
+                particle.acceleration.z += particle.general_relativity_acceleration.z;
+                //println!("GR acceleration {:e} {:e} {:e}", particle.general_relativity_acceleration.x, particle.general_relativity_acceleration.y, particle.general_relativity_acceleration.z);
+            } 
+        }
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -420,11 +558,14 @@ impl Universe {
         }
         
         // - Equation 19 from Bolmont et al. 2015 (second term)
-        for particle in self.particles[1..].iter_mut() {
-            particle.tidal_acceleration.x += factor2 * sum_total_tidal_force.x;
-            particle.tidal_acceleration.y += factor2 * sum_total_tidal_force.y;
-            particle.tidal_acceleration.z += factor2 * sum_total_tidal_force.z;
-        }
+        //for particle in self.particles[1..].iter_mut() {
+            //particle.tidal_acceleration.x += factor2 * sum_total_tidal_force.x;
+            //particle.tidal_acceleration.y += factor2 * sum_total_tidal_force.y;
+            //particle.tidal_acceleration.z += factor2 * sum_total_tidal_force.z;
+        //}
+        self.particles[star_index].tidal_acceleration.x = -1.0 * factor2 * sum_total_tidal_force.x;
+        self.particles[star_index].tidal_acceleration.y = -1.0 * factor2 * sum_total_tidal_force.y;
+        self.particles[star_index].tidal_acceleration.z = -1.0 * factor2 * sum_total_tidal_force.z;
     }
 
     fn calculate_general_relativity_acceleration(&mut self) {
@@ -478,11 +619,14 @@ impl Universe {
         }
         
         // - Equation 19 from Bolmont et al. 2015 (second term)
-        for particle in self.particles[1..].iter_mut() {
-            particle.general_relativity_acceleration.x += factor2 * sum_total_general_relativity_force.x;
-            particle.general_relativity_acceleration.y += factor2 * sum_total_general_relativity_force.y;
-            particle.general_relativity_acceleration.z += factor2 * sum_total_general_relativity_force.z;
-        }
+        //for particle in self.particles[1..].iter_mut() {
+            //particle.general_relativity_acceleration.x += factor2 * sum_total_general_relativity_force.x;
+            //particle.general_relativity_acceleration.y += factor2 * sum_total_general_relativity_force.y;
+            //particle.general_relativity_acceleration.z += factor2 * sum_total_general_relativity_force.z;
+        //}
+        self.particles[star_index].general_relativity_acceleration.x = -1.0 * factor2 * sum_total_general_relativity_force.x;
+        self.particles[star_index].general_relativity_acceleration.y = -1.0 * factor2 * sum_total_general_relativity_force.y;
+        self.particles[star_index].general_relativity_acceleration.z = -1.0 * factor2 * sum_total_general_relativity_force.z;
     }
 
 
@@ -551,11 +695,14 @@ impl Universe {
         }
         
         // - Equation 19 from Bolmont et al. 2015 (second term)
-        for particle in self.particles[1..].iter_mut() {
-            particle.acceleration_induced_by_rotational_flattering.x += factor2 * sum_total_force_induced_by_rotation.x;
-            particle.acceleration_induced_by_rotational_flattering.y += factor2 * sum_total_force_induced_by_rotation.y;
-            particle.acceleration_induced_by_rotational_flattering.z += factor2 * sum_total_force_induced_by_rotation.z;
-        }
+        //for particle in self.particles[1..].iter_mut() {
+            //particle.acceleration_induced_by_rotational_flattering.x += factor2 * sum_total_force_induced_by_rotation.x;
+            //particle.acceleration_induced_by_rotational_flattering.y += factor2 * sum_total_force_induced_by_rotation.y;
+            //particle.acceleration_induced_by_rotational_flattering.z += factor2 * sum_total_force_induced_by_rotation.z;
+        //}
+        self.particles[star_index].acceleration_induced_by_rotational_flattering.x = -1.0 * factor2 * sum_total_force_induced_by_rotation.x;
+        self.particles[star_index].acceleration_induced_by_rotational_flattering.y = -1.0 * factor2 * sum_total_force_induced_by_rotation.y;
+        self.particles[star_index].acceleration_induced_by_rotational_flattering.z = -1.0 * factor2 * sum_total_force_induced_by_rotation.z;
 
     }
 

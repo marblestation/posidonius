@@ -15,7 +15,7 @@ pub struct Particle {
     pub dissipation_factor_scale: f64, // to scale the dissipation factor (multiply)
     pub radius_of_gyration_2: f64,  // radius of gyration square can be computed in terms of the mass moment of inertia, which 
                                     // depends on the shape of the body and determines the torque needed for a desired angular acceleration
-    pub love_number: f64,   // k. Dimensionless parameters that measure the rigidity of a planetary body and the 
+    pub love_number: f64,   // Love number of degree 2 (i.e., k2). Dimensionless parameters that measure the rigidity of a planetary body and the 
                             // susceptibility of its shape to change in response to a tidal potential.
     pub fluid_love_number: f64,   // love number for a completely fluid planet (used for rotational flattening effects)
     //

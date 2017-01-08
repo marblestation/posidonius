@@ -48,6 +48,7 @@ pub const M_SUN : f64 =  1.98892e30; // Kg
 pub const R_SUN : f64 = 4.67920694e-3;  // AU
 pub const SUN_DYN_FREQ : f64 = K2/(R_SUN*R_SUN*R_SUN); // Needed for MathisSolarLike
 pub const R_EARTH : f64 = 4.25874677e-5; // AU
+pub const M_EARTH : f64 = 3.0e-6; // M_SUN
 pub const M2EARTH : f64 = (1.9891e6/5.9794); // Factor for mass-radius relation (valid only for earth type planets)
 
 // Speed of light in AU/day
@@ -55,8 +56,7 @@ pub const SPEED_OF_LIGHT : f64 = 173.1444830225;
 pub const SPEED_OF_LIGHT_2 : f64 = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
 
 //// Others
+pub const CONSIDER_EVERY_BODY_COMBINATIONS: bool = false;
 pub const TIDES: bool = true;
 pub const ROTATIONAL_FLATTENING: bool = true;
 pub const GENERAL_RELATIVITY: bool = true;
-
-

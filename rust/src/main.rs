@@ -16,8 +16,11 @@ fn main() {
     let t1 = time::precise_time_s();
     //timer::sleep(Duration::milliseconds(1000));
 
-    let universe = posidonius::cases::case3();
-    //let universe = posidonius::cases::case3_without_helpers();
+    //let universe = posidonius::cases::bolmont_et_al_2015::case4();
+    let universe = posidonius::cases::bolmont_et_al_2015::case3();
+    //let universe = posidonius::cases::bolmont_et_al_2015::case7();
+    //let universe = posidonius::cases::main_example();
+    //let universe = posidonius::cases::example_with_helpers();
 
 
     ////////////////////////////////////////////////////////////////////////////
