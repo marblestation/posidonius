@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 from astropy.io import ascii
 
 import struct
-#filename = "../target/output.bin"
+filename = "../target/output.bin"
 #filename = "../target/output_leapfrog.bin"
 #filename = "../target/output_leapfrog_notides.bin"
-filename = "../target/output_ias15.bin"
+#filename = "../target/output_ias15.bin"
 #filename = "../target/output_ias15_notides.bin"
 #filename = "../target/output_whfasthelio.bin"
 #filename = "../target/output_whfasthelio_notides.bin"
@@ -24,7 +24,7 @@ data = []
 while True:
     try:
         row = f.read(8+8+4+8*(len(fields)-3))
-        vrow = struct.unpack('> d d i' + ' d'*48, row)
+        vrow = struct.unpack('> d d i' + ' d'*(len(fields)-3), row)
     except:
         break
     else:
@@ -96,7 +96,13 @@ star_data = data[star]
 star_mass = star_data['mass'][0]
 
 planet = data['particle'] == 1
+#planet = data['particle'] == 2
 planet_data = data[planet]
+
+# Same number of points
+shared_idx = np.min((len(star_data), len(planet_data)))
+planet_data = planet_data[:shared_idx]
+star_data = star_data[:shared_idx]
 
 
 star_norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
