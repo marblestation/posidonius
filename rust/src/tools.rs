@@ -764,7 +764,7 @@ fn find_indices_around_target_value(data: &Vec<f64>, target_value: f64) -> (usiz
     // Find the nearest interval [ x(LEFT), x(RIGHT) ] to XVAL.
     let ndata = data.len();
     let last_idx = ndata.wrapping_sub(1);
-    let (left_idx, right_right) = match data.iter().position(|&r| r > target_value) {
+    let (left_idx, right_idx) = match data.iter().position(|&r| r > target_value) {
         None => {
                     if data[last_idx] > target_value {
                         (0, 0)
@@ -782,7 +782,7 @@ fn find_indices_around_target_value(data: &Vec<f64>, target_value: f64) -> (usiz
                 }
             },
     };
-    return (left_idx, right_right)
+    return (left_idx, right_idx)
 }
 
 pub fn calculate_pseudo_synchronization_period(semi_major_axis: f64, eccentricity: f64, star_mass: f64, planet_mass: f64) -> f64 {

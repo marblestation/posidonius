@@ -17,7 +17,7 @@ pub enum EvolutionType {
     NonEvolving,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Evolver {
     pub evolution_type: EvolutionType,
     pub time: Vec<f64>,
@@ -25,6 +25,23 @@ pub struct Evolver {
     pub radius_of_gyration_2: Vec<f64>,
     pub love_number: Vec<f64>,
     pub inverse_tidal_q_factor: Vec<f64>, // Bolmont & Mathis 2016
+}
+
+// NOTE: This is a big optimization to reduce the cost of cloning
+//       Cloned particles are downgraded to a NonEvolving status
+//       to avoid cloning model's data which can be big and expensive.
+impl Clone for Evolver {
+    fn clone(&self) -> Self {
+        Evolver {
+            evolution_type:EvolutionType::NonEvolving,
+            time:vec![],
+            radius:vec![],
+            radius_of_gyration_2:vec![],
+            love_number:vec![],
+            inverse_tidal_q_factor:vec![],
+        }
+
+    }
 }
 
 impl Evolver {
@@ -170,11 +187,40 @@ impl Evolver {
                 }
             };
 
-            time.push(current_time);
-            radius.push(current_radius);
-            radius_of_gyration_2.push(current_radius_of_gyration_2);
-            love_number.push(current_love_number);
-            inverse_tidal_q_factor.push(current_inverse_tidal_q_factor);
+            // Only save values needed for the evolution model to save memory
+            // and computation time when cloning
+            match evolution_type {
+                EvolutionType::BrownDwarf(_) => {
+                    time.push(current_time);
+                    radius.push(current_radius);
+                    radius_of_gyration_2.push(current_radius_of_gyration_2);
+                },
+                EvolutionType::MDwarf => {
+                    time.push(current_time);
+                    radius.push(current_radius);
+                },
+                EvolutionType::SolarLike(model) => {
+                    match model {
+                        SolarEvolutionType::ConstantDissipation => {
+                            time.push(current_time);
+                            radius.push(current_radius);
+                        },
+                        SolarEvolutionType::EvolvingDissipation(_) => {
+                            time.push(current_time);
+                            radius.push(current_radius);
+                            inverse_tidal_q_factor.push(current_inverse_tidal_q_factor);
+                        },
+                    }
+                },
+                EvolutionType::Jupiter => {
+                    time.push(current_time);
+                    radius.push(current_radius);
+                    radius_of_gyration_2.push(current_radius_of_gyration_2);
+                    love_number.push(current_love_number);
+                },
+                EvolutionType::NonEvolving => {
+                }
+            };
         }
 
         if time.len() > 0 && time[0] > 0. {
