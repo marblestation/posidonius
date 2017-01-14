@@ -7,18 +7,12 @@ import matplotlib.pyplot as plt
 from astropy.io import ascii
 
 import struct
-filename = "../target/output.bin"
-#filename = "../target/output_leapfrog.bin"
-#filename = "../target/output_leapfrog_notides.bin"
-#filename = "../target/output_ias15.bin"
-#filename = "../target/output_ias15_notides.bin"
-#filename = "../target/output_whfasthelio.bin"
-#filename = "../target/output_whfasthelio_notides.bin"
+filename = "../target/universe_history.bin"
 
 f = open(filename, "rb")
 # (np.floor(np.log10(np.max((100., 10.)))) - 2.)*10.
 
-fields = ('current_time', 'time_step', 'particle', 'position_x', 'position_y', 'position_z', 'spin_x', 'spin_y', 'spin_z', 'velocity_x', 'velocity_y', 'velocity_z', 'acceleration_x', 'acceleration_y', 'acceleration_z', 'dspin_dt_x', 'dspin_dt_y', 'dspin_dt_z', 'torque_x', 'torque_y', 'torque_z', 'orthogonal_component_of_the_tidal_force_due_to_stellar_tide', 'orthogonal_component_of_the_tidal_force_due_to_planetary_tide', 'radial_component_of_the_tidal_force', 'tidal_acceleration_x', 'tidal_acceleration_y', 'tidal_acceleration_z', 'radial_velocity', 'norm_velocity_vector', 'distance', 'semi-major_axis', 'perihelion_distance', 'eccentricity', 'inclination', 'longitude_of_perihelion', 'longitude_of_ascending_node', 'mean_anomaly', 'orbital_angular_momentum_x', 'orbital_angular_momentum_y', 'orbital_angular_momentum_z', 'orbital_angular_momentum', 'denergy_dt', 'total_energy', 'total_angular_momentum', 'mass', 'radius', 'radius_of_gyration_2', 'scaled_dissipation_factor', 'love_number')
+fields = ('current_time', 'time_step', 'particle', 'position_x', 'position_y', 'position_z', 'spin_x', 'spin_y', 'spin_z', 'velocity_x', 'velocity_y', 'velocity_z', 'semi-major_axis', 'perihelion_distance', 'eccentricity', 'inclination', 'longitude_of_perihelion', 'longitude_of_ascending_node', 'mean_anomaly', 'orbital_angular_momentum_x', 'orbital_angular_momentum_y', 'orbital_angular_momentum_z', 'orbital_angular_momentum', 'denergy_dt', 'total_energy', 'total_angular_momentum', 'mass', 'radius', 'radius_of_gyration_2', 'scaled_dissipation_factor', 'love_number')
 
 data = []
 while True:

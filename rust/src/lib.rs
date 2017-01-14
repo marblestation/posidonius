@@ -1,5 +1,7 @@
 extern crate csv;
 extern crate rand;
+extern crate rustc_serialize;
+extern crate bincode;
 
 pub mod constants;
 

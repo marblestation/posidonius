@@ -1,12 +1,25 @@
 use super::super::particles::{Axes, Particle, Universe};
+//use super::super::{WHFastHelio, Ias15, LeapFrog};
+use super::super::{WHFastHelio};
 use super::super::particles::{EvolutionType};
-use super::super::constants::{R_SUN, M_EARTH, TWO_PI, R_EARTH, K2, G, DEG2RAD, INTEGRATOR};
+use super::super::constants::{R_SUN, M_EARTH, TWO_PI, R_EARTH, K2, G, DEG2RAD};
 use super::super::tools::{calculate_cartesian_coordinates, calculate_keplerian_orbital_elements};
 //use super::super::tools::{calculate_pseudo_synchronization_period};
 use super::super::tools::{calculate_spin};
 
+pub fn main_example() -> WHFastHelio {
+    let time_step: f64 = 0.08; // in days
+    //let time_limit: f64 = 365.25 * 1.0e8; // days
+    let time_limit: f64 = time_step*4.; // days
+    let initial_time: f64 = 1.0e6*365.25; // time [days] where simulation starts
+    let historic_snapshot_period: f64 = 100.*365.25; // days
+    let recovery_snapshot_period: f64 = 10.*historic_snapshot_period; // days
+    //let recovery_snapshot_period: f64 = 100.*historic_snapshot_period; // days
+    let consider_tides = true;
+    let consider_rotational_flattening = true;
+    let consider_general_relativy = true;
+    let consider_all_body_interactions = true;
 
-pub fn main_example() -> Universe {
     ////////////////////////////////////////////////////////////////////////////
     //---- Star (central body)
     let star_mass: f64 = 0.08; // Solar masses
@@ -43,7 +56,8 @@ pub fn main_example() -> Universe {
     let stellar_evolution_type = EvolutionType::NonEvolving;
     let star = Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
-                                            star_position, star_velocity, star_acceleration, star_spin, stellar_evolution_type);
+                                            star_position, star_velocity, star_acceleration, star_spin,
+                                            stellar_evolution_type, initial_time, time_limit);
     ////////////////////////////////////////////////////////////////////////////
 
 
@@ -131,16 +145,31 @@ pub fn main_example() -> Universe {
     let planetary_evolution_type = EvolutionType::NonEvolving;
     let planet = Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
                                             planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
-                                            planet_position, planet_velocity, planet_acceleration, planet_spin, planetary_evolution_type);
+                                            planet_position, planet_velocity, planet_acceleration, planet_spin, 
+                                            planetary_evolution_type, initial_time, time_limit);
     ////////////////////////////////////////////////////////////////////////////
 
-    let universe = Universe::new(vec![star, planet], INTEGRATOR);
+    let universe = Universe::new(vec![star, planet], consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
 
-    //println!("{:?}", universe);
-    universe
+    //let universe_integrator = LeapFrog::new(time_step, time_limit, universe);
+    //let universe_integrator = Ias15::new(time_step, time_limit, universe);
+    let universe_integrator = WHFastHelio::new(time_step, time_limit, recovery_snapshot_period, historic_snapshot_period, universe);
+
+    universe_integrator
 }
 
-pub fn example_with_helpers() -> Universe {
+pub fn example_with_helpers() -> WHFastHelio {
+    let time_step: f64 = 0.08; // in days
+    //let time_limit: f64 = 365.25 * 1.0e8; // days
+    let time_limit: f64 = time_step*4.; // days
+    let initial_time: f64 = 1.0e6*365.25; // time [days] where simulation starts
+    let historic_snapshot_period: f64 = 100.*365.25; // days
+    let recovery_snapshot_period: f64 = 10.*historic_snapshot_period; // days
+    //let recovery_snapshot_period: f64 = 100.*historic_snapshot_period; // days
+    let consider_tides = true;
+    let consider_rotational_flattening = true;
+    let consider_general_relativy = true;
+    let consider_all_body_interactions = true;
     ////////////////////////////////////////////////////////////////////////////
     //---- Star
     let star_mass: f64 = 0.08; // Solar masses
@@ -149,7 +178,8 @@ pub fn example_with_helpers() -> Universe {
     let star_position = Axes{x:0., y:0., z:0.};
     let star_velocity = Axes{x:0., y:0., z:0.};
     let star_acceleration = Axes{x:0., y:0., z:0.};
-    let star = Particle::new_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_acceleration, star_evolution_type);
+    let star = Particle::new_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_acceleration, star_evolution_type,
+                                        initial_time, time_limit);
 
     ////////////////////////////////////////////////////////////////////////////
     //---- Planet
@@ -184,13 +214,18 @@ pub fn example_with_helpers() -> Universe {
     let planet_inclination = planet_keplerian_orbital_elements.3;
     let planet_spin = calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity, planet_position, planet_velocity);
 
-    let mut planet = Particle::new_terrestrial(planet_mass, planet_radius_factor, planet_dissipation_factor_scale, planet_position, planet_velocity, planet_acceleration);
+    let mut planet = Particle::new_terrestrial(planet_mass, planet_radius_factor, planet_dissipation_factor_scale, planet_position, planet_velocity, planet_acceleration, 
+                                               initial_time, time_limit);
     // Replace default values:
     planet.spin = planet_spin;
     planet.love_number = planet_love_number;
     ////////////////////////////////////////////////////////////////////////////
 
-    let universe = Universe::new(vec![star, planet], INTEGRATOR);
-    //println!("{:?}", universe);
-    universe
+    let universe = Universe::new(vec![star, planet], consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
+
+    //let universe_integrator = posidonius::LeapFrog::new(time_step, time_limit, universe);
+    //let universe_integrator = posidonius::Ias15::new(time_step, time_limit, universe);
+    let universe_integrator = WHFastHelio::new(time_step, time_limit, recovery_snapshot_period, historic_snapshot_period, universe);
+
+    universe_integrator
 }

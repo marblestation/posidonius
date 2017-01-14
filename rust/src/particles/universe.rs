@@ -1,23 +1,21 @@
-use super::super::constants::{K2, G, TIDES, ROTATIONAL_FLATTENING, GENERAL_RELATIVITY, SPEED_OF_LIGHT_2, CONSIDER_EVERY_BODY_COMBINATIONS};
-use super::super::integrator::IntegratorType;
+use super::super::constants::{K2, G, SPEED_OF_LIGHT_2};
 use super::{Particle};
 use super::{EvolutionType, SolarEvolutionType};
 use super::{Axes};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub struct Universe {
     pub particles: Vec<Particle>,
-    integrator_type: IntegratorType,
-    integrator_is_whfasthelio: bool,
+    pub consider_tides: bool,
+    pub consider_rotational_flattening: bool,
+    pub consider_general_relativy: bool,
+    pub consider_all_body_interactions: bool,
 }
 
 impl Universe {
-    pub fn new(mut particles: Vec<Particle>, integrator_type: IntegratorType) -> Universe {
-        let integrator_is_whfasthelio = match integrator_type {
-            IntegratorType::WHFastHelio => { true },
-            _ => { false }
-        };
-        if GENERAL_RELATIVITY {
+    pub fn new(mut particles: Vec<Particle>, consider_tides: bool, consider_rotational_flattening:
+              bool, consider_general_relativy: bool, consider_all_body_interactions: bool) -> Universe {
+        if consider_general_relativy {
             let star_index = 0; // index
 			let local_copy_particles = particles.clone();
             let local_copy_star = &local_copy_particles[star_index];
@@ -28,12 +26,14 @@ impl Universe {
 
         Universe {
                     particles: particles,
-                    integrator_type: integrator_type,
-                    integrator_is_whfasthelio: integrator_is_whfasthelio,
+                    consider_tides: consider_tides,
+                    consider_rotational_flattening: consider_rotational_flattening,
+                    consider_general_relativy: consider_general_relativy,
+                    consider_all_body_interactions: consider_all_body_interactions,
                     }
     }
 
-    pub fn gravity_calculate_acceleration(&mut self) {
+    pub fn gravity_calculate_acceleration(&mut self, integrator_is_whfasthelio: bool) {
 		let local_copy_particles = self.particles.clone();
 
         for (i, particle_a) in self.particles.iter_mut().enumerate() {
@@ -41,7 +41,7 @@ impl Universe {
 			particle_a.acceleration.y = 0.;
 			particle_a.acceleration.z = 0.;
             for (j, particle_b) in local_copy_particles.iter().enumerate() {
-                if self.integrator_is_whfasthelio && (i == 0 || j == 0) {
+                if integrator_is_whfasthelio && (i == 0 || j == 0) {
                     // For WHFastHelio, ignore central body
                     continue
                 }
@@ -67,7 +67,7 @@ impl Universe {
             }
         }
 
-        if !self.integrator_is_whfasthelio {
+        if integrator_is_whfasthelio {
             // Tides require heliocentric point of reference, the star should continue in the zero point
             // so we must compensate all the planets (but if WHFastHelio is being used, it is
             // automatically done by the integrator):
@@ -135,7 +135,7 @@ impl Universe {
 
         let n_original_particles = self.particles.len();
         let n_parallel_universes;
-        if CONSIDER_EVERY_BODY_COMBINATIONS {
+        if self.consider_all_body_interactions {
             n_parallel_universes = n_original_particles - 2;
         } else {
             n_parallel_universes = 0;
@@ -265,37 +265,37 @@ impl Universe {
     }
 
     fn calculate_acceleration_corrections(&mut self) {
-        if TIDES {
+        if self.consider_tides {
             self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
             self.calculate_tidal_acceleration();
         }
 
-        if ROTATIONAL_FLATTENING {
+        if self.consider_rotational_flattening {
             self.calculate_acceleration_induced_by_rotational_flattering();
         }
 
-        if GENERAL_RELATIVITY {
+        if self.consider_general_relativy {
             self.calculate_general_relativity_acceleration();
         }
 
         // Add the tidal+flattening+general relativity accelerations to the gravitational one (already computed)
         //for particle in self.particles[1..].iter_mut() {
         for particle in self.particles.iter_mut() {
-            if TIDES {
+            if self.consider_tides {
                 particle.acceleration.x += particle.tidal_acceleration.x;
                 particle.acceleration.y += particle.tidal_acceleration.y;
                 particle.acceleration.z += particle.tidal_acceleration.z;
                 //println!("Tides acceleration {:e} {:e} {:e}", particle.tidal_acceleration.x, particle.tidal_acceleration.y, particle.tidal_acceleration.z);
             }
 
-            if ROTATIONAL_FLATTENING {
+            if self.consider_rotational_flattening {
                 particle.acceleration.x += particle.acceleration_induced_by_rotational_flattering.x;
                 particle.acceleration.y += particle.acceleration_induced_by_rotational_flattering.y;
                 particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z;
                 //println!("Rot acceleration {:e} {:e} {:e}", particle.acceleration_induced_by_rotational_flattering.x, particle.acceleration_induced_by_rotational_flattering.y, particle.acceleration_induced_by_rotational_flattering.z);
             }
 
-            if GENERAL_RELATIVITY {
+            if self.consider_general_relativy {
                 particle.acceleration.x += particle.general_relativity_acceleration.x;
                 particle.acceleration.y += particle.general_relativity_acceleration.y;
                 particle.acceleration.z += particle.general_relativity_acceleration.z;

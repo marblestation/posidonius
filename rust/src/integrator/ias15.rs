@@ -1,9 +1,16 @@
 use std;
 use std::io::{Write, BufWriter};
+use std::fs::File;
 use super::Integrator;
-use super::super::constants::{PRINT_EVERY_N_DAYS, INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
+use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
 use super::super::particles::Universe;
-use super::output::{write_bin_snapshot};
+use super::output::{write_historic_snapshot};
+use rustc_serialize::json;
+use bincode::rustc_serialize::{decode_from};
+use bincode::SizeLimit;
+use std::io::{BufReader};
+use std::io::Read;
+use std::path::Path;
 
 ///https://arxiv.org/abs/1409.4779
 ///IAS15: A fast, adaptive, high-order integrator for gravitational dynamics, accurate to machine
@@ -13,13 +20,17 @@ use super::output::{write_bin_snapshot};
 /// variable time-steps also
 /// break the symplectic nature of an integrator.
 
+#[derive(Debug, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub struct Ias15 {
     time_step: f64,
     time_limit: f64,
     universe: Universe,
     current_time: f64,
     current_iteration: u32,
-    last_print_time: f64,
+    recovery_snapshot_period: f64,
+    historic_snapshot_period: f64,
+    last_recovery_snapshot_time: f64,
+    last_historic_snapshot_time: f64,
     //// Integrator IAS15 data:
     n_particles: usize,
     integrator_iterations_max_exceeded : i32,  // Count how many times the iteration did not converge
@@ -39,16 +50,16 @@ pub struct Ias15 {
     s: [f64; 9], // Summation coefficients
 }
 
-impl Integrator for Ias15 {
-
-
-
-    fn new(time_step: f64, time_limit: f64, universe: Universe) -> Ias15 {
+impl Ias15 {
+    pub fn new(time_step: f64, time_limit: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> Ias15 {
         let n_particles = universe.particles.len();
         Ias15 {
                     time_step:time_step,
                     time_limit:time_limit,
-                    last_print_time: -1.,
+                    recovery_snapshot_period:recovery_snapshot_period,
+                    historic_snapshot_period:historic_snapshot_period,
+                    last_recovery_snapshot_time: -1.,
+                    last_historic_snapshot_time: -1.,
                     universe:universe,
                     current_time:0.,
                     current_iteration:0,
@@ -70,23 +81,58 @@ impl Integrator for Ias15 {
                     }
     }
 
-    fn iterate<T: Write>(&mut self, output_bin: &mut BufWriter<T>) -> Result<(), String> {
+    pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<Ias15, String> {
+        let universe_integrator: Ias15;
+        if universe_integrator_snapshot_path.exists() {
+            // Open the path in read-only mode, returns `io::Result<File>`
+            let mut snapshot_file = match File::open(&universe_integrator_snapshot_path) {
+                // The `description` method of `io::Error` returns a string that
+                // describes the error
+                Err(why) => return Err(format!("Couldn't open {}: {}", universe_integrator_snapshot_path.display(), why)),
+                Ok(file) => file,
+            };
+
+
+            if universe_integrator_snapshot_path.extension().unwrap() == "json" { 
+                //// Deserialize using `json::decode`
+                let mut json_encoded = String::new();
+                match snapshot_file.read_to_string(&mut json_encoded) {
+                    Err(why) => return Err(format!("Couldn't read {}: {}", universe_integrator_snapshot_path.display(), why)),
+                    Ok(_) => {}
+                }
+                universe_integrator = json::decode(&json_encoded).unwrap();
+            } else {
+                let mut reader = BufReader::new(snapshot_file);
+                universe_integrator = decode_from(&mut reader, SizeLimit::Infinite).unwrap();
+            }
+            println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
+            return Ok(universe_integrator);
+        } else {
+            return Err(format!("File does not exist"));
+        }
+    }
+    
+}
+
+impl Integrator for Ias15 {
+
+
+    fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>) -> Result<bool, String> {
         // Output
-        let add_header = self.last_print_time < 0.;
-        let time_triger = self.last_print_time + PRINT_EVERY_N_DAYS <= self.current_time;
-        if add_header || time_triger {
-            write_bin_snapshot(output_bin, &self.universe, self.current_time, self.time_step);
+        let first_snapshot_trigger = self.last_historic_snapshot_time < 0.;
+        let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
+        let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
+        if first_snapshot_trigger || historic_snapshot_time_trigger {
+            write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
+            self.last_historic_snapshot_time = self.current_time;
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
             let _ = std::io::stdout().flush();
-
-            if add_header || time_triger {
-                self.last_print_time = self.current_time;
-            } 
         }
 
         // Calculate accelerations.
-        self.universe.gravity_calculate_acceleration();
+        let integrator_is_whfasthelio = false;
+        self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
         // Calculate non-gravity accelerations.
         let only_dspin_dt = false;
         self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
@@ -98,8 +144,13 @@ impl Integrator for Ias15 {
         if self.current_time+self.time_step > self.time_limit {
             Err("reached maximum time limit.".to_string())
         } else {
-            Ok(())
+            Ok(first_snapshot_trigger || recovery_snapshot_time_trigger)
         }
+    }
+
+    fn prepare_for_recovery_snapshot(&mut self, universe_history_writer: &mut BufWriter<File>) {
+        self.last_recovery_snapshot_time = self.current_time;
+        universe_history_writer.flush().unwrap();
     }
 }
 
@@ -274,7 +325,8 @@ impl Ias15 {
 
 
                     // Calculate accelerations.
-                    self.universe.gravity_calculate_acceleration();
+                    let integrator_is_whfasthelio = false;
+                    self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
                     // Calculate non-gravity accelerations.
                     let only_dspin_dt = false;
                     self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);

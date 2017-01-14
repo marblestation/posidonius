@@ -1,21 +1,4 @@
 use std;
-use super::integrator::IntegratorType;
-
-//// Simulation
-pub const TIME_STEP: f64 = 0.08; // in days
-//pub const TIME_STEP: f64 = 0.003; // in days
-//pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;
-//pub const TIME_LIMIT: f64 = 365.25 * 1.0e3;
-pub const TIME_LIMIT: f64 = TIME_STEP*4.;
-pub const PRINT_EVERY_N_DAYS: f64 = 100.*365.25;
-//pub const PRINT_EVERY_N_DAYS: f64 = TIME_STEP;
-pub const INITIAL_TIME: f64 = 1.0e6*365.25; // time [days] where simulation starts
-//pub const INITIAL_TIME: f64 = 2.5e6*365.25; // time [days] where simulation starts (value for SolarLike or MathisSolarLike)
-
-//// Integrator
-pub const INTEGRATOR: IntegratorType = IntegratorType::LeapFrog;
-//pub const INTEGRATOR: IntegratorType = IntegratorType::Ias15;
-//pub const INTEGRATOR: IntegratorType = IntegratorType::WHFastHelio;
 
 //// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).
@@ -55,8 +38,3 @@ pub const M2EARTH : f64 = (1.9891e6/5.9794); // Factor for mass-radius relation 
 pub const SPEED_OF_LIGHT : f64 = 173.1444830225;
 pub const SPEED_OF_LIGHT_2 : f64 = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
 
-//// Others
-pub const CONSIDER_EVERY_BODY_COMBINATIONS: bool = false;
-pub const TIDES: bool = true;
-pub const ROTATIONAL_FLATTENING: bool = true;
-pub const GENERAL_RELATIVITY: bool = true;

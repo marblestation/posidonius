@@ -1,23 +1,16 @@
 mod leapfrog;
 mod ias15;
 mod whfasthelio;
-mod output;
+pub mod output;
 
 pub use self::leapfrog::*;
 pub use self::ias15::*;
 pub use self::whfasthelio::*;
 
-use super::particles::Universe;
-use std::io::{Write, BufWriter};
-
-#[derive(Debug,Copy, Clone)]
-pub enum IntegratorType {
-    LeapFrog,
-    Ias15,
-    WHFastHelio,
-}
+use std::io::{BufWriter};
+use std::fs::File;
 
 pub trait Integrator {
-    fn new(time_step: f64, time_limit: f64, universe: Universe) -> Self;
-    fn iterate<T: Write>(&mut self, output_bin: &mut BufWriter<T>) -> Result<(), String>;
+    fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>) -> Result<bool, String>;
+    fn prepare_for_recovery_snapshot(&mut self, universe_history_writer: &mut BufWriter<File>);
 }

@@ -1,5 +1,5 @@
 
-#[derive(Debug,Copy, Clone)]
+#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub struct Axes {
     pub x: f64,
     pub y: f64,

@@ -1,23 +1,24 @@
 use super::super::super::particles::{Axes, Particle, Universe};
+use super::super::super::{WHFastHelio};
 use super::super::super::particles::{EvolutionType};
-use super::super::super::constants::{M_EARTH, R_SUN, TWO_PI, R_EARTH, K2, G, DEG2RAD, INTEGRATOR};
+use super::super::super::constants::{M_EARTH, R_SUN, TWO_PI, R_EARTH, K2, G, DEG2RAD};
 use super::super::super::tools::{calculate_cartesian_coordinates, calculate_keplerian_orbital_elements};
 use super::super::super::tools::{calculate_spin};
 
-//pub const TIME_STEP: f64 = 0.08; // in days
-//pub const TIME_LIMIT: f64 = 365.25 * 1.0e8;
-//pub const PRINT_EVERY_N_DAYS: f64 = 100.*365.25;
-//pub const INITIAL_TIME: f64 = 1.0e6*365.25; // time [days] where simulation starts
-//
-//pub const CONSIDER_EVERY_BODY_COMBINATIONS: bool = false;
-//pub const TIDES: bool = true;
-//pub const ROTATIONAL_FLATTENING: bool = false;
-//pub const GENERAL_RELATIVITY: bool = false;
-
-pub fn case3() -> Universe {
+pub fn case3() -> WHFastHelio {
     ////////////////////////////////////////////////////////////////////////////
     // Initial conditions from CASE 3 in Bolmont et al. 2015
     ////////////////////////////////////////////////////////////////////////////
+    let time_step: f64 = 0.08; // in days
+    let time_limit: f64 = 365.25 * 1.0e8; // days
+    //let time_limit: f64 = time_step*4.;
+    let initial_time: f64 = 1.0e6*365.25; // time [days] where simulation starts
+    let historic_snapshot_period: f64 = 100.*365.25; // days
+    let recovery_snapshot_period: f64 = 100.*historic_snapshot_period; // days
+    let consider_tides = true;
+    let consider_rotational_flattening = false;
+    let consider_general_relativy = false;
+    let consider_all_body_interactions = false;
 
     ////////////////////////////////////////////////////////////////////////////
     //---- Star (central body)
@@ -44,7 +45,8 @@ pub fn case3() -> Universe {
     let stellar_evolution_type = EvolutionType::NonEvolving;
     let star = Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
-                                            star_position, star_velocity, star_acceleration, star_spin, stellar_evolution_type);
+                                            star_position, star_velocity, star_acceleration, star_spin, 
+                                            stellar_evolution_type, initial_time, time_limit);
     ////////////////////////////////////////////////////////////////////////////
 
 
@@ -94,12 +96,13 @@ pub fn case3() -> Universe {
     let planetary_evolution_type = EvolutionType::NonEvolving;
     let planet = Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
                                             planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
-                                            planet_position, planet_velocity, planet_acceleration, planet_spin, planetary_evolution_type);
+                                            planet_position, planet_velocity, planet_acceleration, planet_spin, 
+                                            planetary_evolution_type, initial_time, time_limit);
     ////////////////////////////////////////////////////////////////////////////
 
-    let universe = Universe::new(vec![star, planet], INTEGRATOR);
+    let universe = Universe::new(vec![star, planet], consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
+    let universe_integrator = WHFastHelio::new(time_step, time_limit, recovery_snapshot_period, historic_snapshot_period, universe);
 
-    //println!("{:?}", universe);
-    universe
+    universe_integrator
 }
 

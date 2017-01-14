@@ -1,14 +1,14 @@
-use super::super::constants::{R_SUN, M2AU, INITIAL_TIME, TIME_LIMIT};
+use super::super::constants::{R_SUN, M2AU};
 use super::super::tools::{interpolate_b_spline};
 use super::super::{csv};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub enum SolarEvolutionType {
     EvolvingDissipation(f64),
     ConstantDissipation,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub enum EvolutionType {
     BrownDwarf(f64),
     MDwarf,
@@ -17,7 +17,7 @@ pub enum EvolutionType {
     NonEvolving,
 }
 
-#[derive(Debug)]
+#[derive(Debug, RustcEncodable, RustcDecodable, PartialEq)]
 pub struct Evolver {
     pub evolution_type: EvolutionType,
     pub time: Vec<f64>,
@@ -45,7 +45,7 @@ impl Clone for Evolver {
 }
 
 impl Evolver {
-    pub fn new(evolution_type: EvolutionType) -> Evolver {
+    pub fn new(evolution_type: EvolutionType, initial_time: f64, time_limit: f64) -> Evolver {
         let mut time: Vec<f64> = Vec::new();
         let mut radius: Vec<f64> = Vec::new();
         let mut radius_of_gyration_2: Vec<f64> = Vec::new();
@@ -135,19 +135,19 @@ impl Evolver {
             // All types have time and radius
             let (current_time, current_radius) = match evolution_type {
                 EvolutionType::BrownDwarf(_) => {
-                    (raw_time * 365.25 - INITIAL_TIME, raw_radius * R_SUN)
+                    (raw_time * 365.25 - initial_time, raw_radius * R_SUN)
                 },
                 EvolutionType::MDwarf => {
-                    (raw_time * 365.25 - INITIAL_TIME, raw_radius * R_SUN)
+                    (raw_time * 365.25 - initial_time, raw_radius * R_SUN)
                 },
                 EvolutionType::SolarLike(model) => {
                     match model {
-                        SolarEvolutionType::ConstantDissipation => (raw_time * 365.25 - INITIAL_TIME, raw_radius * M2AU),
-                        SolarEvolutionType::EvolvingDissipation(_) => (raw_time * 365.25 - INITIAL_TIME, raw_radius * R_SUN),
+                        SolarEvolutionType::ConstantDissipation => (raw_time * 365.25 - initial_time, raw_radius * M2AU),
+                        SolarEvolutionType::EvolvingDissipation(_) => (raw_time * 365.25 - initial_time, raw_radius * R_SUN),
                     }
                 },
                 EvolutionType::Jupiter => {
-                    (raw_time * 365.25 - INITIAL_TIME, raw_radius * M2AU)
+                    (raw_time * 365.25 - initial_time, raw_radius * M2AU)
                 },
                 _ => {
                     (0., 0.)
@@ -224,10 +224,10 @@ impl Evolver {
         }
 
         if time.len() > 0 && time[0] > 0. {
-            panic!("Your initial time ({} days) is smaller than the minimum allowed age of the star ({} days)", INITIAL_TIME, time[0]+INITIAL_TIME);
+            panic!("Your initial time ({} days) is smaller than the minimum allowed age of the star ({} days)", initial_time, time[0]+initial_time);
         }
-        if time.len() > 0 && time[time.len()-1] < TIME_LIMIT {
-            panic!("Your time limit ({} days) is greater than the maximum allowed age of the star ({} days)", TIME_LIMIT, time[time.len()-1]);
+        if time.len() > 0 && time[time.len()-1] < time_limit {
+            panic!("Your time limit ({} days) is greater than the maximum allowed age of the star ({} days)", time_limit, time[time.len()-1]);
         }
 
         // BrownDwarf have a separate file for radius of gyration with a different time sampling
@@ -241,7 +241,7 @@ impl Evolver {
                 for row in rdr.records().map(|r| r.unwrap()) {
                     let raw_time = row[0].parse::<f64>().unwrap();
                     let raw_radius_of_gyration_2 = row[2].parse::<f64>().unwrap();
-                    let current_time = raw_time * 365.25 - INITIAL_TIME;
+                    let current_time = raw_time * 365.25 - initial_time;
                     let current_radius_of_gyration_2 = raw_radius_of_gyration_2;
                     tmp_time.push(current_time);
                     tmp_radius_of_gyration_2.push(current_radius_of_gyration_2);
