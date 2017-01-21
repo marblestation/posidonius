@@ -11,6 +11,7 @@ pub fn main_example() -> WHFastHelio {
     let time_step: f64 = 0.08; // in days
     //let time_limit: f64 = 365.25 * 1.0e8; // days
     let time_limit: f64 = time_step*4.; // days
+    //let time_limit: f64 = 365.25 * 1.0e2; // days
     let initial_time: f64 = 1.0e6*365.25; // time [days] where simulation starts
     let historic_snapshot_period: f64 = 100.*365.25; // days
     let recovery_snapshot_period: f64 = 10.*historic_snapshot_period; // days

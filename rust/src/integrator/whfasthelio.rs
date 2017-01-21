@@ -405,13 +405,21 @@ impl WHFastHelio {
             true => self.half_time_step,
             false => self.time_step
         };
-        let p1 = self.universe_heliocentric.particles[i].clone();
 
-        let r0 = (p1.position.x.powi(2) + p1.position.y.powi(2) + p1.position.z.powi(2)).sqrt();
+        // Save a copy of the original position and velocities
+        let p1_position;
+        let p1_velocity;
+        {
+            let p1 = &self.universe_heliocentric.particles[i];
+            p1_position = p1.position.clone();
+            p1_velocity = p1.velocity.clone();
+        }
+
+        let r0 = (p1_position.x.powi(2) + p1_position.y.powi(2) + p1_position.z.powi(2)).sqrt();
         let r0i = 1./r0;
-        let v2 = p1.velocity.x.powi(2) + p1.velocity.y.powi(2) + p1.velocity.z.powi(2);
+        let v2 = p1_velocity.x.powi(2) + p1_velocity.y.powi(2) + p1_velocity.z.powi(2);
         let beta = 2.*mass_g*r0i - v2;
-        let eta0 = p1.position.x*p1.velocity.x + p1.position.y*p1.velocity.y + p1.position.z*p1.velocity.z;
+        let eta0 = p1_position.x*p1_velocity.x + p1_position.y*p1_velocity.y + p1_position.z*p1_velocity.z;
         let zeta0 = mass_g - beta*r0;
         let mut x;
         let mut gs;
@@ -446,7 +454,7 @@ impl WHFastHelio {
         let mut old_x = x;
 
         //// Do one Newton step
-        gs = self.stiefel_gs3(beta, x);
+        gs = WHFastHelio::stiefel_gs3(beta, x);
         let eta0_gs1_zeta0_gs2 = eta0*gs[1] + zeta0*gs[2];
         let mut ri = 1./(r0 + eta0_gs1_zeta0_gs2);
         x  = ri*(x*eta0_gs1_zeta0_gs2-eta0*gs[2]-zeta0*gs[3]+_dt);
@@ -459,7 +467,7 @@ impl WHFastHelio {
             x = beta*_dt/mass_g;
             let mut prev_x = [0.; WHFAST_NMAX_QUART+1];
             'outer: for n_lag in 1..WHFAST_NMAX_QUART {
-                gs = self.stiefel_gs3(beta, x);
+                gs = WHFastHelio::stiefel_gs3(beta, x);
                 let f = r0*x + eta0*gs[2] + zeta0*gs[3] - _dt;
                 let fp = r0 + eta0*gs[1] + zeta0*gs[2];
                 let fpp = eta0*gs[0] + zeta0*gs[1];
@@ -483,7 +491,7 @@ impl WHFastHelio {
             for _ in 1..WHFAST_NMAX_NEWT {
                 old_x2 = old_x;
                 old_x = x;
-                gs = self.stiefel_gs3(beta, x);
+                gs = WHFastHelio::stiefel_gs3(beta, x);
                 let eta0_gs1_zeta0_gs2 = eta0*gs[1] + zeta0*gs[2];
                 ri = 1./(r0 + eta0_gs1_zeta0_gs2);
                 x  = ri*(x*eta0_gs1_zeta0_gs2-eta0*gs[2]-zeta0*gs[3]+_dt);
@@ -514,7 +522,7 @@ impl WHFastHelio {
             }
             x = (x_max + x_min)/2.;
             loop {
-                gs = self.stiefel_gs3(beta, x);
+                gs = WHFastHelio::stiefel_gs3(beta, x);
                 let s   = r0*x + eta0*gs[2] + zeta0*gs[3]-_dt;
                 if s >= 0. {
                     x_max = x;
@@ -545,27 +553,27 @@ impl WHFastHelio {
         let gd = -mass_g*gs[2]*ri; 
             
         let p_j = &mut self.universe_heliocentric.particles[i];
-        p_j.position.x += f*p1.position.x + g*p1.velocity.x;
-        p_j.position.y += f*p1.position.y + g*p1.velocity.y;
-        p_j.position.z += f*p1.position.z + g*p1.velocity.z;
+        p_j.position.x += f*p1_position.x + g*p1_velocity.x;
+        p_j.position.y += f*p1_position.y + g*p1_velocity.y;
+        p_j.position.z += f*p1_position.z + g*p1_velocity.z;
         
-        // WARNING: p1.position used below should not be modified by the previous block (keep p_j
+        // WARNING: p1_position used below should not be modified by the previous block (keep p_j
         // independent)
-        p_j.velocity.x += fd*p1.position.x + gd*p1.velocity.x;
-        p_j.velocity.y += fd*p1.position.y + gd*p1.velocity.y;
-        p_j.velocity.z += fd*p1.position.z + gd*p1.velocity.z;
+        p_j.velocity.x += fd*p1_position.x + gd*p1_velocity.x;
+        p_j.velocity.y += fd*p1_position.y + gd*p1_velocity.y;
+        p_j.velocity.z += fd*p1_position.z + gd*p1_velocity.z;
     }
 
-    fn stiefel_gs3(&mut self, beta: f64, x: f64) -> [f64; 6] {
+    fn stiefel_gs3(beta: f64, x: f64) -> [f64; 6] {
         let x2 = x.powi(2);
-        let mut gs = self.stumpff_cs3(beta*x2);
+        let mut gs = WHFastHelio::stumpff_cs3(beta*x2);
         gs[1] *= x; 
         gs[2] *= x2; 
         gs[3] *= x2*x;
         gs
     }
 
-    fn stumpff_cs3(&mut self, z: f64) -> [f64; 6] {
+    fn stumpff_cs3(z: f64) -> [f64; 6] {
         // Fast inverse factorial lookup table
         let invfactorial: [f64; 35] = [1., 1., 1./2., 1./6., 1./24., 1./120., 1./720., 1./5040., 1./40320., 1./362880., 1./3628800., 1./39916800., 1./479001600., 1./6227020800., 1./87178291200., 1./1307674368000., 1./20922789888000., 1./355687428096000., 1./6402373705728000., 1./121645100408832000., 1./2432902008176640000., 1./51090942171709440000., 1./1124000727777607680000., 1./25852016738884976640000., 1./620448401733239439360000., 1./15511210043330985984000000., 1./403291461126605635584000000., 1./10888869450418352160768000000., 1./304888344611713860501504000000., 1./8841761993739701954543616000000., 1./265252859812191058636308480000000., 1./8222838654177922817725562880000000., 1./263130836933693530167218012160000000., 1./8683317618811886495518194401280000000., 1./295232799039604140847618609643520000000.];
         let mut z = z;
@@ -628,17 +636,21 @@ impl WHFastHelio {
             star_heliocentric.velocity.y /= star_heliocentric.mass;
             star_heliocentric.velocity.z /= star_heliocentric.mass;
         }
-        let local_copy_star = self.universe.particles[0].clone();
-        let local_copy_star_heliocentric = self.universe_heliocentric.particles[0].clone();
-        for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..].iter_mut().zip(self.universe.particles[1..].iter()) {
-            particle_heliocentric.position.x  = particle.position.x  - local_copy_star.position.x ; 
-            particle_heliocentric.position.y  = particle.position.y  - local_copy_star.position.y ;
-            particle_heliocentric.position.z  = particle.position.z  - local_copy_star.position.z ;
-            particle_heliocentric.velocity.x = particle.velocity.x - local_copy_star_heliocentric.velocity.x;
-            particle_heliocentric.velocity.y = particle.velocity.y - local_copy_star_heliocentric.velocity.y;
-            particle_heliocentric.velocity.z = particle.velocity.z - local_copy_star_heliocentric.velocity.z;
-            particle_heliocentric.mass  = particle.mass;
+
+        if let Some((star, particles)) = self.universe.particles.split_first_mut() {
+            if let Some((star_heliocentric, particles_heliocentric)) = self.universe_heliocentric.particles.split_first_mut() {
+                for (particle_heliocentric, particle) in particles_heliocentric.iter_mut().zip(particles.iter()) {
+                    particle_heliocentric.position.x  = particle.position.x  - star.position.x ; 
+                    particle_heliocentric.position.y  = particle.position.y  - star.position.y ;
+                    particle_heliocentric.position.z  = particle.position.z  - star.position.z ;
+                    particle_heliocentric.velocity.x = particle.velocity.x - star_heliocentric.velocity.x;
+                    particle_heliocentric.velocity.y = particle.velocity.y - star_heliocentric.velocity.y;
+                    particle_heliocentric.velocity.z = particle.velocity.z - star_heliocentric.velocity.z;
+                    particle_heliocentric.mass  = particle.mass;
+                }
+            }
         }
+
     }
 
     fn to_inertial_pos(&mut self) {
@@ -655,41 +667,45 @@ impl WHFastHelio {
             star.position.y  = new_star_position.y;
             star.position.z  = new_star_position.z;
         }
-        let local_copy_star = self.universe.particles[0].clone();
-        for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..].iter().zip(self.universe.particles[1..].iter_mut()) {
-            particle.position.x = particle_heliocentric.position.x+local_copy_star.position.x;
-            particle.position.y = particle_heliocentric.position.y+local_copy_star.position.y;
-            particle.position.z = particle_heliocentric.position.z+local_copy_star.position.z;
+        if let Some((star, particles)) = self.universe.particles.split_first_mut() {
+            for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..].iter().zip(particles.iter_mut()) {
+                particle.position.x = particle_heliocentric.position.x+star.position.x;
+                particle.position.y = particle_heliocentric.position.y+star.position.y;
+                particle.position.z = particle_heliocentric.position.z+star.position.z;
+            }
         }
+
     }
     fn to_inertial_posvel(&mut self) {
         self.to_inertial_pos();
         let mtot = self.universe_heliocentric.particles[0].mass;
         let m0 = self.universe.particles[0].mass;
         let factor = mtot/m0;
-        let local_copy_star_heliocentric = self.universe_heliocentric.particles[0].clone();
-        for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..].iter().zip(self.universe.particles[1..].iter_mut()) {
-            particle.velocity.x = particle_heliocentric.velocity.x+local_copy_star_heliocentric.velocity.x;
-            particle.velocity.y = particle_heliocentric.velocity.y+local_copy_star_heliocentric.velocity.y;
-            particle.velocity.z = particle_heliocentric.velocity.z+local_copy_star_heliocentric.velocity.z;
+        if let Some((star_heliocentric, particles_heliocentric)) = self.universe_heliocentric.particles.split_first_mut() {
+            for (particle_heliocentric, particle) in particles_heliocentric.iter().zip(self.universe.particles[1..].iter_mut()) {
+                particle.velocity.x = particle_heliocentric.velocity.x+star_heliocentric.velocity.x;
+                particle.velocity.y = particle_heliocentric.velocity.y+star_heliocentric.velocity.y;
+                particle.velocity.z = particle_heliocentric.velocity.z+star_heliocentric.velocity.z;
+            }
         }
 
-        let mut new_star_velocity = self.universe_heliocentric.particles[0].velocity; // Copy
+        let mut new_star_velocity = self.universe_heliocentric.particles[0].velocity.clone();
         new_star_velocity.x = new_star_velocity.x*factor;
         new_star_velocity.y = new_star_velocity.y*factor;
         new_star_velocity.z = new_star_velocity.z*factor;
 
-        for particle in self.universe.particles[1..].iter_mut() {
-            let factor = particle.mass/m0;
-            new_star_velocity.x -= particle.velocity.x*factor;
-            new_star_velocity.y -= particle.velocity.y*factor;
-            new_star_velocity.z -= particle.velocity.z*factor;
-        }
+        if let Some((star, particles)) = self.universe.particles.split_first_mut() {
+            for particle in particles.iter_mut() {
+                let factor = particle.mass/m0;
+                new_star_velocity.x -= particle.velocity.x*factor;
+                new_star_velocity.y -= particle.velocity.y*factor;
+                new_star_velocity.z -= particle.velocity.z*factor;
+            }
 
-        let star = &mut self.universe.particles[0];
-        star.velocity.x = new_star_velocity.x;
-        star.velocity.y = new_star_velocity.y;
-        star.velocity.z = new_star_velocity.z;
+            star.velocity.x = new_star_velocity.x;
+            star.velocity.y = new_star_velocity.y;
+            star.velocity.z = new_star_velocity.z;
+        }
     }
 
     fn get_center_of_mass_of_pair(&self, center_of_mass: &mut Particle, particle: &Particle) {
@@ -771,18 +787,31 @@ impl WHFastHelio {
         if !self.is_synchronized {
             panic!("Non synchronized particles cannot be moved to star center.")
         }
-        let center = self.universe.particles[0].clone();
-        for particle in self.universe.particles[0..].iter_mut() {
-            particle.position.x  -= center.position.x;
-            particle.position.y  -= center.position.y;
-            particle.position.z  -= center.position.z;
-            particle.velocity.x -= center.velocity.x;
-            particle.velocity.y -= center.velocity.y;
-            particle.velocity.z -= center.velocity.z;
-            //particle.acceleration.x -= center.acceleration.x; // Should be always zero
-            //particle.acceleration.y -= center.acceleration.y;
-            //particle.acceleration.z -= center.acceleration.z;
+
+        if let Some((star, particles)) = self.universe.particles.split_first_mut() {
+            for particle in particles.iter_mut() {
+                particle.position.x  -= star.position.x;
+                particle.position.y  -= star.position.y;
+                particle.position.z  -= star.position.z;
+                particle.velocity.x -= star.velocity.x;
+                particle.velocity.y -= star.velocity.y;
+                particle.velocity.z -= star.velocity.z;
+                //particle.acceleration.x -= star.acceleration.x; // Should be always zero
+                //particle.acceleration.y -= star.acceleration.y;
+                //particle.acceleration.z -= star.acceleration.z;
+            }
+            star.position.x = 0.;
+            star.position.y = 0.;
+            star.position.z = 0.;
+            star.velocity.x = 0.;
+            star.velocity.y = 0.;
+            star.velocity.z = 0.;
+            //star.acceleration.x = 0.; // Should be always zero
+            //star.acceleration.y = 0.;
+            //star.acceleration.z = 0.;
         }
+
+
         self.to_helio_posvel();
         self.set_to_center_of_mass = false;
     }
