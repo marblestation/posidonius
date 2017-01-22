@@ -2,6 +2,7 @@ extern crate time;
 extern crate rustc_serialize;
 extern crate bincode;
 use std::fs::File;
+use std::fs::{OpenOptions};
 use std::io::{Write, BufWriter};
 use super::super::Integrator;
 use super::super::particles::Universe;
@@ -42,6 +43,39 @@ pub fn write_recovery_snapshot<I: Integrator+Encodable>(snapshot_path: &Path, un
 }
 
 
+pub fn n_bytes_per_particle_in_historic_snapshot() -> u64 {
+    let n_stored_fields : u64 = 31;
+    let n_bytes_per_particle = 8+8+4+8*(n_stored_fields-3);
+    n_bytes_per_particle
+}
+
+pub fn get_universe_history_writer(universe_history_path: &Path, expected_n_bytes: u64) -> BufWriter<File> {
+    // If history snapshot exists:
+    // - It validates that it contains all the expected data
+    // - If it contains more, the extra data is erased
+
+    // We create file options to write
+    let mut options_bin = OpenOptions::new();
+    options_bin.create(true).write(true).append(true);
+
+    let universe_history_file = match options_bin.open(&universe_history_path) {
+        Ok(f) => f,
+        Err(e) => panic!("file error: {}", e),
+    };
+
+    let metadata = universe_history_file.metadata().unwrap();
+    let current_n_bytes = metadata.len();
+    if current_n_bytes < expected_n_bytes {
+        panic!("Historic snapshots do not contain all the expected history ({} bytes) as indicated by the recovery snapshot ({} bytes)", current_n_bytes, expected_n_bytes);
+    }
+
+    // Keep only historic data that saved until the restored snapshot (if there it is the case)
+    universe_history_file.set_len(expected_n_bytes).unwrap();
+    ////////////////////////////////////////////////////////////////////////////
+    let universe_history_writer = BufWriter::new(universe_history_file);
+    ////////////////////////////////////////////////////////////////////////////
+    universe_history_writer
+}
 
 pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter<T>, universe: &Universe, current_time: f64, time_step: f64) {
     // It can be excessively inefficient to work directly with something that implements Write. For

@@ -46,6 +46,7 @@ pub struct LeapFrog {
     historic_snapshot_period: f64,
     last_recovery_snapshot_time: f64,
     last_historic_snapshot_time: f64,
+    pub n_historic_snapshots: usize,
 }
 
 impl LeapFrog {
@@ -57,6 +58,7 @@ impl LeapFrog {
                     historic_snapshot_period:historic_snapshot_period,
                     last_recovery_snapshot_time:-1.,
                     last_historic_snapshot_time:-1.,
+                    n_historic_snapshots:0,
                     universe:universe,
                     current_time:0.,
                     current_iteration:0,
@@ -107,6 +109,7 @@ impl Integrator for LeapFrog {
         if first_snapshot_trigger || historic_snapshot_time_trigger {
             write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
             self.last_historic_snapshot_time = self.current_time;
+            self.n_historic_snapshots += 1;
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
             let _ = std::io::stdout().flush();
