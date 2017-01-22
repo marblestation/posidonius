@@ -10,6 +10,8 @@ use bincode::SizeLimit;
 use std::io::{BufReader};
 use std::io::Read;
 use std::path::Path;
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 
 /// LeapFrog is a second order symplectic integrator
 /// http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:astro-ph/9710043
@@ -47,11 +49,21 @@ pub struct LeapFrog {
     last_recovery_snapshot_time: f64,
     last_historic_snapshot_time: f64,
     pub n_historic_snapshots: usize,
+    pub hash: u64,
+}
+
+impl Hash for LeapFrog {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hash only works with certain types (for instance, it does not work with f64 values)
+        // thus we convert the whole integrator to a string thanks to the debug trait
+        // and we hash that value
+        format!("{:?}", self).hash(state); 
+    }
 }
 
 impl LeapFrog {
     pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> LeapFrog {
-        LeapFrog {
+        let mut universe_integrator = LeapFrog {
                     time_step:time_step,
                     half_time_step:0.5*time_step,
                     recovery_snapshot_period:recovery_snapshot_period,
@@ -59,10 +71,15 @@ impl LeapFrog {
                     last_recovery_snapshot_time:-1.,
                     last_historic_snapshot_time:-1.,
                     n_historic_snapshots:0,
+                    hash: 0,
                     universe:universe,
                     current_time:0.,
                     current_iteration:0,
-                    }
+                    };
+        let mut s = DefaultHasher::new();
+        universe_integrator.hash(&mut s);
+        universe_integrator.hash = s.finish();
+        universe_integrator
     }
 
     pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<LeapFrog, String> {

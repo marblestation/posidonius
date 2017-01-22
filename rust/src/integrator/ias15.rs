@@ -11,6 +11,8 @@ use bincode::SizeLimit;
 use std::io::{BufReader};
 use std::io::Read;
 use std::path::Path;
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 
 ///https://arxiv.org/abs/1409.4779
 ///IAS15: A fast, adaptive, high-order integrator for gravitational dynamics, accurate to machine
@@ -31,6 +33,7 @@ pub struct Ias15 {
     last_recovery_snapshot_time: f64,
     last_historic_snapshot_time: f64,
     pub n_historic_snapshots: usize,
+    pub hash: u64,
     //// Integrator IAS15 data:
     n_particles: usize,
     integrator_iterations_max_exceeded : i32,  // Count how many times the iteration did not converge
@@ -50,16 +53,26 @@ pub struct Ias15 {
     s: [f64; 9], // Summation coefficients
 }
 
+impl Hash for Ias15 {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hash only works with certain types (for instance, it does not work with f64 values)
+        // thus we convert the whole integrator to a string thanks to the debug trait
+        // and we hash that value
+        format!("{:?}", self).hash(state); 
+    }
+}
+
 impl Ias15 {
     pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> Ias15 {
         let n_particles = universe.n_particles;
-        Ias15 {
+        let mut universe_integrator = Ias15 {
                     time_step:time_step,
                     recovery_snapshot_period:recovery_snapshot_period,
                     historic_snapshot_period:historic_snapshot_period,
                     last_recovery_snapshot_time: -1.,
                     last_historic_snapshot_time: -1.,
                     n_historic_snapshots:0,
+                    hash: 0,
                     universe:universe,
                     current_time:0.,
                     current_iteration:0,
@@ -78,7 +91,11 @@ impl Ias15 {
                     csx : vec![0.; 3*n_particles],
                     csv : vec![0.; 3*n_particles],
                     s   : [0.; 9],
-                    }
+                    };
+        let mut s = DefaultHasher::new();
+        universe_integrator.hash(&mut s);
+        universe_integrator.hash = s.finish();
+        universe_integrator
     }
 
     pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<Ias15, String> {

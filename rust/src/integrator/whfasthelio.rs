@@ -13,6 +13,8 @@ use bincode::SizeLimit;
 use std::io::{BufReader};
 use std::io::Read;
 use std::path::Path;
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 
 /// WHFastHelio (symplectic integrator) to be used always in safe mode (always sync because it is required by tides)
 /// and without correction (i.e. 2nd order integrator, comparable to mercury symplectic part of the hybrid integrator)
@@ -105,6 +107,7 @@ pub struct WHFastHelio {
     last_recovery_snapshot_time: f64,
     last_historic_snapshot_time: f64,
     pub n_historic_snapshots: usize,
+    pub hash: u64,
     /**
      * @brief This variable turns on/off different symplectic correctors for WHFastHelio. Same as for WHFast.
      * @details 
@@ -151,10 +154,19 @@ pub struct WHFastHelio {
     set_to_center_of_mass: bool
 }
 
+impl Hash for WHFastHelio {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hash only works with certain types (for instance, it does not work with f64 values)
+        // thus we convert the whole integrator to a string thanks to the debug trait
+        // and we hash that value
+        format!("{:?}", self).hash(state); 
+    }
+}
+
 impl WHFastHelio {
     pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> WHFastHelio {
         let universe_heliocentric = universe.clone(); // Clone will not clone evolving types
-        WHFastHelio {
+        let mut universe_integrator = WHFastHelio {
                     time_step:time_step,
                     half_time_step:0.5*time_step,
                     recovery_snapshot_period:recovery_snapshot_period,
@@ -162,6 +174,7 @@ impl WHFastHelio {
                     last_recovery_snapshot_time:-1.,
                     last_historic_snapshot_time:-1.,
                     n_historic_snapshots:0,
+                    hash: 0,
                     universe:universe,
                     current_time:0.,
                     current_iteration:0,
@@ -174,7 +187,11 @@ impl WHFastHelio {
                     recalculate_heliocentric_but_not_synchronized_warning: 0,
                     timestep_warning: 0,
                     set_to_center_of_mass: false,
-                    }
+                    };
+        let mut s = DefaultHasher::new();
+        universe_integrator.hash(&mut s);
+        universe_integrator.hash = s.finish();
+        universe_integrator
     }
     
     pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<WHFastHelio, String> {
