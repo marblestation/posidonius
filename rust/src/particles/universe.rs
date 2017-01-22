@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use super::super::constants::{K2, G, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES};
+use super::super::constants::{K2, G, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2};
 use super::{Evolver, EvolutionType, SolarEvolutionType};
 use super::{Particle};
 use super::{Axes};
@@ -18,7 +18,9 @@ pub struct Universe {
     star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
     parallel_universes : Vec<Universe>, // If consider all the interactions
     temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
+    temporary_copied_particle_velocities: [Axes; MAX_PARTICLES], // For optimization purposes
     temporary_copied_particles_masses: [f64; MAX_PARTICLES], // For optimization purposes
+    temporary_copied_particles_radiuses: [f64; MAX_PARTICLES], // For optimization purposes
 }
 
 impl Universe {
@@ -33,9 +35,10 @@ impl Universe {
             }
         }
 
-
         let temporary_copied_particle_positions = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
+        let temporary_copied_particle_velocities = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
         let temporary_copied_particles_masses = [0.; MAX_PARTICLES];
+        let temporary_copied_particles_radiuses = [0.; MAX_PARTICLES];
     
         // OPTIMIZATION: Transform vector to array
         // - Arrays are stored in the stack which is faster than the heap (where vectors are allocated)
@@ -75,7 +78,9 @@ impl Universe {
                     star_planet_dependent_dissipation_factors:HashMap::new(),
                     parallel_universes: parallel_universes,
                     temporary_copied_particle_positions: temporary_copied_particle_positions,
+                    temporary_copied_particle_velocities: temporary_copied_particle_velocities,
                     temporary_copied_particles_masses: temporary_copied_particles_masses,
+                    temporary_copied_particles_radiuses: temporary_copied_particles_radiuses,
                     };
         let current_time = 0.;
         universe.evolve_particles(current_time); // Make sure we start with the good initial values
@@ -88,21 +93,53 @@ impl Universe {
             self.temporary_copied_particle_positions[i].x = particle.position.x;
             self.temporary_copied_particle_positions[i].y = particle.position.y;
             self.temporary_copied_particle_positions[i].z = particle.position.z;
+            self.temporary_copied_particle_velocities[i].x = particle.velocity.x;
+            self.temporary_copied_particle_velocities[i].y = particle.velocity.y;
+            self.temporary_copied_particle_velocities[i].z = particle.velocity.z;
             self.temporary_copied_particles_masses[i] = particle.mass;
+            self.temporary_copied_particles_radiuses[i] = particle.radius;
         }
 
         for (i, particle_a) in self.particles[..self.n_particles].iter_mut().enumerate() {
 			particle_a.acceleration.x = 0.;
 			particle_a.acceleration.y = 0.;
 			particle_a.acceleration.z = 0.;
-            for (j, (particle_b_position, particle_b_mass)) in self.temporary_copied_particle_positions.iter().zip(self.temporary_copied_particles_masses.iter()).enumerate() {
+            for (j, (((particle_b_position, particle_b_velocity), particle_b_radius), particle_b_mass)) in self.temporary_copied_particle_positions[..self.n_particles].iter()
+                                                                .zip(self.temporary_copied_particle_velocities[..self.n_particles].iter())
+                                                                .zip(self.temporary_copied_particles_radiuses[..self.n_particles].iter())
+                                                                .zip(self.temporary_copied_particles_masses[..self.n_particles].iter()).enumerate() {
+                if i == j {
+                    continue;
+                }
+
+                //// Check collisions //////////////////////////////////////////////
+                let dx = particle_a.position.x - particle_b_position.x;
+                let dy = particle_a.position.y - particle_b_position.y;
+                let dz = particle_a.position.z - particle_b_position.z;
+                let distance_2 = dx*dx + dy*dy + dz*dz;
+                // Do not check twice the same pair of particles:
+                if i < j {
+                    // Check if particles are overlapping
+                    if distance_2 < (particle_a.radius + particle_b_radius).powi(2) {
+                        let dvx = particle_a.velocity.x - particle_b_velocity.x;
+                        let dvy = particle_a.velocity.y - particle_b_velocity.y;
+                        let dvz = particle_a.velocity.z - particle_b_velocity.z;
+                        // Check if particles are approaching each other by checking the sign of the non-normalized radial velocity
+                        if dvx*dx + dvy*dy + dvz*dz < 0. {
+                            panic!("Collision between particle {} and {}!", i, j);
+                        }
+                    }
+                    if i == 0 && distance_2 > MAX_DISTANCE_2 {
+                        panic!("Particle {} has been ejected!", j);
+                    }
+                }
+                //////////////////////////////////////////////////////////////////////
+
                 if integrator_is_whfasthelio && (i == 0 || j == 0) {
                     // For WHFastHelio, ignore central body
                     continue
                 }
-                if i == j {
-                    continue;
-                }
+
                 // gravitational force equation for vector quantities
                 // Fx = - G * ((m1 * m2) / r^3) * (x2 - x1)
                 // Fy = - G * ((m1 * m2) / r^3) * (y2 - y1)
@@ -110,10 +147,11 @@ impl Universe {
                 //
                 // acceleration:
                 // ax = Fx / m1 = - G * (m2 / r^3) * (x2 - x1)
-                let dx = particle_a.position.x - particle_b_position.x;
-                let dy = particle_a.position.y - particle_b_position.y;
-                let dz = particle_a.position.z - particle_b_position.z;
-                let r = (dx*dx + dy*dy + dz*dz).sqrt();
+                //let dx = particle_a.position.x - particle_b_position.x;
+                //let dy = particle_a.position.y - particle_b_position.y;
+                //let dz = particle_a.position.z - particle_b_position.z;
+                //let r = (dx*dx + dy*dy + dz*dz).sqrt();
+                let r = distance_2.sqrt();
                 let prefact = -G/(r*r*r) * particle_b_mass;
 
                 particle_a.acceleration.x += prefact * dx;
