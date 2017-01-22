@@ -23,7 +23,6 @@ use std::path::Path;
 #[derive(Debug, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub struct Ias15 {
     time_step: f64,
-    time_limit: f64,
     universe: Universe,
     current_time: f64,
     current_iteration: u32,
@@ -51,11 +50,10 @@ pub struct Ias15 {
 }
 
 impl Ias15 {
-    pub fn new(time_step: f64, time_limit: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> Ias15 {
-        let n_particles = universe.particles.len();
+    pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> Ias15 {
+        let n_particles = universe.n_particles;
         Ias15 {
                     time_step:time_step,
-                    time_limit:time_limit,
                     recovery_snapshot_period:recovery_snapshot_period,
                     historic_snapshot_period:historic_snapshot_period,
                     last_recovery_snapshot_time: -1.,
@@ -141,7 +139,7 @@ impl Integrator for Ias15 {
         self.current_iteration += 1;
 
         // Return
-        if self.current_time+self.time_step > self.time_limit {
+        if self.current_time+self.time_step > self.universe.time_limit {
             Err("reached maximum time limit.".to_string())
         } else {
             Ok(first_snapshot_trigger || recovery_snapshot_time_trigger)
@@ -205,7 +203,7 @@ impl Ias15 {
 
         loop {
 
-            for (k, particle) in self.universe.particles.iter().enumerate() {
+            for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                 self.x0[3*k]   = particle.position.x;
                 self.x0[3*k+1] = particle.position.y;
                 self.x0[3*k+2] = particle.position.z;
@@ -280,7 +278,7 @@ impl Ias15 {
 
                     //// Prepare particles arrays for force calculation
                     // Predict positions at interval n using self.b values
-                    for (i, particle) in self.universe.particles.iter_mut().enumerate() {
+                    for (i, particle) in self.universe.particles[..self.universe.n_particles].iter_mut().enumerate() {
                         let k0 : usize = 3*i+0;
                         let k1 : usize = 3*i+1;
                         let k2 : usize = 3*i+2;
@@ -308,7 +306,7 @@ impl Ias15 {
                         self.s[7] = 7. * self.s[6] * h[n] / 8.;
 
                         // Predict velocities at interval n using self.b values
-                        for (i, particle) in self.universe.particles.iter_mut().enumerate() {
+                        for (i, particle) in self.universe.particles[..self.universe.n_particles].iter_mut().enumerate() {
                             let k0 = 3*i+0;
                             let k1 = 3*i+1;
                             let k2 = 3*i+2;
@@ -331,7 +329,7 @@ impl Ias15 {
                     let only_dspin_dt = false;
                     self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
 
-                    for (k, particle) in self.universe.particles.iter().enumerate() {
+                    for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.acceleration.x;
                         self.at[3*k+1] = particle.acceleration.y;  
                         self.at[3*k+2] = particle.acceleration.z;
@@ -473,7 +471,7 @@ impl Ias15 {
                     let mut maxak: f64 = 0.0;
                     let mut maxb6k: f64 = 0.0;
                     // Looping over all particles and all 3 components of the acceleration. 
-                    for (i, particle) in self.universe.particles.iter().enumerate() {
+                    for (i, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         let v2 = particle.velocity.x*particle.velocity.x
                                     +particle.velocity.y*particle.velocity.y
                                     +particle.velocity.z*particle.velocity.z;
@@ -532,7 +530,7 @@ impl Ias15 {
                 
                 if (dt_new/dt_done).abs() < SAFETY_FACTOR {	// New timestep is significantly smaller.
                     // Reset particles
-                    for (k, particle) in self.universe.particles.iter_mut().enumerate() {
+                    for (k, particle) in self.universe.particles[..self.universe.n_particles].iter_mut().enumerate() {
                         particle.position.x = self.x0[3*k+0];	// Set inital position
                         particle.position.y = self.x0[3*k+1];
                         particle.position.z = self.x0[3*k+2];
@@ -589,7 +587,7 @@ impl Ias15 {
             self.current_time += dt_done;
 
             // Swap particle buffers
-            for (k, particle) in self.universe.particles.iter_mut().enumerate() {
+            for (k, particle) in self.universe.particles[..self.universe.n_particles].iter_mut().enumerate() {
                 particle.position.x = self.x0[3*k+0];	// Set final position
                 particle.position.y = self.x0[3*k+1];
                 particle.position.z = self.x0[3*k+2];

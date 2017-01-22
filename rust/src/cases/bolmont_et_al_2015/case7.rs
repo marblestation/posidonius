@@ -46,7 +46,7 @@ pub fn case7() -> WHFastHelio {
     let star = Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
                                             star_position, star_velocity, star_acceleration, star_spin, 
-                                            stellar_evolution_type, initial_time, time_limit);
+                                            stellar_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
 
@@ -97,7 +97,7 @@ pub fn case7() -> WHFastHelio {
     let inner_planet = Particle::new(inner_planet_mass, inner_planet_radius, inner_planet_dissipation_factor, inner_planet_dissipation_factor_scale, 
                                             inner_planet_radius_of_gyration_2, inner_planet_love_number, inner_planet_fluid_love_number,
                                             inner_planet_position, inner_planet_velocity, inner_planet_acceleration, inner_planet_spin, 
-                                            planetary_evolution_type, initial_time, time_limit);
+                                            planetary_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
     
     ////////////////////////////////////////////////////////////////////////////
@@ -146,11 +146,12 @@ pub fn case7() -> WHFastHelio {
     let outer_planet = Particle::new(outer_planet_mass, outer_planet_radius, outer_planet_dissipation_factor, outer_planet_dissipation_factor_scale, 
                                             outer_planet_radius_of_gyration_2, outer_planet_love_number, outer_planet_fluid_love_number,
                                             outer_planet_position, outer_planet_velocity, outer_planet_acceleration, outer_planet_spin, 
-                                            planetary_evolution_type, initial_time, time_limit);
+                                            planetary_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
-    let universe = Universe::new(vec![star, inner_planet, outer_planet], consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
-    let universe_integrator = WHFastHelio::new(time_step, time_limit, recovery_snapshot_period, historic_snapshot_period, universe);
+    let universe = Universe::new(vec![star, inner_planet, outer_planet], initial_time, time_limit,
+                                 consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
+    let universe_integrator = WHFastHelio::new(time_step, recovery_snapshot_period, historic_snapshot_period, universe);
 
     universe_integrator
 }

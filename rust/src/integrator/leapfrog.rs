@@ -39,7 +39,6 @@ use std::path::Path;
 pub struct LeapFrog {
     time_step: f64,
     half_time_step: f64,
-    time_limit: f64,
     universe: Universe,
     current_time: f64,
     current_iteration: u32,
@@ -50,11 +49,10 @@ pub struct LeapFrog {
 }
 
 impl LeapFrog {
-    pub fn new(time_step: f64, time_limit: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> LeapFrog {
+    pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> LeapFrog {
         LeapFrog {
                     time_step:time_step,
                     half_time_step:0.5*time_step,
-                    time_limit:time_limit,
                     recovery_snapshot_period:recovery_snapshot_period,
                     historic_snapshot_period:historic_snapshot_period,
                     last_recovery_snapshot_time:-1.,
@@ -134,7 +132,7 @@ impl Integrator for LeapFrog {
         self.current_iteration += 1;
 
         // Return
-        if self.current_time+self.time_step > self.time_limit {
+        if self.current_time+self.time_step > self.universe.time_limit {
             Err("reached maximum time limit.".to_string())
         } else {
             Ok(first_snapshot_trigger || recovery_snapshot_time_trigger)
@@ -153,7 +151,7 @@ impl LeapFrog {
     // for non-rotating frame.
     #[allow(dead_code)]
     fn integrator_part1(&mut self) {
-        for particle in self.universe.particles.iter_mut() {
+        for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
             particle.position.x += self.half_time_step * particle.velocity.x;
             particle.position.y += self.half_time_step * particle.velocity.y;
             particle.position.z += self.half_time_step * particle.velocity.z;
@@ -167,7 +165,7 @@ impl LeapFrog {
 
     #[allow(dead_code)]
     fn integrator_part2(&mut self) {
-        for particle in self.universe.particles.iter_mut() {
+        for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
             particle.velocity.x += self.time_step * particle.acceleration.x;
             particle.velocity.y += self.time_step * particle.acceleration.y;
             particle.velocity.z += self.time_step * particle.acceleration.z;

@@ -53,12 +53,12 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
     // 2.- Write accumulative output data to conserve the history of the simulation
     let total_energy = universe.compute_total_energy();
     let total_angular_momentum = universe.compute_total_angular_momentum();
-    for (i, particle) in universe.particles.iter().enumerate() {
+    for particle in universe.particles[..universe.n_particles].iter() {
         // Serialize in chunks of maximum 12 elements or it fails
         let output = (
                         current_time,                           // days
                         time_step,                              // days
-                        (i as i32),
+                        (particle.id as i32),
                         particle.position.x,                    // AU
                         particle.position.y,
                         particle.position.z,
@@ -71,10 +71,10 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                     );
         bincode::rustc_serialize::encode_into(&output, universe_history_writer, bincode::SizeLimit::Infinite).unwrap();
 
-        if i > 0 {
+        if particle.id > 0 {
             //// Only for planets
-            let star = 0;
-            let (semimajor_axis, perihelion_distance, eccentricity, inclination, longitude_of_perihelion, longitude_of_ascending_node, mean_anomaly) = calculate_keplerian_orbital_elements(universe.particles[star].mass_g+particle.mass_g, particle.position, particle.velocity);
+            let star_id = 0;
+            let (semimajor_axis, perihelion_distance, eccentricity, inclination, longitude_of_perihelion, longitude_of_ascending_node, mean_anomaly) = calculate_keplerian_orbital_elements(universe.particles[star_id].mass_g+particle.mass_g, particle.position, particle.velocity);
             // Calculation of orbital angular momentum (without mass and in AU^2/day)
             let horb_x = particle.position.y * particle.velocity.z - particle.position.z * particle.velocity.y;
             let horb_y = particle.position.z * particle.velocity.x - particle.position.x * particle.velocity.z;

@@ -2,6 +2,7 @@ use super::super::particles::{Axes, Particle, Universe};
 //use super::super::{WHFastHelio, Ias15, LeapFrog};
 use super::super::{WHFastHelio};
 use super::super::particles::{EvolutionType};
+//use super::super::particles::{SolarEvolutionType};
 use super::super::constants::{R_SUN, M_EARTH, TWO_PI, R_EARTH, K2, G, DEG2RAD};
 use super::super::tools::{calculate_cartesian_coordinates, calculate_keplerian_orbital_elements};
 //use super::super::tools::{calculate_pseudo_synchronization_period};
@@ -51,14 +52,15 @@ pub fn main_example() -> WHFastHelio {
     //let stellar_evolution_type = EvolutionType::BrownDwarf(star_mass);
     //let stellar_evolution_type = EvolutionType::MDwarf;
     //let stellar_evolution_type = EvolutionType::SolarLike(SolarEvolutionType::ConstantDissipation);
-    //let stellar_evolution_type = EvolutionType::SolarLike(SolarEvolutionType::EvolvingDissipation(star_mass));
     //let star_mass = 1.0;
+    //let initial_time: f64 = 4.5e6*365.25; // time [days] where simulation starts
+    //let stellar_evolution_type = EvolutionType::SolarLike(SolarEvolutionType::EvolvingDissipation(star_mass));
     //let stellar_evolution_type = EvolutionType::Jupiter;
     let stellar_evolution_type = EvolutionType::NonEvolving;
     let star = Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
                                             star_position, star_velocity, star_acceleration, star_spin,
-                                            stellar_evolution_type, initial_time, time_limit);
+                                            stellar_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
 
@@ -147,14 +149,15 @@ pub fn main_example() -> WHFastHelio {
     let planet = Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
                                             planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
                                             planet_position, planet_velocity, planet_acceleration, planet_spin, 
-                                            planetary_evolution_type, initial_time, time_limit);
+                                            planetary_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
-    let universe = Universe::new(vec![star, planet], consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
+    let universe = Universe::new(vec![star, planet], initial_time, time_limit, 
+                                 consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
 
-    //let universe_integrator = LeapFrog::new(time_step, time_limit, universe);
-    //let universe_integrator = Ias15::new(time_step, time_limit, universe);
-    let universe_integrator = WHFastHelio::new(time_step, time_limit, recovery_snapshot_period, historic_snapshot_period, universe);
+    //let universe_integrator = LeapFrog::new(time_step, universe);
+    //let universe_integrator = Ias15::new(time_step, universe);
+    let universe_integrator = WHFastHelio::new(time_step, recovery_snapshot_period, historic_snapshot_period, universe);
 
     universe_integrator
 }
@@ -179,8 +182,7 @@ pub fn example_with_helpers() -> WHFastHelio {
     let star_position = Axes{x:0., y:0., z:0.};
     let star_velocity = Axes{x:0., y:0., z:0.};
     let star_acceleration = Axes{x:0., y:0., z:0.};
-    let star = Particle::new_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_acceleration, star_evolution_type,
-                                        initial_time, time_limit);
+    let star = Particle::new_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_acceleration, star_evolution_type);
 
     ////////////////////////////////////////////////////////////////////////////
     //---- Planet
@@ -215,18 +217,17 @@ pub fn example_with_helpers() -> WHFastHelio {
     let planet_inclination = planet_keplerian_orbital_elements.3;
     let planet_spin = calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity, planet_position, planet_velocity);
 
-    let mut planet = Particle::new_terrestrial(planet_mass, planet_radius_factor, planet_dissipation_factor_scale, planet_position, planet_velocity, planet_acceleration, 
-                                               initial_time, time_limit);
+    let mut planet = Particle::new_terrestrial(planet_mass, planet_radius_factor, planet_dissipation_factor_scale, planet_position, planet_velocity, planet_acceleration);
     // Replace default values:
     planet.spin = planet_spin;
     planet.love_number = planet_love_number;
     ////////////////////////////////////////////////////////////////////////////
 
-    let universe = Universe::new(vec![star, planet], consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
+    let universe = Universe::new(vec![star, planet], initial_time, time_limit, consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
 
-    //let universe_integrator = posidonius::LeapFrog::new(time_step, time_limit, universe);
-    //let universe_integrator = posidonius::Ias15::new(time_step, time_limit, universe);
-    let universe_integrator = WHFastHelio::new(time_step, time_limit, recovery_snapshot_period, historic_snapshot_period, universe);
+    //let universe_integrator = posidonius::LeapFrog::new(time_step, universe);
+    //let universe_integrator = posidonius::Ias15::new(time_step, universe);
+    let universe_integrator = WHFastHelio::new(time_step, recovery_snapshot_period, historic_snapshot_period, universe);
 
     universe_integrator
 }

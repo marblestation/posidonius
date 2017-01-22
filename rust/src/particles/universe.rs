@@ -1,19 +1,29 @@
-use super::super::constants::{K2, G, SPEED_OF_LIGHT_2};
+use std::collections::HashMap;
+use super::super::constants::{K2, G, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES};
+use super::{Evolver, EvolutionType, SolarEvolutionType};
 use super::{Particle};
-use super::{EvolutionType, SolarEvolutionType};
 use super::{Axes};
 
 #[derive(Debug, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub struct Universe {
-    pub particles: Vec<Particle>,
+    pub initial_time: f64,
+    pub time_limit: f64,
+    pub particles: [Particle; MAX_PARTICLES],
+    pub particles_evolvers: Vec<Evolver>,
+    pub n_particles: usize,
     pub consider_tides: bool,
     pub consider_rotational_flattening: bool,
     pub consider_general_relativy: bool,
     pub consider_all_body_interactions: bool,
+    star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
+    parallel_universes : Vec<Universe>, // If consider all the interactions
+    temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
+    temporary_copied_particles_masses: [f64; MAX_PARTICLES], // For optimization purposes
 }
 
 impl Universe {
-    pub fn new(mut particles: Vec<Particle>, consider_tides: bool, consider_rotational_flattening:
+    pub fn new(mut particles: Vec<Particle>, initial_time: f64, time_limit: f64, 
+              consider_tides: bool, consider_rotational_flattening:
               bool, consider_general_relativy: bool, consider_all_body_interactions: bool) -> Universe {
         if consider_general_relativy {
             let star_index = 0; // index
@@ -23,29 +33,69 @@ impl Universe {
             }
         }
 
-        Universe {
-                    particles: particles,
+
+        let temporary_copied_particle_positions = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
+        let temporary_copied_particles_masses = [0.; MAX_PARTICLES];
+    
+        // OPTIMIZATION: Transform vector to array
+        // - Arrays are stored in the stack which is faster than the heap (where vectors are allocated)
+        // - The array should have a fixed size, thus it should always be equal or greater to the vector passed
+        // - The array elements to be considered will be limited by the n_particles value
+        let n_particles = particles.len();
+        if n_particles > MAX_PARTICLES {
+            panic!("Only {} bodies are allowed, you need to increase the MAX_PARTICLE constant.", MAX_PARTICLES);
+        }
+        let mut transformed_particles = [Particle::new_dummy(); MAX_PARTICLES];
+        let mut particles_evolvers : Vec<Evolver> = Vec::with_capacity(n_particles);
+        for i in 0..n_particles {
+            transformed_particles[i] = particles[i];
+            transformed_particles[i].id = i;
+            particles_evolvers.push(Evolver::new(transformed_particles[i].evolution_type, initial_time, time_limit));
+        }
+
+        // Parallel universes
+        let n_parallel_universes;
+        if consider_all_body_interactions {
+            n_parallel_universes = n_particles - 2;
+        } else {
+            n_parallel_universes = 0;
+        }
+        let parallel_universes : Vec<Universe> = Vec::with_capacity(n_parallel_universes);
+
+        let mut universe = Universe {
+                    initial_time: initial_time,
+                    time_limit: time_limit,
+                    particles: transformed_particles,
+                    particles_evolvers: particles_evolvers,
+                    n_particles: n_particles,
                     consider_tides: consider_tides,
                     consider_rotational_flattening: consider_rotational_flattening,
                     consider_general_relativy: consider_general_relativy,
-                    consider_all_body_interactions: consider_all_body_interactions,
-                    }
+                    consider_all_body_interactions: consider_all_body_interactions && n_parallel_universes > 0,
+                    star_planet_dependent_dissipation_factors:HashMap::new(),
+                    parallel_universes: parallel_universes,
+                    temporary_copied_particle_positions: temporary_copied_particle_positions,
+                    temporary_copied_particles_masses: temporary_copied_particles_masses,
+                    };
+        let current_time = 0.;
+        universe.evolve_particles(current_time); // Make sure we start with the good initial values
+        universe
     }
 
     pub fn gravity_calculate_acceleration(&mut self, integrator_is_whfasthelio: bool) {
-        let mut local_copy_particles_position : Vec<Axes> = Vec::with_capacity(self.particles.len());
-        let mut local_copy_particles_mass : Vec<f64> = Vec::with_capacity(self.particles.len());
-        for particle in self.particles.iter_mut() {
-            local_copy_particles_position.push(particle.position.clone());
-            local_copy_particles_mass.push(particle.mass.clone());
+
+        for (i, particle) in self.particles[..self.n_particles].iter().enumerate() {
+            self.temporary_copied_particle_positions[i].x = particle.position.x;
+            self.temporary_copied_particle_positions[i].y = particle.position.y;
+            self.temporary_copied_particle_positions[i].z = particle.position.z;
+            self.temporary_copied_particles_masses[i] = particle.mass;
         }
 
-        for (i, particle_a) in self.particles.iter_mut().enumerate() {
+        for (i, particle_a) in self.particles[..self.n_particles].iter_mut().enumerate() {
 			particle_a.acceleration.x = 0.;
 			particle_a.acceleration.y = 0.;
 			particle_a.acceleration.z = 0.;
-            //for (j, particle_b) in local_copy_particles.iter().enumerate() {
-            for (j, (particle_b_position, particle_b_mass)) in local_copy_particles_position.iter().zip(local_copy_particles_mass.iter()).enumerate() {
+            for (j, (particle_b_position, particle_b_mass)) in self.temporary_copied_particle_positions.iter().zip(self.temporary_copied_particles_masses.iter()).enumerate() {
                 if integrator_is_whfasthelio && (i == 0 || j == 0) {
                     // For WHFastHelio, ignore central body
                     continue
@@ -76,7 +126,7 @@ impl Universe {
             // Tides require heliocentric point of reference, the star should continue in the zero point
             // so we must compensate all the planets (but if WHFastHelio is being used, it is
             // automatically done by the integrator):
-            if let Some((star, particles)) = self.particles.split_first_mut() {
+            if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
                 for particle in particles.iter_mut() {
                     particle.acceleration.x -= star.acceleration.x;
                     particle.acceleration.y -= star.acceleration.y;
@@ -131,11 +181,9 @@ impl Universe {
         //let (tx, rx) = mpsc::channel();
         ////////////////////////////////////////////////////////////////////////
 
-        for particle in self.particles.iter_mut() {
-            particle.evolve(current_time);
-        }
+        self.evolve_particles(current_time);
 
-        let n_original_particles = self.particles.len();
+        let n_original_particles = self.n_particles;
         let n_parallel_universes;
         if self.consider_all_body_interactions {
             n_parallel_universes = n_original_particles - 2;
@@ -143,47 +191,53 @@ impl Universe {
             n_parallel_universes = 0;
         }
 
-        // Build parallel universes if needed
-        let mut parallel_universes : Vec<Universe> = Vec::with_capacity(n_parallel_universes);
-        for id in 0..n_parallel_universes {
-            let mut parallel_universe = self.clone();
-            parallel_universe.particles.reverse();
-            parallel_universe.particles.truncate(n_original_particles - (id+1)); // retain first N elements
-            parallel_universe.particles.reverse();
-            // Forget accelerations from the original universe
-            for particle in parallel_universe.particles.iter_mut() {
-                particle.acceleration.x = 0.0;
-                particle.acceleration.y = 0.0;
-                particle.acceleration.z = 0.0;
+        if self.consider_all_body_interactions {
+            // Build parallel universes if needed
+            self.parallel_universes.clear();
+            for _ in 0..n_parallel_universes {
+                let mut parallel_universe = self.clone();
+                // Remove central body
+                for i in 0..parallel_universe.n_particles {
+                    parallel_universe.particles[i] = parallel_universe.particles[i+1]
+                }
+                parallel_universe.n_particles -= 1;
+                // Forget accelerations from the original universe
+                for particle in parallel_universe.particles[..parallel_universe.n_particles].iter_mut() {
+                    particle.acceleration.x = 0.0;
+                    particle.acceleration.y = 0.0;
+                    particle.acceleration.z = 0.0;
+                }
+                // Re-center system over the new first body
+                parallel_universe.center_to_first_particle();
+                self.parallel_universes.push(parallel_universe)
             }
-            // Re-center system over the new first body
-            parallel_universe.center_to_first_particle();
-            parallel_universes.push(parallel_universe)
-        }
 
-        // Compute parallel universes
-        for parallel_universe in parallel_universes.iter_mut() {
-            parallel_universe.calculate_dspin_dt();
-            if !only_dspin_dt {
-                parallel_universe.calculate_acceleration_corrections();
+            // Compute parallel universes
+            for parallel_universe in self.parallel_universes.iter_mut() {
+                parallel_universe.calculate_dspin_dt();
+                if !only_dspin_dt {
+                    parallel_universe.calculate_acceleration_corrections();
+                }
             }
         }
 
         ////////////////////////////////////////////////////////////////////////
         ////// Execute in parallel
-        //for parallel_universe in parallel_universes.iter_mut() {
-            //let tx = tx.clone();
-            //let mut parallel_universe = parallel_universe.clone();
+        //if self.consider_all_body_interactions {
+            //for parallel_universe in self.parallel_universes.iter_mut() {
+                //let tx = tx.clone();
+                //let mut parallel_universe = parallel_universe.clone();
 
-            //thread_pool.execute(move || {
-                //parallel_universe.particles[0].acceleration.x = 1.;
-                //parallel_universe.calculate_dspin_dt();
-                //if !only_dspin_dt {
-                    //parallel_universe.calculate_acceleration_corrections();
-                //}
-                
-                //tx.send(parallel_universe).unwrap();
-            //});
+                //thread_pool.execute(move || {
+                    //parallel_universe.particles[0].acceleration.x = 1.;
+                    //parallel_universe.calculate_dspin_dt();
+                    //if !only_dspin_dt {
+                        //parallel_universe.calculate_acceleration_corrections();
+                    //}
+                    
+                    //tx.send(parallel_universe).unwrap();
+                //});
+            //}
         //}
         ////////////////////////////////////////////////////////////////////////
 
@@ -195,51 +249,56 @@ impl Universe {
 
         ////////////////////////////////////////////////////////////////////////
         ////// Collect results from parallel threads
-        //parallel_universes.clear();
-        //for _ in 0..n_parallel_universes {
-            //// It will block the current thread if there no messages available
-            //let parallel_universe = rx.recv().unwrap();
-            //parallel_universes.push(parallel_universe);
+        //if self.consider_all_body_interactions {
+            //self.parallel_universes.clear();
+            //for _ in 0..n_parallel_universes {
+                //// It will block the current thread if there no messages available
+                //let parallel_universe = rx.recv().unwrap();
+                //self.parallel_universes.push(parallel_universe);
+            //}
         //}
         ////////////////////////////////////////////////////////////////////////
 
 
-        // Integrate results from all parallel universes into this universe
-        for parallel_universe in parallel_universes.iter() {
-            //let mut num = 0;
-            let id = n_original_particles - parallel_universe.particles.len() - 1;
+        if self.consider_all_body_interactions {
+            // Integrate results from all parallel universes into this universe
+            for parallel_universe in self.parallel_universes.iter() {
+                //let mut num = 0;
+                let id = n_original_particles - parallel_universe.n_particles - 1;
 
-            for (particle, particle_parallel_universe) in self.particles[1+id..].iter_mut().zip(parallel_universe.particles.iter()) {
-                //println!("Body {}:", num);
-                if !only_dspin_dt {
-                    //println!("      Acceleration {:e} {:e} {:e}", particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
-                    particle.acceleration.x += particle_parallel_universe.acceleration.x;
-                    particle.acceleration.y += particle_parallel_universe.acceleration.y;
-                    particle.acceleration.z += particle_parallel_universe.acceleration.z; 
-                    //println!("      Acceleration {:e} {:e} {:e}", particle_parallel_universe.acceleration.x, particle_parallel_universe.acceleration.y, particle_parallel_universe.acceleration.z);
-                    //println!("Added              {:e} {:e} {:e}", particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
+                for (particle, particle_parallel_universe) in self.particles[1+id..self.n_particles].iter_mut().zip(parallel_universe.particles[..parallel_universe.n_particles].iter()) {
+                    //println!("Body {}:", num);
+                    if !only_dspin_dt {
+                        //println!("      Acceleration {:e} {:e} {:e}", particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
+                        particle.acceleration.x += particle_parallel_universe.acceleration.x;
+                        particle.acceleration.y += particle_parallel_universe.acceleration.y;
+                        particle.acceleration.z += particle_parallel_universe.acceleration.z; 
+                        //println!("      Acceleration {:e} {:e} {:e}", particle_parallel_universe.acceleration.x, particle_parallel_universe.acceleration.y, particle_parallel_universe.acceleration.z);
+                        //println!("Added              {:e} {:e} {:e}", particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
+                    }
+                    //println!("      dspin_dt {:e} {:e} {:e}", particle.dspin_dt.x, particle.dspin_dt.y, particle.dspin_dt.z);
+                    particle.dspin_dt.x += particle_parallel_universe.dspin_dt.x;
+                    particle.dspin_dt.y += particle_parallel_universe.dspin_dt.y;
+                    particle.dspin_dt.z += particle_parallel_universe.dspin_dt.z;
+                    //println!("      dspin_dt {:e} {:e} {:e}", particle_parallel_universe.dspin_dt.x, particle_parallel_universe.dspin_dt.y, particle_parallel_universe.dspin_dt.z);
+                    //println!("Added          {:e} {:e} {:e}", particle.dspin_dt.x, particle.dspin_dt.y, particle.dspin_dt.z);
+                    //num += 1;
                 }
-                //println!("      dspin_dt {:e} {:e} {:e}", particle.dspin_dt.x, particle.dspin_dt.y, particle.dspin_dt.z);
-                particle.dspin_dt.x += particle_parallel_universe.dspin_dt.x;
-                particle.dspin_dt.y += particle_parallel_universe.dspin_dt.y;
-                particle.dspin_dt.z += particle_parallel_universe.dspin_dt.z;
-                //println!("      dspin_dt {:e} {:e} {:e}", particle_parallel_universe.dspin_dt.x, particle_parallel_universe.dspin_dt.y, particle_parallel_universe.dspin_dt.z);
-                //println!("Added          {:e} {:e} {:e}", particle.dspin_dt.x, particle.dspin_dt.y, particle.dspin_dt.z);
-                //num += 1;
+                //println!("--------------------------------------------");
             }
-            //println!("--------------------------------------------");
+            self.parallel_universes.clear();
         }
 
         // Recover first original body as frame of reference
         self.center_to_first_particle();
-        //for (i, particle) in self.particles[1..].iter().enumerate() {
+        //for (i, particle) in self.particles[1..self.n_particles].iter().enumerate() {
             //println!("{} - Acceleration {:e} {:e} {:e}", i, particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
         //}
     }
 
 
     pub fn center_to_first_particle(&mut self) {
-        if let Some((star, particles)) = self.particles.split_first_mut() {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {
                 particle.position.x  -= star.position.x;
                 particle.position.y  -= star.position.y;
@@ -290,8 +349,8 @@ impl Universe {
         }
 
         // Add the tidal+flattening+general relativity accelerations to the gravitational one (already computed)
-        //for particle in self.particles[1..].iter_mut() {
-        for particle in self.particles.iter_mut() {
+        //for particle in self.particles[1..self.n_particles].iter_mut() {
+        for particle in self.particles[..self.n_particles].iter_mut() {
             if self.consider_tides {
                 particle.acceleration.x += particle.tidal_acceleration.x;
                 particle.acceleration.y += particle.tidal_acceleration.y;
@@ -318,7 +377,7 @@ impl Universe {
     ////////////////////////////////////////////////////////////////////////////
     // TIDES
     fn calculate_torque_due_to_tides(&mut self, central_body:bool) {
-        if let Some((star, particles)) = self.particles.split_first_mut() {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             let mut torque = Axes{x: 0., y: 0., z:0.};
             let mut reference_spin = star.spin.clone();
             let mut orthogonal_component_of_the_tidal_force: f64;
@@ -385,7 +444,7 @@ impl Universe {
     }
 
     fn calculate_orthogonal_component_of_the_tidal_force(&mut self, central_body:bool) {
-        if let Some((star, particles)) = self.particles.split_first_mut() {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {
                 // (distance to star)^7
                 let distance_7 = particle.distance.powi(7);
@@ -395,7 +454,7 @@ impl Universe {
                 // - Ftides in Msun.AU.day-1
                 if central_body {
                     // - F_tides_ortho_star
-                    let star_dissipation_factor = star.planet_dependent_dissipation_factor(&particle.id);
+                    let star_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &star.id, star.evolution_type, star.scaled_dissipation_factor);
                     particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass_g.powi(2))
                                                     * (star.radius.powi(10)) 
                                                     * star_dissipation_factor / ( (K2.powi(2)) * distance_7);
@@ -424,7 +483,7 @@ impl Universe {
         // F_tides_rad
         // F_tides_rad_cons
         // F_tides_rad_diss
-        if let Some((star, particles)) = self.particles.split_first_mut() {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             let star_mass_2 = star.mass_g * star.mass_g;
 
             for particle in particles.iter_mut() {
@@ -443,7 +502,7 @@ impl Universe {
                 // - Ftidr_diss
                 let factor1 = -13.5 * particle.radial_velocity / (particle.distance.powi(8) * K2*K2);
                 //let factor1 = -13.5 * particle.radial_velocity / particle.distance.powi(8);
-                let star_dissipation_factor = star.planet_dependent_dissipation_factor(&particle.id);
+                let star_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &star.id, star.evolution_type, star.scaled_dissipation_factor);
                 let term1 = planet_mass_2
                             * star.radius.powi(10)
                             * star_dissipation_factor;
@@ -488,7 +547,7 @@ impl Universe {
 
 
     fn calculate_tidal_acceleration(&mut self) {
-        if let Some((star, particles)) = self.particles.split_first_mut() {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             let factor2 = K2 / star.mass_g;
             //let factor2 = 1 / star.mass;
             let mut sum_total_tidal_force = Axes{x:0., y:0., z:0.};
@@ -543,7 +602,7 @@ impl Universe {
 
     fn calculate_general_relativity_acceleration(&mut self) {
 
-        if let Some((star, particles)) = self.particles.split_first_mut() {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             let factor2 = K2 / star.mass_g;
             //let factor2 = 1 / star.mass;
             let mut sum_total_general_relativity_force = Axes{x:0., y:0., z:0.};
@@ -604,7 +663,7 @@ impl Universe {
 
 
     fn calculate_acceleration_induced_by_rotational_flattering(&mut self) {
-        if let Some((star, particles)) = self.particles.split_first_mut() {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             let factor2 = K2 / star.mass_g;
             //let factor2 = 1 / star.mass;
 
@@ -680,7 +739,7 @@ impl Universe {
     fn calculate_distance_and_velocities(&mut self) {
         // Calculation of velocity vv(j), radial velocity vrad(j)
         // velocities in AU/day
-        for particle in self.particles[1..].iter_mut() {
+        for particle in self.particles[1..self.n_particles].iter_mut() {
             // Norm of the velocity
             let v_2 = (particle.velocity.x.powi(2)) 
                                 + (particle.velocity.y.powi(2))
@@ -714,11 +773,11 @@ impl Universe {
 
     fn calculate_planet_dependent_dissipation_factors(&mut self) {
         let star_index = 0; // index
-        match self.particles[star_index].evolver.evolution_type {
+        match self.particles[star_index].evolution_type {
             EvolutionType::SolarLike(model) => {
                 match model {
                     SolarEvolutionType::EvolvingDissipation(_) => {
-                        if let Some((star, particles)) = self.particles.split_first_mut() {
+                        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
                             for particle in particles.iter() {
                                 let frequency = (particle.velocity.x - star.spin.y*particle.position.z + star.spin.z*particle.position.y).powi(2)
                                             + (particle.velocity.y - star.spin.z*particle.position.x + star.spin.x*particle.position.z).powi(2)
@@ -729,7 +788,7 @@ impl Universe {
                                 let planet_dependent_dissipation_factor = star.dissipation_factor_scale * 2.0 * K2
                                     * star.lag_angle * inverse_of_half_the_excitation_frequency / (3.0*star.radius.powi(5));
 
-                                star.planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
+                                self.star_planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
                                 //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);
                             }
                         }
@@ -742,18 +801,35 @@ impl Universe {
 
     }
 
+    pub fn planet_dependent_dissipation_factor(star_planet_dependent_dissipation_factors: &HashMap<usize, f64>,  id: &usize, evolution_type: EvolutionType, scaled_dissipation_factor: f64) -> f64 {
+        match evolution_type {
+            EvolutionType::SolarLike(model) => {
+                match model {
+                    SolarEvolutionType::EvolvingDissipation(_) => {
+                        match star_planet_dependent_dissipation_factors.get(id) {
+                            Some(&value) => value,
+                            _ => scaled_dissipation_factor // This should not happen
+                        }
+                    },
+                    _ => scaled_dissipation_factor,
+                }
+            },
+            _ => scaled_dissipation_factor,
+        }
+    }
+
     pub fn compute_total_energy(&self) -> f64 {
         let mut e_kin = 0.;
         let mut e_pot = 0.;
         let e_offset = 0.; // Energy offset due to collisions and ejections
 
         // Kinectic energy
-        for particle in self.particles.iter() {
+        for particle in self.particles[..self.n_particles].iter() {
             e_kin += 0.5 * particle.mass * (particle.velocity.x.powi(2) + particle.velocity.y.powi(2) + particle.velocity.z.powi(2));
         }
         // Gravitationl potential energy
-        for (i, particle_a) in self.particles.iter().enumerate() {
-            for particle_b in self.particles[i+1..].iter() {
+        for (i, particle_a) in self.particles[..self.n_particles].iter().enumerate() {
+            for particle_b in self.particles[i+1..self.n_particles].iter() {
                 let dx = particle_a.position.x - particle_b.position.x;
                 let dy = particle_a.position.y - particle_b.position.y;
                 let dz = particle_a.position.z - particle_b.position.z;
@@ -766,13 +842,42 @@ impl Universe {
 
     pub fn compute_total_angular_momentum(&self) -> f64 {
         let mut total_angular_momentum = Axes{x:0., y:0., z:0.}; // L
-        for particle in self.particles.iter() {
+        for particle in self.particles[..self.n_particles].iter() {
             total_angular_momentum.x += particle.mass*(particle.position.y*particle.velocity.z - particle.position.z*particle.velocity.y);
             total_angular_momentum.y += particle.mass*(particle.position.z*particle.velocity.x - particle.position.x*particle.velocity.z);
             total_angular_momentum.z += particle.mass*(particle.position.x*particle.velocity.y - particle.position.y*particle.velocity.x);
         }
         let total_angular_momentum = (total_angular_momentum.x.powf(2.) + total_angular_momentum.y.powf(2.) + total_angular_momentum.z.powf(2.)).sqrt();
         total_angular_momentum
+    }
+    
+    pub fn evolve_particles(&mut self, current_time: f64) {
+        for (particle, evolver) in self.particles[..self.n_particles].iter_mut().zip(self.particles_evolvers.iter()) {
+            particle.radius = evolver.radius(current_time, particle.radius);
+            particle.radius_of_gyration_2 = evolver.radius_of_gyration_2(current_time, particle.radius_of_gyration_2);
+            particle.love_number = evolver.love_number(current_time, particle.love_number);
+            particle.lag_angle = match evolver.evolution_type {
+                    EvolutionType::SolarLike(model) => {
+                        match model {
+                            SolarEvolutionType::EvolvingDissipation(_) => {
+                                let inverse_tidal_q_factor = evolver.inverse_tidal_q_factor(current_time, 0.);
+                                //
+                                // Calculation of the norm square of the spin for the star
+                                let normspin_2 = particle.spin.x.powi(2) + particle.spin.y.powi(2) + particle.spin.z.powi(2);
+                                let epsilon_squared = normspin_2/SUN_DYN_FREQ;
+                                // Normal formula = 3.d0*epsilon_squared*Q_str_inv/(4.d0*k2s)
+                                // but as for sigma it is necessary to divide by k2s, we do not divide here
+                                let lag_angle = 3.0*epsilon_squared*inverse_tidal_q_factor/4.0;
+                                lag_angle
+                            },
+                            _ => 0.,
+                        }
+                    },
+                    _ => 0.,
+            };
+            //println!("[{}] Evolve Radius {:e} Gyration {:e} Love {:e} Lag {:e}", current_time, particle.radius, particle.radius_of_gyration_2, particle.love_number, particle.lag_angle);
+        }
+
     }
 
 }

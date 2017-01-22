@@ -46,7 +46,7 @@ pub fn case4() -> WHFastHelio {
     let star = Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
                                             star_position, star_velocity, star_acceleration, star_spin, 
-                                            stellar_evolution_type, initial_time, time_limit);
+                                            stellar_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
 
@@ -97,11 +97,12 @@ pub fn case4() -> WHFastHelio {
     let planet = Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
                                             planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
                                             planet_position, planet_velocity, planet_acceleration, planet_spin, 
-                                            planetary_evolution_type, initial_time, time_limit);
+                                            planetary_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
-    let universe = Universe::new(vec![star, planet], consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
-    let universe_integrator = WHFastHelio::new(time_step, time_limit, recovery_snapshot_period, historic_snapshot_period, universe);
+    let universe = Universe::new(vec![star, planet], initial_time, time_limit,
+                                 consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
+    let universe_integrator = WHFastHelio::new(time_step, recovery_snapshot_period, historic_snapshot_period, universe);
 
     universe_integrator
 }

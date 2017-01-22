@@ -1,5 +1,7 @@
 use std;
 
+pub const MAX_PARTICLES : usize = 3; // The optimal value matches the real number of bodies, but a greater number will work too.
+
 //// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).
 pub const INTEGRATOR_EPSILON_GLOBAL : bool = true;  // if true: estimate the fractional error by max(acceleration_error)/max(acceleration), where max is take over all particles.

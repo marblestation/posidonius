@@ -18,5 +18,4 @@ debug = false
 time = "*"
 bincode = "*"
 csv = "*"
-rand = "*"
 rustc-serialize = "*"
