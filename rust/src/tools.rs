@@ -682,7 +682,8 @@ fn modulus(a: f64, b: f64) -> f64 {
     return a - (a / b).floor() * b;
 }
 
-pub fn interpolate_b_spline(tdata: &Vec<f64>, ydata: &Vec<f64>, tval: f64) -> f64 {
+pub fn interpolate_b_spline(tdata: &[f64], ydata: &[f64], tval: f64) -> (f64, usize) {
+    //// OPTIMIZATION: Return last left to reduce future searches
     // Based on: 
     //
     //    SPLINE_B_VAL evaluates a cubic B spline approximant.
@@ -757,10 +758,10 @@ pub fn interpolate_b_spline(tdata: &Vec<f64>, ydata: &Vec<f64>, tval: f64) -> f6
 
     }
 
-    return yval;
+    return (yval, left);
 }
 
-fn find_indices_around_target_value(data: &Vec<f64>, target_value: f64) -> (usize, usize) {
+fn find_indices_around_target_value(data: &[f64], target_value: f64) -> (usize, usize) {
     // Find the nearest interval [ x(LEFT), x(RIGHT) ] to XVAL.
     let ndata = data.len();
     let last_idx = ndata.wrapping_sub(1);

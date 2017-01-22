@@ -852,7 +852,7 @@ impl Universe {
     }
     
     pub fn evolve_particles(&mut self, current_time: f64) {
-        for (particle, evolver) in self.particles[..self.n_particles].iter_mut().zip(self.particles_evolvers.iter()) {
+        for (particle, evolver) in self.particles[..self.n_particles].iter_mut().zip(self.particles_evolvers.iter_mut()) {
             particle.radius = evolver.radius(current_time, particle.radius);
             particle.radius_of_gyration_2 = evolver.radius_of_gyration_2(current_time, particle.radius_of_gyration_2);
             particle.love_number = evolver.love_number(current_time, particle.love_number);

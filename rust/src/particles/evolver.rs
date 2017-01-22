@@ -25,6 +25,7 @@ pub struct Evolver {
     pub radius_of_gyration_2: Vec<f64>,
     pub love_number: Vec<f64>,
     pub inverse_tidal_q_factor: Vec<f64>, // Bolmont & Mathis 2016
+    left_index: usize,
 }
 
 // NOTE: This is a big optimization to reduce the cost of cloning
@@ -39,6 +40,7 @@ impl Clone for Evolver {
             radius_of_gyration_2:vec![],
             love_number:vec![],
             inverse_tidal_q_factor:vec![],
+            left_index: 0,
         }
 
     }
@@ -251,7 +253,7 @@ impl Evolver {
                 // Interpolate to match the same time sampling shared by other parameters (e.g., radius)
                 let mut resampled_radius_of_gyration_2: Vec<f64> = Vec::new();
                 for current_time in time.iter() {
-                    let current_radius_of_gyration_2 = interpolate_b_spline(&tmp_time, &tmp_radius_of_gyration_2, *current_time);
+                    let (current_radius_of_gyration_2, _) = interpolate_b_spline(&tmp_time, &tmp_radius_of_gyration_2, *current_time);
                     resampled_radius_of_gyration_2.push(current_radius_of_gyration_2);
                     //println!("Rg2 {} {}", current_time, current_radius_of_gyration_2);
                 }
@@ -268,35 +270,48 @@ impl Evolver {
                 radius_of_gyration_2:radius_of_gyration_2,
                 love_number:love_number,
                 inverse_tidal_q_factor:inverse_tidal_q_factor,
+                left_index:0,
         }
     }
 
-    pub fn radius(&self, current_time: f64, current_radius: f64) -> f64 {
-        let new_radius = match self.evolution_type {
-            EvolutionType::NonEvolving => { current_radius },
-            _ => { interpolate_b_spline(&self.time, &self.radius, current_time) }
+    // OPTIMIZATION: Skip first N elements which belong to the past
+    fn idx(&self) -> usize {
+        if self.left_index > 0 {
+            return self.left_index - 1;
+        } else {
+            return 0;
+        }
+    }
+
+    pub fn radius(&mut self, current_time: f64, current_radius: f64) -> f64 {
+        let (new_radius, left_index) = match self.evolution_type {
+            EvolutionType::NonEvolving => { (current_radius, 0) },
+            _ => { interpolate_b_spline(&self.time[self.idx()..], &self.radius[self.idx()..], current_time) }
         };
+        self.left_index += left_index;
         return new_radius;
     }
 
-    pub fn radius_of_gyration_2(&self, current_time: f64, current_radius_of_gyration_2: f64) -> f64 {
-        let new_radius_of_gyration_2 = match self.evolution_type {
-            EvolutionType::BrownDwarf(_) => { interpolate_b_spline(&self.time, &self.radius_of_gyration_2, current_time) },
-            EvolutionType::Jupiter => { interpolate_b_spline(&self.time, &self.radius_of_gyration_2, current_time) },
-            _ => { current_radius_of_gyration_2 }
+    pub fn radius_of_gyration_2(&mut self, current_time: f64, current_radius_of_gyration_2: f64) -> f64 {
+        let (new_radius_of_gyration_2, left_index) = match self.evolution_type {
+            EvolutionType::BrownDwarf(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
+            EvolutionType::Jupiter => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
+            _ => { (current_radius_of_gyration_2, 0) }
         };
+        self.left_index += left_index;
         return new_radius_of_gyration_2;
     }
 
-    pub fn love_number(&self, current_time: f64, current_love_number: f64) -> f64 {
-        let new_love_number = match self.evolution_type {
-            EvolutionType::Jupiter => { interpolate_b_spline(&self.time, &self.love_number, current_time) },
-            _ => { current_love_number }
+    pub fn love_number(&mut self, current_time: f64, current_love_number: f64) -> f64 {
+        let (new_love_number, left_index) = match self.evolution_type {
+            EvolutionType::Jupiter => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
+            _ => { (current_love_number, 0) }
         };
+        self.left_index += left_index;
         return new_love_number;
     }
 
-    pub fn inverse_tidal_q_factor(&self, current_time: f64, current_inverse_tidal_q_factor: f64) -> f64 {
+    pub fn inverse_tidal_q_factor(&mut self, current_time: f64, current_inverse_tidal_q_factor: f64) -> f64 {
         // The planet excite/induce waves in the convective region of the star
         // and the Q factor is a quality factor that describes that loss of energy.
         //
@@ -314,17 +329,18 @@ impl Evolver {
         // The tidal theory (and this code) assumes circular orbits because they are easier.
         // Excentric orbits needs more than one frequency to be described and it will be
         // included in future versions of this code.
-        let new_inverse_tidal_q_factor = match self.evolution_type {
+        let (new_inverse_tidal_q_factor, left_index) = match self.evolution_type {
                 EvolutionType::SolarLike(model) => {
                     match model {
                         SolarEvolutionType::EvolvingDissipation(_) => {
-                            interpolate_b_spline(&self.time, &self.inverse_tidal_q_factor, current_time)
+                            interpolate_b_spline(&self.time[self.idx()..], &self.inverse_tidal_q_factor[self.idx()..], current_time)
                         },
-                        _ => current_inverse_tidal_q_factor,
+                        _ => (current_inverse_tidal_q_factor, 0),
                     }
                 },
-                _ => current_inverse_tidal_q_factor,
+                _ => (current_inverse_tidal_q_factor, 0),
         };
+        self.left_index += left_index;
         return new_inverse_tidal_q_factor;
     }
 }
