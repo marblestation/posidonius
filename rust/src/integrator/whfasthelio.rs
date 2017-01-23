@@ -250,7 +250,7 @@ impl Integrator for WHFastHelio {
             self.move_to_star_center();
         }
         let only_dspin_dt = true;
-        self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
+        self.universe.calculate_additional_forces(self.current_time, self.half_time_step, only_dspin_dt);
         
         // A 'DKD'-like integrator will do the first 'D' part.
         if !self.set_to_center_of_mass {
@@ -267,7 +267,7 @@ impl Integrator for WHFastHelio {
             self.move_to_star_center();
         }
         let only_dspin_dt = false;
-        self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
+        self.universe.calculate_additional_forces(self.current_time, self.half_time_step, only_dspin_dt);
 
         // A 'DKD'-like integrator will do the 'KD' part.
         if !self.set_to_center_of_mass {
@@ -331,9 +331,9 @@ impl WHFastHelio {
         }
 
         for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
-            particle.spin.x += self.half_time_step * particle.dspin_dt.x;
-            particle.spin.y += self.half_time_step * particle.dspin_dt.y;
-            particle.spin.z += self.half_time_step * particle.dspin_dt.z;
+            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x + particle.wind_factor.x;
+            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y + particle.wind_factor.y;
+            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z + particle.wind_factor.z;
         }
     
         self.current_time += self.half_time_step;
@@ -351,9 +351,9 @@ impl WHFastHelio {
         }
 
         for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
-            particle.spin.x += self.half_time_step * particle.dspin_dt.x;
-            particle.spin.y += self.half_time_step * particle.dspin_dt.y;
-            particle.spin.z += self.half_time_step * particle.dspin_dt.z;
+            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x;
+            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y;
+            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z;
         }
 
         self.current_time += self.half_time_step;

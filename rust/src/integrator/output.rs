@@ -44,7 +44,7 @@ pub fn write_recovery_snapshot<I: Integrator+Encodable>(snapshot_path: &Path, un
 
 
 pub fn n_bytes_per_particle_in_historic_snapshot() -> u64 {
-    let n_stored_fields : u64 = 31;
+    let n_stored_fields : u64 = 32;
     let n_bytes_per_particle = 8+8+4+8*(n_stored_fields-3);
     n_bytes_per_particle
 }
@@ -154,7 +154,8 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         particle.radius,                        // Rsun
                         particle.radius_of_gyration_2,
                         particle.scaled_dissipation_factor,
-                        particle.love_number
+                        particle.love_number,
+                        particle.lag_angle,
                     );
         bincode::rustc_serialize::encode_into(&output, universe_history_writer, bincode::SizeLimit::Infinite).unwrap();
 

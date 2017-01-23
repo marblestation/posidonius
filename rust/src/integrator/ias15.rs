@@ -153,7 +153,7 @@ impl Integrator for Ias15 {
         self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
         // Calculate non-gravity accelerations.
         let only_dspin_dt = false;
-        self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
+        self.universe.calculate_additional_forces(self.current_time, self.time_step, only_dspin_dt);
 
         self.integrator();
         self.current_iteration += 1;
@@ -347,7 +347,7 @@ impl Ias15 {
                     self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
                     // Calculate non-gravity accelerations.
                     let only_dspin_dt = false;
-                    self.universe.calculate_additional_forces(self.current_time, only_dspin_dt);
+                    self.universe.calculate_additional_forces(self.current_time, self.time_step, only_dspin_dt);
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.acceleration.x;
@@ -616,9 +616,9 @@ impl Ias15 {
                 particle.velocity.y = self.v0[3*k+1];
                 particle.velocity.z = self.v0[3*k+2];
 
-                particle.spin.x += self.time_step * particle.dspin_dt.x;
-                particle.spin.y += self.time_step * particle.dspin_dt.y;
-                particle.spin.z += self.time_step * particle.dspin_dt.z;
+                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.time_step * particle.dspin_dt.x + particle.wind_factor.x;
+                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.time_step * particle.dspin_dt.y + particle.wind_factor.y;
+                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.time_step * particle.dspin_dt.z + particle.wind_factor.z;
             }
 
             self.time_step_last_success = dt_done;

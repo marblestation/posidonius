@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 from astropy.io import ascii
 
 import struct
-filename = "../target/universe_history.bin"
+filename = "target/universe_history.bin"
 
 f = open(filename, "rb")
 # (np.floor(np.log10(np.max((100., 10.)))) - 2.)*10.
 
-fields = ('current_time', 'time_step', 'particle', 'position_x', 'position_y', 'position_z', 'spin_x', 'spin_y', 'spin_z', 'velocity_x', 'velocity_y', 'velocity_z', 'semi-major_axis', 'perihelion_distance', 'eccentricity', 'inclination', 'longitude_of_perihelion', 'longitude_of_ascending_node', 'mean_anomaly', 'orbital_angular_momentum_x', 'orbital_angular_momentum_y', 'orbital_angular_momentum_z', 'orbital_angular_momentum', 'denergy_dt', 'total_energy', 'total_angular_momentum', 'mass', 'radius', 'radius_of_gyration_2', 'scaled_dissipation_factor', 'love_number')
+fields = ('current_time', 'time_step', 'particle', 'position_x', 'position_y', 'position_z', 'spin_x', 'spin_y', 'spin_z', 'velocity_x', 'velocity_y', 'velocity_z', 'semi-major_axis', 'perihelion_distance', 'eccentricity', 'inclination', 'longitude_of_perihelion', 'longitude_of_ascending_node', 'mean_anomaly', 'orbital_angular_momentum_x', 'orbital_angular_momentum_y', 'orbital_angular_momentum_z', 'orbital_angular_momentum', 'denergy_dt', 'total_energy', 'total_angular_momentum', 'mass', 'radius', 'radius_of_gyration_2', 'scaled_dissipation_factor', 'love_number', 'lag_angle')
 
 data = []
 while True:
@@ -251,19 +251,21 @@ conservation_of_angular_momentum[0] = conservation_of_angular_momentum[1]
 
 
 fig = plt.figure(figsize=(16, 10))
-ax = fig.add_subplot(4,3,1)
+ax = fig.add_subplot(5,3,1)
 field = 'semi-major_axis'
 for key in planets_keys:
     planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planet_data[field], label=key)
+for key in planets_keys:
+    planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planets_computed_data[key]['corrotation_radius'], label=key+" corrotation")
 ax.set_ylabel(field+" (AU)")
-ax.set_ylim([0.005, 0.028])
+#ax.set_ylim([0.005, 0.028])
 ax.set_xscale('log')
 ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
-ax = fig.add_subplot(4,3,2, sharex=ax)
+ax = fig.add_subplot(5,3,2, sharex=ax)
 field = 'planet obliquity (deg)'
 for key in planets_keys:
     planet_data = planets_data[key]
@@ -275,7 +277,7 @@ ax.set_yscale('log')
 ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
-ax = fig.add_subplot(4,3,3, sharex=ax)
+ax = fig.add_subplot(5,3,3, sharex=ax)
 field = 'eccentricity'
 for key in planets_keys:
     planet_data = planets_data[key]
@@ -288,23 +290,25 @@ ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 
-ax = fig.add_subplot(4,3,4, sharex=ax)
+ax = fig.add_subplot(5,3,4, sharex=ax)
 field = 'inclination'
 for key in planets_keys:
     planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planet_data[field] * (180 / np.pi), label=key) # From rad to degrees
 ax.set_ylabel('planet '+field+ " (deg)")
-ax.set_ylim([0.5, 5.5])
+#ax.set_ylim([0.5, 5.5])
 ax.set_xscale('log')
 ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
-ax = fig.add_subplot(4,3,5, sharex=ax)
+ax = fig.add_subplot(5,3,5, sharex=ax)
 # Energy loss dE/dt due to tides per planet surface
 field = 'Energy lost\ndue to tides (W/m^2)'
 for key in planets_keys:
     planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planets_computed_data[key]['inst_tidal_flux'], label=key+" Instantaneous") # Instantaneous energy loss
+for key in planets_keys:
+    planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planets_computed_data[key]['mean_tidal_flux'], label=key+" Mean") # Mean energy loss
 ax.set_ylabel(field)
 ax.set_ylim([1e-2, 1e5])
@@ -313,33 +317,37 @@ ax.set_yscale('log')
 ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
-ax = fig.add_subplot(4,3,6, sharex=ax)
+ax = fig.add_subplot(5,3,6, sharex=ax)
 field = 'planet_rotation_period\n(hr)'
 for key in planets_keys:
     planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planets_computed_data[key]['planet_rotation_period']*24., label=key)
+for key in planets_keys:
+    planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planets_computed_data[key]['pseudo_synchronization_period'], label=key+" pseudo-sync")
 ax.set_ylabel(field)
-ax.set_ylim([40, 160.0])
+#ax.set_ylim([40, 160.0])
 ax.set_xscale('log')
 ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
-ax = fig.add_subplot(4,3,7, sharex=ax)
+ax = fig.add_subplot(5,3,7, sharex=ax)
 field = '$\Delta L/L_{0}$'
 ax.plot(planet_data['current_time'], conservation_of_angular_momentum)
 ax.set_ylabel(field)
-ax.set_ylim([0., 0.000007])
+#ax.set_ylim([0., 0.000007])
 ax.set_xscale('log')
-#ax.set_yscale('symlog')
+ax.set_yscale('log')
 
-ax = fig.add_subplot(4,3,8, sharex=ax)
+ax = fig.add_subplot(5,3,8, sharex=ax)
 # Energy loss dE/dt due to tides
 field = 'Energy lost\ndue to tides (W)'
 #ax.plot(planet_data['current_time'], planet_data[field])
 for key in planets_keys:
     planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planets_computed_data[key]['denergy_dt'], label=key+" Instantaneous") # Instantaneous energy loss
+for key in planets_keys:
+    planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planets_computed_data[key]['gravitational_energy_lost'], label=key+" Mean") # Mean energy loss
 ax.set_ylabel(field)
 ax.set_ylim([1e12, 1e19])
@@ -347,32 +355,32 @@ ax.set_xscale('log')
 ax.set_yscale('symlog')
 ax.legend(loc=0, prop={'size':8})
 
-ax = fig.add_subplot(4,3,9, sharex=ax)
+ax = fig.add_subplot(5,3,9, sharex=ax)
 field = 'star_rotation_period\n(days)'
 ax.plot(planet_data['current_time'], star_rotation_period)
 ax.set_ylabel(field)
-ax.set_ylim([2.915, 2.92])
+#ax.set_ylim([2.915, 2.92])
 ax.set_xscale('log')
 #plt.setp(ax.get_xticklabels(), visible=False)
 
-ax = fig.add_subplot(4,3,10, sharex=ax)
+ax = fig.add_subplot(5,3,10, sharex=ax)
 field = 'star_obliquity (deg)'
 for key in planets_keys:
     planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planets_computed_data[key]['star_obliquity'], label=key)
 ax.set_ylabel(field)
-ax.set_ylim([0.5, 5.5])
+#ax.set_ylim([0.5, 5.5])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 ax.legend(loc=0, prop={'size':8})
 
-ax = fig.add_subplot(4,3,11, sharex=ax)
+ax = fig.add_subplot(5,3,11, sharex=ax)
 field = 'planet_precession_angle\n(deg)'
 for key in planets_keys:
     planet_data = planets_data[key]
     ax.plot(planet_data['current_time'], planets_computed_data[key]['planet_precession_angle'], label=key)
 ax.set_ylabel(field)
-ax.set_ylim([80., 100.])
+#ax.set_ylim([80., 100.])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
 ax.legend(loc=0, prop={'size':8})
@@ -397,13 +405,31 @@ ax.legend(loc=0, prop={'size':8})
 # conservation of energy (kinetic+potential)
 relative_energy_error = (star_data['total_energy'] - star_data['total_energy'][0]) / star_data['total_energy'][0]
 
-ax = fig.add_subplot(4,3,12, sharex=ax)
+ax = fig.add_subplot(5,3,12, sharex=ax)
 field = '$\Delta E/E_{0}$'
 ax.plot(planet_data['current_time'], relative_energy_error)
 ax.set_ylabel(field)
 ax.set_ylim([-0.35, 0.05])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
+
+ax = fig.add_subplot(5,3,13, sharex=ax)
+field = 'Star radius (AU)'
+ax.plot(star_data['current_time'], star_data['radius'])
+ax.set_ylabel(field)
+ax.set_xscale('log')
+
+ax = fig.add_subplot(5,3,14, sharex=ax)
+field = 'Star radius of\ngyration 2'
+ax.plot(star_data['current_time'], star_data['radius_of_gyration_2'])
+ax.set_ylabel(field)
+ax.set_xscale('log')
+
+ax = fig.add_subplot(5,3,15, sharex=ax)
+field = 'Star love number'
+ax.plot(star_data['current_time'], star_data['love_number'])
+ax.set_ylabel(field)
+ax.set_xscale('log')
 
 ax.set_xlim([100.0, 1.0e8])
 plt.tight_layout()

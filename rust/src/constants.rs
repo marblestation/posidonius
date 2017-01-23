@@ -4,6 +4,7 @@ pub const MAX_PARTICLES : usize = 3; // The optimal value matches the real numbe
 pub const MAX_DISTANCE : f64 = 100.; // AU
 pub const MAX_DISTANCE_2 : f64 = MAX_DISTANCE*MAX_DISTANCE; // AU
 
+
 //// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).
 pub const INTEGRATOR_EPSILON_GLOBAL : bool = true;  // if true: estimate the fractional error by max(acceleration_error)/max(acceleration), where max is take over all particles.
@@ -42,3 +43,7 @@ pub const M2EARTH : f64 = (1.9891e6/5.9794); // Factor for mass-radius relation 
 pub const SPEED_OF_LIGHT : f64 = 173.1444830225;
 pub const SPEED_OF_LIGHT_2 : f64 = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
 
+// Wind parametrisation (Bouvier 1997)
+pub const K_WIND : f64 = 4.0e-18; // K_wind = 1.6d47 cgs, which is in Msun.AU2.day
+pub const WSAT_WIND : f64 = 14. * TWO_PI/25.0; // wsat in units of the spin of the Sun today
+pub const WSAT_WIND_2 : f64 = WSAT_WIND*WSAT_WIND;

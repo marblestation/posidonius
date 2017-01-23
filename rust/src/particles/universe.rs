@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use super::super::constants::{K2, G, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2};
+use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2, K_WIND, WSAT_WIND, WSAT_WIND_2};
 use super::{Evolver, EvolutionType, SolarEvolutionType};
 use super::{Particle};
 use super::{Axes};
@@ -82,8 +82,9 @@ impl Universe {
                     temporary_copied_particles_masses: temporary_copied_particles_masses,
                     temporary_copied_particles_radiuses: temporary_copied_particles_radiuses,
                     };
+        let time_step = 0.;
         let current_time = 0.;
-        universe.evolve_particles(current_time); // Make sure we start with the good initial values
+        universe.evolve_particles(current_time, time_step); // Make sure we start with the good initial values
         for i in 0..n_parallel_universes {
             let mut parallel_universe = universe.clone();
             parallel_universe.n_particles -= i+1;
@@ -205,7 +206,7 @@ impl Universe {
         // TODO: Check rebound
     }
 
-    pub fn calculate_additional_forces(&mut self, current_time: f64, only_dspin_dt: bool) {
+    pub fn calculate_additional_forces(&mut self, current_time: f64, time_step: f64, only_dspin_dt: bool) {
         ////////////////////////////////////////////////////////////////////////
         // Parallel universes: Copies of the current universe but without the
         // first central body
@@ -226,7 +227,7 @@ impl Universe {
         //let (tx, rx) = mpsc::channel();
         ////////////////////////////////////////////////////////////////////////
 
-        self.evolve_particles(current_time);
+        self.evolve_particles(current_time, time_step);
 
         if self.consider_all_body_interactions {
             // Build parallel universes if needed
@@ -459,6 +460,7 @@ impl Universe {
                     particle.torque.x = n_tid_x;
                     particle.torque.y = n_tid_y;
                     particle.torque.z = n_tid_z;
+                    // - Equation 25 from Bolmont et al. 2015
                     particle.dspin_dt.x = factor * n_tid_x;
                     particle.dspin_dt.y = factor * n_tid_y;
                     particle.dspin_dt.z = factor * n_tid_z;
@@ -467,6 +469,7 @@ impl Universe {
             }
 
             if central_body {
+                // - Equation 25 from Bolmont et al. 2015
                 let factor = - 1. / (star.radius_of_gyration_2 * star.radius.powi(2));
                 star.torque.x = torque.x;
                 star.torque.y = torque.y;
@@ -887,11 +890,69 @@ impl Universe {
         total_angular_momentum
     }
     
-    pub fn evolve_particles(&mut self, current_time: f64) {
+    pub fn evolve_particles(&mut self, current_time: f64, time_step: f64) {
         for (particle, evolver) in self.particles[..self.n_particles].iter_mut().zip(self.particles_evolvers.iter_mut()) {
-            particle.radius = evolver.radius(current_time, particle.radius);
-            particle.radius_of_gyration_2 = evolver.radius_of_gyration_2(current_time, particle.radius_of_gyration_2);
+            ////////////////////////////////////////////////////////////////////
+            // Wind
+            ////////////////////////////////////////////////////////////////////
+            // - It requires the radius before being evolved
+            // - If time_step is zero, it's the first initialization and the wind factor will be zero
+            particle.wind_factor = match evolver.evolution_type {
+                EvolutionType::SolarLike(_) => { 
+                    let threshold = (particle.spin.x.powi(2) + particle.spin.y.powi(2) +
+                                     particle.spin.z.powi(2)).sqrt();
+                    if threshold >= WSAT_WIND {
+                        // Friendly reminder that m(1) is in solar mass * K2
+                        //tmp2 = hdt * K_wind * wsat_wind*wsat_wind * sqrt(Rsth*K2/(Rsun*m(1)))
+                        let old_radius = particle.radius; // TODO
+                        let factor = time_step * K_WIND * WSAT_WIND_2 * (old_radius/R_SUN * 1./particle.mass).sqrt();
+                        Axes{ 
+                            x: factor * particle.spin.x,
+                            y: factor * particle.spin.y,
+                            z: factor * particle.spin.z,
+                        }
+                    } else {
+                        //tmp2 = hdt * K_wind * sqrt(Rsth*K2/(Rsun*m(1)))
+                        let old_radius = particle.radius; // TODO
+                        let factor = time_step * K_WIND * (old_radius/R_SUN * 1./particle.mass).sqrt();
+                        Axes{ 
+                            x: factor * particle.spin.x.powi(3),
+                            y: factor * particle.spin.y.powi(3),
+                            z: factor * particle.spin.z.powi(3),
+                        }
+                    }
+                },
+                _ => Axes{x: 0., y:0., z: 0.},
+            };
+
+            ////////////////////////////////////////////////////////////////////
+            // Radius and radius of gyration 2
+            ////////////////////////////////////////////////////////////////////
+            // If particle radius/radius_of_gyration_2 evolves
+            // - Compute ratio between previous and new moment of inertia 
+            // - The ratio will be used in the spin integration
+            let new_radius = evolver.radius(current_time, particle.radius);
+            let new_radius_of_gyration_2 = evolver.radius_of_gyration_2(current_time, particle.radius_of_gyration_2);
+            if new_radius != particle.radius || new_radius_of_gyration_2 != particle.radius_of_gyration_2 {
+                // Update moment of inertia ratio only if it is not during first initialization
+                if current_time > 0. {
+                    particle.moment_of_inertia_ratio = (particle.radius_of_gyration_2 * particle.radius.powi(2)) 
+                                                        / (new_radius_of_gyration_2 * new_radius.powi(2));
+                }
+                particle.radius = new_radius;
+                particle.radius_of_gyration_2 = new_radius_of_gyration_2;
+            } else {
+                particle.moment_of_inertia_ratio = 1.;
+            }
+
+            ////////////////////////////////////////////////////////////////////
+            // Love number
+            ////////////////////////////////////////////////////////////////////
             particle.love_number = evolver.love_number(current_time, particle.love_number);
+
+            ////////////////////////////////////////////////////////////////////
+            // Lag angle
+            ////////////////////////////////////////////////////////////////////
             particle.lag_angle = match evolver.evolution_type {
                     EvolutionType::SolarLike(model) => {
                         match model {
