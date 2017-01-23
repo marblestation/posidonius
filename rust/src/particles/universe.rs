@@ -84,6 +84,13 @@ impl Universe {
                     };
         let current_time = 0.;
         universe.evolve_particles(current_time); // Make sure we start with the good initial values
+        for i in 0..n_parallel_universes {
+            let mut parallel_universe = universe.clone();
+            parallel_universe.n_particles -= i+1;
+            // The correct transfer all particles except central body will be executed when needed
+            // later on
+            universe.parallel_universes.push(parallel_universe);
+        }
         universe
     }
 
@@ -221,42 +228,34 @@ impl Universe {
 
         self.evolve_particles(current_time);
 
-        let n_original_particles = self.n_particles;
-        let n_parallel_universes;
-        if self.consider_all_body_interactions {
-            n_parallel_universes = n_original_particles - 2;
-        } else {
-            n_parallel_universes = 0;
-        }
-
         if self.consider_all_body_interactions {
             // Build parallel universes if needed
-            self.parallel_universes.clear();
-            for _ in 0..n_parallel_universes {
-                let mut parallel_universe = self.clone();
-                // Remove central body
-                for i in 0..parallel_universe.n_particles {
-                    parallel_universe.particles[i] = parallel_universe.particles[i+1]
-                }
-                parallel_universe.n_particles -= 1;
-                // Forget accelerations from the original universe
-                for particle in parallel_universe.particles[..parallel_universe.n_particles].iter_mut() {
-                    particle.acceleration.x = 0.0;
-                    particle.acceleration.y = 0.0;
-                    particle.acceleration.z = 0.0;
+            for (i, parallel_universe) in self.parallel_universes.iter_mut().enumerate() {
+                // Transfer all particles except central body
+                for (particle, particle_parallel_universe) in self.particles[i+1..self.n_particles].iter()
+                                                            .zip(parallel_universe.particles[..parallel_universe.n_particles].iter_mut()) {
+                    particle_parallel_universe.position = particle.position;
+                    particle_parallel_universe.velocity = particle.velocity;
+                    // Forget accelerations from the original universe
+                    particle_parallel_universe.acceleration.x = 0.0;
+                    particle_parallel_universe.acceleration.y = 0.0;
+                    particle_parallel_universe.acceleration.z = 0.0;
+                    // Potentially evolving values
+                    particle_parallel_universe.radius = particle.radius;
+                    particle_parallel_universe.radius_of_gyration_2 = particle.radius_of_gyration_2;
+                    particle_parallel_universe.love_number = particle.love_number;
+                    particle_parallel_universe.lag_angle = particle.lag_angle;
                 }
                 // Re-center system over the new first body
                 parallel_universe.center_to_first_particle();
-                self.parallel_universes.push(parallel_universe)
-            }
 
-            // Compute parallel universes
-            for parallel_universe in self.parallel_universes.iter_mut() {
+                // Compute parallel universes
                 parallel_universe.calculate_dspin_dt();
                 if !only_dspin_dt {
                     parallel_universe.calculate_acceleration_corrections();
                 }
             }
+
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -302,7 +301,7 @@ impl Universe {
             // Integrate results from all parallel universes into this universe
             for parallel_universe in self.parallel_universes.iter() {
                 //let mut num = 0;
-                let id = n_original_particles - parallel_universe.n_particles - 1;
+                let id = self.n_particles - parallel_universe.n_particles - 1;
 
                 for (particle, particle_parallel_universe) in self.particles[1+id..self.n_particles].iter_mut().zip(parallel_universe.particles[..parallel_universe.n_particles].iter()) {
                     //println!("Body {}:", num);
@@ -324,7 +323,6 @@ impl Universe {
                 }
                 //println!("--------------------------------------------");
             }
-            self.parallel_universes.clear();
         }
 
         // Recover first original body as frame of reference
