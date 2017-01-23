@@ -25,9 +25,14 @@ while True:
         data.append(vrow)
 
 data = pd.DataFrame(data, columns=fields, index=np.arange(len(data)))
-if len(data) % 2:
-    # Force to have two lines per snapshot because there are 2 particles (sun+planet)
-    data = data[:-1]
+
+# Force to always have N lines per snapshot corresponding to N particles
+n_particles = int(data['particle'].max())+1
+outer_particles = n_particles-1
+last_particle = int(data.iloc[-1]['particle'])
+excess = (n_particles - (outer_particles - last_particle)) % n_particles
+if excess > 0:
+    data = data[:-1*excess]
 data = data.to_records()
 
 #-------------------------------------------------------------------------------
@@ -89,174 +94,235 @@ star = data['particle'] == 0
 star_data = data[star]
 star_mass = star_data['mass'][0]
 
-planet = data['particle'] == 1
-#planet = data['particle'] == 2
-planet_data = data[planet]
+planets_data = {}
+planets_keys = [] # To ensure the order
+for i in xrange(n_particles-1):
+    planets_data["{}".format(i+1)] = data[data['particle'] == i+1]
+    planets_keys.append("{}".format(i+1))
 
-# Same number of points
-shared_idx = np.min((len(star_data), len(planet_data)))
-planet_data = planet_data[:shared_idx]
-star_data = star_data[:shared_idx]
+## Same number of points
+#shared_idx = np.min((len(star_data), len(planet_data)))
+#planet_data = planet_data[:shared_idx]
+#star_data = star_data[:shared_idx]
 
 
+################################################################################
+## Star
+################################################################################
 star_norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
-planet_norm_spin = np.sqrt(np.power(planet_data['spin_x'], 2) + np.power(planet_data['spin_y'], 2) + np.power(planet_data['spin_z'], 2))
-planet_rotation_period = 2*np.pi / planet_norm_spin
 star_rotation_period = 2*np.pi / star_norm_spin
 
-## Planet obliquity
-relative_orbital_angular_momentum_x = planet_data['orbital_angular_momentum_x']/planet_data['orbital_angular_momentum']
-relative_orbital_angular_momentum_y = planet_data['orbital_angular_momentum_y']/planet_data['orbital_angular_momentum']
-relative_orbital_angular_momentum_z = planet_data['orbital_angular_momentum_z']/planet_data['orbital_angular_momentum']
-numerator = relative_orbital_angular_momentum_x * planet_data['spin_x'] + \
-                    relative_orbital_angular_momentum_y * planet_data['spin_y'] + \
-                    relative_orbital_angular_momentum_z * planet_data['spin_z']
-denominator= np.sqrt(np.power(relative_orbital_angular_momentum_x, 2) + \
-                        np.power(relative_orbital_angular_momentum_y, 2) + \
-                        np.power(relative_orbital_angular_momentum_z, 2)) * \
-                        np.sqrt(np.power(planet_data['spin_x'], 2) + np.power(planet_data['spin_y'], 2) + np.power(planet_data['spin_z'], 2))
-planet_obliquity = numerator / denominator
-ofilter = planet_obliquity <= 1.
-planet_obliquity[ofilter] = np.arccos(planet_obliquity[ofilter])*180./np.pi
-planet_obliquity[np.logical_not(ofilter)] = 1.e-6
 
-## Star obliquity
-# https://en.wikipedia.org/wiki/Axial_tilt
-# Angle between the spin axis of the star and the planet's orbital plane (in other words, it's the inclination of the planet)
-# or, equivalently, the angle between its equatorial plane and orbital plane
-# At an obliquity of zero, the two axes point in the same direction; i.e., the rotational axis is perpendicular to the orbital plane.
-numerator = relative_orbital_angular_momentum_x * star_data['spin_x'] + \
-                    relative_orbital_angular_momentum_y * star_data['spin_y'] + \
-                    relative_orbital_angular_momentum_z * star_data['spin_z']
-denominator= np.sqrt(np.power(relative_orbital_angular_momentum_x, 2) + \
-                        np.power(relative_orbital_angular_momentum_y, 2) + \
-                        np.power(relative_orbital_angular_momentum_z, 2)) * \
-                        np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
-star_obliquity = numerator / denominator
-ofilter = star_obliquity <= 1.
-star_obliquity[ofilter] = np.arccos(star_obliquity[ofilter])*180./np.pi
-star_obliquity[np.logical_not(ofilter)] = 1.e-6
-
-## Planet precession angle
-# https://en.wikipedia.org/wiki/Apsidal_precession
-# Angle defined between an arbitrary direction and the semi-major axis direction
-numerator = 1./np.sin(planet_obliquity) \
-            *(planet_data['position_x']*planet_data['spin_x'] \
-                + planet_data['position_y']*planet_data['spin_y'] \
-                + planet_data['position_z']*planet_data['spin_z'])
-
-denominator = np.sqrt(np.power(planet_data['position_x'], 2) + np.power(planet_data['position_y'], 2) + np.power(planet_data['position_z'], 2)) \
-                * planet_norm_spin
-planet_precession_angle = numerator / denominator
-ofilter = planet_precession_angle <= 1.
-planet_precession_angle[ofilter] = np.arccos(planet_precession_angle[ofilter])*180./np.pi
-planet_precession_angle[np.logical_not(ofilter)] = 1.e-6
+################################################################################
 
 
-### Calculation of energydot and tidal flux, in W/m2
-# Gravitationl energy lost of the system due to dissipation
-# Masses in kg
-k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
-gravitational_energy_lost = energydot(planet_data['semi-major_axis']*AU, \
-                                        planet_data['eccentricity'], \
-                                        planet_norm_spin / day, \
-                                        planet_obliquity * np.pi/180.0, \
-                                        G, \
-                                        planet_data['mass'] * Msun, \
-                                        star_mass * Msun, \
-                                        planet_data['radius'] * AU, \
-                                        k2pdelta * day)
 
-# The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
-# If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
-mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
+################################################################################
+## Planets
+################################################################################
+total_planets_angular_momentum = 0.
+total_planets_orbital_angular_momentum = 0.
+planets_computed_data = {}
+for key in planets_keys:
+    planet_data = planets_data[key]
+    planet_computed_data = {}
+
+    planet_norm_spin = np.sqrt(np.power(planet_data['spin_x'], 2) + np.power(planet_data['spin_y'], 2) + np.power(planet_data['spin_z'], 2))
+    planet_rotation_period = 2*np.pi / planet_norm_spin
+    planet_computed_data['planet_rotation_period'] = planet_rotation_period
+
+    ## Planet obliquity
+    relative_orbital_angular_momentum_x = planet_data['orbital_angular_momentum_x']/planet_data['orbital_angular_momentum']
+    relative_orbital_angular_momentum_y = planet_data['orbital_angular_momentum_y']/planet_data['orbital_angular_momentum']
+    relative_orbital_angular_momentum_z = planet_data['orbital_angular_momentum_z']/planet_data['orbital_angular_momentum']
+    numerator = relative_orbital_angular_momentum_x * planet_data['spin_x'] + \
+                        relative_orbital_angular_momentum_y * planet_data['spin_y'] + \
+                        relative_orbital_angular_momentum_z * planet_data['spin_z']
+    denominator= np.sqrt(np.power(relative_orbital_angular_momentum_x, 2) + \
+                            np.power(relative_orbital_angular_momentum_y, 2) + \
+                            np.power(relative_orbital_angular_momentum_z, 2)) * \
+                            np.sqrt(np.power(planet_data['spin_x'], 2) + np.power(planet_data['spin_y'], 2) + np.power(planet_data['spin_z'], 2))
+    planet_obliquity = numerator / denominator
+    ofilter = planet_obliquity <= 1.
+    planet_obliquity[ofilter] = np.arccos(planet_obliquity[ofilter])*180./np.pi
+    planet_obliquity[np.logical_not(ofilter)] = 1.e-6
+    planet_computed_data['planet_obliquity'] = planet_obliquity
+
+    ## Planet precession angle
+    # https://en.wikipedia.org/wiki/Apsidal_precession
+    # Angle defined between an arbitrary direction and the semi-major axis direction
+    numerator = 1./np.sin(planet_obliquity) \
+                *(planet_data['position_x']*planet_data['spin_x'] \
+                    + planet_data['position_y']*planet_data['spin_y'] \
+                    + planet_data['position_z']*planet_data['spin_z'])
+
+    denominator = np.sqrt(np.power(planet_data['position_x'], 2) + np.power(planet_data['position_y'], 2) + np.power(planet_data['position_z'], 2)) \
+                    * planet_norm_spin
+    planet_precession_angle = numerator / denominator
+    ofilter = planet_precession_angle <= 1.
+    planet_precession_angle[ofilter] = np.arccos(planet_precession_angle[ofilter])*180./np.pi
+    planet_precession_angle[np.logical_not(ofilter)] = 1.e-6
+    planet_computed_data['planet_precession_angle'] = planet_precession_angle
+
+    planet_mass = planet_data['mass'][0]
+    norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
+    corrotation_radius = ((G*Msun*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/day)**(-2./3.))/AU
+    planet_computed_data['corrotation_radius'] = corrotation_radius
+
+    e = planet_data['eccentricity']
+    alpha = (1.+15./2.*e**2+45./8.*e**4+5./16.*e**6)*1./(1.+3.*e**2+3./8.*e**4)*1./(1.-e**2)**1.5
+    pseudo_rot = alpha * np.sqrt(G*Msun*(star_mass+planet_mass))
+    pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * hr)
+    planet_computed_data['pseudo_synchronization_period'] = pseudo_synchronization_period
 
 
-denergy_dt = planet_data['denergy_dt'] * 6.90125e37 # conversation from Msun.AU^2.day^-3 to W
-inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
+    ### Calculation of energydot and tidal flux, in W/m2
+    # Gravitationl energy lost of the system due to dissipation
+    # Masses in kg
+    k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
+    gravitational_energy_lost = energydot(planet_data['semi-major_axis']*AU, \
+                                            planet_data['eccentricity'], \
+                                            planet_norm_spin / day, \
+                                            planet_obliquity * np.pi/180.0, \
+                                            G, \
+                                            planet_data['mass'] * Msun, \
+                                            star_mass * Msun, \
+                                            planet_data['radius'] * AU, \
+                                            k2pdelta * day)
+    planet_computed_data['gravitational_energy_lost'] = gravitational_energy_lost
+
+    # The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
+    # If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
+    mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
+    planet_computed_data['mean_tidal_flux'] = mean_tidal_flux
 
 
-star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*Msun) * np.power(star_data['radius']*AU, 2) * (star_norm_spin/day)
-planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*Msun) * np.power(planet_data['radius']*AU, 2) * (planet_norm_spin/day)
-total_planets_angular_momentum = planet_angular_momentum # If more than one planet is present, all of them should be added
+    denergy_dt = planet_data['denergy_dt'] * 6.90125e37 # conversation from Msun.AU^2.day^-3 to W
+    planet_computed_data['denergy_dt'] = denergy_dt
 
-# Sum on number of planets to have total orbital momentum
-planet_orbital_angular_momentum = (star_mass*Msun) * (planet_data['mass']*Msun) / ((star_mass*Msun) + (planet_data['mass']*Msun)) * planet_data['orbital_angular_momentum'] * ((AU*AU)/day) # kg.m^2.s-1
-total_planets_orbital_angular_momentum = planet_orbital_angular_momentum # If more than one planet is present, all of them should be added
+    inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
+    planet_computed_data['inst_tidal_flux'] = inst_tidal_flux
+
+    ################################################################################
+    ## Star obliquity (with respect to a planet)
+    # https://en.wikipedia.org/wiki/Axial_tilt
+    # Angle between the spin axis of the star and the planet's orbital plane (in other words, it's the inclination of the planet)
+    # or, equivalently, the angle between its equatorial plane and orbital plane
+    # At an obliquity of zero, the two axes point in the same direction; i.e., the rotational axis is perpendicular to the orbital plane.
+    numerator = relative_orbital_angular_momentum_x * star_data['spin_x'] + \
+                        relative_orbital_angular_momentum_y * star_data['spin_y'] + \
+                        relative_orbital_angular_momentum_z * star_data['spin_z']
+    denominator= np.sqrt(np.power(relative_orbital_angular_momentum_x, 2) + \
+                            np.power(relative_orbital_angular_momentum_y, 2) + \
+                            np.power(relative_orbital_angular_momentum_z, 2)) * \
+                            np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
+    star_obliquity = numerator / denominator
+    ofilter = star_obliquity <= 1.
+    star_obliquity[ofilter] = np.arccos(star_obliquity[ofilter])*180./np.pi
+    star_obliquity[np.logical_not(ofilter)] = 1.e-6
+    planet_computed_data['star_obliquity'] = star_obliquity
+    ################################################################################
+
+
+    ################################################################################
+    ## Sum over all the planets values:
+    planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*Msun) * np.power(planet_data['radius']*AU, 2) * (planet_norm_spin/day)
+    total_planets_angular_momentum += planet_angular_momentum # If more than one planet is present, all of them should be added
+
+    # Sum on number of planets to have total orbital momentum
+    planet_orbital_angular_momentum = (star_mass*Msun) * (planet_data['mass']*Msun) / ((star_mass*Msun) + (planet_data['mass']*Msun)) * planet_data['orbital_angular_momentum'] * ((AU*AU)/day) # kg.m^2.s-1
+    total_planets_orbital_angular_momentum += planet_orbital_angular_momentum # If more than one planet is present, all of them should be added
+    ################################################################################
+
+    ################################################################################
+    # Save computed data
+    planets_computed_data[key] = planet_computed_data
+    ################################################################################
 
 
 
 # \Delta L / L
+star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*Msun) * np.power(star_data['radius']*AU, 2) * (star_norm_spin/day)
 initial_total_angular_momentum = total_planets_orbital_angular_momentum[0] + total_planets_angular_momentum[0] + star_angular_momentum[0]
 conservation_of_angular_momentum = np.abs(((total_planets_orbital_angular_momentum + total_planets_angular_momentum + star_angular_momentum) - initial_total_angular_momentum) / initial_total_angular_momentum)
 conservation_of_angular_momentum[0] = conservation_of_angular_momentum[1]
 #conservation_of_angular_momentum = np.abs(star_data['total_angular_momentum'] - star_data['total_angular_momentum'][0]) / star_data['total_angular_momentum'][0]
 
 
-planet_mass = planet_data['mass'][0]
-norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
-corrotation_radius = ((G*Msun*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/day)**(-2./3.))/AU
-
-e = planet_data['eccentricity']
-alpha = (1.+15./2.*e**2+45./8.*e**4+5./16.*e**6)*1./(1.+3.*e**2+3./8.*e**4)*1./(1.-e**2)**1.5
-pseudo_rot = alpha * np.sqrt(G*Msun*(star_mass+planet_mass))
-pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * hr)
 
 fig = plt.figure(figsize=(16, 10))
 ax = fig.add_subplot(4,3,1)
 field = 'semi-major_axis'
-ax.plot(planet_data['current_time'], planet_data[field])
-ax.plot(planet_data['current_time'], corrotation_radius, color="red")
+for key in planets_keys:
+    planet_data = planets_data[key]
+    ax.plot(planet_data['current_time'], planet_data[field], label=key)
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['corrotation_radius'], label=key+" corrotation")
 ax.set_ylabel(field+" (AU)")
 ax.set_ylim([0.005, 0.028])
 ax.set_xscale('log')
+ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,2, sharex=ax)
 field = 'planet obliquity (deg)'
-ax.plot(planet_data['current_time'], planet_obliquity)
+for key in planets_keys:
+    planet_data = planets_data[key]
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['planet_obliquity'], label=key)
 ax.set_ylabel(field)
 ax.set_ylim([0.0001, 100.0])
 ax.set_xscale('log')
 ax.set_yscale('log')
+ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,3, sharex=ax)
 field = 'eccentricity'
-ax.plot(planet_data['current_time'], planet_data[field])
+for key in planets_keys:
+    planet_data = planets_data[key]
+    ax.plot(planet_data['current_time'], planet_data[field], label=key)
 ax.set_ylabel(field)
 ax.set_ylim([0.001, 1.000])
 ax.set_xscale('log')
 ax.set_yscale('log')
+ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 
 ax = fig.add_subplot(4,3,4, sharex=ax)
 field = 'inclination'
-ax.plot(planet_data['current_time'], planet_data[field] * (180 / np.pi)) # From rad to degrees
+for key in planets_keys:
+    planet_data = planets_data[key]
+    ax.plot(planet_data['current_time'], planet_data[field] * (180 / np.pi), label=key) # From rad to degrees
 ax.set_ylabel('planet '+field+ " (deg)")
-ax.set_ylim([2.5, 5.5])
+ax.set_ylim([0.5, 5.5])
 ax.set_xscale('log')
+ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,5, sharex=ax)
 # Energy loss dE/dt due to tides per planet surface
 field = 'Energy lost\ndue to tides (W/m^2)'
-ax.plot(planet_data['current_time'], inst_tidal_flux) # Instantaneous energy loss
-ax.plot(planet_data['current_time'], mean_tidal_flux, color="red") # Mean energy loss
+for key in planets_keys:
+    planet_data = planets_data[key]
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['inst_tidal_flux'], label=key+" Instantaneous") # Instantaneous energy loss
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['mean_tidal_flux'], label=key+" Mean") # Mean energy loss
 ax.set_ylabel(field)
 ax.set_ylim([1e-2, 1e5])
 ax.set_xscale('log')
 ax.set_yscale('log')
+ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,6, sharex=ax)
 field = 'planet_rotation_period\n(hr)'
-ax.plot(planet_data['current_time'], planet_rotation_period*24.)
-ax.plot(planet_data['current_time'], pseudo_synchronization_period, color="red")
+for key in planets_keys:
+    planet_data = planets_data[key]
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['planet_rotation_period']*24., label=key)
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['pseudo_synchronization_period'], label=key+" pseudo-sync")
 ax.set_ylabel(field)
 ax.set_ylim([40, 160.0])
 ax.set_xscale('log')
+ax.legend(loc=0, prop={'size':8})
 #plt.setp(ax.get_xticklabels(), visible=False)
 
 ax = fig.add_subplot(4,3,7, sharex=ax)
@@ -271,12 +337,15 @@ ax = fig.add_subplot(4,3,8, sharex=ax)
 # Energy loss dE/dt due to tides
 field = 'Energy lost\ndue to tides (W)'
 #ax.plot(planet_data['current_time'], planet_data[field])
-ax.plot(planet_data['current_time'], denergy_dt) # Instantaneous energy loss
-ax.plot(planet_data['current_time'], gravitational_energy_lost, color="red") # Mean energy loss
+for key in planets_keys:
+    planet_data = planets_data[key]
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['denergy_dt'], label=key+" Instantaneous") # Instantaneous energy loss
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['gravitational_energy_lost'], label=key+" Mean") # Mean energy loss
 ax.set_ylabel(field)
 ax.set_ylim([1e12, 1e19])
 ax.set_xscale('log')
 ax.set_yscale('symlog')
+ax.legend(loc=0, prop={'size':8})
 
 ax = fig.add_subplot(4,3,9, sharex=ax)
 field = 'star_rotation_period\n(days)'
@@ -288,19 +357,25 @@ ax.set_xscale('log')
 
 ax = fig.add_subplot(4,3,10, sharex=ax)
 field = 'star_obliquity (deg)'
-ax.plot(planet_data['current_time'], star_obliquity)
+for key in planets_keys:
+    planet_data = planets_data[key]
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['star_obliquity'], label=key)
 ax.set_ylabel(field)
-ax.set_ylim([2.5, 5.5])
+ax.set_ylim([0.5, 5.5])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
+ax.legend(loc=0, prop={'size':8})
 
 ax = fig.add_subplot(4,3,11, sharex=ax)
 field = 'planet_precession_angle\n(deg)'
-ax.plot(planet_data['current_time'], planet_precession_angle)
+for key in planets_keys:
+    planet_data = planets_data[key]
+    ax.plot(planet_data['current_time'], planets_computed_data[key]['planet_precession_angle'], label=key)
 ax.set_ylabel(field)
 ax.set_ylim([80., 100.])
 ax.set_xscale('log')
 #ax.set_yscale('symlog')
+ax.legend(loc=0, prop={'size':8})
 
 # How to compute the total energy if it is not provided:
 #star_e_kin = 0.5 * star_data['mass'] * (np.power(star_data['velocity_x'], 2) + \
@@ -331,34 +406,46 @@ ax.set_xscale('log')
 #ax.set_yscale('symlog')
 
 ax.set_xlim([100.0, 1.0e8])
-
 plt.tight_layout()
-#plt.savefig("../target/output.png")
-#plt.savefig("output.png")
-#plt.savefig(os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + ".png")
-plt.savefig(os.path.splitext(os.path.basename(filename))[0] + ".png")
+
+output_figure_filename = os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + ".png"
+#output_figure_filename = os.path.splitext(os.path.basename(filename))[0] + ".png"
+plt.savefig(output_figure_filename)
 #plt.show()
+print("Output figure file written to: {}".format(output_figure_filename))
 
 
-data = pd.DataFrame(planet_data['current_time'], columns=['current_time'])
-data['semi-major_axis_AU'] = planet_data['semi-major_axis']
-data['corrotation_radius_AU'] = corrotation_radius
-data['planet_obliquity_deg'] = planet_obliquity
-data['eccentricity'] = planet_data['eccentricity']
-data['inclination_deg'] = planet_data['inclination'] * (180 / np.pi)
-data['energy_lost_due_to_tides_W_per_m2'] = inst_tidal_flux
-data['mean_energy_lost_due_to_tides_W_per_m2'] = mean_tidal_flux
-data['planet_rotation_period_hours'] = planet_rotation_period*24
-data['planet_pseudo_synchronization_period'] = pseudo_synchronization_period
-data['conservation_of_angular_momentum'] = conservation_of_angular_momentum
-data['energy_lost_due_to_tides_W'] = denergy_dt
-data['mean_energy_lost_due_to_tides_W'] = gravitational_energy_lost
-data['star_rotation_period_days'] = star_rotation_period
-data['star_obliquity_deg'] = star_obliquity
-data['planet_precession_angle_deg'] = planet_precession_angle
-data['conservation_of_energy'] = relative_energy_error
-data.to_csv(os.path.splitext(os.path.basename(filename))[0] + ".txt", sep="\t")
+all_data = None
+for key in planets_keys:
+    planet_data = planets_data[key]
+    data = pd.DataFrame(planet_data['current_time'], columns=['current_time'])
+    data['planet'] = key
+    data['semi-major_axis_AU'] = planet_data['semi-major_axis']
+    data['corrotation_radius_AU'] = planets_computed_data[key]['corrotation_radius']
+    data['planet_obliquity_deg'] = planets_computed_data[key]['corrotation_radius']
+    data['eccentricity'] = planet_data['eccentricity']
+    data['inclination_deg'] = planet_data['inclination'] * (180 / np.pi)
+    data['energy_lost_due_to_tides_W_per_m2'] = planets_computed_data[key]['inst_tidal_flux']
+    data['mean_energy_lost_due_to_tides_W_per_m2'] = planets_computed_data[key]['mean_tidal_flux']
+    data['planet_rotation_period_hours'] = planets_computed_data[key]['planet_rotation_period']*24
+    data['planet_pseudo_synchronization_period'] = planets_computed_data[key]['pseudo_synchronization_period']
+    data['energy_lost_due_to_tides_W'] = planets_computed_data[key]['denergy_dt']
+    data['mean_energy_lost_due_to_tides_W'] = planets_computed_data[key]['gravitational_energy_lost']
+    data['star_obliquity_deg'] = planets_computed_data[key]['star_obliquity']
+    data['planet_precession_angle_deg'] = planets_computed_data[key]['planet_precession_angle']
+    data['conservation_of_angular_momentum'] = conservation_of_angular_momentum
+    data['star_rotation_period_days'] = star_rotation_period
+    data['conservation_of_energy'] = relative_energy_error
+    if all_data is None:
+        all_data = data
+    else:
+        all_data = pd.concat((all_data, data))
+output_text_filename = os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + ".txt"
+#output_text_filename = os.path.splitext(os.path.basename(filename))[0] + ".txt"
+all_data.to_csv(output_text_filename, sep="\t")
 
-import pudb
-pudb.set_trace()
+print("Output plain text file written to: {}".format(output_text_filename))
+
+#import pudb
+#pudb.set_trace()
 
