@@ -36,7 +36,6 @@ pub fn case4() -> WHFastHelio {
     // To calculate tidal forces, it is needed to have the central body/star at [0,0,0] and without velocity or acceleration (heliocentric)
     let star_position = Axes{x:0., y:0., z:0.};
     let star_velocity = Axes{x:0., y:0., z:0.};
-    let star_acceleration = Axes{x:0., y:0., z:0.};
     ////// Initialization of stellar spin
     let star_rotation_period: f64 = 70.0; // hours
     let star_angular_frequency = TWO_PI/(star_rotation_period/24.); // days^-1
@@ -45,7 +44,7 @@ pub fn case4() -> WHFastHelio {
     let stellar_evolution_type = EvolutionType::BrownDwarf(star_mass);
     let star = Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
-                                            star_position, star_velocity, star_acceleration, star_spin, 
+                                            star_position, star_velocity, star_spin, 
                                             stellar_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
@@ -82,7 +81,6 @@ pub fn case4() -> WHFastHelio {
 
     let planet_position = Axes{x:x, y:y, z:z};
     let planet_velocity = Axes{x:vx, y:vy, z:vz};
-    let planet_acceleration = Axes{x:0., y:0., z:0.};
     
     ////// Initialization of planetary spin
     let planet_obliquity: f64 = 11.459156 * DEG2RAD; // 0.2 rad
@@ -96,7 +94,7 @@ pub fn case4() -> WHFastHelio {
     let planetary_evolution_type = EvolutionType::NonEvolving;
     let planet = Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
                                             planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
-                                            planet_position, planet_velocity, planet_acceleration, planet_spin, 
+                                            planet_position, planet_velocity,  planet_spin, 
                                             planetary_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 

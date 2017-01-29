@@ -36,7 +36,6 @@ pub fn case7() -> WHFastHelio {
     // To calculate tidal forces, it is needed to have the central body/star at [0,0,0] and without velocity or acceleration (heliocentric)
     let star_position = Axes{x:0., y:0., z:0.};
     let star_velocity = Axes{x:0., y:0., z:0.};
-    let star_acceleration = Axes{x:0., y:0., z:0.};
     ////// Initialization of stellar spin
     let star_rotation_period: f64 = 70.0; // hours
     let star_angular_frequency = TWO_PI/(star_rotation_period/24.); // days^-1
@@ -45,7 +44,7 @@ pub fn case7() -> WHFastHelio {
     let stellar_evolution_type = EvolutionType::NonEvolving;
     let star = Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
-                                            star_position, star_velocity, star_acceleration, star_spin, 
+                                            star_position, star_velocity, star_spin, 
                                             stellar_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 
@@ -82,7 +81,6 @@ pub fn case7() -> WHFastHelio {
 
     let inner_planet_position = Axes{x:x, y:y, z:z};
     let inner_planet_velocity = Axes{x:vx, y:vy, z:vz};
-    let inner_planet_acceleration = Axes{x:0., y:0., z:0.};
     
     ////// Initialization of planetary spin
     let inner_planet_obliquity: f64 = 11.459156 * DEG2RAD; // 0.2 rad
@@ -96,7 +94,7 @@ pub fn case7() -> WHFastHelio {
     let planetary_evolution_type = EvolutionType::NonEvolving;
     let inner_planet = Particle::new(inner_planet_mass, inner_planet_radius, inner_planet_dissipation_factor, inner_planet_dissipation_factor_scale, 
                                             inner_planet_radius_of_gyration_2, inner_planet_love_number, inner_planet_fluid_love_number,
-                                            inner_planet_position, inner_planet_velocity, inner_planet_acceleration, inner_planet_spin, 
+                                            inner_planet_position, inner_planet_velocity, inner_planet_spin, 
                                             planetary_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
     
@@ -131,7 +129,6 @@ pub fn case7() -> WHFastHelio {
 
     let outer_planet_position = Axes{x:x, y:y, z:z};
     let outer_planet_velocity = Axes{x:vx, y:vy, z:vz};
-    let outer_planet_acceleration = Axes{x:0., y:0., z:0.};
     
     ////// Initialization of planetary spin
     let outer_planet_obliquity: f64 = 23. * DEG2RAD; // 0.2 rad
@@ -145,7 +142,7 @@ pub fn case7() -> WHFastHelio {
     let planetary_evolution_type = EvolutionType::NonEvolving;
     let outer_planet = Particle::new(outer_planet_mass, outer_planet_radius, outer_planet_dissipation_factor, outer_planet_dissipation_factor_scale, 
                                             outer_planet_radius_of_gyration_2, outer_planet_love_number, outer_planet_fluid_love_number,
-                                            outer_planet_position, outer_planet_velocity, outer_planet_acceleration, outer_planet_spin, 
+                                            outer_planet_position, outer_planet_velocity, outer_planet_spin, 
                                             planetary_evolution_type);
     ////////////////////////////////////////////////////////////////////////////
 

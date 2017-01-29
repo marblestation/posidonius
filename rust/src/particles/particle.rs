@@ -47,7 +47,8 @@ pub struct Particle {
 }
 
 impl Particle {
-    pub fn new(mass: f64, radius: f64, dissipation_factor: f64, dissipation_factor_scale: f64, radius_of_gyration_2: f64, love_number: f64, fluid_love_number: f64, position: Axes, velocity: Axes, acceleration: Axes, spin: Axes, evolution_type: EvolutionType) -> Particle {
+    pub fn new(mass: f64, radius: f64, dissipation_factor: f64, dissipation_factor_scale: f64, radius_of_gyration_2: f64, love_number: f64, fluid_love_number: f64, position: Axes, velocity: Axes, spin: Axes, evolution_type: EvolutionType) -> Particle {
+        let acceleration = Axes{x: 0., y: 0., z: 0.};
         let torque = Axes{x: 0., y: 0., z: 0.};
         let dspin_dt = Axes{x: 0., y: 0., z: 0.};
         let tidal_acceleration = Axes{x: 0., y: 0., z: 0.};
@@ -123,7 +124,7 @@ impl Particle {
         }
     }
 
-    pub fn new_brown_dwarf(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, acceleration: Axes, evolution_type: EvolutionType) -> Particle {
+    pub fn new_brown_dwarf(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, evolution_type: EvolutionType) -> Particle {
         let (rotation_period, love_number) = match evolution_type {
             EvolutionType::NonEvolving => { 
                 let rotation_period: f64 = 70.0; // hours
@@ -190,12 +191,12 @@ impl Particle {
         let radius: f64 = radius_factor * R_SUN;
         let radius_of_gyration_2: f64 = 1.94e-1; // Brown dwarf
         let brown_dwarf = Particle::new(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number,
-                                                position, velocity, acceleration, spin, 
+                                                position, velocity, spin, 
                                                 evolution_type);
         brown_dwarf
     }
 
-    pub fn new_solar_like(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, acceleration: Axes, evolution_type: EvolutionType) -> Particle {
+    pub fn new_solar_like(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, evolution_type: EvolutionType) -> Particle {
         match evolution_type {
             EvolutionType::SolarLike(_) => { },
             EvolutionType::NonEvolving => { },
@@ -217,12 +218,12 @@ impl Particle {
         let radius: f64 = radius_factor * R_SUN;
         let radius_of_gyration_2: f64 = 5.9e-2; // Sun
         let solarlike_star = Particle::new(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number,
-                                                position, velocity, acceleration, spin, 
+                                                position, velocity, spin, 
                                                 evolution_type);
         solarlike_star
     }
 
-    pub fn new_m_dwarf(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, acceleration: Axes, evolution_type: EvolutionType) -> Particle {
+    pub fn new_m_dwarf(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, evolution_type: EvolutionType) -> Particle {
         match evolution_type {
             EvolutionType::MDwarf => { },
             EvolutionType::NonEvolving => { },
@@ -245,12 +246,12 @@ impl Particle {
         let radius: f64 = radius_factor * R_SUN;
         let radius_of_gyration_2: f64 = 2.0e-1; // M-dwarf
         let m_dwarf = Particle::new(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number,
-                                                position, velocity, acceleration, spin, 
+                                                position, velocity, spin, 
                                                 evolution_type);
         m_dwarf
     }
 
-    pub fn new_jupiter_like(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, acceleration: Axes, evolution_type: EvolutionType) -> Particle {
+    pub fn new_jupiter_like(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, evolution_type: EvolutionType) -> Particle {
         match evolution_type {
             EvolutionType::Jupiter => { },
             EvolutionType::NonEvolving => { },
@@ -278,12 +279,12 @@ impl Particle {
         let radius_of_gyration_2: f64 = 2.54e-1; // Gas giant
 
         let jupiter = Particle::new(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number,
-                                                position, velocity, acceleration, spin, 
+                                                position, velocity, spin, 
                                                 evolution_type);
         jupiter
     }
 
-    pub fn new_earth_like(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, acceleration: Axes) -> Particle {
+    pub fn new_earth_like(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes) -> Particle {
         let evolution_type = EvolutionType::NonEvolving;
 
         let rotation_period = 24.; // hours
@@ -305,13 +306,13 @@ impl Particle {
         let dissipation_factor: f64 = 2. * K2 * k2pdelta/(3. * radius.powi(5));
 
         let earth_like = Particle::new(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number,
-                                                position, velocity, acceleration, spin, 
+                                                position, velocity, spin, 
                                                 evolution_type);
         earth_like
     }
 
-    pub fn new_terrestrial(mass: f64, radius_factor: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, acceleration: Axes) -> Particle {
-        let mut terrestrial = Particle::new_earth_like(mass, dissipation_factor_scale, position, velocity, acceleration);
+    pub fn new_terrestrial(mass: f64, radius_factor: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes) -> Particle {
+        let mut terrestrial = Particle::new_earth_like(mass, dissipation_factor_scale, position, velocity);
         // Change radius
         terrestrial.radius = radius_factor * R_EARTH;
         // The dissipation factor depends on the radius and it has changed
@@ -321,9 +322,9 @@ impl Particle {
         terrestrial
     }
     
-    pub fn new_gas_giant(mass: f64, radius_factor: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, acceleration: Axes) -> Particle {
+    pub fn new_gas_giant(mass: f64, radius_factor: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes) -> Particle {
         let evolution_type = EvolutionType::NonEvolving;
-        let mut gas_giant = Particle::new_jupiter_like(mass, dissipation_factor_scale, position, velocity, acceleration, evolution_type);
+        let mut gas_giant = Particle::new_jupiter_like(mass, dissipation_factor_scale, position, velocity, evolution_type);
         // Change radius
         gas_giant.radius = radius_factor * R_EARTH;
         gas_giant

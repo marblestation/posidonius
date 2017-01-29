@@ -218,7 +218,11 @@ impl WHFastHelio {
                 let mut reader = BufReader::new(snapshot_file);
                 universe_integrator = decode_from(&mut reader, SizeLimit::Infinite).unwrap();
             }
-            println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
+            if universe_integrator.hash == 0 {
+                println!("INFO: Restored new custom simulation from '{}'", universe_integrator_snapshot_path.display());
+            } else {
+                println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
+            }
             return Ok(universe_integrator);
         } else {
             return Err(format!("File does not exist"));
