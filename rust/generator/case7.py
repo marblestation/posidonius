@@ -11,7 +11,8 @@ if __name__ == "__main__":
     filename = args.output_filename
     #filename = posidonius.constants.BASE_DIR+"target/case7.json"
 
-    initial_time = 4.5e6*365.25 # time [days] where simulation starts
+    #initial_time = 4.5e6*365.25 # time [days] where simulation starts
+    initial_time = 1.0e6*365.25 # time [days] where simulation starts
     time_step = 0.08 # days
     #time_limit   = 4*time_step # days
     time_limit   = 365.25 * 1.0e8 # days
@@ -28,7 +29,7 @@ if __name__ == "__main__":
     star_radius = star_radius_factor * posidonius.constants.R_SUN
     star_dissipation_factor = 2.006*3.845764e4 # -60+64
     star_dissipation_factor_scale = 1.0
-    star_radius_of_gyration_2 = 0.2376400515700609
+    star_radius_of_gyration_2 = 1.94e-1 # Brown dwarf
     star_love_number = 0.307
     fluid_love_number = star_love_number
     star_position = posidonius.Axes(0., 0., 0.)
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     a = 0.018;                             # semi-major axis (in AU)
-    e = 0.1;                               # eccentricity
+    e = 0.01;                              # eccentricity
     i = 0. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
     p = 0.;                                # argument of pericentre (degrees)
     n = 0. * posidonius.constants.DEG2RAD;                      # longitude of the ascending node (degrees)

@@ -64,7 +64,7 @@ class BrownDwarf(EvolutionType):
         aux_data = np.loadtxt(BASE_DIR+aux_filename)
         # BrownDwarf have a separate file for radius of gyration with a different time sampling
         # that should be homogenized:
-        aux_time = aux_data[:, 0]
+        aux_time = aux_data[:, 0] * 365.25 - initial_time
         aux_radius_of_gyration_2 = aux_data[:, 2]
         resampled_radius_of_gyration_2 = []
         for current_time in time:
