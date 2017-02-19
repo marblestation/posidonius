@@ -1,6 +1,6 @@
 use std;
 
-pub const MAX_PARTICLES : usize = 3; // The optimal value matches the real number of bodies (it will generate smaller snapshots), but a greater number will work too.
+pub const MAX_PARTICLES : usize = 10; // The optimal value matches the real number of bodies (it will generate smaller snapshots), but a greater number will work too.
 pub const MAX_DISTANCE : f64 = 100.; // AU
 pub const MAX_DISTANCE_2 : f64 = MAX_DISTANCE*MAX_DISTANCE; // AU
 

@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-MAX_PARTICLES = 3
+MAX_PARTICLES = 10
 BASE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 
 K = 0.01720209895 # Gaussian constant
