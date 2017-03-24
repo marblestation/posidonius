@@ -102,7 +102,7 @@ impl Universe {
                     continue;
                 }
 
-                //// Check collisions //////////////////////////////////////////////
+                //// Check collisions and ejections //////////////////////////////////
                 let dx = particle_a.position.x - particle_b_position.x;
                 let dy = particle_a.position.y - particle_b_position.y;
                 let dz = particle_a.position.z - particle_b_position.z;
@@ -167,27 +167,6 @@ impl Universe {
         }
     }
 
-    pub fn gravity_calculate_acceleration2(&mut self) {
-        // https://www.cs.utoronto.ca/~wayne/research/thesis/msc/node5.html
-        // force softening, i.e.,  replacing  tex2html_wrap_inline2549 with  tex2html_wrap_inline2551 in
-        // the denominator of the gravitational force computation for some small constant
-        // tex2html_wrap_inline2553 , usually chosen to approximate the average inter-particle separation.
-        // This is done because it allows a smaller N to approximate a larger N, and also to eliminate the
-        // singularity at r=0 [6].
-        // [6] James Binney and Scott Tremaine. Galactic Dynamics. Princeton Series in Astrophysics.
-        //      Princeton University Press, 1987.
-        //
-        //  https://en.wikipedia.org/wiki/N-body_problem#Few_bodies
-        //  For a small number of bodies, an n-body problem can be solved using direct methods,
-        //  also called particle-particle methods. These methods numerically integrate the
-        //  differential equations of motion. Numerical integration for this problem can be a
-        //  challenge for several reasons. First, the gravitational potential is singular; it goes
-        //  to infinity as the distance between two particles goes to zero. The gravitational
-        //  potential may be softened to remove the singularity at small distances
-        //
-        // TODO: Check rebound
-    }
-
     pub fn calculate_additional_forces(&mut self, current_time: f64, time_step: f64, only_dspin_dt: bool) {
         self.evolve_particles(current_time, time_step);
 
@@ -199,6 +178,7 @@ impl Universe {
         self.calculate_dspin_dt();
         if !only_dspin_dt {
             self.calculate_acceleration_corrections();
+            self.apply_acceleration_corrections();
         }
 
         // Recover first original body as frame of reference
@@ -259,7 +239,9 @@ impl Universe {
         if self.consider_general_relativy {
             self.calculate_general_relativity_acceleration();
         }
+    }
 
+    fn apply_acceleration_corrections(&mut self) {
         // Add the tidal+flattening+general relativity accelerations to the gravitational one (already computed)
         //for particle in self.particles[1..self.n_particles].iter_mut() {
         for particle in self.particles[..self.n_particles].iter_mut() {
@@ -443,18 +425,6 @@ impl Universe {
                             + (particle.spin.x*particle.position.y - particle.spin.y*particle.position.x - particle.velocity.z) * particle.velocity.z))
                             + star.mass_g/(star.mass_g + particle.mass_g) 
                             * (particle.torque.x*particle.spin.x + particle.torque.y*particle.spin.y + particle.torque.z*particle.spin.z) ;
-
-                //println!("{:e} {:e}", particle.denergy_dt, factor2);
-                //thread::sleep_ms(1000);
-
-                //tmp = Ftidop/rr
-                //tmp1 = 1.d0/rr*(Ftidr_diss + tmp*v_rad)
-
-                //dEdt = -(tmp1*(xhx*vhx+xhy*vhy+xhz*vhz) &
-                        //+ tmp*((spiny*xhz-spinz*xhy-vhx)*vhx &
-                              //+(spinz*xhx-spinx*xhz-vhy)*vhy &
-                              //+(spinx*xhy-spiny*xhx-vhz)*vhz)) &
-                        //+ m(1)/(m(1)+m(i))*(N_tid_px*spinx+N_tid_py*spiny+N_tid_pz*spinz)
             }
         }
     }
@@ -508,6 +478,7 @@ impl Universe {
                 //particle.tidal_acceleration.y += factor2 * sum_total_tidal_force.y;
                 //particle.tidal_acceleration.z += factor2 * sum_total_tidal_force.z;
             //}
+            // Instead of the previous code, keep star tidal acceleration separated:
             star.tidal_acceleration.x = -1.0 * factor2 * sum_total_tidal_force.x;
             star.tidal_acceleration.y = -1.0 * factor2 * sum_total_tidal_force.y;
             star.tidal_acceleration.z = -1.0 * factor2 * sum_total_tidal_force.z;
@@ -542,13 +513,13 @@ impl Universe {
                 //println!("Ortho component GR force {:e}", orthogonal_component_of_the_general_relativity_force);
                 // Total General Relativity force
                 // - Equation 10 from Bolmont et al. 2015
-                let total_general_relativity_force_x = particle.mass_g 
+                let total_general_relativity_force_x = particle.mass 
                         * (radial_component_of_the_general_relativity_force * particle.position.x / particle.distance
                         + orthogonal_component_of_the_general_relativity_force * particle.velocity.x / particle.norm_velocity_vector);
-                let total_general_relativity_force_y = particle.mass_g 
+                let total_general_relativity_force_y = particle.mass 
                         * (radial_component_of_the_general_relativity_force * particle.position.y / particle.distance
                         + orthogonal_component_of_the_general_relativity_force * particle.velocity.y / particle.norm_velocity_vector);
-                let total_general_relativity_force_z = particle.mass_g 
+                let total_general_relativity_force_z = particle.mass 
                         * (radial_component_of_the_general_relativity_force * particle.position.z / particle.distance
                         + orthogonal_component_of_the_general_relativity_force * particle.velocity.z / particle.norm_velocity_vector);
                 
@@ -569,6 +540,7 @@ impl Universe {
                 //particle.general_relativity_acceleration.y += factor2 * sum_total_general_relativity_force.y;
                 //particle.general_relativity_acceleration.z += factor2 * sum_total_general_relativity_force.z;
             //}
+            // Instead of the previous code, keep star tidal acceleration separated:
             star.general_relativity_acceleration.x = -1.0 * factor2 * sum_total_general_relativity_force.x;
             star.general_relativity_acceleration.y = -1.0 * factor2 * sum_total_general_relativity_force.y;
             star.general_relativity_acceleration.z = -1.0 * factor2 * sum_total_general_relativity_force.z;
@@ -644,6 +616,7 @@ impl Universe {
                 //particle.acceleration_induced_by_rotational_flattering.y += factor2 * sum_total_force_induced_by_rotation.y;
                 //particle.acceleration_induced_by_rotational_flattering.z += factor2 * sum_total_force_induced_by_rotation.z;
             //}
+            // Instead of the previous code, keep star tidal acceleration separated:
             star.acceleration_induced_by_rotational_flattering.x = -1.0 * factor2 * sum_total_force_induced_by_rotation.x;
             star.acceleration_induced_by_rotational_flattering.y = -1.0 * factor2 * sum_total_force_induced_by_rotation.y;
             star.acceleration_induced_by_rotational_flattering.z = -1.0 * factor2 * sum_total_force_induced_by_rotation.z;

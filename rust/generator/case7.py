@@ -48,18 +48,18 @@ if __name__ == "__main__":
     universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, fluid_love_number, star_position, star_velocity, star_spin, star_evolution_type)
 
     ############################################################################
-    inner_planet_mass_factor = 1.0
-    inner_planet_mass = inner_planet_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
-    # inner_planetary radius in AU (rearth in AU) Rocky inner_planet
-    inner_planet_radius_factor = 1.
-    inner_planet_radius = inner_planet_radius_factor * posidonius.constants.R_EARTH
+    planet1_mass_factor = 1.0
+    planet1_mass = planet1_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
+    # planet1ary radius in AU (rearth in AU) Rocky planet1
+    planet1_radius_factor = 1.
+    planet1_radius = planet1_radius_factor * posidonius.constants.R_EARTH
     # Terrestrial:
-    k2pdelta = 2.465278e-3 # Terrestrial inner_planets (no gas)
-    inner_planet_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(inner_planet_radius, 5))
-    inner_planet_dissipation_factor_scale = 1.0
-    inner_planet_radius_of_gyration_2 = 0.3308
-    inner_planet_love_number = 0.305
-    inner_planet_fluid_love_number = inner_planet_love_number
+    k2pdelta = 2.465278e-3 # Terrestrial planet1s (no gas)
+    planet1_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet1_radius, 5))
+    planet1_dissipation_factor_scale = 1.0
+    planet1_radius_of_gyration_2 = 0.3308
+    planet1_love_number = 0.305
+    planet1_fluid_love_number = planet1_love_number
 
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
@@ -71,43 +71,43 @@ if __name__ == "__main__":
     l = 0. * posidonius.constants.DEG2RAD;                      # mean anomaly (degrees)
     p = (p + n) * posidonius.constants.DEG2RAD;                 # Convert to longitude of perihelion !!
     q = a * (1.0 - e);                     # perihelion distance
-    gm = posidonius.constants.G*(inner_planet_mass+star_mass);
+    gm = posidonius.constants.G*(planet1_mass+star_mass);
     x, y, z, vx, vy, vz = posidonius.calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
-    inner_planet_position = posidonius.Axes(x, y, z)
-    inner_planet_velocity = posidonius.Axes(vx, vy, vz)
+    planet1_position = posidonius.Axes(x, y, z)
+    planet1_velocity = posidonius.Axes(vx, vy, vz)
 
-    #////// Initialization of inner_planetary spin
-    inner_planet_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
-    inner_planet_rotation_period = 24. # hours
-    inner_planet_angular_frequency = posidonius.constants.TWO_PI/(inner_planet_rotation_period/24.) # days^-1
+    #////// Initialization of planet1ary spin
+    planet1_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
+    planet1_rotation_period = 24. # hours
+    planet1_angular_frequency = posidonius.constants.TWO_PI/(planet1_rotation_period/24.) # days^-1
     # Pseudo-synchronization period
-    #keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*inner_planet_mass, inner_planet_position, inner_planet_velocity)
-    #semi_major_axis = inner_planet_keplerian_orbital_elements[0]
-    #eccentricity = inner_planet_keplerian_orbital_elements[2]
+    #keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet1_mass, planet1_position, planet1_velocity)
+    #semi_major_axis = planet1_keplerian_orbital_elements[0]
+    #eccentricity = planet1_keplerian_orbital_elements[2]
     #semi_major_axis = a
     #eccentricity = e
-    #pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(inner_planet_semi_major_axis, inner_planet_eccentricity, star_mass, inner_planet_mass)
-    #angular_frequency = posidonius.constants.TWO_PI/(inner_planet_pseudo_synchronization_period/24.) # days^-1
-    inner_planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*inner_planet_mass, inner_planet_position, inner_planet_velocity)
-    inner_planet_inclination = inner_planet_keplerian_orbital_elements[3]
-    inner_planet_spin = posidonius.calculate_spin(inner_planet_angular_frequency, inner_planet_inclination, inner_planet_obliquity, inner_planet_position, inner_planet_velocity)
+    #pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(planet1_semi_major_axis, planet1_eccentricity, star_mass, planet1_mass)
+    #angular_frequency = posidonius.constants.TWO_PI/(planet1_pseudo_synchronization_period/24.) # days^-1
+    planet1_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet1_mass, planet1_position, planet1_velocity)
+    planet1_inclination = planet1_keplerian_orbital_elements[3]
+    planet1_spin = posidonius.calculate_spin(planet1_angular_frequency, planet1_inclination, planet1_obliquity, planet1_position, planet1_velocity)
 
-    inner_planet_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(inner_planet_mass, inner_planet_radius, inner_planet_dissipation_factor, inner_planet_dissipation_factor_scale, inner_planet_radius_of_gyration_2, inner_planet_love_number, inner_planet_fluid_love_number, inner_planet_position, inner_planet_velocity, inner_planet_spin, inner_planet_evolution_type)
+    planet1_evolution_type = posidonius.NonEvolving()
+    universe.add_particle(planet1_mass, planet1_radius, planet1_dissipation_factor, planet1_dissipation_factor_scale, planet1_radius_of_gyration_2, planet1_love_number, planet1_fluid_love_number, planet1_position, planet1_velocity, planet1_spin, planet1_evolution_type)
 
     ############################################################################
-    outer_planet_mass_factor = 1.0
-    outer_planet_mass = outer_planet_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
-    # outer_planetary radius in AU (rearth in AU) Rocky outer_planet
-    outer_planet_radius_factor = 1.
-    outer_planet_radius = outer_planet_radius_factor * posidonius.constants.R_EARTH
+    planet2_mass_factor = 1.0
+    planet2_mass = planet2_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
+    # planet2ary radius in AU (rearth in AU) Rocky planet2
+    planet2_radius_factor = 1.
+    planet2_radius = planet2_radius_factor * posidonius.constants.R_EARTH
     # Terrestrial:
-    k2pdelta = 2.465278e-3 # Terrestrial outer_planets (no gas)
-    outer_planet_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(outer_planet_radius, 5))
-    outer_planet_dissipation_factor_scale = 1.0
-    outer_planet_radius_of_gyration_2 = 0.3308
-    outer_planet_love_number = 0.305
-    outer_planet_fluid_love_number = outer_planet_love_number
+    k2pdelta = 2.465278e-3 # Terrestrial planet2s (no gas)
+    planet2_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet2_radius, 5))
+    planet2_dissipation_factor_scale = 1.0
+    planet2_radius_of_gyration_2 = 0.3308
+    planet2_love_number = 0.305
+    planet2_fluid_love_number = planet2_love_number
 
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
@@ -119,29 +119,29 @@ if __name__ == "__main__":
     l = 0. * posidonius.constants.DEG2RAD;                      # mean anomaly (degrees)
     p = (p + n) * posidonius.constants.DEG2RAD;                 # Convert to longitude of perihelion !!
     q = a * (1.0 - e);                     # perihelion distance
-    gm = posidonius.constants.G*(outer_planet_mass+star_mass);
+    gm = posidonius.constants.G*(planet2_mass+star_mass);
     x, y, z, vx, vy, vz = posidonius.calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
-    outer_planet_position = posidonius.Axes(x, y, z)
-    outer_planet_velocity = posidonius.Axes(vx, vy, vz)
+    planet2_position = posidonius.Axes(x, y, z)
+    planet2_velocity = posidonius.Axes(vx, vy, vz)
 
-    #////// Initialization of outer_planetary spin
-    outer_planet_obliquity = 23. * posidonius.constants.DEG2RAD # 0.2 rad
-    outer_planet_rotation_period = 24. # hours
-    outer_planet_angular_frequency = posidonius.constants.TWO_PI/(outer_planet_rotation_period/24.) # days^-1
+    #////// Initialization of planet2ary spin
+    planet2_obliquity = 23. * posidonius.constants.DEG2RAD # 0.2 rad
+    planet2_rotation_period = 24. # hours
+    planet2_angular_frequency = posidonius.constants.TWO_PI/(planet2_rotation_period/24.) # days^-1
     # Pseudo-synchronization period
-    #keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*outer_planet_mass, outer_planet_position, outer_planet_velocity)
-    #semi_major_axis = outer_planet_keplerian_orbital_elements[0]
-    #eccentricity = outer_planet_keplerian_orbital_elements[2]
+    #keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet2_mass, planet2_position, planet2_velocity)
+    #semi_major_axis = planet2_keplerian_orbital_elements[0]
+    #eccentricity = planet2_keplerian_orbital_elements[2]
     #semi_major_axis = a
     #eccentricity = e
-    #pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(outer_planet_semi_major_axis, outer_planet_eccentricity, star_mass, outer_planet_mass)
-    #angular_frequency = posidonius.constants.TWO_PI/(outer_planet_pseudo_synchronization_period/24.) # days^-1
-    outer_planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*outer_planet_mass, outer_planet_position, outer_planet_velocity)
-    outer_planet_inclination = outer_planet_keplerian_orbital_elements[3]
-    outer_planet_spin = posidonius.calculate_spin(outer_planet_angular_frequency, outer_planet_inclination, outer_planet_obliquity, outer_planet_position, outer_planet_velocity)
+    #pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(planet2_semi_major_axis, planet2_eccentricity, star_mass, planet2_mass)
+    #angular_frequency = posidonius.constants.TWO_PI/(planet2_pseudo_synchronization_period/24.) # days^-1
+    planet2_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet2_mass, planet2_position, planet2_velocity)
+    planet2_inclination = planet2_keplerian_orbital_elements[3]
+    planet2_spin = posidonius.calculate_spin(planet2_angular_frequency, planet2_inclination, planet2_obliquity, planet2_position, planet2_velocity)
 
-    outer_planet_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(outer_planet_mass, outer_planet_radius, outer_planet_dissipation_factor, outer_planet_dissipation_factor_scale, outer_planet_radius_of_gyration_2, outer_planet_love_number, outer_planet_fluid_love_number, outer_planet_position, outer_planet_velocity, outer_planet_spin, outer_planet_evolution_type)
+    planet2_evolution_type = posidonius.NonEvolving()
+    universe.add_particle(planet2_mass, planet2_radius, planet2_dissipation_factor, planet2_dissipation_factor_scale, planet2_radius_of_gyration_2, planet2_love_number, planet2_fluid_love_number, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)
 
     universe.write(filename)
 
