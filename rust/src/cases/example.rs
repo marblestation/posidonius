@@ -20,7 +20,7 @@ pub fn main_example() -> WHFastHelio {
     let consider_tides = true;
     let consider_rotational_flattening = true;
     let consider_general_relativy = true;
-    let consider_all_body_interactions = true;
+    let consider_all_body_interactions = false;
 
     ////////////////////////////////////////////////////////////////////////////
     //---- Star (central body)
@@ -171,7 +171,7 @@ pub fn example_with_helpers() -> WHFastHelio {
     let consider_tides = true;
     let consider_rotational_flattening = true;
     let consider_general_relativy = true;
-    let consider_all_body_interactions = true;
+    let consider_all_body_interactions = false;
     ////////////////////////////////////////////////////////////////////////////
     //---- Star
     let star_mass: f64 = 0.08; // Solar masses

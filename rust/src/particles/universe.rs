@@ -16,7 +16,6 @@ pub struct Universe {
     pub consider_general_relativy: bool,
     pub consider_all_body_interactions: bool,
     star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
-    parallel_universes : Vec<Universe>, // If consider all the interactions
     temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
     temporary_copied_particle_velocities: [Axes; MAX_PARTICLES], // For optimization purposes
     temporary_copied_particles_masses: [f64; MAX_PARTICLES], // For optimization purposes
@@ -56,15 +55,6 @@ impl Universe {
             particles_evolvers.push(Evolver::new(transformed_particles[i].evolution_type, initial_time, time_limit));
         }
 
-        // Parallel universes
-        let n_parallel_universes;
-        if consider_all_body_interactions {
-            n_parallel_universes = n_particles - 2;
-        } else {
-            n_parallel_universes = 0;
-        }
-        let parallel_universes : Vec<Universe> = Vec::with_capacity(n_parallel_universes);
-
         let mut universe = Universe {
                     initial_time: initial_time,
                     time_limit: time_limit,
@@ -74,9 +64,8 @@ impl Universe {
                     consider_tides: consider_tides,
                     consider_rotational_flattening: consider_rotational_flattening,
                     consider_general_relativy: consider_general_relativy,
-                    consider_all_body_interactions: consider_all_body_interactions && n_parallel_universes > 0,
+                    consider_all_body_interactions: consider_all_body_interactions,
                     star_planet_dependent_dissipation_factors:HashMap::new(),
-                    parallel_universes: parallel_universes,
                     temporary_copied_particle_positions: temporary_copied_particle_positions,
                     temporary_copied_particle_velocities: temporary_copied_particle_velocities,
                     temporary_copied_particles_masses: temporary_copied_particles_masses,
@@ -85,13 +74,6 @@ impl Universe {
         let time_step = 0.;
         let current_time = 0.;
         universe.evolve_particles(current_time, time_step); // Make sure we start with the good initial values
-        for i in 0..n_parallel_universes {
-            let mut parallel_universe = universe.clone();
-            parallel_universe.n_particles -= i+1;
-            // The correct transfer all particles except central body will be executed when needed
-            // later on
-            universe.parallel_universes.push(parallel_universe);
-        }
         universe
     }
 
@@ -207,123 +189,16 @@ impl Universe {
     }
 
     pub fn calculate_additional_forces(&mut self, current_time: f64, time_step: f64, only_dspin_dt: bool) {
-        ////////////////////////////////////////////////////////////////////////
-        // Parallel universes: Copies of the current universe but without the
-        // first central body
-        //  1.- First parallel universe removes first body and uses the second 
-        //      body as point of reference (central body)
-        //  2.- Second parallel universe removes first and second body, it uses 
-        //      the third body as point of reference (central body)
-        //  3.- Third parallel universe...
-        ////////////////////////////////////////////////////////////////////////
-        // Dependencies for Parallel Computation
-        // NOTE: tests show that this parallel approach leads to slower results)
-        //
-        //extern crate threadpool;
-        //use self::threadpool::ThreadPool;
-        //use std::sync::mpsc;
-        //let n_workers = 10;
-        //let thread_pool: ThreadPool::new(n_workers),
-        //let (tx, rx) = mpsc::channel();
-        ////////////////////////////////////////////////////////////////////////
-
         self.evolve_particles(current_time, time_step);
 
         if self.consider_all_body_interactions {
-            // Build parallel universes if needed
-            for (i, parallel_universe) in self.parallel_universes.iter_mut().enumerate() {
-                // Transfer all particles except central body
-                for (particle, particle_parallel_universe) in self.particles[i+1..self.n_particles].iter()
-                                                            .zip(parallel_universe.particles[..parallel_universe.n_particles].iter_mut()) {
-                    particle_parallel_universe.position = particle.position;
-                    particle_parallel_universe.velocity = particle.velocity;
-                    // Forget accelerations from the original universe
-                    particle_parallel_universe.acceleration.x = 0.0;
-                    particle_parallel_universe.acceleration.y = 0.0;
-                    particle_parallel_universe.acceleration.z = 0.0;
-                    // Potentially evolving values
-                    particle_parallel_universe.radius = particle.radius;
-                    particle_parallel_universe.radius_of_gyration_2 = particle.radius_of_gyration_2;
-                    particle_parallel_universe.love_number = particle.love_number;
-                    particle_parallel_universe.lag_angle = particle.lag_angle;
-                }
-                // Re-center system over the new first body
-                parallel_universe.center_to_first_particle();
-
-                // Compute parallel universes
-                parallel_universe.calculate_dspin_dt();
-                if !only_dspin_dt {
-                    parallel_universe.calculate_acceleration_corrections();
-                }
-            }
-
+            // TODO: Not yet implemented
         }
-
-        ////////////////////////////////////////////////////////////////////////
-        ////// Execute in parallel
-        //if self.consider_all_body_interactions {
-            //for parallel_universe in self.parallel_universes.iter_mut() {
-                //let tx = tx.clone();
-                //let mut parallel_universe = parallel_universe.clone();
-
-                //thread_pool.execute(move || {
-                    //parallel_universe.particles[0].acceleration.x = 1.;
-                    //parallel_universe.calculate_dspin_dt();
-                    //if !only_dspin_dt {
-                        //parallel_universe.calculate_acceleration_corrections();
-                    //}
-                    
-                    //tx.send(parallel_universe).unwrap();
-                //});
-            //}
-        //}
-        ////////////////////////////////////////////////////////////////////////
 
         // Compute this universe
         self.calculate_dspin_dt();
         if !only_dspin_dt {
             self.calculate_acceleration_corrections();
-        }
-
-        ////////////////////////////////////////////////////////////////////////
-        ////// Collect results from parallel threads
-        //if self.consider_all_body_interactions {
-            //self.parallel_universes.clear();
-            //for _ in 0..n_parallel_universes {
-                //// It will block the current thread if there no messages available
-                //let parallel_universe = rx.recv().unwrap();
-                //self.parallel_universes.push(parallel_universe);
-            //}
-        //}
-        ////////////////////////////////////////////////////////////////////////
-
-
-        if self.consider_all_body_interactions {
-            // Integrate results from all parallel universes into this universe
-            for parallel_universe in self.parallel_universes.iter() {
-                //let mut num = 0;
-                let id = self.n_particles - parallel_universe.n_particles - 1;
-
-                for (particle, particle_parallel_universe) in self.particles[1+id..self.n_particles].iter_mut().zip(parallel_universe.particles[..parallel_universe.n_particles].iter()) {
-                    //println!("Body {}:", num);
-                    if !only_dspin_dt {
-                        //println!("      Acceleration {:e} {:e} {:e}", particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
-                        particle.acceleration.x += particle_parallel_universe.acceleration.x;
-                        particle.acceleration.y += particle_parallel_universe.acceleration.y;
-                        particle.acceleration.z += particle_parallel_universe.acceleration.z; 
-                        //println!("      Acceleration {:e} {:e} {:e}", particle_parallel_universe.acceleration.x, particle_parallel_universe.acceleration.y, particle_parallel_universe.acceleration.z);
-                        //println!("Added              {:e} {:e} {:e}", particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
-                    }
-                    //println!("      dspin_dt {:e} {:e} {:e}", particle.dspin_dt.x, particle.dspin_dt.y, particle.dspin_dt.z);
-                    particle.dspin_dt.x += particle_parallel_universe.dspin_dt.x;
-                    particle.dspin_dt.y += particle_parallel_universe.dspin_dt.y;
-                    particle.dspin_dt.z += particle_parallel_universe.dspin_dt.z;
-                    //println!("      dspin_dt {:e} {:e} {:e}", particle_parallel_universe.dspin_dt.x, particle_parallel_universe.dspin_dt.y, particle_parallel_universe.dspin_dt.z);
-                    //println!("Added          {:e} {:e} {:e}", particle.dspin_dt.x, particle.dspin_dt.y, particle.dspin_dt.z);
-                    //num += 1;
-                }
-                //println!("--------------------------------------------");
-            }
         }
 
         // Recover first original body as frame of reference

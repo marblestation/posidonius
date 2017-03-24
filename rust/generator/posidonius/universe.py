@@ -19,16 +19,12 @@ class Universe(object):
         self._data['particles'] = []
         self._data['particles_evolvers'] = []
         self._data['n_particles'] = 0
-        self._data['parallel_universes'] = []
         self._data['star_planet_dependent_dissipation_factors'] = {}
-        self._data['temporary_copied_particles_radiuses'] = [0.0, 0.0, 0.0]
-        self._data['temporary_copied_particles_masses'] = [0.0, 0.0, 0.0]
-        self._data['temporary_copied_particle_velocities'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0},
-                                                                  {u'x': 0.0, u'y': 0.0, u'z': 0.0},
-                                                                  {u'x': 0.0, u'y': 0.0, u'z': 0.0}]
-        self._data['temporary_copied_particle_positions'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0},
-                                                                  {u'x': 0.0, u'y': 0.0, u'z': 0.0},
-                                                                  {u'x': 0.0, u'y': 0.0, u'z': 0.0}]
+        self._data['temporary_copied_particles_radiuses'] = []
+        self._data['temporary_copied_particles_masses'] = []
+        self._data['temporary_copied_particle_velocities'] = []
+        self._data['temporary_copied_particle_positions'] = []
+
 
 
     def add_dummy_particle(self):
@@ -91,6 +87,10 @@ class Universe(object):
 
         self._data['particles'].append(particle)
         self._data['particles_evolvers'].append(evolver)
+        self._data['temporary_copied_particles_radiuses'].append(0.0)
+        self._data['temporary_copied_particles_masses'].append(0.0)
+        self._data['temporary_copied_particle_velocities'].append({u'x': 0.0, u'y': 0.0, u'z': 0.0})
+        self._data['temporary_copied_particle_positions'].append({u'x': 0.0, u'y': 0.0, u'z': 0.0})
         self._data['n_particles'] += 1
 
     def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity, evolution_type):
@@ -308,14 +308,10 @@ class Universe(object):
         for i in xrange(n_dummy_particles):
             self.add_dummy_particle()
 
-        # Add the parallel universes to the dictionary
         data = self._data.copy()
         if data['consider_all_body_interactions']:
-            n_parallel_universes = max((0., data['n_particles'] - 2))
-            for i in xrange(n_parallel_universes):
-                parallel_universe = universe.get().copy()
-                parallel_universe['n_particles'] -= 1
-                data['parallel_universes'].append(parallel_universe)
+            # TODO: Not yet implemented in the rust code
+            pass
 
         # Forget the dummy particles
         if n_dummy_particles > 0:
