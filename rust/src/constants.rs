@@ -23,7 +23,8 @@ pub const WHFAST_NMAX_NEWT : usize = 32;               // Maximum number of iter
 // These are the same units as used by the mercury6 code.
 const K  : f64 = 0.01720209895;    // Gaussian constant 
 pub const K2 : f64 = K*K; 
-pub const G  : f64 = K2;  // Gravitational constant
+pub const G  : f64 = K2;  // Gravitational constant in Mercury units
+pub const G_SI : f64 = 6.6742367e-11;  // m^3.kg^-1.s^-2 (S.I. units)
 pub const PI : f64 = std::f64::consts::PI;
 pub const TWO_PI : f64 = std::f64::consts::PI * 2.;
 pub const DEG2RAD : f64 = std::f64::consts::PI / 180.; // conversion factor from degrees to radians

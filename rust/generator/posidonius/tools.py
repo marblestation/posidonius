@@ -668,10 +668,12 @@ def find_indices_around_target_value(data, target_value):
 def calculate_pseudo_synchronization_period(semi_major_axis, eccentricity, star_mass, planet_mass):
     alpha = (1.+15./2.*np.power(eccentricity, 2)+45./8.*np.power(eccentricity, 4)+5./16.
                  * np.power(eccentricity, 6))*1./(1.+3.*np.power(eccentricity, 2)+3./8.
-                 * np.power(eccentricity, 4))*1./(1.-np.power(eccentricity, 2)).powf(1.5)
-    pseudo_rot = alpha * (G*M_SUN*(star_mass+planet_mass)).sqrt()
-    pseudo_synchronization_period = pseudo_rot * (semi_major_axis*AU).powf(-3./2.) * HR # In hours
-    return pseudo_synchronization_period
+                 * np.power(eccentricity, 4))*1./np.power(1.-np.power(eccentricity, 2), 1.5)
+    pseudo_rot = alpha * np.sqrt(G_SI*M_SUN*(star_mass+planet_mass)) # L^(3/2).T^(-1)
+    angular_frequency = pseudo_rot * np.power(semi_major_axis*AU, -3./2.) * HR * 24. # days^-1
+    pseudo_synchronization_period = TWO_PI/(angular_frequency) # days
+
+    return pseudo_synchronization_period # days
 
 
 

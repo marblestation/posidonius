@@ -20,7 +20,6 @@ pub fn main_example() -> WHFastHelio {
     let consider_tides = true;
     let consider_rotational_flattening = true;
     let consider_general_relativy = true;
-    let consider_all_body_interactions = false;
 
     ////////////////////////////////////////////////////////////////////////////
     //---- Star (central body)
@@ -135,8 +134,8 @@ pub fn main_example() -> WHFastHelio {
     ////let planet_eccentricity = planet_keplerian_orbital_elements.2;
     //let planet_semi_major_axis = a;
     //let planet_eccentricity = e;
-    //let planet_pseudo_synchronization_period = calculate_pseudo_synchronization_period(planet_semi_major_axis, planet_eccentricity, star_mass, planet_mass);
-    //let planet_angular_frequency = TWO_PI/(planet_pseudo_synchronization_period/24.); // days^-1
+    //let planet_pseudo_synchronization_period = calculate_pseudo_synchronization_period(planet_semi_major_axis, planet_eccentricity, star_mass, planet_mass); // days
+    //let planet_angular_frequency = TWO_PI/(planet_pseudo_synchronization_period); // days^-1
     //
     let planet_keplerian_orbital_elements = calculate_keplerian_orbital_elements(G*star_mass*planet_mass, planet_position, planet_velocity);
     let planet_inclination = planet_keplerian_orbital_elements.3;
@@ -151,7 +150,7 @@ pub fn main_example() -> WHFastHelio {
     ////////////////////////////////////////////////////////////////////////////
 
     let universe = Universe::new(vec![star, planet], initial_time, time_limit, 
-                                 consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
+                                 consider_tides, consider_rotational_flattening, consider_general_relativy);
 
     //let universe_integrator = LeapFrog::new(time_step, universe);
     //let universe_integrator = Ias15::new(time_step, universe);
@@ -171,7 +170,6 @@ pub fn example_with_helpers() -> WHFastHelio {
     let consider_tides = true;
     let consider_rotational_flattening = true;
     let consider_general_relativy = true;
-    let consider_all_body_interactions = false;
     ////////////////////////////////////////////////////////////////////////////
     //---- Star
     let star_mass: f64 = 0.08; // Solar masses
@@ -219,7 +217,7 @@ pub fn example_with_helpers() -> WHFastHelio {
     planet.love_number = planet_love_number;
     ////////////////////////////////////////////////////////////////////////////
 
-    let universe = Universe::new(vec![star, planet], initial_time, time_limit, consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
+    let universe = Universe::new(vec![star, planet], initial_time, time_limit, consider_tides, consider_rotational_flattening, consider_general_relativy);
 
     //let universe_integrator = posidonius::LeapFrog::new(time_step, universe);
     //let universe_integrator = posidonius::Ias15::new(time_step, universe);

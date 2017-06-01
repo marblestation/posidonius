@@ -49,7 +49,7 @@ posidonius resume target/example.bin target/example_history.bin
 
 # Analyse simulations
 
-While a simulation is in progress or when it has ended, the historic snapshot file can be interpreted to generate a plain text file and a plot with the history of the simulation.
+While a simulation is in progress or when it has ended, the historic snapshot file can be interpreted to generate a plain text file and a plot with the history of the simulation:
 
 ```bash
 python analysis/process.py target/case3_history.bin
@@ -57,3 +57,22 @@ python analysis/process.py target/case4_history.bin
 python analysis/process.py target/case7_history.bin
 python analysis/process.py target/example_history.bin
 ```
+
+To explore what possible resonances might be present in the system:
+
+```
+python analysis/process_timed_resonances.py target/case3_history.bin
+python analysis/process_timed_resonances.py target/case4_history.bin
+python analysis/process_timed_resonances.py target/case7_history.bin
+python analysis/process_timed_resonances.py target/example_history.bin
+```
+
+Finally, to study a given resonance (e.g., 3:2) between planet one and two:
+
+```
+python analysis/process_single_resonance.py target/case3_history.bin 1 2 3 2
+python analysis/process_single_resonance.py target/case4_history.bin 1 2 3 2
+python analysis/process_single_resonance.py target/case7_history.bin 1 2 3 2
+python analysis/process_single_resonance.py target/example_history.bin 1 2 3 2
+```
+

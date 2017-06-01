@@ -5,7 +5,7 @@ from evolution_type import NonEvolving
 from tools import calculate_spin
 
 class Universe(object):
-    def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions):
+    def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy):
         self._time_step = time_step
         self._recovery_snapshot_period = recovery_snapshot_period
         self._historic_snapshot_period = historic_snapshot_period
@@ -15,7 +15,6 @@ class Universe(object):
         self._data['consider_tides'] = consider_tides
         self._data['consider_rotational_flattening'] = consider_rotational_flattening
         self._data['consider_general_relativy'] = consider_general_relativy
-        self._data['consider_all_body_interactions'] = consider_all_body_interactions
         self._data['particles'] = []
         self._data['particles_evolvers'] = []
         self._data['n_particles'] = 0
@@ -309,9 +308,6 @@ class Universe(object):
             self.add_dummy_particle()
 
         data = self._data.copy()
-        if data['consider_all_body_interactions']:
-            # TODO: Not yet implemented in the rust code
-            pass
 
         # Forget the dummy particles
         if n_dummy_particles > 0:

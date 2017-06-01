@@ -4,8 +4,8 @@ import pandas as pd
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
-import struct
 import argparse
+from common import *
 
 
 if __name__ == "__main__":
@@ -14,109 +14,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     filename = args.historic_snapshot_filename
-
-
-    f = open(filename, "rb")
-    # (np.floor(np.log10(np.max((100., 10.)))) - 2.)*10.
-
-    if not os.path.exists(filename):
-        raise Exception("File does not exists!")
-
-    fields = ('current_time', 'time_step', 'particle', 'position_x', 'position_y', 'position_z', 'spin_x', 'spin_y', 'spin_z', 'velocity_x', 'velocity_y', 'velocity_z', 'semi-major_axis', 'perihelion_distance', 'eccentricity', 'inclination', 'longitude_of_perihelion', 'longitude_of_ascending_node', 'mean_anomaly', 'orbital_angular_momentum_x', 'orbital_angular_momentum_y', 'orbital_angular_momentum_z', 'orbital_angular_momentum', 'denergy_dt', 'total_energy', 'total_angular_momentum', 'mass', 'radius', 'radius_of_gyration_2', 'scaled_dissipation_factor', 'love_number', 'lag_angle')
-
-    data = []
-    while True:
-        try:
-            row = f.read(8+8+4+8*(len(fields)-3))
-            vrow = struct.unpack('> d d i' + ' d'*(len(fields)-3), row)
-        except:
-            break
-        else:
-            data.append(vrow)
-
-    data = pd.DataFrame(data, columns=fields, index=np.arange(len(data)))
-    if len(data) == 0:
-        raise Exception("Empty file!")
-
-    # Force to always have N lines per snapshot corresponding to N particles
-    n_particles = int(data['particle'].max())+1
-    outer_particles = n_particles-1
-    last_particle = int(data.iloc[-1]['particle'])
-    excess = (n_particles - (outer_particles - last_particle)) % n_particles
-    if excess > 0:
-        data = data[:-1*excess]
-    data = data.to_records()
-
-    #-------------------------------------------------------------------------------
-    # Constants
-    #-------------------------------------------------------------------------------
-    Msun      =  1.98892e30               # kg
-    Rsun      =  6.96e8                   # m
-    AU        =  1.49598e11               # m
-    day       =  24*3600.                 # s
-    Rearth    =  6371.0e3                 # m
-
-    G         =  6.6742367e-11            # m^3.kg^-1.s^-2
-
-    yr        =  365.25*24*3600           # s
-    hr        =  3600.                    # s
-
-    Mjup      =  9.5511e-4 * Msun         # kg
-    Mearth    =  3.e-6 * Msun             # kg
-    Rjup      =  69173.e3                 # m
-
-    #-------------------------------------------------------------------------------
-    # Functions
-    #-------------------------------------------------------------------------------
-    # The 2 eccentricity dependant factors in the equation in a
-    def Na1(e):
-        return (1.0+31.0/2.0*(e*e)+255.0/8.0*np.power(e, 4) \
-                + 185.0/16.0* np.power(e, 6) + 25.0/64.0* np.power(e,8)) / np.power((1.0- (e*e)), (15.0/2.0))
-
-    def Na2(e):
-        return (1.+15./2.0*(e*e) + 45./8.0 * np.power(e, 4) + 5./16.0* np.power(e, 6)) / np.power((1.0- (e*e)), 6)
-
-    def No2(e):
-        return (1.0 + 3.0 * (e*e) + 3.0/8.0 * np.power(e, 4)) / np.power((1.0- (e*e)), 5)
-
-    def energydot(a, e, rotp, oblp, G, Mp, Ms, Rp, k2deltat_plan):
-        return 2. * Kplan(k2deltat_plan, G, Mp, Ms, Rp, a) \
-                * (Na1(e) - 2.0*Na2(e) * np.cos(oblp) * (rotp/(norb(G, Mp, Ms)*np.power(a, -1.5))) \
-                + (1.0 + np.power(np.cos(oblp),2))/2.0 * No2(e) * np.sqrt(1.0-(e*e)) * np.power(rotp/(norb(G, Mp, Ms)* np.power(a, -1.5)), 2))
-
-    # Jeremys Ki factor :
-    def Kplan(k2deltat_plan, G, Mp, Ms, Rp, a):
-        return 3./2. * k2deltat_plan * (G*(Mp*Mp)/Rp) * np.power(Ms/Mp,2) \
-                * np.power(Rp/a, 6) * np.power(norb(G,Mp,Ms) * np.power(a, -1.5), 2)
-
-    # Mean orbital angular velocity without the a dependance         (m^3/2.s-1)
-    def norb(G, Mp, Ms):
-        return np.sqrt(G) * np.sqrt(Mp+Ms)
-
-
+    n_particles, data = read_history(filename)
+    star_data, planets_data, planets_keys = filter_history(n_particles, data)
+    star_mass = star_data['mass'][0]
 
     #-------------------------------------------------------------------------------
     # Main
     #-------------------------------------------------------------------------------
-    # Ignore first 100 years
-    data['current_time'] /= 362.25 # From days to years
-    data = data[data['current_time'] >= 100.]
-
-    star = data['particle'] == 0
-    star_data = data[star]
-    star_mass = star_data['mass'][0]
-
-    planets_data = {}
-    planets_keys = [] # To ensure the order
-    for i in xrange(n_particles-1):
-        planets_data["{}".format(i+1)] = data[data['particle'] == i+1]
-        planets_keys.append("{}".format(i+1))
-
-    ## Same number of points
-    #shared_idx = np.min((len(star_data), len(planet_data)))
-    #planet_data = planet_data[:shared_idx]
-    #star_data = star_data[:shared_idx]
-
 
     ################################################################################
     ## Star
@@ -184,7 +88,8 @@ if __name__ == "__main__":
         e = planet_data['eccentricity']
         alpha = (1.+15./2.*e**2+45./8.*e**4+5./16.*e**6)*1./(1.+3.*e**2+3./8.*e**4)*1./(1.-e**2)**1.5
         pseudo_rot = alpha * np.sqrt(G*Msun*(star_mass+planet_mass))
-        pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * hr)
+        #pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * hr) # Hours
+        pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * hr*24.) # Days
         planet_computed_data['pseudo_synchronization_period'] = pseudo_synchronization_period
 
 
@@ -237,6 +142,15 @@ if __name__ == "__main__":
 
 
         ################################################################################
+        #G         =  6.6742367e-11            # m^3.kg^-1.s^-2
+        #AU        =  1.49598e11               # m
+        #Msun      =  1.98892e30               # kg
+        planet_orbital_period = 2*np.pi*np.sqrt(np.power(planet_data['semi-major_axis']*AU, 3)/(G*Msun*(star_data['mass']+planet_data['mass'])))
+        planet_computed_data['orbital_period'] = planet_orbital_period/(hr*24) # days
+        ################################################################################
+
+
+        ################################################################################
         ## Sum over all the planets values:
         planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*Msun) * np.power(planet_data['radius']*AU, 2) * (planet_norm_spin/day)
         total_planets_angular_momentum += planet_angular_momentum # If more than one planet is present, all of them should be added
@@ -267,10 +181,8 @@ if __name__ == "__main__":
     field = 'semi-major_axis'
     for key in planets_keys:
         planet_data = planets_data[key]
-        ax.plot(planet_data['current_time'], planet_data[field], label=key)
-    for key in planets_keys:
-        planet_data = planets_data[key]
-        ax.plot(planet_data['current_time'], planets_computed_data[key]['corrotation_radius'], label=key+" corrotation")
+        line, = ax.plot(planet_data['current_time'], planet_data[field], label=key)
+        ax.plot(planet_data['current_time'], planets_computed_data[key]['corrotation_radius'], label=None, ls="--", c=line.get_color()) # Corrotation
     ax.set_ylabel(field+" (AU)")
     #ax.set_ylim([0.005, 0.028])
     ax.set_xscale('log')
@@ -295,7 +207,7 @@ if __name__ == "__main__":
         planet_data = planets_data[key]
         ax.plot(planet_data['current_time'], planet_data[field], label=key)
     ax.set_ylabel(field)
-    ax.set_ylim([0.001, 1.000])
+    #ax.set_ylim([0.001, 1.000])
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.legend(loc=0, prop={'size':8})
@@ -315,28 +227,27 @@ if __name__ == "__main__":
 
     ax = fig.add_subplot(5,3,5, sharex=ax)
     # Energy loss dE/dt due to tides per planet surface
-    field = 'Energy lost\ndue to tides (W/m^2)'
+    #field = 'Energy lost\ndue to tides (W/m^2)'
+    field = 'Tidal heat\nflux (W/m^2)'
     for key in planets_keys:
         planet_data = planets_data[key]
-        ax.plot(planet_data['current_time'], planets_computed_data[key]['inst_tidal_flux'], label=key+" Instantaneous") # Instantaneous energy loss
-    for key in planets_keys:
-        planet_data = planets_data[key]
-        ax.plot(planet_data['current_time'], planets_computed_data[key]['mean_tidal_flux'], label=key+" Mean") # Mean energy loss
+        line, = ax.plot(planet_data['current_time'], planets_computed_data[key]['inst_tidal_flux'], label=key) # Instantaneous energy loss
+        ax.plot(planet_data['current_time'], planets_computed_data[key]['mean_tidal_flux'], label=None, ls="--", c=line.get_color()) # Mean energy loss
     ax.set_ylabel(field)
-    ax.set_ylim([1e-2, 1e5])
+    #ax.set_ylim([1e-2, 1e5])
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.legend(loc=0, prop={'size':8})
     #plt.setp(ax.get_xticklabels(), visible=False)
 
     ax = fig.add_subplot(5,3,6, sharex=ax)
-    field = 'planet_rotation_period\n(hr)'
+    #field = 'planet_rotation_period\n(hr)'
+    field = 'planet_rotation_period\n(days)'
     for key in planets_keys:
         planet_data = planets_data[key]
-        ax.plot(planet_data['current_time'], planets_computed_data[key]['planet_rotation_period']*24., label=key)
-    for key in planets_keys:
-        planet_data = planets_data[key]
-        ax.plot(planet_data['current_time'], planets_computed_data[key]['pseudo_synchronization_period'], label=key+" pseudo-sync")
+        #line, = ax.plot(planet_data['current_time'], planets_computed_data[key]['planet_rotation_period']*24., label=key)
+        line, = ax.plot(planet_data['current_time'], planets_computed_data[key]['planet_rotation_period'], label=key)
+        ax.plot(planet_data['current_time'], planets_computed_data[key]['pseudo_synchronization_period'], label=None, ls="--", c=line.get_color()) # Pseudo-sync
     ax.set_ylabel(field)
     #ax.set_ylim([40, 160.0])
     ax.set_xscale('log')
@@ -351,18 +262,30 @@ if __name__ == "__main__":
     ax.set_xscale('log')
     ax.set_yscale('log')
 
+    #ax = fig.add_subplot(5,3,8, sharex=ax)
+    ## Energy loss dE/dt due to tides
+    #field = 'Energy lost\ndue to tides (W)'
+    ##ax.plot(planet_data['current_time'], planet_data[field])
+    #for key in planets_keys:
+        #planet_data = planets_data[key]
+        #line, = ax.plot(planet_data['current_time'], planets_computed_data[key]['denergy_dt'], label=key) # Instantaneous energy loss
+        #ax.plot(planet_data['current_time'], planets_computed_data[key]['gravitational_energy_lost'], label=None, ls="--", c=line.get_color()) # Mean energy loss
+    #ax.set_ylabel(field)
+    ##ax.set_ylim([1e12, 1e19])
+    #ax.set_xscale('log')
+    #ax.set_yscale('symlog')
+    #ax.legend(loc=0, prop={'size':8})
+    #ax = fig.add_subplot(5,3,8, sharex=ax)
+
     ax = fig.add_subplot(5,3,8, sharex=ax)
-    # Energy loss dE/dt due to tides
-    field = 'Energy lost\ndue to tides (W)'
+    # Planet orbital period
+    field = 'Orbital period'
     #ax.plot(planet_data['current_time'], planet_data[field])
     for key in planets_keys:
         planet_data = planets_data[key]
-        ax.plot(planet_data['current_time'], planets_computed_data[key]['denergy_dt'], label=key+" Instantaneous") # Instantaneous energy loss
-    for key in planets_keys:
-        planet_data = planets_data[key]
-        ax.plot(planet_data['current_time'], planets_computed_data[key]['gravitational_energy_lost'], label=key+" Mean") # Mean energy loss
+        ax.plot(planet_data['current_time'], planets_computed_data[key]['orbital_period'], label=key) #
     ax.set_ylabel(field)
-    ax.set_ylim([1e12, 1e19])
+    #ax.set_ylim([1e12, 1e19])
     ax.set_xscale('log')
     ax.set_yscale('symlog')
     ax.legend(loc=0, prop={'size':8})
@@ -421,7 +344,7 @@ if __name__ == "__main__":
     field = '$\Delta E/E_{0}$'
     ax.plot(planet_data['current_time'], relative_energy_error)
     ax.set_ylabel(field)
-    ax.set_ylim([-0.35, 0.05])
+    #ax.set_ylim([-0.35, 0.05])
     ax.set_xscale('log')
     #ax.set_yscale('symlog')
 
@@ -480,7 +403,7 @@ if __name__ == "__main__":
             all_data = pd.concat((all_data, data))
     output_text_filename = os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + ".txt"
     #output_text_filename = os.path.splitext(os.path.basename(filename))[0] + ".txt"
-    all_data.to_csv(output_text_filename, sep="\t")
+    all_data.to_csv(output_text_filename, sep="\t", index=False)
 
     print("Output plain text file written to: {}".format(output_text_filename))
 

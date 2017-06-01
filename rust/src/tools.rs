@@ -790,8 +790,9 @@ pub fn calculate_pseudo_synchronization_period(semi_major_axis: f64, eccentricit
     let alpha = (1.+15./2.*eccentricity.powi(2)+45./8.*eccentricity.powi(4)+5./16.
                  * eccentricity.powi(6))*1./(1.+3.*eccentricity.powi(2)+3./8.
                  * eccentricity.powi(4))*1./(1.-eccentricity.powi(2)).powf(1.5);
-    let pseudo_rot = alpha * (G*M_SUN*(star_mass+planet_mass)).sqrt();
-    let pseudo_synchronization_period = pseudo_rot * (semi_major_axis*AU).powf(-3./2.) * HR; // In hours
+    let pseudo_rot = alpha * (G_SI*M_SUN*(star_mass+planet_mass)).sqrt();
+    let angular_frequency = pseudo_rot * (semi_major_axis*AU).powf(-3./2.) * HR * 24.; // days^-1
+    let pseudo_synchronization_period = TWO_PI/(angular_frequency); // days
     pseudo_synchronization_period
 }
 

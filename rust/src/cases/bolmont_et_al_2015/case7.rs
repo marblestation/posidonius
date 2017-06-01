@@ -18,7 +18,6 @@ pub fn case7() -> WHFastHelio {
     let consider_tides = true;
     let consider_rotational_flattening = true;
     let consider_general_relativy = false;
-    let consider_all_body_interactions = false;
 
     ////////////////////////////////////////////////////////////////////////////
     //---- Star (central body)
@@ -147,7 +146,7 @@ pub fn case7() -> WHFastHelio {
     ////////////////////////////////////////////////////////////////////////////
 
     let universe = Universe::new(vec![star, inner_planet, outer_planet], initial_time, time_limit,
-                                 consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions);
+                                 consider_tides, consider_rotational_flattening, consider_general_relativy);
     let universe_integrator = WHFastHelio::new(time_step, recovery_snapshot_period, historic_snapshot_period, universe);
 
     universe_integrator

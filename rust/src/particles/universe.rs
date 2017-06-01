@@ -14,7 +14,6 @@ pub struct Universe {
     pub consider_tides: bool,
     pub consider_rotational_flattening: bool,
     pub consider_general_relativy: bool,
-    pub consider_all_body_interactions: bool,
     star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
     temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
     temporary_copied_particle_velocities: [Axes; MAX_PARTICLES], // For optimization purposes
@@ -25,7 +24,7 @@ pub struct Universe {
 impl Universe {
     pub fn new(mut particles: Vec<Particle>, initial_time: f64, time_limit: f64, 
               consider_tides: bool, consider_rotational_flattening:
-              bool, consider_general_relativy: bool, consider_all_body_interactions: bool) -> Universe {
+              bool, consider_general_relativy: bool) -> Universe {
         if consider_general_relativy {
             let star_index = 0; // index
             let local_copy_star_mass_g = particles[star_index].mass_g;
@@ -64,7 +63,6 @@ impl Universe {
                     consider_tides: consider_tides,
                     consider_rotational_flattening: consider_rotational_flattening,
                     consider_general_relativy: consider_general_relativy,
-                    consider_all_body_interactions: consider_all_body_interactions,
                     star_planet_dependent_dissipation_factors:HashMap::new(),
                     temporary_copied_particle_positions: temporary_copied_particle_positions,
                     temporary_copied_particle_velocities: temporary_copied_particle_velocities,
@@ -169,10 +167,6 @@ impl Universe {
 
     pub fn calculate_additional_forces(&mut self, current_time: f64, time_step: f64, only_dspin_dt: bool) {
         self.evolve_particles(current_time, time_step);
-
-        if self.consider_all_body_interactions {
-            // TODO: Not yet implemented
-        }
 
         // Compute this universe
         self.calculate_dspin_dt();

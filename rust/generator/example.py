@@ -20,8 +20,7 @@ if __name__ == "__main__":
     consider_tides = True
     consider_rotational_flattening = True
     consider_general_relativy = True
-    consider_all_body_interactions = False
-    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy, consider_all_body_interactions)
+    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy)
 
     star_mass = 0.08 # Solar masses
     star_radius_factor = 0.845649342247916
@@ -80,13 +79,13 @@ if __name__ == "__main__":
     planet_rotation_period = 24. # hours
     planet_angular_frequency = posidonius.constants.TWO_PI/(planet_rotation_period/24.) # days^-1
     # Pseudo-synchronization period
-    #keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet_mass, planet_position, planet_velocity)
-    #semi_major_axis = planet_keplerian_orbital_elements[0]
-    #eccentricity = planet_keplerian_orbital_elements[2]
-    #semi_major_axis = a
-    #eccentricity = e
-    #pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(planet_semi_major_axis, planet_eccentricity, star_mass, planet_mass)
-    #angular_frequency = posidonius.constants.TWO_PI/(planet_pseudo_synchronization_period/24.) # days^-1
+    #planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet_mass, planet_position, planet_velocity)
+    #planet_semi_major_axis = planet_keplerian_orbital_elements[0]
+    #planet_eccentricity = planet_keplerian_orbital_elements[2]
+    #planet_semi_major_axis = a
+    #planet_eccentricity = e
+    #planet_pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(planet_semi_major_axis, planet_eccentricity, star_mass, planet_mass)
+    #planet_angular_frequency = posidonius.constants.TWO_PI/(planet_pseudo_synchronization_period/24.) # days^-1
     planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet_mass, planet_position, planet_velocity)
     planet_inclination = planet_keplerian_orbital_elements[3]
     planet_spin = posidonius.calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity, planet_position, planet_velocity)

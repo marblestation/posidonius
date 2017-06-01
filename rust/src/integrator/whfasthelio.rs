@@ -219,7 +219,7 @@ impl WHFastHelio {
                 universe_integrator = decode_from(&mut reader, SizeLimit::Infinite).unwrap();
             }
             if universe_integrator.hash == 0 {
-                println!("INFO: Restored new custom simulation from '{}'", universe_integrator_snapshot_path.display());
+                println!("INFO: Created new simulation based on '{}'", universe_integrator_snapshot_path.display());
             } else {
                 println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
             }
