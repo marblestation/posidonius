@@ -169,7 +169,12 @@ impl Universe {
         self.evolve_particles(current_time, time_step);
 
         // Compute this universe
-        self.calculate_dspin_dt();
+        if self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy  {
+            self.calculate_distance_and_velocities(); // Needed for tides, rotational flattening and general relativity
+            if self.consider_tides || self.consider_rotational_flattening  {
+                self.calculate_dspin_dt(); // Needed for tides and rotational flattening
+            }
+        }
         if !only_dspin_dt {
             self.calculate_acceleration_corrections();
             self.apply_acceleration_corrections();
@@ -211,7 +216,6 @@ impl Universe {
     fn calculate_dspin_dt(&mut self) {
         let central_body = true;
 
-        self.calculate_distance_and_velocities(); // Needed for calculate_torque_due_to_tides and calculate_planet_dependent_dissipation_factors
         self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if MathisSolarLike
 
         self.calculate_orthogonal_component_of_the_tidal_force(central_body);   // Needed for calculate_torque_due_to_tides and calculate_tidal_acceleration

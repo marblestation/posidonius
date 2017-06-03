@@ -14,6 +14,7 @@ if __name__ == "__main__":
     #initial_time = 4.5e6*365.25 # time [days] where simulation starts
     initial_time = 1.0e6*365.25 # time [days] where simulation starts
     time_step = 0.08 # days
+    #time_step = 0.05 # days
     #time_limit   = 4*time_step # days
     time_limit   = 365.25 * 1.0e8 # days
     historic_snapshot_period = 100.*365.25 # days
@@ -36,6 +37,7 @@ if __name__ == "__main__":
 
     # Initialization of stellar spin
     star_rotation_period = 3.3*24 # hours
+    #star_rotation_period = 19.0*24 # hours
     star_angular_frequency = posidonius.constants.TWO_PI/(star_rotation_period/24.) # days^-1
     star_spin = posidonius.Axes(0., 0., star_angular_frequency)
     #star_evolution_type = posidonius.BrownDwarf(star_mass)

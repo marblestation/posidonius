@@ -279,7 +279,7 @@ if __name__ == "__main__":
 
     ax = fig.add_subplot(5,3,8, sharex=ax)
     # Planet orbital period
-    field = 'Orbital period'
+    field = 'Orbital period\n(days)'
     #ax.plot(planet_data['current_time'], planet_data[field])
     for key in planets_keys:
         planet_data = planets_data[key]
@@ -287,7 +287,7 @@ if __name__ == "__main__":
     ax.set_ylabel(field)
     #ax.set_ylim([1e12, 1e19])
     ax.set_xscale('log')
-    ax.set_yscale('symlog')
+    #ax.set_yscale('symlog')
     ax.legend(loc=0, prop={'size':8})
 
     ax = fig.add_subplot(5,3,9, sharex=ax)
