@@ -1,7 +1,7 @@
 from axes import Axes
 from integrator import WHFast
 from constants import *
-from evolution_type import NonEvolving
+from evolution_type import NonEvolving, BrownDwarf, MDwarf, Jupiter, SolarLikeEvolvingDissipation, SolarLikeConstantDissipation
 from tools import calculate_spin
 
 class Universe(object):

@@ -19,3 +19,4 @@ HR = 3600. # s
 M_EARTH = 3.0e-6 # M_SUN
 M_SUN = 1.98892e30 # Kg
 
+M2EARTH = 1.9891e6/5.9794 # Factor for mass-radius relation (valid only for earth type planets)
