@@ -177,7 +177,10 @@ pub fn example_with_helpers() -> WHFastHelio {
     let star_evolution_type = EvolutionType::NonEvolving;
     let star_position = Axes{x:0., y:0., z:0.};
     let star_velocity = Axes{x:0., y:0., z:0.};
-    let star = Particle::new_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_evolution_type);
+ 
+    let inclination: f64 = 0.;
+    let obliquity: f64 = 0.;
+    let star = Particle::new_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, inclination, obliquity, star_evolution_type);
 
     ////////////////////////////////////////////////////////////////////////////
     //---- Planet
@@ -211,7 +214,7 @@ pub fn example_with_helpers() -> WHFastHelio {
     let planet_inclination = planet_keplerian_orbital_elements.3;
     let planet_spin = calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity, planet_position, planet_velocity);
 
-    let mut planet = Particle::new_terrestrial(planet_mass, planet_radius_factor, planet_dissipation_factor_scale, planet_position, planet_velocity);
+    let mut planet = Particle::new_terrestrial(planet_mass, planet_radius_factor, planet_dissipation_factor_scale, planet_position, planet_velocity, planet_spin);
     // Replace default values:
     planet.spin = planet_spin;
     planet.love_number = planet_love_number;

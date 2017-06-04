@@ -97,7 +97,7 @@ class Universe(object):
         self._data['temporary_copied_particle_positions'].append({u'x': 0.0, u'y': 0.0, u'z': 0.0})
         self._data['n_particles'] += 1
 
-    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity, evolution_type):
+    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity, inclination, obliquity, evolution_type):
         rotation_period = None
         love_number = None
         if type(evolution_type) == NonEvolving:
@@ -148,8 +148,6 @@ class Universe(object):
             raise Exception("Evolution type should be BrownDwarf or NonEvolving!")
 
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
-        inclination = 0.
-        obliquity = 0.
         spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
 
         fluid_love_number = love_number
@@ -163,17 +161,11 @@ class Universe(object):
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
 
 
-    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, evolution_type):
+    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
         if type(evolution_type) not in (SolarLikeEvolvingDissipation, SolarLikeConstantDissipation):
             raise Exception("Evolution type should be SolarLikeEvolvingDissipation or SolarLikeConstantDissipation!")
 
-        rotation_period = 8. # hours
-        love_number = 0.03 # SolarLike
-        angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
-        inclination = 0.
-        obliquity = 0.
-        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
-
+        # Typical rotation period: 24 hours
         fluid_love_number = love_number
         # Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 4.992*3.845764e-2 # -66+64
@@ -184,18 +176,13 @@ class Universe(object):
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
 
 
-    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, evolution_type):
+    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
         if type(evolution_type) not in (MDwarf, NonEvolving):
             raise Exception("Evolution type should be MDwarf or NonEvolving!")
 
-        rotation_period = 70. # hours
+        # Typical rotation period: 70 hours
         love_number = 0.307 # M Dwarf
         fluid_love_number = love_number
-
-        angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
-        inclination = 0.
-        obliquity = 0.
-        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
 
         # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 2.006*3.845764e4 # -60+64
@@ -206,18 +193,13 @@ class Universe(object):
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
 
 
-    def add_jupiter_like(self, mass, dissipation_factor_scale, position, velocity, evolution_type):
+    def add_jupiter_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
         if type(evolution_type) not in (Jupiter, NonEvolving):
             raise Exception("Evolution type should be Jupiter or NonEvolving!")
 
-        rotation_period = 9.8 # hours
+        # Typical rotation period: 9.8 hours
         love_number = 0.380 # Gas giant
         fluid_love_number = love_number
-
-        angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
-        inclination = 0.
-        obliquity = 0.
-        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
 
         radius_factor = 10.9 # Jupiter in R_EARTH
         radius = radius_factor * R_EARTH
@@ -232,22 +214,17 @@ class Universe(object):
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
 
 
-    def add_earth_like(self, mass, dissipation_factor_scale, position, velocity, evolution_type):
+    def add_earth_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
         if type(evolution_type) not in (NonEvolving,):
             raise Exception("Evolution type should be NonEvolving!")
 
-        rotation_period = 24. # hours
+        # Typical rotation period: 24 hours
         love_number = 0.299 # Earth
         fluid_love_number = 0.9532 # Earth
 
-        angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
-        inclination = 0.
-        obliquity = 0.
-        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
-
         # Earth-like => mass-radius relationship from Fortney 2007
-        radius_factor = (0.0592*0.7+0.0975) * np.power(np.log10(mass) + np.log10(M2EARTH) - np.log10(K2), 2) \
-                                 + (0.2337*0.7+0.4938) * (np.log10(mass) + np.log10(M2EARTH) - np.log10(K2)) \
+        radius_factor = (0.0592*0.7+0.0975) * np.power(np.log10(mass) + np.log10(M2EARTH), 2) \
+                                 + (0.2337*0.7+0.4938) * (np.log10(mass) + np.log10(M2EARTH)) \
                                  + 0.3102*0.7+0.7932
         radius = radius_factor * R_EARTH
         radius_of_gyration_2 = 3.308e-1 # Earth type planet
@@ -256,18 +233,13 @@ class Universe(object):
 
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
 
-    def add_terrestrial(self, mass, radius_factor, dissipation_factor_scale, position, velocity, evolution_type):
+    def add_terrestrial(self, mass, radius_factor, dissipation_factor_scale, position, velocity, spin, evolution_type):
         if type(evolution_type) not in (NonEvolving,):
             raise Exception("Evolution type should be NonEvolving!")
 
-        rotation_period = 24. # hours
+        # Typical rotation period: 24 hours
         love_number = 0.299 # Earth
         fluid_love_number = 0.9532 # Earth
-
-        angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
-        inclination = 0.
-        obliquity = 0.
-        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
 
         radius = radius_factor * R_EARTH
         radius_of_gyration_2 = 3.308e-1 # Earth type planet
@@ -277,18 +249,13 @@ class Universe(object):
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
 
 
-    def add_gas_giant(self, mass, radius_factor, dissipation_factor_scale, position, velocity, evolution_type):
+    def add_gas_giant(self, mass, radius_factor, dissipation_factor_scale, position, velocity, spin, evolution_type):
         if type(evolution_type) not in (NonEvolving):
             raise Exception("Evolution type should be NonEvolving!")
 
-        rotation_period = 9.8 # hours
+        # Typical rotation period: 9.8 hours
         love_number = 0.380 # Gas giant
         fluid_love_number = love_number
-
-        angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
-        inclination = 0.
-        obliquity = 0.
-        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
 
         radius = radius_factor * R_EARTH
 
