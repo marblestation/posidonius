@@ -18,6 +18,7 @@ class Universe(object):
         self._data['particles'] = []
         self._data['particles_evolvers'] = []
         self._data['n_particles'] = 0
+        self._data['evolving_particles_exist'] = False
         self._data['star_planet_dependent_dissipation_factors'] = {}
         self._data['temporary_copied_particles_radiuses'] = []
         self._data['temporary_copied_particles_masses'] = []
@@ -57,6 +58,9 @@ class Universe(object):
         particle['spin'] = spin.get()
         particle['evolution_type'] = evolution_type.get()
 
+        if type(evolution_type) != NonEvolving:
+            self._data['evolving_particles_exist'] = True;
+
         particle['id'] = self._data['n_particles']
         particle['acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['torque'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
@@ -69,6 +73,8 @@ class Universe(object):
         particle['radial_component_of_the_force_induced_by_rotation'] = 0.0
         particle['orthogonal_component_of_the_force_induced_by_star_rotation'] = 0.0
         particle['orthogonal_component_of_the_force_induced_by_planet_rotation'] = 0.0
+        particle['factor_for_the_force_induced_by_star_rotation'] = 0.0
+        particle['factor_for_the_force_induced_by_planet_rotation'] = 0.0
         particle['radial_component_of_the_tidal_force'] = 0.0
         particle['orthogonal_component_of_the_tidal_force_due_to_stellar_tide'] = 0.0
         particle['orthogonal_component_of_the_tidal_force_due_to_planetary_tide'] = 0.0
@@ -81,6 +87,7 @@ class Universe(object):
         particle['distance'] = 0.0
         particle['acceleration_induced_by_rotational_flattering'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['norm_velocity_vector_2'] = 0.0
+        particle['norm_spin_vector_2'] = 0.0
         particle['denergy_dt'] = 0.
 
         evolver = evolution_type.get_evolver(self._data['initial_time'])
@@ -97,7 +104,7 @@ class Universe(object):
         self._data['temporary_copied_particle_positions'].append({u'x': 0.0, u'y': 0.0, u'z': 0.0})
         self._data['n_particles'] += 1
 
-    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity, inclination, obliquity, evolution_type):
+    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity,  evolution_type):
         rotation_period = None
         love_number = None
         if type(evolution_type) == NonEvolving:
@@ -148,6 +155,8 @@ class Universe(object):
             raise Exception("Evolution type should be BrownDwarf or NonEvolving!")
 
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
+        inclination = 0.
+        obliquity = 0.
         spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
 
         fluid_love_number = love_number
@@ -161,11 +170,16 @@ class Universe(object):
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
 
 
-    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
+    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type):
         if type(evolution_type) not in (SolarLikeEvolvingDissipation, SolarLikeConstantDissipation):
             raise Exception("Evolution type should be SolarLikeEvolvingDissipation or SolarLikeConstantDissipation!")
 
         # Typical rotation period: 24 hours
+        angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
+        inclination = 0.
+        obliquity = 0.
+        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
+
         fluid_love_number = love_number
         # Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 4.992*3.845764e-2 # -66+64
@@ -176,11 +190,16 @@ class Universe(object):
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
 
 
-    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
+    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type):
         if type(evolution_type) not in (MDwarf, NonEvolving):
             raise Exception("Evolution type should be MDwarf or NonEvolving!")
 
         # Typical rotation period: 70 hours
+        angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
+        inclination = 0.
+        obliquity = 0.
+        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
+
         love_number = 0.307 # M Dwarf
         fluid_love_number = love_number
 

@@ -24,6 +24,7 @@ pub struct Particle {
     pub radial_velocity: f64,
     pub norm_velocity_vector: f64,
     pub norm_velocity_vector_2: f64,
+    pub norm_spin_vector_2: f64,
     pub distance: f64,
     // Tides
     pub scalar_product_of_vector_position_with_stellar_spin: f64,
@@ -31,6 +32,8 @@ pub struct Particle {
     pub radial_component_of_the_force_induced_by_rotation: f64,
     pub orthogonal_component_of_the_tidal_force_due_to_stellar_tide: f64,
     pub orthogonal_component_of_the_tidal_force_due_to_planetary_tide: f64,
+    pub factor_for_the_force_induced_by_star_rotation: f64,
+    pub factor_for_the_force_induced_by_planet_rotation: f64,
     pub radial_component_of_the_tidal_force: f64,
     pub orthogonal_component_of_the_force_induced_by_star_rotation: f64,
     pub orthogonal_component_of_the_force_induced_by_planet_rotation: f64,
@@ -78,8 +81,9 @@ impl Particle {
                     radius_of_gyration_2:radius_of_gyration_2, 
                     love_number:love_number, fluid_love_number:fluid_love_number,
                     position:position, velocity:velocity, acceleration:acceleration, spin:spin,
-                    radial_velocity: 0., norm_velocity_vector:0., norm_velocity_vector_2:0., distance:0.,
+                    radial_velocity: 0., norm_velocity_vector:0., norm_velocity_vector_2:0., norm_spin_vector_2: 0., distance:0.,
                     scalar_product_of_vector_position_with_stellar_spin:0., scalar_product_of_vector_position_with_planetary_spin:0.,
+                    factor_for_the_force_induced_by_star_rotation:0., factor_for_the_force_induced_by_planet_rotation: 0.,
                     orthogonal_component_of_the_tidal_force_due_to_stellar_tide:0., orthogonal_component_of_the_tidal_force_due_to_planetary_tide:0., radial_component_of_the_tidal_force:0., 
                     orthogonal_component_of_the_force_induced_by_star_rotation:0., orthogonal_component_of_the_force_induced_by_planet_rotation:0., radial_component_of_the_force_induced_by_rotation:0.,
                     denergy_dt:0., torque:torque, 
@@ -118,8 +122,9 @@ impl Particle {
                     radius_of_gyration_2:radius_of_gyration_2, 
                     love_number:love_number, fluid_love_number:fluid_love_number,
                     position:position, velocity:velocity, acceleration:acceleration, spin:spin,
-                    radial_velocity: 0., norm_velocity_vector:0., norm_velocity_vector_2:0., distance:0.,
+                    radial_velocity: 0., norm_velocity_vector:0., norm_velocity_vector_2:0., norm_spin_vector_2: 0., distance:0.,
                     scalar_product_of_vector_position_with_stellar_spin:0., scalar_product_of_vector_position_with_planetary_spin:0.,
+                    factor_for_the_force_induced_by_star_rotation:0., factor_for_the_force_induced_by_planet_rotation: 0.,
                     orthogonal_component_of_the_tidal_force_due_to_stellar_tide:0., orthogonal_component_of_the_tidal_force_due_to_planetary_tide:0., radial_component_of_the_tidal_force:0., 
                     orthogonal_component_of_the_force_induced_by_star_rotation:0., orthogonal_component_of_the_force_induced_by_planet_rotation:0., radial_component_of_the_force_induced_by_rotation:0.,
                     denergy_dt:0., torque:torque, 
@@ -133,7 +138,7 @@ impl Particle {
         }
     }
 
-    pub fn new_brown_dwarf(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, inclination: f64, obliquity: f64, evolution_type: EvolutionType) -> Particle {
+    pub fn new_brown_dwarf(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, evolution_type: EvolutionType) -> Particle {
         let (rotation_period, love_number) = match evolution_type {
             EvolutionType::NonEvolving => { 
                 let rotation_period: f64 = 70.0; // hours
@@ -188,6 +193,8 @@ impl Particle {
         };
 
         let angular_frequency = TWO_PI/(rotation_period/24.); // days^-1
+        let inclination = 0.;
+        let obliquity = 0.;
         let spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity);
 
         let fluid_love_number = love_number;
@@ -203,7 +210,7 @@ impl Particle {
         brown_dwarf
     }
 
-    pub fn new_solar_like(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, spin: Axes, evolution_type: EvolutionType) -> Particle {
+    pub fn new_solar_like(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, rotation_period: f64, evolution_type: EvolutionType) -> Particle {
         match evolution_type {
             EvolutionType::SolarLike(_) => { },
             EvolutionType::NonEvolving => { },
@@ -211,6 +218,11 @@ impl Particle {
         }
 
         // typical rotation period: 24 hours
+        let angular_frequency = TWO_PI/(rotation_period/24.); // days^-1
+        let inclination = 0.;
+        let obliquity = 0.;
+        let spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity);
+
         let love_number = 0.03; // SolarLike
         let fluid_love_number = love_number;
         // Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
@@ -225,7 +237,7 @@ impl Particle {
         solarlike_star
     }
 
-    pub fn new_m_dwarf(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, spin: Axes, evolution_type: EvolutionType) -> Particle {
+    pub fn new_m_dwarf(mass: f64, dissipation_factor_scale: f64, position: Axes, velocity: Axes, rotation_period: f64, evolution_type: EvolutionType) -> Particle {
         match evolution_type {
             EvolutionType::MDwarf => { },
             EvolutionType::NonEvolving => { },
@@ -233,6 +245,11 @@ impl Particle {
         }
 
         // typical rotation period: 70 hours
+        let angular_frequency = TWO_PI/(rotation_period/24.); // days^-1
+        let inclination = 0.;
+        let obliquity = 0.;
+        let spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity);
+
         let love_number: f64 = 0.307; // M Dwarf
         let fluid_love_number = love_number;
 

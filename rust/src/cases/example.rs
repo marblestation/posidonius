@@ -178,9 +178,7 @@ pub fn example_with_helpers() -> WHFastHelio {
     let star_position = Axes{x:0., y:0., z:0.};
     let star_velocity = Axes{x:0., y:0., z:0.};
  
-    let inclination: f64 = 0.;
-    let obliquity: f64 = 0.;
-    let star = Particle::new_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, inclination, obliquity, star_evolution_type);
+    let star = Particle::new_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_evolution_type);
 
     ////////////////////////////////////////////////////////////////////////////
     //---- Planet
