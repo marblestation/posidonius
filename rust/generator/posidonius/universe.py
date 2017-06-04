@@ -65,6 +65,8 @@ class Universe(object):
         particle['norm_velocity_vector'] = 0.0
         particle['tidal_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['radial_component_of_the_tidal_force'] = 0.0
+        particle['orthogonal_component_of_the_force_induced_by_star_rotation'] = 0.0
+        particle['orthogonal_component_of_the_force_induced_by_planet_rotation'] = 0.0
         particle['orthogonal_component_of_the_tidal_force_due_to_planetary_tide'] = 0.0
         particle['general_relativity_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['radial_velocity'] = 0.0

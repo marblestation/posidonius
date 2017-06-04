@@ -172,6 +172,7 @@ impl Universe {
         if self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy  {
             self.calculate_distance_and_velocities(); // Needed for tides, rotational flattening and general relativity
             if self.consider_tides || self.consider_rotational_flattening  {
+                self.calculate_torques(); // Needed for dspin_dt
                 self.calculate_dspin_dt(); // Needed for tides and rotational flattening
             }
         }
@@ -210,18 +211,30 @@ impl Universe {
             star.acceleration.x = 0.;
             star.acceleration.y = 0.;
             star.acceleration.z = 0.;
+            star.torque.x = 0.;
+            star.torque.y = 0.;
+            star.torque.z = 0.;
         }
     }
 
-    fn calculate_dspin_dt(&mut self) {
+    fn calculate_torques(&mut self) {
         let central_body = true;
 
         self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if MathisSolarLike
+        
+        if self.consider_tides {
+            self.calculate_orthogonal_component_of_the_tidal_force(central_body);   // Needed for calculate_torque_due_to_tides and calculate_tidal_acceleration
+            self.calculate_orthogonal_component_of_the_tidal_force(!central_body);  // Needed for calculate_torque_due_to_tides and calculate_tidal_acceleration
+            self.calculate_torque_due_to_tides(central_body);   // Needed for spin integration
+            self.calculate_torque_due_to_tides(!central_body);  // Needed for spin integration
+        }
 
-        self.calculate_orthogonal_component_of_the_tidal_force(central_body);   // Needed for calculate_torque_due_to_tides and calculate_tidal_acceleration
-        self.calculate_orthogonal_component_of_the_tidal_force(!central_body);  // Needed for calculate_torque_due_to_tides and calculate_tidal_acceleration
-        self.calculate_torque_due_to_tides(central_body);   // Needed for spin integration
-        self.calculate_torque_due_to_tides(!central_body);  // Needed for spin integration
+        if self.consider_rotational_flattening {
+            self.calculate_orthogonal_component_induced_by_rotational_flattening(central_body);
+            self.calculate_orthogonal_component_induced_by_rotational_flattening(!central_body);
+            self.calculate_torque_induced_by_rotational_flattening(central_body);
+            self.calculate_torque_induced_by_rotational_flattening(!central_body);
+        }
     }
 
     fn calculate_acceleration_corrections(&mut self) {
@@ -308,33 +321,41 @@ impl Universe {
                     torque.y += factor * n_tid_y;
                     torque.z += factor * n_tid_z;
                 } else {
-                    let factor = - K2 * star.mass_g / (particle.mass_g * (particle.mass_g + star.mass_g) 
-                                    * particle.radius_of_gyration_2 * particle.radius.powi(2));
-                    //let factor = - 1. * star.mass / (particle.mass * (particle.mass + star.mass) 
-                                    //* particle.radius_of_gyration_2 * particle.radius.powi(2));
                     particle.torque.x = n_tid_x;
                     particle.torque.y = n_tid_y;
                     particle.torque.z = n_tid_z;
-                    // - Equation 25 from Bolmont et al. 2015
-                    particle.dspin_dt.x = factor * n_tid_x;
-                    particle.dspin_dt.y = factor * n_tid_y;
-                    particle.dspin_dt.z = factor * n_tid_z;
                 }
 
             }
 
             if central_body {
                 // - Equation 25 from Bolmont et al. 2015
-                let factor = - 1. / (star.radius_of_gyration_2 * star.radius.powi(2));
                 star.torque.x = torque.x;
                 star.torque.y = torque.y;
                 star.torque.z = torque.z;
-                star.dspin_dt.x = factor * torque.x;
-                star.dspin_dt.y = factor * torque.y;
-                star.dspin_dt.z = factor * torque.z;
             }
         }
 
+    }
+
+
+    fn calculate_dspin_dt(&mut self) {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            // - Equation 25 from Bolmont et al. 2015
+            let factor = - 1. / (star.radius_of_gyration_2 * star.radius.powi(2));
+            star.dspin_dt.x = factor * star.torque.x;
+            star.dspin_dt.y = factor * star.torque.y;
+            star.dspin_dt.z = factor * star.torque.z;
+
+            for particle in particles.iter_mut() {
+                let factor = - K2 * star.mass_g / (particle.mass_g * (particle.mass_g + star.mass_g) 
+                                * particle.radius_of_gyration_2 * particle.radius.powi(2));
+                // - Equation 25 from Bolmont et al. 2015
+                particle.dspin_dt.x = factor * particle.torque.x;
+                particle.dspin_dt.y = factor * particle.torque.y;
+                particle.dspin_dt.z = factor * particle.torque.z;
+            }
+        }
     }
 
     fn calculate_orthogonal_component_of_the_tidal_force(&mut self, central_body:bool) {
@@ -546,6 +567,82 @@ impl Universe {
     }
 
 
+    /// 
+    fn calculate_orthogonal_component_induced_by_rotational_flattening(&mut self, central_body:bool) {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            // Calculation of the norm square of the spin for the planet
+            let normspin_2_star = star.spin.x.powi(2) + star.spin.y.powi(2) + star.spin.z.powi(2);
+            for particle in particles.iter_mut() {
+                if central_body {
+                    // - Equation 16 from Bolmont et al. 2015
+                    let csi = particle.mass_g * star.fluid_love_number * normspin_2_star * star.radius.powi(5) / (6. * K2); // Msun.AU^5.day-2
+                    // Calculation of r scalar spin for the star
+                    let rscalspin_star = particle.position.x * star.spin.x 
+                                    + particle.position.y * star.spin.y
+                                    + particle.position.z * star.spin.z;
+                    // - Equation 16 from Bolmont et al. 2015
+                    particle.orthogonal_component_of_the_force_induced_by_star_rotation = -6. * csi * rscalspin_star / (normspin_2_star * particle.distance.powi(5));
+                } else {
+                    // Calculation of the norm square of the spin for the planet
+                    let normspin_2_planet = particle.spin.x.powi(2) + particle.spin.y.powi(2) + particle.spin.z.powi(2);
+                    // - Equation 16 from Bolmont et al. 2015
+                    let cpi = star.mass_g * particle.fluid_love_number * normspin_2_planet * particle.radius.powi(5) / (6. * K2); // Msun.AU^5.day-2
+                
+                    // Calculation of r scalar spin for planet
+                    let rscalspin_planet = particle.position.x * particle.spin.x 
+                                    + particle.position.y * particle.spin.y
+                                    + particle.position.z * particle.spin.z;
+                    // - Equation 16 from Bolmont et al. 2015
+                    particle.orthogonal_component_of_the_force_induced_by_planet_rotation = -6. * cpi * rscalspin_planet / (normspin_2_planet * particle.distance.powi(5));
+                }
+            }
+        }
+    }
+
+    fn calculate_torque_induced_by_rotational_flattening(&mut self, central_body:bool) {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            let mut torque = Axes{x: 0., y: 0., z:0.};
+            let mut reference_spin = star.spin.clone();
+            let mut orthogonal_component_of_the_force_induced_by_rotation: f64;
+
+            for particle in particles.iter_mut() {
+                if !central_body {
+                    reference_spin = particle.spin.clone();
+                    orthogonal_component_of_the_force_induced_by_rotation = particle.orthogonal_component_of_the_force_induced_by_planet_rotation;
+                } else {
+                    orthogonal_component_of_the_force_induced_by_rotation = particle.orthogonal_component_of_the_force_induced_by_star_rotation;
+                }
+                
+                //// Torque calculation due to rotational flattening
+                // - Equation 17-18 from Bolmont et al. 2015
+                let n_rot_x: f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.y * reference_spin.z - particle.position.z * reference_spin.y);
+                let n_rot_y :f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.z * reference_spin.x - particle.position.x * reference_spin.z);
+                let n_rot_z: f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.x * reference_spin.y - particle.position.y * reference_spin.x);
+
+                // - Equation 25 from Bolmont et al. 2015
+                if central_body {
+                    // Integration of the spin (total torque tides):
+                    let factor = K2 / (star.mass_g + particle.mass_g);
+                    //let factor = 1. / (star.mass + particle.mass);
+                    torque.x += factor * n_rot_x;
+                    torque.y += factor * n_rot_y;
+                    torque.z += factor * n_rot_z;
+                } else {
+                    particle.torque.x += n_rot_x;
+                    particle.torque.y += n_rot_y;
+                    particle.torque.z += n_rot_z;
+                }
+            }
+
+            if central_body {
+                // - Equation 25 from Bolmont et al. 2015
+                star.torque.x = torque.x;
+                star.torque.y = torque.y;
+                star.torque.z = torque.z;
+            }
+        }
+    }
+
     fn calculate_acceleration_induced_by_rotational_flattering(&mut self) {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             let factor2 = K2 / star.mass_g;
@@ -620,6 +717,7 @@ impl Universe {
             star.acceleration_induced_by_rotational_flattering.z = -1.0 * factor2 * sum_total_force_induced_by_rotation.z;
         }
     }
+
 
     fn calculate_distance_and_velocities(&mut self) {
         // Calculation of velocity vv(j), radial velocity vrad(j)
