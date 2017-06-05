@@ -23,6 +23,9 @@ Mjup      =  9.5511e-4 * Msun         # kg
 Mearth    =  3.e-6 * Msun             # kg
 Rjup      =  69173.e3                 # m
 
+RAD2DEG = 180./np.pi
+
+
 
 #-------------------------------------------------------------------------------
 # Functions
@@ -253,9 +256,11 @@ def calculate_resonance_data(planets_keys, planets_data):
         a.append(planet_data['semi-major_axis']) # AU
         e.append(planet_data['eccentricity'])
         # Change from longitude of perihelion to argument of perihelion
-        g.append(planet_data['longitude_of_perihelion'] - planet_data['longitude_of_ascending_node'])
-        n.append(planet_data['longitude_of_ascending_node'])
-        M.append(planet_data['mean_anomaly'])
+        longitude_of_perihelion_degrees = (planet_data['longitude_of_perihelion'] * RAD2DEG) % 360.
+        longitude_of_ascending_node_degrees = (planet_data['longitude_of_ascending_node'] * RAD2DEG) % 360.
+        g.append((longitude_of_perihelion_degrees - longitude_of_ascending_node_degrees) % 360.)
+        n.append(longitude_of_ascending_node_degrees)
+        M.append((planet_data['mean_anomaly'] * RAD2DEG) % 360.)
         #q.append(planet_data['perihelion_distance'])
         #Q.append(planet_data['semi-major_axis']*2 - planet_data['perihelion_distance'])
         q.append(planet_data['semi-major_axis'] * (1 - planet_data['eccentricity']))

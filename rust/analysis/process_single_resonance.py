@@ -27,8 +27,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    if args.inner_planet > args.outer_planet:
+        raise Exception("Inner planet number should be always smaller than the outer planet number")
+
     if args.outer_period > args.inner_period:
         raise Exception("Outer period cannot be greater than the inner period!")
+
 
     filename = args.historic_snapshot_filename
     n_particles, data = read_history(filename)
@@ -112,7 +116,7 @@ if __name__ == "__main__":
 
     # on trace les plots
     myxfmt = ScalarFormatter(useOffset=True)
-    myxfmt._set_offset(1e5)
+    #myxfmt._set_offset(1e5)
     myxfmt.set_scientific(True)
     myxfmt.set_powerlimits((-3, 3))
 

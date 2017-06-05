@@ -289,7 +289,7 @@ if __name__ == "__main__":
     plot_e.grid(True)
 
     myxfmt = ScalarFormatter(useOffset=True)
-    myxfmt._set_offset(1e5)
+    #myxfmt._set_offset(1e5)
     myxfmt.set_scientific(True)
     myxfmt.set_powerlimits((-3, 3))
     plot_a.xaxis.set_major_formatter(myxfmt)
