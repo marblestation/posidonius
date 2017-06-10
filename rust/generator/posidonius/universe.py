@@ -83,7 +83,7 @@ class Universe(object):
         particle['moment_of_inertia_ratio'] = 1.0
         particle['mass_g'] = particle['mass'] * K2
         particle['dspin_dt'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['wind_factor'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['wind_factor'] = 0.
         particle['distance'] = 0.0
         particle['acceleration_induced_by_rotational_flattering'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['norm_velocity_vector_2'] = 0.0

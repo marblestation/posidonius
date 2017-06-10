@@ -42,7 +42,7 @@ pub struct Particle {
     pub spin: Axes,
     pub dspin_dt: Axes,
     pub moment_of_inertia_ratio: f64, // Spin related
-    pub wind_factor: Axes, // Spin related
+    pub wind_factor: f64, // Spin related
     pub tidal_acceleration: Axes,
     // Rotational flattening
     pub acceleration_induced_by_rotational_flattering: Axes,
@@ -87,7 +87,7 @@ impl Particle {
                     orthogonal_component_of_the_tidal_force_due_to_stellar_tide:0., orthogonal_component_of_the_tidal_force_due_to_planetary_tide:0., radial_component_of_the_tidal_force:0., 
                     orthogonal_component_of_the_force_induced_by_star_rotation:0., orthogonal_component_of_the_force_induced_by_planet_rotation:0., radial_component_of_the_force_induced_by_rotation:0.,
                     denergy_dt:0., torque:torque, 
-                    dspin_dt:dspin_dt, moment_of_inertia_ratio: 1., wind_factor: Axes{x: 0., y:0., z: 0.},
+                    dspin_dt:dspin_dt, moment_of_inertia_ratio: 1., wind_factor: 0.,
                     tidal_acceleration:tidal_acceleration, 
                     acceleration_induced_by_rotational_flattering:acceleration_induced_by_rotational_flattering,
                     general_relativity_acceleration:general_relativity_acceleration,
@@ -128,7 +128,7 @@ impl Particle {
                     orthogonal_component_of_the_tidal_force_due_to_stellar_tide:0., orthogonal_component_of_the_tidal_force_due_to_planetary_tide:0., radial_component_of_the_tidal_force:0., 
                     orthogonal_component_of_the_force_induced_by_star_rotation:0., orthogonal_component_of_the_force_induced_by_planet_rotation:0., radial_component_of_the_force_induced_by_rotation:0.,
                     denergy_dt:0., torque:torque, 
-                    dspin_dt:dspin_dt, moment_of_inertia_ratio: 1., wind_factor: Axes{x: 0., y:0., z: 0.},
+                    dspin_dt:dspin_dt, moment_of_inertia_ratio: 1., wind_factor: 0.,
                     tidal_acceleration:tidal_acceleration, 
                     acceleration_induced_by_rotational_flattering:acceleration_induced_by_rotational_flattering,
                     general_relativity_acceleration:general_relativity_acceleration,

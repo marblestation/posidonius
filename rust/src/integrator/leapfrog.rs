@@ -133,8 +133,10 @@ impl Integrator for LeapFrog {
         }
 
         // Calculate non-gravity accelerations.
-        let only_dspin_dt = true;
-        self.universe.calculate_additional_forces(self.current_time, self.half_time_step, only_dspin_dt);
+        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
+        self.universe.calculate_particles_evolving_quantities(self.current_time);
+        self.universe.calculate_torque_and_dspin_dt();
+
 
         // A 'DKD'-like integrator will do the first 'D' part.
         self.integrator_part1();
@@ -144,8 +146,11 @@ impl Integrator for LeapFrog {
         self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
 
         // Calculate non-gravity accelerations.
-        let only_dspin_dt = false;
-        self.universe.calculate_additional_forces(self.current_time, self.half_time_step, only_dspin_dt);
+        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
+        self.universe.calculate_particles_evolving_quantities(self.current_time);
+        self.universe.calculate_torque_and_dspin_dt();
+        self.universe.calculate_additional_accelerations();
+
 
         // A 'DKD'-like integrator will do the 'KD' part.
         self.integrator_part2();
@@ -176,9 +181,9 @@ impl LeapFrog {
             particle.position.y += self.half_time_step * particle.velocity.y;
             particle.position.z += self.half_time_step * particle.velocity.z;
 
-            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x + particle.wind_factor.x;
-            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y + particle.wind_factor.y;
-            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z + particle.wind_factor.z;
+            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x + self.half_time_step * particle.wind_factor * particle.spin.x;
+            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y + self.half_time_step * particle.wind_factor * particle.spin.y;
+            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z + self.half_time_step * particle.wind_factor * particle.spin.z;
         }
         self.current_time += self.half_time_step;
     }
@@ -193,9 +198,9 @@ impl LeapFrog {
             particle.position.y += self.half_time_step * particle.velocity.y;
             particle.position.z += self.half_time_step * particle.velocity.z;
 
-            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x + particle.wind_factor.x;
-            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y + particle.wind_factor.y;
-            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z + particle.wind_factor.z;
+            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x + self.half_time_step * particle.wind_factor * particle.spin.x;
+            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y + self.half_time_step * particle.wind_factor * particle.spin.y;
+            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z + self.half_time_step * particle.wind_factor * particle.spin.z;
         }
         self.current_time += self.half_time_step;
     }

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     historic_snapshot_period = 100.*365.25 # days
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_tides = True
-    consider_rotational_flattening = True
+    consider_rotational_flattening = False
     consider_general_relativy = True
     universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy)
 

@@ -75,10 +75,9 @@ impl Universe {
                     temporary_copied_particles_masses: temporary_copied_particles_masses,
                     temporary_copied_particles_radiuses: temporary_copied_particles_radiuses,
                     };
-        let time_step = 0.;
         let current_time = 0.;
         universe.calculate_norm_spin(); // Needed for evolution
-        universe.evolve_particles(current_time, time_step); // Make sure we start with the good initial values
+        universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
         universe
     }
 
@@ -172,29 +171,29 @@ impl Universe {
         }
     }
 
-    pub fn calculate_additional_forces(&mut self, current_time: f64, time_step: f64, only_dspin_dt: bool) {
-        if self.evolving_particles_exist || self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy  { 
+    pub fn calculate_position_velocity_and_spin_dependent_quantities(&mut self) {
+        if self.evolving_particles_exist || self.consider_rotational_flattening {
+            self.calculate_norm_spin(); // Needed for rotational flattening and evolution
+        }
 
-            if self.evolving_particles_exist || self.consider_rotational_flattening {
-                self.calculate_norm_spin(); // Needed for rotational flattening and evolution
-                if self.evolving_particles_exist {
-                    self.evolve_particles(current_time, time_step);
-                }
-            }
+        if self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy  {
+            self.calculate_distance_and_velocities(); // Needed for tides, rotational flattening, general relativity and evolution
+        }
+    }
 
-            if self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy  {
-                self.calculate_distance_and_velocities(); // Needed for tides, rotational flattening, general relativity and evolution
-                if self.consider_tides || self.consider_rotational_flattening  {
-                    self.calculate_torques(); // Needed for dspin_dt
-                    self.calculate_dspin_dt(); // Needed for tides and rotational flattening
-                }
-                if !only_dspin_dt {
-                    self.calculate_acceleration_corrections();
-                    self.apply_acceleration_corrections();
-                }
-                // Recover first original body as frame of reference
-                self.center_to_first_particle();
-            }
+    pub fn calculate_torque_and_dspin_dt(&mut self) {
+        if self.consider_tides || self.consider_rotational_flattening  {
+            self.calculate_torques(); // Needed for dspin_dt
+            self.calculate_dspin_dt(); // Needed for tides and rotational flattening
+        }
+    }
+
+    pub fn calculate_additional_accelerations(&mut self) {
+        if self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy  {
+            self.calculate_acceleration_corrections();
+            self.apply_acceleration_corrections();
+            // Recover first original body as frame of reference
+            self.center_to_first_particle();
         }
         //for (i, particle) in self.particles[1..self.n_particles].iter().enumerate() {
         //for (i, particle) in self.particles[0..self.n_particles].iter().enumerate() {
@@ -203,6 +202,18 @@ impl Universe {
         //}
     }
 
+    pub fn initialize_torque(&mut self) {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            for particle in particles.iter_mut() {
+                particle.torque.x = 0.;
+                particle.torque.y = 0.;
+                particle.torque.z = 0.;
+            }
+            star.torque.x = 0.;
+            star.torque.y = 0.;
+            star.torque.z = 0.;
+        }
+    }
 
     pub fn center_to_first_particle(&mut self) {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
@@ -216,9 +227,6 @@ impl Universe {
                 particle.acceleration.x -= star.acceleration.x;
                 particle.acceleration.y -= star.acceleration.y;
                 particle.acceleration.z -= star.acceleration.z;
-                particle.torque.x = 0.;
-                particle.torque.y = 0.;
-                particle.torque.z = 0.;
             }
             star.position.x = 0.;
             star.position.y = 0.;
@@ -229,15 +237,13 @@ impl Universe {
             star.acceleration.x = 0.;
             star.acceleration.y = 0.;
             star.acceleration.z = 0.;
-            star.torque.x = 0.;
-            star.torque.y = 0.;
-            star.torque.z = 0.;
         }
     }
 
     fn calculate_torques(&mut self) {
         let central_body = true;
 
+        self.initialize_torque();
         self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if MathisSolarLike
         self.calculate_scalar_product_of_vector_position_with_spin(); // Needed by tides and rotational flattening
         
@@ -334,7 +340,9 @@ impl Universe {
 
                 if central_body {
                     // Integration of the spin (total torque tides):
-                    let factor = K2 / (star.mass_g + particle.mass_g);
+                    //let factor = star.mass_g / (star.mass_g + particle.mass_g);
+                    ////let factor = star.mass / (star.mass + particle.mass);
+                    let factor = K2 / (star.mass_g + particle.mass_g); // Simplification because later on we will devide by star.mass_g
                     //let factor = 1. / (star.mass + particle.mass);
                     torque.x += factor * n_tid_x;
                     torque.y += factor * n_tid_y;
@@ -367,6 +375,9 @@ impl Universe {
             star.dspin_dt.z = factor * star.torque.z;
 
             for particle in particles.iter_mut() {
+                //let factor1 = star.mass_g / (star.mass_g + particle.mass_g);
+                //let factor2 = - K2 / (particle.mass_g * particle.radius_of_gyration_2 * particle.radius.powi(2));
+                //let factor = factor1 * factor2;
                 let factor = - K2 * star.mass_g / (particle.mass_g * (particle.mass_g + star.mass_g) 
                                 * particle.radius_of_gyration_2 * particle.radius.powi(2));
                 // - Equation 25 from Bolmont et al. 2015
@@ -645,8 +656,10 @@ impl Universe {
 
                 // - Equation 25 from Bolmont et al. 2015
                 if central_body {
-                    // Integration of the spin (total torque tides):
-                    let factor = K2 / (star.mass_g + particle.mass_g);
+                    // Integration of the spin (total torque rot):
+                    //let factor = star.mass_g / (star.mass_g + particle.mass_g);
+                    ////let factor = star.mass / (star.mass + particle.mass);
+                    let factor = K2 / (star.mass_g + particle.mass_g); // Simplification because later on we will devide by star.mass_g
                     //let factor = 1. / (star.mass + particle.mass);
                     torque.x += factor * n_rot_x;
                     torque.y += factor * n_rot_y;
@@ -836,7 +849,10 @@ impl Universe {
         total_angular_momentum
     }
     
-    pub fn evolve_particles(&mut self, current_time: f64, time_step: f64) {
+    pub fn calculate_particles_evolving_quantities(&mut self, current_time: f64) {
+        if !self.evolving_particles_exist {
+            return;
+        }
         for (particle, evolver) in self.particles[..self.n_particles].iter_mut().zip(self.particles_evolvers.iter_mut()) {
             ////////////////////////////////////////////////////////////////////
             // Wind
@@ -846,28 +862,19 @@ impl Universe {
             particle.wind_factor = match evolver.evolution_type {
                 EvolutionType::SolarLike(_) => { 
                     let threshold = (particle.norm_spin_vector_2).sqrt();
+                    let old_radius = particle.radius; // TODO
+                    let factor = - K2 / (particle.mass_g * particle.radius_of_gyration_2 * old_radius.powi(2));
                     if threshold >= WSAT_WIND {
                         // Friendly reminder that m(1) is in solar mass * K2
                         //tmp2 = hdt * K_wind * wsat_wind*wsat_wind * sqrt(Rsth*K2/(Rsun*m(1)))
-                        let old_radius = particle.radius; // TODO
-                        let factor = time_step * K_WIND * WSAT_WIND_2 * (old_radius/R_SUN * 1./particle.mass).sqrt();
-                        Axes{ 
-                            x: factor * particle.spin.x,
-                            y: factor * particle.spin.y,
-                            z: factor * particle.spin.z,
-                        }
+                        factor * K_WIND * WSAT_WIND_2 * (old_radius/R_SUN * 1./particle.mass).sqrt()
                     } else {
                         //tmp2 = hdt * K_wind * sqrt(Rsth*K2/(Rsun*m(1)))
                         let old_radius = particle.radius; // TODO
-                        let factor = time_step * K_WIND * (old_radius/R_SUN * 1./particle.mass).sqrt();
-                        Axes{ 
-                            x: factor * particle.spin.x.powi(3),
-                            y: factor * particle.spin.y.powi(3),
-                            z: factor * particle.spin.z.powi(3),
-                        }
+                        factor * K_WIND * (old_radius/R_SUN * 1./particle.mass).sqrt()
                     }
                 },
-                _ => Axes{x: 0., y:0., z: 0.},
+                _ => 0.,
             };
 
             ////////////////////////////////////////////////////////////////////

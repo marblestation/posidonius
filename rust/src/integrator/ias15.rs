@@ -152,8 +152,10 @@ impl Integrator for Ias15 {
         let integrator_is_whfasthelio = false;
         self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
         // Calculate non-gravity accelerations.
-        let only_dspin_dt = false;
-        self.universe.calculate_additional_forces(self.current_time, self.time_step, only_dspin_dt);
+        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
+        self.universe.calculate_particles_evolving_quantities(self.current_time);
+        self.universe.calculate_torque_and_dspin_dt();
+        self.universe.calculate_additional_accelerations();
 
         self.integrator();
         self.current_iteration += 1;
@@ -346,8 +348,10 @@ impl Ias15 {
                     let integrator_is_whfasthelio = false;
                     self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
                     // Calculate non-gravity accelerations.
-                    let only_dspin_dt = false;
-                    self.universe.calculate_additional_forces(self.current_time, self.time_step, only_dspin_dt);
+                    self.universe.calculate_position_velocity_and_spin_dependent_quantities();
+                    self.universe.calculate_particles_evolving_quantities(self.current_time);
+                    self.universe.calculate_torque_and_dspin_dt();
+                    self.universe.calculate_additional_accelerations();
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.acceleration.x;
@@ -616,9 +620,9 @@ impl Ias15 {
                 particle.velocity.y = self.v0[3*k+1];
                 particle.velocity.z = self.v0[3*k+2];
 
-                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.time_step * particle.dspin_dt.x + particle.wind_factor.x;
-                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.time_step * particle.dspin_dt.y + particle.wind_factor.y;
-                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.time_step * particle.dspin_dt.z + particle.wind_factor.z;
+                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.time_step * particle.dspin_dt.x + self.time_step * particle.wind_factor * particle.spin.x;
+                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.time_step * particle.dspin_dt.y + self.time_step * particle.wind_factor * particle.spin.y;
+                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.time_step * particle.dspin_dt.z + self.time_step * particle.wind_factor * particle.spin.z;
             }
 
             self.time_step_last_success = dt_done;

@@ -2,7 +2,7 @@ use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
 use super::Integrator;
-use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT};
+use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT};
 use super::super::particles::Universe;
 use super::super::particles::Particle;
 use super::super::particles::Axes;
@@ -109,32 +109,6 @@ pub struct WHFastHelio {
     pub n_historic_snapshots: usize,
     pub hash: u64,
     /**
-     * @brief This variable turns on/off different symplectic correctors for WHFastHelio. Same as for WHFast.
-     * @details 
-     * - 0 (default): turns off all correctors
-     * - 3: uses third order (two-stage) corrector 
-     * - 5: uses fifth order (four-stage) corrector 
-     * - 7: uses seventh order (six-stage) corrector 
-     * - 11: uses eleventh order (ten-stage) corrector 
-     */
-    corrector: usize, 
-    /** 
-     * @brief Setting this flag to one will recalculate heliocentric coordinates from the particle structure in the next timestep. 
-     * @details After the timestep, the flag gets set back to 0. 
-     * If you want to change particles after every timestep, you 
-     * also need to set this flag to 1 before every timestep.
-     * Default is 0.
-     */ 
-    recalculate_heliocentric_this_timestep: bool,
-    /**
-     * @brief If this flag is set (the default), WHFastHelio will recalculate heliocentric
-     * coordinates and synchronize every timestep, to avoid problems with outputs or 
-     * particle modifications between timesteps. 
-     * @details Setting it to 0 will result in a speedup, but care
-     * must be taken to synchronize and recalculate heliocentric coordinates when needed.
-     */
-    safe_mode: bool,
-    /**
      * @brief Heliocentric coordinates
      * @details This array contains the heliocentric coordinates of all particles.
      * It is automatically filled and updated by WHfastDemocratic.
@@ -148,8 +122,6 @@ pub struct WHFastHelio {
      */
     ///< Flag to determine if current particle structure is synchronized
     is_synchronized: bool, 
-    ///< Counter of heliocentric synchronization errors
-    recalculate_heliocentric_but_not_synchronized_warning: usize,
     timestep_warning: usize ,
     set_to_center_of_mass: bool
 }
@@ -179,12 +151,8 @@ impl WHFastHelio {
                     current_time:0.,
                     current_iteration:0,
                     // WHFastHelio specifics:
-                    corrector: 0, 
-                    recalculate_heliocentric_this_timestep: true,
-                    safe_mode: true,
                     universe_heliocentric: universe_heliocentric,
                     is_synchronized: true,
-                    recalculate_heliocentric_but_not_synchronized_warning: 0,
                     timestep_warning: 0,
                     set_to_center_of_mass: false,
                     };
@@ -249,35 +217,49 @@ impl Integrator for WHFastHelio {
             let _ = std::io::stdout().flush();
         }
 
-        //// Calculate non-gravity accelerations.
+        let time_step = self.time_step;
+        let half_time_step = self.half_time_step;
+
+        // Calculate spin variation.
         if self.set_to_center_of_mass {
             self.move_to_star_center();
         }
-        let only_dspin_dt = true;
-        self.universe.calculate_additional_forces(self.current_time, self.half_time_step, only_dspin_dt);
-        
+        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
+        self.universe.calculate_particles_evolving_quantities(self.current_time);
+        self.universe.calculate_torque_and_dspin_dt();
+        self.spin_step(half_time_step);
+        self.move_to_center_of_mass();
+
+        // ---------------------------------------------------------------------
         // A 'DKD'-like integrator will do the first 'D' part.
-        if !self.set_to_center_of_mass {
-            self.move_to_center_of_mass();
-        }
-        self.integrator_part1();
+        self.to_helio_posvel();
+        self.helio_kepler_steps(half_time_step);
+        self.to_inertial_posvel();
+        self.current_time += self.half_time_step;
+        // ---------------------------------------------------------------------
 
         // Calculate accelerations.
         let integrator_is_whfasthelio = true;
         self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
         
-        //// Calculate non-gravity accelerations.
-        if self.set_to_center_of_mass {
-            self.move_to_star_center();
-        }
-        let only_dspin_dt = false;
-        self.universe.calculate_additional_forces(self.current_time, self.half_time_step, only_dspin_dt);
+        // Calculate spin variation and non-gravity accelerations.
+        self.move_to_star_center();
+        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
+        self.universe.calculate_particles_evolving_quantities(self.current_time);
+        self.universe.calculate_torque_and_dspin_dt();
+        self.universe.calculate_additional_accelerations();
+        self.spin_step(half_time_step);
+        self.move_to_center_of_mass();
 
+        // ---------------------------------------------------------------------
         // A 'DKD'-like integrator will do the 'KD' part.
-        if !self.set_to_center_of_mass {
-            self.move_to_center_of_mass();
-        }
-        self.integrator_part2();
+        self.to_helio_posvel();
+        self.helio_interaction_step(time_step);
+        self.helio_jump_step(time_step);
+        self.helio_kepler_steps(half_time_step);
+        self.to_inertial_posvel();
+        self.current_time += self.half_time_step;
+        // ---------------------------------------------------------------------
         self.current_iteration += 1;
 
         // Return
@@ -298,87 +280,19 @@ impl Integrator for WHFastHelio {
 
 impl WHFastHelio {
     // WHFastHelio integrator
-    #[allow(dead_code)]
-    fn integrator_part1(&mut self) {
-        if self.safe_mode || self.recalculate_heliocentric_this_timestep {
-            if !self.is_synchronized {
-                self.synchronize();
-                if self.recalculate_heliocentric_but_not_synchronized_warning == 0 {
-                    println!("Recalculating heliocentric coordinates but pos/vel were not synchronized before.");
-                    self.recalculate_heliocentric_but_not_synchronized_warning += 1;
-                }
-
-            }
-            self.recalculate_heliocentric_this_timestep = false;
-            self.to_helio_posvel();
-        }
-
-        if self.is_synchronized {
-            // First half DRIFT step
-            if self.corrector != 0 {
-                //reb_whfast_apply_corrector(1., reb_whfasthelio_corrector_Z);
-                panic!("Correctors not implemented yet!");
-            }
-            let half_time_step = true;
-            self.kepler_steps(half_time_step);
-        }else{
-            // Combined DRIFT step
-            let half_time_step = false;
-            self.kepler_steps(half_time_step);
-        }
-
-        // For force calculation:
-        if INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT {
-            self.to_inertial_posvel();
-        } else {
-            self.to_inertial_pos();
-        }
-
+ 
+    fn spin_step(&mut self, _dt: f64) {
         for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
-            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x + particle.wind_factor.x;
-            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y + particle.wind_factor.y;
-            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z + particle.wind_factor.z;
+            // TODO: Verify wind factor
+            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + _dt * particle.dspin_dt.x + _dt * particle.wind_factor * particle.spin.x;
+            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + _dt * particle.dspin_dt.y + _dt * particle.wind_factor * particle.spin.y;
+            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + _dt * particle.dspin_dt.z + _dt * particle.wind_factor * particle.spin.z;
         }
-    
-        self.current_time += self.half_time_step;
-    }
-
-    #[allow(dead_code)]
-    fn integrator_part2(&mut self) {
-        let time_step = self.time_step;
-        self.interaction_step(time_step);
-        self.jump_step(time_step);
-        
-        self.is_synchronized = false;
-        if self.safe_mode {
-            self.synchronize();
-        }
-
-        for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
-            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x;
-            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y;
-            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z;
-        }
-
-        self.current_time += self.half_time_step;
-    }
-
-    fn synchronize(&mut self) {
-        if !self.is_synchronized {
-            let half_time_step = true;
-            self.kepler_steps(half_time_step);
-            if self.corrector != 0 {
-                //reb_whfast_apply_corrector(-1., reb_whfasthelio_corrector_Z);
-                panic!("Correctors not implemented yet!");
-            }
-            self.to_inertial_posvel();
-        }
-        self.is_synchronized = true;
     }
 
     /***************************** 
      * Operators                 */
-    fn jump_step(&mut self, _dt: f64){
+    fn helio_jump_step(&mut self, _dt: f64){
         let m0 = self.universe.particles[0].mass;
         let mut px = 0.;
         let mut py = 0.;
@@ -393,40 +307,34 @@ impl WHFastHelio {
             particle_heliocentric.position.y += _dt * py/m0;
             particle_heliocentric.position.z += _dt * pz/m0;
         }
+        self.is_synchronized = false;
     }
 
-    fn interaction_step(&mut self, _dt: f64){
+    fn helio_interaction_step(&mut self, _dt: f64){
         for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..self.universe_heliocentric.n_particles].iter_mut().zip(self.universe.particles[1..self.universe.n_particles].iter()) {
             particle_heliocentric.velocity.x += _dt*particle.acceleration.x;
             particle_heliocentric.velocity.y += _dt*particle.acceleration.y;
             particle_heliocentric.velocity.z += _dt*particle.acceleration.z;
         }
+        self.is_synchronized = false;
     }
 
-    fn kepler_steps(&mut self, half_time_step: bool){
+    fn helio_kepler_steps(&mut self, time_step: f64){
         let star_mass_g = self.universe.particles[0].mass_g;
 
         for i in 1..self.universe.n_particles {
-            self.kepler_individual_step(i, star_mass_g, half_time_step);
+            self.kepler_individual_step(i, star_mass_g, time_step);
         }
-        let time_step = match half_time_step {
-            true => self.half_time_step,
-            false => self.time_step
-        };
         let star_heliocentric = &mut self.universe_heliocentric.particles[0];
         star_heliocentric.position.x += time_step*star_heliocentric.velocity.x;
         star_heliocentric.position.y += time_step*star_heliocentric.velocity.y;
         star_heliocentric.position.z += time_step*star_heliocentric.velocity.z;
+        self.is_synchronized = false;
     }
 
     //***************************** 
     // Keplerian motion           
-    fn kepler_individual_step(&mut self, i: usize, mass_g: f64, half_time_step: bool){
-        let _dt = match half_time_step {
-            true => self.half_time_step,
-            false => self.time_step
-        };
-
+    fn kepler_individual_step(&mut self, i: usize, mass_g: f64, _dt: f64){
         // Save a copy of the original position and velocities
         let p1_position;
         let p1_velocity;
@@ -671,7 +579,7 @@ impl WHFastHelio {
                 }
             }
         }
-
+        self.is_synchronized = true;
     }
 
     fn to_inertial_pos(&mut self) {
@@ -727,6 +635,7 @@ impl WHFastHelio {
             star.velocity.y = new_star_velocity.y;
             star.velocity.z = new_star_velocity.z;
         }
+        self.is_synchronized = true;
     }
 
     fn get_center_of_mass_of_pair(&self, center_of_mass_position: &mut Axes, center_of_mass_velocity: &mut Axes, center_of_mass_acceleration: &mut Axes, center_of_mass_mass: f64, particle: &Particle) -> f64 {
@@ -790,7 +699,6 @@ impl WHFastHelio {
             //particle.acceleration.y -= center_of_mass_acceleration.y;
             //particle.acceleration.z -= center_of_mass_acceleration.z;
         }
-        self.to_helio_posvel();
         self.set_to_center_of_mass = true;
     }
 
@@ -826,7 +734,6 @@ impl WHFastHelio {
         }
 
 
-        self.to_helio_posvel();
         self.set_to_center_of_mass = false;
     }
 

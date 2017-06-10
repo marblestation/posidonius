@@ -4,7 +4,7 @@ class Integrator(object):
     def __init__(self, time_step, recovery_snapshot_period, historic_snapshot_period, universe):
         self._data = {}
         self._data['time_step'] = float(time_step)
-        self._data['half_time_step'] = self._data['time_step']/2.
+        self._data['half_time_step'] = self._data['time_step']*0.5
         self._data['universe'] = universe.get()
         self._data['current_time'] = 0.0
         self._data['current_iteration'] = 0
@@ -23,12 +23,8 @@ class WHFast(Integrator):
     def __init__(self, time_step, recovery_snapshot_period, historic_snapshot_period, universe):
         super(WHFast, self).__init__(time_step, recovery_snapshot_period, historic_snapshot_period, universe)
         self._data['timestep_warning'] = 0
-        self._data['safe_mode'] = True
         self._data['universe_heliocentric'] = self._data['universe'].copy()
-        self._data['recalculate_heliocentric_this_timestep'] = True
-        self._data['recalculate_heliocentric_but_not_synchronized_warning'] = 0
         self._data['set_to_center_of_mass'] = False
-        self._data['corrector'] = 0
         self._data['is_synchronized'] = True
 
 class LeapFrog(Integrator):
