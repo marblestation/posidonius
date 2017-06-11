@@ -2,7 +2,7 @@ use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
 use super::Integrator;
-use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT};
+use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES};
 use super::super::particles::Universe;
 use super::super::particles::Particle;
 use super::super::particles::Axes;
@@ -100,6 +100,7 @@ pub struct WHFastHelio {
     time_step: f64,
     half_time_step: f64,
     pub universe: Universe,
+    last_spin: [Axes; MAX_PARTICLES], // For spin integration with the midpoint method
     current_time: f64,
     current_iteration: usize,
     recovery_snapshot_period: f64,
@@ -148,6 +149,7 @@ impl WHFastHelio {
                     n_historic_snapshots:0,
                     hash: 0,
                     universe:universe,
+                    last_spin:[Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
                     current_time:0.,
                     current_iteration:0,
                     // WHFastHelio specifics:
@@ -217,48 +219,9 @@ impl Integrator for WHFastHelio {
             let _ = std::io::stdout().flush();
         }
 
-        let time_step = self.time_step;
-        let half_time_step = self.half_time_step;
+        self.iterate_position_and_velocity_with_whfasthelio();
+        self.iterate_spin_with_midpoint_method();
 
-        // Calculate spin variation.
-        if self.set_to_center_of_mass {
-            self.move_to_star_center();
-        }
-        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
-        self.universe.calculate_particles_evolving_quantities(self.current_time);
-        self.universe.calculate_torque_and_dspin_dt();
-        self.spin_step(half_time_step);
-        self.move_to_center_of_mass();
-
-        // ---------------------------------------------------------------------
-        // A 'DKD'-like integrator will do the first 'D' part.
-        self.to_helio_posvel();
-        self.helio_kepler_steps(half_time_step);
-        self.to_inertial_posvel();
-        self.current_time += self.half_time_step;
-        // ---------------------------------------------------------------------
-
-        // Calculate accelerations.
-        let integrator_is_whfasthelio = true;
-        self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
-        
-        // Calculate spin variation and non-gravity accelerations.
-        self.move_to_star_center();
-        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
-        self.universe.calculate_particles_evolving_quantities(self.current_time);
-        self.universe.calculate_torque_and_dspin_dt();
-        self.universe.calculate_additional_accelerations();
-        self.spin_step(half_time_step);
-        self.move_to_center_of_mass();
-
-        // ---------------------------------------------------------------------
-        // A 'DKD'-like integrator will do the 'KD' part.
-        self.to_helio_posvel();
-        self.helio_interaction_step(time_step);
-        self.helio_jump_step(time_step);
-        self.helio_kepler_steps(half_time_step);
-        self.to_inertial_posvel();
-        self.current_time += self.half_time_step;
         // ---------------------------------------------------------------------
         self.current_iteration += 1;
 
@@ -280,6 +243,76 @@ impl Integrator for WHFastHelio {
 
 impl WHFastHelio {
     // WHFastHelio integrator
+    fn iterate_position_and_velocity_with_whfasthelio(&mut self) {
+        let time_step = self.time_step;
+        let half_time_step = self.half_time_step;
+
+        self.move_to_center_of_mass();
+        // ---------------------------------------------------------------------
+        // A 'DKD'-like integrator will do the first 'D' part.
+        self.to_helio_posvel();
+        self.helio_kepler_steps(half_time_step);
+        self.to_inertial_posvel();
+        self.current_time += self.half_time_step;
+        // ---------------------------------------------------------------------
+
+        // Calculate accelerations.
+        let integrator_is_whfasthelio = true;
+        self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
+        
+        // Calculate spin variation and non-gravity accelerations.
+        self.move_to_star_center();
+        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
+        self.universe.calculate_particles_evolving_quantities(self.current_time);
+        self.universe.calculate_torque_and_dspin_dt();
+        self.universe.calculate_additional_accelerations();
+        self.move_to_center_of_mass();
+
+        // ---------------------------------------------------------------------
+        // A 'DKD'-like integrator will do the 'KD' part.
+        self.to_helio_posvel();
+        self.helio_interaction_step(time_step);
+        self.helio_jump_step(time_step);
+        self.helio_kepler_steps(half_time_step);
+        self.to_inertial_posvel();
+        self.current_time += self.half_time_step;
+        // ---------------------------------------------------------------------
+        self.move_to_star_center();
+    }
+
+    fn iterate_spin_with_midpoint_method(&mut self) {
+        let time_step = self.time_step;
+        let half_time_step = self.half_time_step;
+
+        // Midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
+        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
+        //self.universe.calculate_particles_evolving_quantities(self.current_time); // Don't evolve particles at this point or it messes up the conservation of angular momentum
+        self.universe.calculate_torque_and_dspin_dt();
+
+        self.save_current_spin();
+        self.spin_step(half_time_step);
+        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
+        //self.universe.calculate_particles_evolving_quantities(self.current_time); // Don't evolve particles at this point or it messes up the conservation of angular momentum
+        self.universe.calculate_torque_and_dspin_dt();
+        self.restore_last_spin();
+        self.spin_step(time_step);
+    }
+
+    fn save_current_spin(&mut self) {
+        for (particle, spin) in self.universe.particles[..self.universe.n_particles].iter().zip(self.last_spin[..self.universe.n_particles].iter_mut()) {
+            spin.x = particle.spin.x;
+            spin.y = particle.spin.y;
+            spin.z = particle.spin.z;
+        }
+    }
+
+    fn restore_last_spin(&mut self) {
+        for (particle, spin) in self.universe.particles[..self.universe.n_particles].iter_mut().zip(self.last_spin[..self.universe.n_particles].iter()) {
+            particle.spin.x = spin.x;
+            particle.spin.y = spin.y;
+            particle.spin.z = spin.z;
+        }
+    }
  
     fn spin_step(&mut self, _dt: f64) {
         for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {

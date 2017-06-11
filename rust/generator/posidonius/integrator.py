@@ -1,4 +1,5 @@
 import json
+from constants import *
 
 class Integrator(object):
     def __init__(self, time_step, recovery_snapshot_period, historic_snapshot_period, universe):
@@ -6,6 +7,7 @@ class Integrator(object):
         self._data['time_step'] = float(time_step)
         self._data['half_time_step'] = self._data['time_step']*0.5
         self._data['universe'] = universe.get()
+        self._data['last_spin'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0}]*MAX_PARTICLES # For spin integration with the midpoint method
         self._data['current_time'] = 0.0
         self._data['current_iteration'] = 0
         self._data['recovery_snapshot_period'] = 3652500.0
