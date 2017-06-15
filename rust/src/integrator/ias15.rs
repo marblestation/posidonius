@@ -25,7 +25,7 @@ use std::collections::hash_map::DefaultHasher;
 #[derive(Debug, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub struct Ias15 {
     time_step: f64,
-    universe: Universe,
+    pub universe: Universe,
     current_time: f64,
     current_iteration: u32,
     recovery_snapshot_period: f64,

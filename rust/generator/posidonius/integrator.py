@@ -39,16 +39,16 @@ class Ias15(Integrator):
         self._data['n_particles'] = universe._data['n_particles']
         self._data['integrator_iterations_max_exceeded'] = 0
         self._data['time_step_last_success'] = 0.
-        self._data['b'] = [[0.,] * self._data['n_particles'],] * 7
-        self._data['br'] = [[0.,] * self._data['n_particles'],] * 7
-        self._data['g'] = [[0.,] * self._data['n_particles'],] * 7
-        self._data['e'] = [[0.,] * self._data['n_particles'],] * 7
-        self._data['er'] = [[0.,] * self._data['n_particles'],] * 7
-        self._data['at'] = [0.,] * self._data['n_particles']
-        self._data['x0'] = [0.,] * self._data['n_particles']
-        self._data['v0'] = [0.,] * self._data['n_particles']
-        self._data['a0'] = [0.,] * self._data['n_particles']
-        self._data['csx'] = [0.,] * self._data['n_particles']
-        self._data['csv'] = [0.,] * self._data['n_particles']
+        self._data['b'] = [[0.,] *  3*MAX_PARTICLES,] * 7
+        self._data['br'] = [[0.,] * 3*MAX_PARTICLES,] * 7
+        self._data['g'] = [[0.,] *  3*MAX_PARTICLES,] * 7
+        self._data['e'] = [[0.,] *  3*MAX_PARTICLES,] * 7
+        self._data['er'] = [[0.,] * 3*MAX_PARTICLES,] * 7
+        self._data['at'] = [0.,] *  3*MAX_PARTICLES
+        self._data['x0'] = [0.,] *  3*MAX_PARTICLES
+        self._data['v0'] = [0.,] *  3*MAX_PARTICLES
+        self._data['a0'] = [0.,] *  3*MAX_PARTICLES
+        self._data['csx'] = [0.,] * 3*MAX_PARTICLES
+        self._data['csv'] = [0.,] * 3*MAX_PARTICLES
         self._data['s'] = [0.,] * 9
 

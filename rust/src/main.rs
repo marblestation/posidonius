@@ -110,6 +110,10 @@ fn main() {
         }
     };
 
+    //// Other integrators:
+    //let mut universe_integrator = posidonius::Ias15::restore_snapshot(&first_universe_integrator_snapshot_path).unwrap();
+    //let mut universe_integrator = posidonius::LeapFrog::restore_snapshot(&first_universe_integrator_snapshot_path).unwrap();
+
     // Create/recover historic snapshot
     let expected_n_bytes = (universe_integrator.n_historic_snapshots as u64) 
                                 * posidonius::output::n_bytes_per_particle_in_historic_snapshot()

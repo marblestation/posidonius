@@ -1,5 +1,5 @@
 from axes import Axes
-from integrator import WHFast
+from integrator import WHFast, Ias15, LeapFrog
 from constants import *
 from evolution_type import NonEvolving, BrownDwarf, MDwarf, Jupiter, SolarLikeEvolvingDissipation, SolarLikeConstantDissipation
 from tools import calculate_spin
@@ -40,10 +40,10 @@ class Universe(object):
         spin = Axes(0., 0., 0.)
         evolution_type = NonEvolving()
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
-        self._data['n_particles'] -= 1
+        self._data['n_particles'] -= 1 # Compensate the addition from the previous add_particle call
 
     def add_particle(self, mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type):
-        if self._data['n_particles'] == MAX_PARTICLES:
+        if self._data['n_particles'] > MAX_PARTICLES:
             raise Exception("Maximum number of particles reached: {}".format(MAX_PARTICLES))
         particle = {}
         particle['mass'] = float(mass)
@@ -304,7 +304,7 @@ class Universe(object):
         if n_dummy_particles > 0:
             self._data['particles'] = self._data['particles'][:-n_dummy_particles]
             self._data['particles_evolvers'] = self._data['particles_evolvers'][:-n_dummy_particles]
-            self._data['n_particles'] -= n_dummy_particles
+            #self._data['n_particles'] -= n_dummy_particles
         return data
 
     def write(self, filename, integrator="WHFast"):

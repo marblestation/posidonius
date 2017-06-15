@@ -448,15 +448,15 @@ impl Universe {
                             * particle.scaled_dissipation_factor;
                 let radial_component_of_the_tidal_force_dissipative_part = factor1 * (term1 + term2 );
 
-                // If we consider the star as a point mass (used for denergy_dt calculation):
-                let radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass = factor1 * term2;
-
                 // Sum of the dissipative and conservative part of the radial force
                 // - First line Equation 5 from Bolmont et al. 2015
                 particle.radial_component_of_the_tidal_force = radial_component_of_the_tidal_force_conservative_part + radial_component_of_the_tidal_force_dissipative_part;
+                
+                // If we consider the star as a point mass (used for denergy_dt calculation):
+                let radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass = factor1 * term2;
 
-                ////// Instantaneous energy loss dE/dt due to tides
-                ////// in Msun.AU^2.day^(-3)
+                //// Instantaneous energy loss dE/dt due to tides
+                //// in Msun.AU^2.day^(-3)
                 //radial_tidal_force_for_energy_loss_calculation = factor1 * term2; // Ftidr_diss
                 let factor2 = particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide / particle.distance;
                 particle.denergy_dt = -((1.0 / particle.distance * (radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor2 * particle.radial_velocity))
@@ -466,7 +466,7 @@ impl Universe {
                             + (particle.spin.z*particle.position.x - particle.spin.x*particle.position.z - particle.velocity.y) * particle.velocity.y
                             + (particle.spin.x*particle.position.y - particle.spin.y*particle.position.x - particle.velocity.z) * particle.velocity.z))
                             + star.mass_g/(star.mass_g + particle.mass_g) 
-                            * (particle.torque.x*particle.spin.x + particle.torque.y*particle.spin.y + particle.torque.z*particle.spin.z) ;
+                            * (particle.torque.x*particle.spin.x + particle.torque.y*particle.spin.y + particle.torque.z*particle.spin.z);
             }
         }
     }

@@ -212,8 +212,8 @@ impl Integrator for WHFastHelio {
                 self.move_to_star_center();
             }
             write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
-            self.last_historic_snapshot_time = self.current_time;
             self.n_historic_snapshots += 1;
+            self.last_historic_snapshot_time = self.n_historic_snapshots as f64*self.historic_snapshot_period; // Instead of self.current_time to avoid small deviations
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
             let _ = std::io::stdout().flush();
