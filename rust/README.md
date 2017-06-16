@@ -6,14 +6,6 @@ cargo build --release
 cargo install
 ```
 
-# Start default simulation
-
-The default simulation is hard-coded in Posidonius, it can be changed by modifying the source code and re-building it again.
-
-```bash
-posidonius default target/default.bin target/default_history.bin
-```
-
 # Prepare initial snapshots
 
 Using the generator, the user can design his/her own simulation with a python script. The generator will create a json file with the simulation description, which can be read later on by Posidonius to start it.

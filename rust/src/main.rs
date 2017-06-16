@@ -37,15 +37,6 @@ fn main() {
                                           .required(true)
                                           .help("Historic snapshot filename")) 
                                       )
-                            .subcommand(SubCommand::with_name("default")
-                                      .about("Start the default simulation (hard-coded in Posidonius)")
-                                      .arg(Arg::with_name("snapshot_filename")
-                                          .required(true)
-                                          .help("Recovery snapshot filename"))
-                                      .arg(Arg::with_name("historic_snapshot_filename")
-                                          .required(true)
-                                          .help("Historic snapshot filename")) 
-                                      )
                             .setting(AppSettings::SubcommandRequiredElseHelp)
                           .get_matches();
 
@@ -53,7 +44,6 @@ fn main() {
     let universe_integrator_snapshot_filename;
     let universe_history_filename;
     let resume;
-    let default;
 
     match matches.subcommand() {
         ("start", Some(start_matches)) =>{
@@ -61,21 +51,12 @@ fn main() {
             universe_integrator_snapshot_filename = start_matches.value_of("snapshot_filename").unwrap();
             universe_history_filename = start_matches.value_of("historic_snapshot_filename").unwrap();
             resume = false;
-            default = false;
         },
         ("resume", Some(resume_matches)) =>{
             universe_integrator_snapshot_filename = resume_matches.value_of("resume_case_filename").unwrap();
             first_universe_integrator_snapshot_filename = &universe_integrator_snapshot_filename;
             universe_history_filename = resume_matches.value_of("historic_snapshot_filename").unwrap();
             resume = true;
-            default = false;
-        },
-        ("default", Some(default_matches)) =>{
-            universe_integrator_snapshot_filename = default_matches.value_of("snapshot_filename").unwrap();
-            first_universe_integrator_snapshot_filename = &universe_integrator_snapshot_filename;
-            universe_history_filename = default_matches.value_of("historic_snapshot_filename").unwrap();
-            resume = false;
-            default = true;
         },
         ("", None)   => unreachable!(),
         _            => unreachable!(),
@@ -83,31 +64,18 @@ fn main() {
 
     let universe_integrator_snapshot_path = Path::new(&universe_integrator_snapshot_filename);
 
-    //let default_case = posidonius::cases::bolmont_et_al_2015::case3();
-    //let default_case = posidonius::cases::bolmont_et_al_2015::case4();
-    //let default_case = posidonius::cases::bolmont_et_al_2015::case7();
-    let default_case = posidonius::cases::main_example();
-    //let default_case = posidonius::cases::example_with_helpers();
-
     let first_universe_integrator_snapshot_path = Path::new(&first_universe_integrator_snapshot_filename);
-    let mut universe_integrator = match default {
-        true => {
-            // Start default case
-            default_case
-        },
-        false => {
-            // Start/Resume from snapshot
-            match posidonius::WHFastHelio::restore_snapshot(&first_universe_integrator_snapshot_path) {
-                Ok(restored_case) => { restored_case },
-                Err(_) => { 
-                    if resume {
-                        panic!("It was not possible to resume the simulation");
-                    } else {
-                        panic!("It was not possible to start the simulation");
-                    }
-                },
+    
+    // Start/Resume from snapshot
+    let mut universe_integrator = match posidonius::WHFastHelio::restore_snapshot(&first_universe_integrator_snapshot_path) {
+        Ok(restored_case) => { restored_case },
+        Err(_) => { 
+            if resume {
+                panic!("It was not possible to resume the simulation");
+            } else {
+                panic!("It was not possible to start the simulation");
             }
-        }
+        },
     };
 
     //// Other integrators:

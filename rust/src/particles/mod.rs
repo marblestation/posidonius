@@ -8,5 +8,4 @@ pub use self::universe::Universe;
 pub use self::axes::Axes;
 pub use self::evolver::Evolver;
 pub use self::evolver::EvolutionType;
-pub use self::evolver::SolarEvolutionType;
 

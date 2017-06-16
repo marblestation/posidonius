@@ -165,7 +165,7 @@ impl WHFastHelio {
     }
     
     pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<WHFastHelio, String> {
-        let universe_integrator: WHFastHelio;
+        let mut universe_integrator: WHFastHelio;
         if universe_integrator_snapshot_path.exists() {
             // Open the path in read-only mode, returns `io::Result<File>`
             let mut snapshot_file = match File::open(&universe_integrator_snapshot_path) {
@@ -190,6 +190,9 @@ impl WHFastHelio {
             }
             if universe_integrator.hash == 0 {
                 println!("INFO: Created new simulation based on '{}'", universe_integrator_snapshot_path.display());
+                let current_time = 0.;
+                universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
+                universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
             } else {
                 println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
             }
@@ -211,9 +214,10 @@ impl Integrator for WHFastHelio {
             if self.set_to_center_of_mass {
                 self.move_to_star_center();
             }
+            self.universe.calculate_denergy_dt();
             write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
-            self.n_historic_snapshots += 1;
             self.last_historic_snapshot_time = self.n_historic_snapshots as f64*self.historic_snapshot_period; // Instead of self.current_time to avoid small deviations
+            self.n_historic_snapshots += 1;
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
             let _ = std::io::stdout().flush();
@@ -262,10 +266,10 @@ impl WHFastHelio {
         
         // Calculate spin variation and non-gravity accelerations.
         self.move_to_star_center();
-        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
-        self.universe.calculate_particles_evolving_quantities(self.current_time);
-        self.universe.calculate_torque_and_dspin_dt();
-        self.universe.calculate_additional_accelerations();
+        let evolution = true;
+        let dspin_dt = false;
+        let accelerations = true;
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
         self.move_to_center_of_mass();
 
         // ---------------------------------------------------------------------
@@ -285,15 +289,17 @@ impl WHFastHelio {
         let half_time_step = self.half_time_step;
 
         // Midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
-        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
-        //self.universe.calculate_particles_evolving_quantities(self.current_time); // Don't evolve particles at this point or it messes up the conservation of angular momentum
-        self.universe.calculate_torque_and_dspin_dt();
+        let evolution = false; // Don't evolve particles at this point or it messes up the conservation of angular momentum
+        let dspin_dt = true;
+        let accelerations = false;
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
 
         self.save_current_spin();
         self.spin_step(half_time_step);
-        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
-        //self.universe.calculate_particles_evolving_quantities(self.current_time); // Don't evolve particles at this point or it messes up the conservation of angular momentum
-        self.universe.calculate_torque_and_dspin_dt();
+        let evolution = false; // Don't evolve particles at this point or it messes up the conservation of angular momentum
+        let dspin_dt = true;
+        let accelerations = false;
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
         self.restore_last_spin();
         self.spin_step(time_step);
     }

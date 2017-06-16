@@ -1,7 +1,7 @@
 from axes import Axes
 from integrator import WHFast, Ias15, LeapFrog
 from constants import *
-from evolution_type import NonEvolving, BrownDwarf, MDwarf, Jupiter, SolarLikeEvolvingDissipation, SolarLikeConstantDissipation
+from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016
 from tools import calculate_spin
 
 class Universe(object):
@@ -89,12 +89,13 @@ class Universe(object):
         particle['norm_velocity_vector_2'] = 0.0
         particle['norm_spin_vector_2'] = 0.0
         particle['denergy_dt'] = 0.
+        particle['radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass'] = 0.
 
         evolver = evolution_type.get_evolver(self._data['initial_time'])
         if len(evolver['time']) > 0 and evolver['time'][0] > 0.:
-            raise Exception("Your initial time ({} days) is smaller than the minimum allowed age of the star ({} days)".format(self._data['initial_time'], evolver['time'][0]+self._data['initial_time']));
+            raise Exception("Your initial time ({} days | {:.2e} years) is smaller than the minimum allowed age of the star ({} days | {:.2e} years)".format(self._data['initial_time'], self._data['initial_time']/365.25, evolver['time'][0]+self._data['initial_time'], (evolver['time'][0]+self._data['initial_time'])/365.25));
         if len(evolver['time']) > 0 and evolver['time'][-1] < self._data['initial_time']:
-            raise Exception("Your time limit ({} days) is greater than the maximum allowed age of the star ({} days)", self._data['initial_time'], evolver['time'][0])
+            raise Exception("Your time limit ({} days | {:.2e} years) is greater than the maximum allowed age of the star ({} days | {:.2e} years)", self._data['initial_time'], self._data['initial_time']/365.25, evolver['time'][0], evolver['time'][0]/365.25)
 
         self._data['particles'].append(particle)
         self._data['particles_evolvers'].append(evolver)
@@ -110,7 +111,7 @@ class Universe(object):
         if type(evolution_type) == NonEvolving:
             rotation_period = 70.0 # hours
             love_number = 0.307 # BrownDwarf
-        elif type(evolution_type) == BrownDwarf:
+        elif type(evolution_type) in (Leconte2011, Baraffe2015):
             mass = evolution_type._data['fields'][0]
 
             if mass <= 0.0101 and mass >= 0.0099:
@@ -150,9 +151,9 @@ class Universe(object):
                 rotation_period = 70.0
                 love_number = 0.3070
             else:
-                raise Exception("The evolution type BrownDwarf does not support a mass of {} Msun!".format(mass))
+                raise Exception("The evolution type Leconte2011 does not support a mass of {} Msun and Baraffe2015 with higher masses is possible but then it should not be considered as a Brown Dwarf!".format(mass))
         else:
-            raise Exception("Evolution type should be BrownDwarf or NonEvolving!")
+            raise Exception("Evolution type should be Leconte2011, Baraffe2015 or NonEvolving!")
 
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
         inclination = 0.
@@ -171,8 +172,8 @@ class Universe(object):
 
 
     def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type):
-        if type(evolution_type) not in (SolarLikeEvolvingDissipation, SolarLikeConstantDissipation):
-            raise Exception("Evolution type should be SolarLikeEvolvingDissipation or SolarLikeConstantDissipation!")
+        if type(evolution_type) not in (BolmontMathis2016, Leconte2011, Baraffe2015):
+            raise Exception("Evolution type should be BolmontMathis2016 LeconteChabrier2013 or Baraffe2015!")
 
         # Typical rotation period: 24 hours
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
@@ -191,8 +192,8 @@ class Universe(object):
 
 
     def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type):
-        if type(evolution_type) not in (MDwarf, NonEvolving):
-            raise Exception("Evolution type should be MDwarf or NonEvolving!")
+        if type(evolution_type) not in (Baraffe1998, NonEvolving) or mass != 0.10:
+            raise Exception("Evolution type should be Baraffe1998 (mass = 0.10) or NonEvolving!")
 
         # Typical rotation period: 70 hours
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
@@ -213,8 +214,8 @@ class Universe(object):
 
 
     def add_jupiter_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
-        if type(evolution_type) not in (Jupiter, NonEvolving):
-            raise Exception("Evolution type should be Jupiter or NonEvolving!")
+        if type(evolution_type) not in (LeconteChabrier2013, NonEvolving):
+            raise Exception("Evolution type should be LeconteChabrier2013 or NonEvolving!")
 
         # Typical rotation period: 9.8 hours
         love_number = 0.380 # Gas giant

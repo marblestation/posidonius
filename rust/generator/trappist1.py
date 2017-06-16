@@ -28,7 +28,7 @@ if __name__ == "__main__":
     star_radius_factor = 0.117
     star_radius = star_radius_factor * posidonius.constants.R_SUN
     star_dissipation_factor = 2.006*3.845764e4 # -60+64
-    star_dissipation_factor_scale = 1.0
+    star_dissipation_factor_scale = 0.01
     star_radius_of_gyration_2 = 2.00e-1 # Brown dwarf
     star_love_number = 0.307
     fluid_love_number = star_love_number
@@ -40,11 +40,11 @@ if __name__ == "__main__":
     #star_rotation_period = 19.0*24 # hours
     star_angular_frequency = posidonius.constants.TWO_PI/(star_rotation_period/24.) # days^-1
     star_spin = posidonius.Axes(0., 0., star_angular_frequency)
-    #star_evolution_type = posidonius.BrownDwarf(star_mass)
-    #star_evolution_type = posidonius.MDwarf()
-    #star_evolution_type = posidonius.Jupyter()
-    #star_evolution_type = posidonius.SolarLikeEvolvingDissipation(star_mass)
-    #star_evolution_type = posidonius.SolarLikeConstantDissipation()
+    #star_evolution_type = posidonius.BolmontMathis2016(star_mass) # mass = 0.40 .. 1.40
+    #star_evolution_type = posidonius.Baraffe2015(star_mass) # mass = 0.01 .. 1.40
+    #star_evolution_type = posidonius.Leconte2011(star_mass) # mass = 0.01 .. 0.08
+    #star_evolution_type = posidonius.Baraffe1998(star_mass) # Sun (mass = 1.0) or M-Dwarf (mass = 0.1)
+    #star_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
     star_evolution_type = posidonius.NonEvolving()
     universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, fluid_love_number, star_position, star_velocity, star_spin, star_evolution_type)
 

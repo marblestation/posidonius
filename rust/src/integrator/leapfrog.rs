@@ -83,7 +83,7 @@ impl LeapFrog {
     }
 
     pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<LeapFrog, String> {
-        let universe_integrator: LeapFrog;
+        let mut universe_integrator: LeapFrog;
         if universe_integrator_snapshot_path.exists() {
             // Open the path in read-only mode, returns `io::Result<File>`
             let mut snapshot_file = match File::open(&universe_integrator_snapshot_path) {
@@ -106,7 +106,14 @@ impl LeapFrog {
                 let mut reader = BufReader::new(snapshot_file);
                 universe_integrator = decode_from(&mut reader, SizeLimit::Infinite).unwrap();
             }
-            println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
+            if universe_integrator.hash == 0 {
+                println!("INFO: Created new simulation based on '{}'", universe_integrator_snapshot_path.display());
+                let current_time = 0.;
+                universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
+                universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
+            } else {
+                println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
+            }
             return Ok(universe_integrator);
         } else {
             return Err(format!("File does not exist"));
@@ -125,7 +132,7 @@ impl Integrator for LeapFrog {
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
             write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
-            self.last_historic_snapshot_time = self.current_time;
+            self.last_historic_snapshot_time = self.n_historic_snapshots as f64*self.historic_snapshot_period; // Instead of self.current_time to avoid small deviations
             self.n_historic_snapshots += 1;
             let current_time_years = self.current_time/365.25;
             print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
@@ -133,9 +140,10 @@ impl Integrator for LeapFrog {
         }
 
         // Calculate non-gravity accelerations.
-        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
-        self.universe.calculate_particles_evolving_quantities(self.current_time);
-        self.universe.calculate_torque_and_dspin_dt();
+        let evolution = true;
+        let dspin_dt = true;
+        let accelerations = false;
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
 
 
         // A 'DKD'-like integrator will do the first 'D' part.
@@ -146,10 +154,10 @@ impl Integrator for LeapFrog {
         self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
 
         // Calculate non-gravity accelerations.
-        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
-        self.universe.calculate_particles_evolving_quantities(self.current_time);
-        self.universe.calculate_torque_and_dspin_dt();
-        self.universe.calculate_additional_accelerations();
+        let evolution = true;
+        let dspin_dt = true;
+        let accelerations = true;
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
 
 
         // A 'DKD'-like integrator will do the 'KD' part.

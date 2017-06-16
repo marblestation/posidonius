@@ -99,7 +99,7 @@ impl Ias15 {
     }
 
     pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<Ias15, String> {
-        let universe_integrator: Ias15;
+        let mut universe_integrator: Ias15;
         if universe_integrator_snapshot_path.exists() {
             // Open the path in read-only mode, returns `io::Result<File>`
             let mut snapshot_file = match File::open(&universe_integrator_snapshot_path) {
@@ -122,7 +122,14 @@ impl Ias15 {
                 let mut reader = BufReader::new(snapshot_file);
                 universe_integrator = decode_from(&mut reader, SizeLimit::Infinite).unwrap();
             }
-            println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
+            if universe_integrator.hash == 0 {
+                println!("INFO: Created new simulation based on '{}'", universe_integrator_snapshot_path.display());
+                let current_time = 0.;
+                universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
+                universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
+            } else {
+                println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
+            }
             return Ok(universe_integrator);
         } else {
             return Err(format!("File does not exist"));
@@ -152,10 +159,10 @@ impl Integrator for Ias15 {
         let integrator_is_whfasthelio = false;
         self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
         // Calculate non-gravity accelerations.
-        self.universe.calculate_position_velocity_and_spin_dependent_quantities();
-        self.universe.calculate_particles_evolving_quantities(self.current_time);
-        self.universe.calculate_torque_and_dspin_dt();
-        self.universe.calculate_additional_accelerations();
+        let evolution = true;
+        let dspin_dt = true;
+        let accelerations = true;
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
 
         self.integrator();
         self.current_iteration += 1;
@@ -348,10 +355,10 @@ impl Ias15 {
                     let integrator_is_whfasthelio = false;
                     self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
                     // Calculate non-gravity accelerations.
-                    self.universe.calculate_position_velocity_and_spin_dependent_quantities();
-                    self.universe.calculate_particles_evolving_quantities(self.current_time);
-                    self.universe.calculate_torque_and_dspin_dt();
-                    self.universe.calculate_additional_accelerations();
+                    let evolution = true;
+                    let dspin_dt = true;
+                    let accelerations = true;
+                    self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.acceleration.x;

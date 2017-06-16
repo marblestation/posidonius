@@ -16,4 +16,3 @@ pub use self::integrator::*;
 
 pub mod tools;
 
-pub mod cases;

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2, K_WIND, WSAT_WIND, WSAT_WIND_2};
-use super::{Evolver, EvolutionType, SolarEvolutionType};
+use super::{Evolver, EvolutionType};
 use super::{Particle};
 use super::{Axes};
 
@@ -23,64 +23,6 @@ pub struct Universe {
 }
 
 impl Universe {
-    pub fn new(mut particles: Vec<Particle>, initial_time: f64, time_limit: f64, 
-              consider_tides: bool, consider_rotational_flattening:
-              bool, consider_general_relativy: bool) -> Universe {
-        if consider_general_relativy {
-            let star_index = 0; // index
-            let local_copy_star_mass_g = particles[star_index].mass_g;
-            for particle in particles[1..].iter_mut() {
-                particle.general_relativity_factor =  local_copy_star_mass_g*particle.mass_g / (local_copy_star_mass_g + particle.mass_g).powi(2)
-            }
-        }
-
-        let temporary_copied_particle_positions = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
-        let temporary_copied_particle_velocities = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
-        let temporary_copied_particles_masses = [0.; MAX_PARTICLES];
-        let temporary_copied_particles_radiuses = [0.; MAX_PARTICLES];
-    
-        // OPTIMIZATION: Transform vector to array
-        // - Arrays are stored in the stack which is faster than the heap (where vectors are allocated)
-        // - The array should have a fixed size, thus it should always be equal or greater to the vector passed
-        // - The array elements to be considered will be limited by the n_particles value
-        let n_particles = particles.len();
-        if n_particles > MAX_PARTICLES {
-            panic!("Only {} bodies are allowed, you need to increase the MAX_PARTICLE constant.", MAX_PARTICLES);
-        }
-        let mut transformed_particles = [Particle::new_dummy(); MAX_PARTICLES];
-        let mut particles_evolvers : Vec<Evolver> = Vec::with_capacity(n_particles);
-        let mut evolving_particles_exist = false;
-        for i in 0..n_particles {
-            transformed_particles[i] = particles[i];
-            transformed_particles[i].id = i;
-            particles_evolvers.push(Evolver::new(transformed_particles[i].evolution_type, initial_time, time_limit));
-            if transformed_particles[i].evolution_type != EvolutionType::NonEvolving {
-                evolving_particles_exist = true;
-            }
-        }
-
-        let mut universe = Universe {
-                    initial_time: initial_time,
-                    time_limit: time_limit,
-                    particles: transformed_particles,
-                    particles_evolvers: particles_evolvers,
-                    n_particles: n_particles,
-                    evolving_particles_exist: evolving_particles_exist,
-                    consider_tides: consider_tides,
-                    consider_rotational_flattening: consider_rotational_flattening,
-                    consider_general_relativy: consider_general_relativy,
-                    star_planet_dependent_dissipation_factors:HashMap::new(),
-                    temporary_copied_particle_positions: temporary_copied_particle_positions,
-                    temporary_copied_particle_velocities: temporary_copied_particle_velocities,
-                    temporary_copied_particles_masses: temporary_copied_particles_masses,
-                    temporary_copied_particles_radiuses: temporary_copied_particles_radiuses,
-                    };
-        let current_time = 0.;
-        universe.calculate_norm_spin(); // Needed for evolution
-        universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
-        universe
-    }
-
     pub fn gravity_calculate_acceleration(&mut self, integrator_is_whfasthelio: bool) {
 
         for (i, particle) in self.particles[..self.n_particles].iter().enumerate() {
@@ -171,36 +113,58 @@ impl Universe {
         }
     }
 
-    pub fn calculate_position_velocity_and_spin_dependent_quantities(&mut self) {
-        if self.evolving_particles_exist || self.consider_rotational_flattening {
-            self.calculate_norm_spin(); // Needed for rotational flattening and evolution
+    pub fn calculate_additional_effects(&mut self, current_time: f64, evolution: bool, dspin_dt: bool, accelerations: bool) {
+        if (evolution && self.evolving_particles_exist) || 
+            ((dspin_dt || accelerations) && self.consider_rotational_flattening) {
+            self.calculate_norm_spin(); // Needed for rotational flattening (torque and accelerations) and evolution
         }
 
-        if self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy  {
+        if (dspin_dt && (self.consider_tides || self.consider_rotational_flattening)) ||
+            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy)) {
             self.calculate_distance_and_velocities(); // Needed for tides, rotational flattening, general relativity and evolution
         }
-    }
 
-    pub fn calculate_torque_and_dspin_dt(&mut self) {
-        if self.consider_tides || self.consider_rotational_flattening  {
-            self.calculate_torques(); // Needed for dspin_dt
-            self.calculate_dspin_dt(); // Needed for tides and rotational flattening
+        if evolution && self.evolving_particles_exist {
+            self.calculate_particles_evolving_quantities(current_time);
+        }
+
+        if (dspin_dt && (self.consider_tides || self.consider_rotational_flattening)) ||
+            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy)) {
+
+            self.calculate_orthogonal_components(); // Needed for torques and additional accelerations
+
+            if dspin_dt && (self.consider_tides || self.consider_rotational_flattening) {
+                // Not needed for additional accelerations
+                self.calculate_torques(); // Needed for dspin_dt
+                self.calculate_dspin_dt();
+            }
+
+            if accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy) {
+                if self.consider_tides {
+                    self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
+                    self.calculate_tidal_acceleration();
+                }
+
+                if self.consider_rotational_flattening {
+                    self.calculate_radial_component_of_the_force_induced_by_rotational_flattening();
+                    self.calculate_acceleration_induced_by_rotational_flattering();
+                }
+
+                if self.consider_general_relativy {
+                    self.calculate_general_relativity_acceleration();
+                }
+
+                self.apply_acceleration_corrections();
+
+                //for (i, particle) in self.particles[1..self.n_particles].iter().enumerate() {
+                //for (i, particle) in self.particles[0..self.n_particles].iter().enumerate() {
+                    //println!("{} - Acceleration {:e} {:e} {:e}", i, particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
+                    //println!("{} - Acceleration rot {:e} {:e} {:e}", i, particle.acceleration_induced_by_rotational_flattering.x, particle.acceleration_induced_by_rotational_flattering.y, particle.acceleration_induced_by_rotational_flattering.z);
+                //}
+            }
         }
     }
 
-    pub fn calculate_additional_accelerations(&mut self) {
-        if self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy  {
-            self.calculate_acceleration_corrections();
-            self.apply_acceleration_corrections();
-            // Recover first original body as frame of reference
-            self.center_to_first_particle();
-        }
-        //for (i, particle) in self.particles[1..self.n_particles].iter().enumerate() {
-        //for (i, particle) in self.particles[0..self.n_particles].iter().enumerate() {
-            //println!("{} - Acceleration {:e} {:e} {:e}", i, particle.acceleration.x, particle.acceleration.y, particle.acceleration.z);
-            //println!("{} - Acceleration rot {:e} {:e} {:e}", i, particle.acceleration_induced_by_rotational_flattering.x, particle.acceleration_induced_by_rotational_flattering.y, particle.acceleration_induced_by_rotational_flattering.z);
-        //}
-    }
 
     pub fn initialize_torque(&mut self) {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
@@ -215,93 +179,64 @@ impl Universe {
         }
     }
 
-    pub fn center_to_first_particle(&mut self) {
-        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
-            for particle in particles.iter_mut() {
-                particle.position.x  -= star.position.x;
-                particle.position.y  -= star.position.y;
-                particle.position.z  -= star.position.z;
-                particle.velocity.x -= star.velocity.x;
-                particle.velocity.y -= star.velocity.y;
-                particle.velocity.z -= star.velocity.z;
-                particle.acceleration.x -= star.acceleration.x;
-                particle.acceleration.y -= star.acceleration.y;
-                particle.acceleration.z -= star.acceleration.z;
-            }
-            star.position.x = 0.;
-            star.position.y = 0.;
-            star.position.z = 0.;
-            star.velocity.x = 0.;
-            star.velocity.y = 0.;
-            star.velocity.z = 0.;
-            star.acceleration.x = 0.;
-            star.acceleration.y = 0.;
-            star.acceleration.z = 0.;
-        }
-    }
-
     fn calculate_torques(&mut self) {
         let central_body = true;
 
         self.initialize_torque();
-        self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if MathisSolarLike
-        self.calculate_scalar_product_of_vector_position_with_spin(); // Needed by tides and rotational flattening
         
         if self.consider_tides {
-            self.calculate_orthogonal_component_of_the_tidal_force(central_body);
-            self.calculate_orthogonal_component_of_the_tidal_force(!central_body);
             self.calculate_torque_due_to_tides(central_body);
             self.calculate_torque_due_to_tides(!central_body);
         }
 
         if self.consider_rotational_flattening {
-            self.calculate_orthogonal_component_of_the_force_induced_by_rotational_flattening(central_body);
-            self.calculate_orthogonal_component_of_the_force_induced_by_rotational_flattening(!central_body);
             self.calculate_torque_induced_by_rotational_flattening(central_body);
             self.calculate_torque_induced_by_rotational_flattening(!central_body);
         }
     }
 
-    fn calculate_acceleration_corrections(&mut self) {
+    fn calculate_orthogonal_components(&mut self) {
+        let central_body = true;
+
+        self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if BolmontMathis2016
+        self.calculate_scalar_product_of_vector_position_with_spin(); // Needed by tides and rotational flattening
+        
         if self.consider_tides {
-            self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
-            self.calculate_tidal_acceleration();
+            self.calculate_orthogonal_component_of_the_tidal_force(central_body);
+            self.calculate_orthogonal_component_of_the_tidal_force(!central_body);
         }
 
         if self.consider_rotational_flattening {
-            self.calculate_radial_component_of_the_force_induced_by_rotational_flattening();
-            self.calculate_acceleration_induced_by_rotational_flattering();
-        }
-
-        if self.consider_general_relativy {
-            self.calculate_general_relativity_acceleration();
+            self.calculate_orthogonal_component_of_the_force_induced_by_rotational_flattening(central_body);
+            self.calculate_orthogonal_component_of_the_force_induced_by_rotational_flattening(!central_body);
         }
     }
 
     fn apply_acceleration_corrections(&mut self) {
         // Add the tidal+flattening+general relativity accelerations to the gravitational one (already computed)
-        //for particle in self.particles[1..self.n_particles].iter_mut() {
-        for particle in self.particles[..self.n_particles].iter_mut() {
-            if self.consider_tides {
-                particle.acceleration.x += particle.tidal_acceleration.x;
-                particle.acceleration.y += particle.tidal_acceleration.y;
-                particle.acceleration.z += particle.tidal_acceleration.z;
-                //println!("Tides acceleration {:e} {:e} {:e}", particle.tidal_acceleration.x, particle.tidal_acceleration.y, particle.tidal_acceleration.z);
-            }
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            for particle in particles.iter_mut() {
+                if self.consider_tides {
+                    particle.acceleration.x += particle.tidal_acceleration.x - star.tidal_acceleration.x;
+                    particle.acceleration.y += particle.tidal_acceleration.y - star.tidal_acceleration.y;
+                    particle.acceleration.z += particle.tidal_acceleration.z - star.tidal_acceleration.z;
+                    //println!("Tides acceleration {:e} {:e} {:e}", particle.tidal_acceleration.x, particle.tidal_acceleration.y, particle.tidal_acceleration.z);
+                }
 
-            if self.consider_rotational_flattening {
-                particle.acceleration.x += particle.acceleration_induced_by_rotational_flattering.x;
-                particle.acceleration.y += particle.acceleration_induced_by_rotational_flattering.y;
-                particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z;
-                //println!("Rot acceleration {:e} {:e} {:e}", particle.acceleration_induced_by_rotational_flattering.x, particle.acceleration_induced_by_rotational_flattering.y, particle.acceleration_induced_by_rotational_flattering.z);
-            }
+                if self.consider_rotational_flattening {
+                    particle.acceleration.x += particle.acceleration_induced_by_rotational_flattering.x - star.acceleration_induced_by_rotational_flattering.x;
+                    particle.acceleration.y += particle.acceleration_induced_by_rotational_flattering.y - star.acceleration_induced_by_rotational_flattering.y;
+                    particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z - star.acceleration_induced_by_rotational_flattering.z;
+                    //println!("Rot acceleration {:e} {:e} {:e}", particle.acceleration_induced_by_rotational_flattering.x, particle.acceleration_induced_by_rotational_flattering.y, particle.acceleration_induced_by_rotational_flattering.z);
+                }
 
-            if self.consider_general_relativy {
-                particle.acceleration.x += particle.general_relativity_acceleration.x;
-                particle.acceleration.y += particle.general_relativity_acceleration.y;
-                particle.acceleration.z += particle.general_relativity_acceleration.z;
-                //println!("GR acceleration {:e} {:e} {:e}", particle.general_relativity_acceleration.x, particle.general_relativity_acceleration.y, particle.general_relativity_acceleration.z);
-            } 
+                if self.consider_general_relativy {
+                    particle.acceleration.x += particle.general_relativity_acceleration.x - star.general_relativity_acceleration.x;
+                    particle.acceleration.y += particle.general_relativity_acceleration.y - star.general_relativity_acceleration.y;
+                    particle.acceleration.z += particle.general_relativity_acceleration.z - star.general_relativity_acceleration.z;
+                    //println!("GR acceleration {:e} {:e} {:e}", particle.general_relativity_acceleration.x, particle.general_relativity_acceleration.y, particle.general_relativity_acceleration.z);
+                } 
+            }
         }
     }
     
@@ -446,20 +381,25 @@ impl Universe {
                 let term2 = star_mass_2
                             * particle.radius.powi(10)
                             * particle.scaled_dissipation_factor;
-                let radial_component_of_the_tidal_force_dissipative_part = factor1 * (term1 + term2 );
+                // If we consider the star as a point mass (used for denergy_dt calculation):
+                particle.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass = factor1 * term2;
+                let radial_component_of_the_tidal_force_dissipative_part = particle.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor1 * term1;
 
                 // Sum of the dissipative and conservative part of the radial force
                 // - First line Equation 5 from Bolmont et al. 2015
                 particle.radial_component_of_the_tidal_force = radial_component_of_the_tidal_force_conservative_part + radial_component_of_the_tidal_force_dissipative_part;
-                
-                // If we consider the star as a point mass (used for denergy_dt calculation):
-                let radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass = factor1 * term2;
+            }
+        }
+    }
 
+    pub fn calculate_denergy_dt(&mut self) {
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            for particle in particles.iter_mut() {
                 //// Instantaneous energy loss dE/dt due to tides
                 //// in Msun.AU^2.day^(-3)
                 //radial_tidal_force_for_energy_loss_calculation = factor1 * term2; // Ftidr_diss
                 let factor2 = particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide / particle.distance;
-                particle.denergy_dt = -((1.0 / particle.distance * (radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor2 * particle.radial_velocity))
+                particle.denergy_dt = -((1.0 / particle.distance * (particle.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor2 * particle.radial_velocity))
                             * (particle.position.x*particle.velocity.x + particle.position.y*particle.velocity.y + particle.position.z*particle.velocity.z)
                             + factor2 
                             * ((particle.spin.y*particle.position.z - particle.spin.z*particle.position.y - particle.velocity.x) * particle.velocity.x
@@ -727,7 +667,9 @@ impl Universe {
     }
 
 
-    fn calculate_norm_spin(&mut self) {
+
+
+    pub fn calculate_norm_spin(&mut self) {
         for particle in self.particles[..self.n_particles].iter_mut() {
             // Squared norm of the spin
             particle.norm_spin_vector_2 = (particle.spin.x.powi(2)) 
@@ -772,26 +714,21 @@ impl Universe {
     fn calculate_planet_dependent_dissipation_factors(&mut self) {
         let star_index = 0; // index
         match self.particles[star_index].evolution_type {
-            EvolutionType::SolarLike(model) => {
-                match model {
-                    SolarEvolutionType::EvolvingDissipation(_) => {
-                        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
-                            for particle in particles.iter() {
-                                let frequency = (particle.velocity.x - star.spin.y*particle.position.z + star.spin.z*particle.position.y).powi(2)
-                                            + (particle.velocity.y - star.spin.z*particle.position.x + star.spin.x*particle.position.z).powi(2)
-                                            + (particle.velocity.z - star.spin.x*particle.position.y + star.spin.y*particle.position.x).powi(2);
-                                // two_times_the_inverse_of_the_excitation_frequency: 2/w
-                                // inverse_of_half_the_excitation_frequency : 1/(w/2)
-                                let inverse_of_half_the_excitation_frequency = particle.distance / frequency;
-                                let planet_dependent_dissipation_factor = star.dissipation_factor_scale * 2.0 * K2
-                                    * star.lag_angle * inverse_of_half_the_excitation_frequency / (3.0*star.radius.powi(5));
+            EvolutionType::BolmontMathis2016(_) => {
+                if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+                    for particle in particles.iter() {
+                        let frequency = (particle.velocity.x - star.spin.y*particle.position.z + star.spin.z*particle.position.y).powi(2)
+                                    + (particle.velocity.y - star.spin.z*particle.position.x + star.spin.x*particle.position.z).powi(2)
+                                    + (particle.velocity.z - star.spin.x*particle.position.y + star.spin.y*particle.position.x).powi(2);
+                        // two_times_the_inverse_of_the_excitation_frequency: 2/w
+                        // inverse_of_half_the_excitation_frequency : 1/(w/2)
+                        let inverse_of_half_the_excitation_frequency = particle.distance / frequency;
+                        let planet_dependent_dissipation_factor = star.dissipation_factor_scale * 2.0 * K2
+                            * star.lag_angle * inverse_of_half_the_excitation_frequency / (3.0*star.radius.powi(5));
 
-                                self.star_planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
-                                //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);
-                            }
-                        }
-                    },
-                    _ => {},
+                        self.star_planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
+                        //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);
+                    }
                 }
             },
             _ => {},
@@ -801,15 +738,10 @@ impl Universe {
 
     pub fn planet_dependent_dissipation_factor(star_planet_dependent_dissipation_factors: &HashMap<usize, f64>,  id: &usize, evolution_type: EvolutionType, scaled_dissipation_factor: f64) -> f64 {
         match evolution_type {
-            EvolutionType::SolarLike(model) => {
-                match model {
-                    SolarEvolutionType::EvolvingDissipation(_) => {
-                        match star_planet_dependent_dissipation_factors.get(id) {
-                            Some(&value) => value,
-                            _ => scaled_dissipation_factor // This should not happen
-                        }
-                    },
-                    _ => scaled_dissipation_factor,
+            EvolutionType::BolmontMathis2016(_) => {
+                match star_planet_dependent_dissipation_factors.get(id) {
+                    Some(&value) => value,
+                    _ => scaled_dissipation_factor // This should not happen
                 }
             },
             _ => scaled_dissipation_factor,
@@ -850,9 +782,6 @@ impl Universe {
     }
     
     pub fn calculate_particles_evolving_quantities(&mut self, current_time: f64) {
-        if !self.evolving_particles_exist {
-            return;
-        }
         for (particle, evolver) in self.particles[..self.n_particles].iter_mut().zip(self.particles_evolvers.iter_mut()) {
             ////////////////////////////////////////////////////////////////////
             // Wind
@@ -860,9 +789,9 @@ impl Universe {
             // - It requires the radius before being evolved
             // - If time_step is zero, it's the first initialization and the wind factor will be zero
             particle.wind_factor = match evolver.evolution_type {
-                EvolutionType::SolarLike(_) => { 
+                EvolutionType::BolmontMathis2016(_) => { 
                     let threshold = (particle.norm_spin_vector_2).sqrt();
-                    let old_radius = particle.radius; // TODO
+                    let old_radius = particle.radius;
                     let factor = - K2 / (particle.mass_g * particle.radius_of_gyration_2 * old_radius.powi(2));
                     if threshold >= WSAT_WIND {
                         // Friendly reminder that m(1) is in solar mass * K2
@@ -870,7 +799,7 @@ impl Universe {
                         factor * K_WIND * WSAT_WIND_2 * (old_radius/R_SUN * 1./particle.mass).sqrt()
                     } else {
                         //tmp2 = hdt * K_wind * sqrt(Rsth*K2/(Rsun*m(1)))
-                        let old_radius = particle.radius; // TODO
+                        let old_radius = particle.radius;
                         factor * K_WIND * (old_radius/R_SUN * 1./particle.mass).sqrt()
                     }
                 },
@@ -906,20 +835,15 @@ impl Universe {
             // Lag angle
             ////////////////////////////////////////////////////////////////////
             particle.lag_angle = match evolver.evolution_type {
-                    EvolutionType::SolarLike(model) => {
-                        match model {
-                            SolarEvolutionType::EvolvingDissipation(_) => {
-                                let inverse_tidal_q_factor = evolver.inverse_tidal_q_factor(current_time, 0.);
-                                let epsilon_squared = particle.norm_spin_vector_2/SUN_DYN_FREQ;
-                                // Normal formula = 3.d0*epsilon_squared*Q_str_inv/(4.d0*k2s)
-                                // but as for sigma it is necessary to divide by k2s, we do not divide here
-                                let lag_angle = 3.0*epsilon_squared*inverse_tidal_q_factor/4.0;
-                                lag_angle
-                            },
-                            _ => 0.,
-                        }
+                EvolutionType::BolmontMathis2016(_) => {
+                        let inverse_tidal_q_factor = evolver.inverse_tidal_q_factor(current_time, 0.);
+                        let epsilon_squared = particle.norm_spin_vector_2/SUN_DYN_FREQ;
+                        // Normal formula = 3.d0*epsilon_squared*Q_str_inv/(4.d0*k2s)
+                        // but as for sigma it is necessary to divide by k2s, we do not divide here
+                        let lag_angle = 3.0*epsilon_squared*inverse_tidal_q_factor/4.0;
+                        lag_angle
                     },
-                    _ => 0.,
+                _ => 0.,
             };
             //println!("[{}] Evolve Radius {:e} Gyration {:e} Love {:e} Lag {:e}", current_time, particle.radius, particle.radius_of_gyration_2, particle.love_number, particle.lag_angle);
         }
