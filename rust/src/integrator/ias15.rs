@@ -627,9 +627,21 @@ impl Ias15 {
                 particle.velocity.y = self.v0[3*k+1];
                 particle.velocity.z = self.v0[3*k+2];
 
-                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.time_step * particle.dspin_dt.x + self.time_step * particle.wind_factor * particle.spin.x;
-                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.time_step * particle.dspin_dt.y + self.time_step * particle.wind_factor * particle.spin.y;
-                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.time_step * particle.dspin_dt.z + self.time_step * particle.wind_factor * particle.spin.z;
+                if particle.moment_of_inertia_ratio != 1. {
+                    particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.time_step * particle.dspin_dt.x;
+                    particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.time_step * particle.dspin_dt.y;
+                    particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.time_step * particle.dspin_dt.z;
+                } else {
+                    particle.spin.x = particle.spin.x + self.time_step * particle.dspin_dt.x;
+                    particle.spin.y = particle.spin.y + self.time_step * particle.dspin_dt.y;
+                    particle.spin.z = particle.spin.z + self.time_step * particle.dspin_dt.z;
+                }
+                if particle.wind_factor != 0. {
+                    // TODO: Verify wind factor
+                    particle.spin.x += self.time_step * particle.wind_factor * particle.spin.x;
+                    particle.spin.y += self.time_step * particle.wind_factor * particle.spin.y;
+                    particle.spin.z += self.time_step * particle.wind_factor * particle.spin.z;
+                }
             }
 
             self.time_step_last_success = dt_done;

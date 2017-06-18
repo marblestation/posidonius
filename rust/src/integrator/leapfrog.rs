@@ -189,9 +189,21 @@ impl LeapFrog {
             particle.position.y += self.half_time_step * particle.velocity.y;
             particle.position.z += self.half_time_step * particle.velocity.z;
 
-            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x + self.half_time_step * particle.wind_factor * particle.spin.x;
-            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y + self.half_time_step * particle.wind_factor * particle.spin.y;
-            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z + self.half_time_step * particle.wind_factor * particle.spin.z;
+            if particle.moment_of_inertia_ratio != 1. {
+                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x;
+                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y;
+                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z;
+            } else {
+                particle.spin.x = particle.spin.x + self.half_time_step * particle.dspin_dt.x;
+                particle.spin.y = particle.spin.y + self.half_time_step * particle.dspin_dt.y;
+                particle.spin.z = particle.spin.z + self.half_time_step * particle.dspin_dt.z;
+            }
+            if particle.wind_factor != 0. {
+                // TODO: Verify wind factor
+                particle.spin.x += self.half_time_step * particle.wind_factor * particle.spin.x;
+                particle.spin.y += self.half_time_step * particle.wind_factor * particle.spin.y;
+                particle.spin.z += self.half_time_step * particle.wind_factor * particle.spin.z;
+            }
         }
         self.current_time += self.half_time_step;
     }
@@ -206,9 +218,21 @@ impl LeapFrog {
             particle.position.y += self.half_time_step * particle.velocity.y;
             particle.position.z += self.half_time_step * particle.velocity.z;
 
-            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x + self.half_time_step * particle.wind_factor * particle.spin.x;
-            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y + self.half_time_step * particle.wind_factor * particle.spin.y;
-            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z + self.half_time_step * particle.wind_factor * particle.spin.z;
+            if particle.moment_of_inertia_ratio != 1. {
+                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x;
+                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y;
+                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z;
+            } else {
+                particle.spin.x = particle.spin.x + self.half_time_step * particle.dspin_dt.x;
+                particle.spin.y = particle.spin.y + self.half_time_step * particle.dspin_dt.y;
+                particle.spin.z = particle.spin.z + self.half_time_step * particle.dspin_dt.z;
+            }
+            if particle.wind_factor != 0. {
+                // TODO: Verify wind factor
+                particle.spin.x += self.half_time_step * particle.wind_factor * particle.spin.x;
+                particle.spin.y += self.half_time_step * particle.wind_factor * particle.spin.y;
+                particle.spin.z += self.half_time_step * particle.wind_factor * particle.spin.z;
+            }
         }
         self.current_time += self.half_time_step;
     }

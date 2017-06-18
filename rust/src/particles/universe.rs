@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2, K_WIND, WSAT_WIND, WSAT_WIND_2};
+use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2};
 use super::{Evolver, EvolutionType};
 use super::{Particle};
 use super::{Axes};
@@ -12,6 +12,7 @@ pub struct Universe {
     pub particles_evolvers: Vec<Evolver>,
     pub n_particles: usize,
     pub evolving_particles_exist: bool,
+    pub wind_effects_exist: bool,
     pub consider_tides: bool,
     pub consider_rotational_flattening: bool,
     pub consider_general_relativy: bool,
@@ -126,6 +127,10 @@ impl Universe {
 
         if evolution && self.evolving_particles_exist {
             self.calculate_particles_evolving_quantities(current_time);
+        }
+
+        if dspin_dt && self.wind_effects_exist {
+            self.calculate_wind_factor();
         }
 
         if (dspin_dt && (self.consider_tides || self.consider_rotational_flattening)) ||
@@ -780,32 +785,26 @@ impl Universe {
         let total_angular_momentum = (total_angular_momentum.x.powf(2.) + total_angular_momentum.y.powf(2.) + total_angular_momentum.z.powf(2.)).sqrt();
         total_angular_momentum
     }
+
+    pub fn calculate_wind_factor(&mut self) {
+        for particle in self.particles[..self.n_particles].iter_mut() {
+            if particle.wind_k_factor != 0. {
+                let threshold = (particle.norm_spin_vector_2).sqrt();
+                let factor = - K2 / (particle.mass_g * particle.radius_of_gyration_2 * particle.radius.powi(2));
+                if threshold >= particle.wind_rotation_saturation {
+                    // Friendly reminder that m(1) is in solar mass * K2
+                    //tmp2 = hdt * K_wind * wsat_wind*wsat_wind * sqrt(Rsth*K2/(Rsun*m(1)))
+                    particle.wind_factor = factor * particle.wind_k_factor * particle.wind_rotation_saturation_2 * (particle.radius/R_SUN * 1./particle.mass).sqrt()
+                } else {
+                    //tmp2 = hdt * K_wind * sqrt(Rsth*K2/(Rsun*m(1)))
+                    particle.wind_factor = factor * particle.wind_k_factor * (particle.radius/R_SUN * 1./particle.mass).sqrt()
+                }
+            };
+        }
+    }
     
     pub fn calculate_particles_evolving_quantities(&mut self, current_time: f64) {
         for (particle, evolver) in self.particles[..self.n_particles].iter_mut().zip(self.particles_evolvers.iter_mut()) {
-            ////////////////////////////////////////////////////////////////////
-            // Wind
-            ////////////////////////////////////////////////////////////////////
-            // - It requires the radius before being evolved
-            // - If time_step is zero, it's the first initialization and the wind factor will be zero
-            particle.wind_factor = match evolver.evolution_type {
-                EvolutionType::BolmontMathis2016(_) => { 
-                    let threshold = (particle.norm_spin_vector_2).sqrt();
-                    let old_radius = particle.radius;
-                    let factor = - K2 / (particle.mass_g * particle.radius_of_gyration_2 * old_radius.powi(2));
-                    if threshold >= WSAT_WIND {
-                        // Friendly reminder that m(1) is in solar mass * K2
-                        //tmp2 = hdt * K_wind * wsat_wind*wsat_wind * sqrt(Rsth*K2/(Rsun*m(1)))
-                        factor * K_WIND * WSAT_WIND_2 * (old_radius/R_SUN * 1./particle.mass).sqrt()
-                    } else {
-                        //tmp2 = hdt * K_wind * sqrt(Rsth*K2/(Rsun*m(1)))
-                        let old_radius = particle.radius;
-                        factor * K_WIND * (old_radius/R_SUN * 1./particle.mass).sqrt()
-                    }
-                },
-                _ => 0.,
-            };
-
             ////////////////////////////////////////////////////////////////////
             // Radius and radius of gyration 2
             ////////////////////////////////////////////////////////////////////

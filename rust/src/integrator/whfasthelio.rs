@@ -322,10 +322,21 @@ impl WHFastHelio {
  
     fn spin_step(&mut self, _dt: f64) {
         for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
-            // TODO: Verify wind factor
-            particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + _dt * particle.dspin_dt.x + _dt * particle.wind_factor * particle.spin.x;
-            particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + _dt * particle.dspin_dt.y + _dt * particle.wind_factor * particle.spin.y;
-            particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + _dt * particle.dspin_dt.z + _dt * particle.wind_factor * particle.spin.z;
+            if particle.moment_of_inertia_ratio != 1. {
+                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + _dt * particle.dspin_dt.x;
+                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + _dt * particle.dspin_dt.y;
+                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + _dt * particle.dspin_dt.z;
+            } else {
+                particle.spin.x = particle.spin.x + _dt * particle.dspin_dt.x;
+                particle.spin.y = particle.spin.y + _dt * particle.dspin_dt.y;
+                particle.spin.z = particle.spin.z + _dt * particle.dspin_dt.z;
+            }
+            if particle.wind_factor != 0. {
+                // TODO: Verify wind factor
+                particle.spin.x += _dt * particle.wind_factor * particle.spin.x;
+                particle.spin.y += _dt * particle.wind_factor * particle.spin.y;
+                particle.spin.z += _dt * particle.wind_factor * particle.spin.z;
+            }
         }
     }
 

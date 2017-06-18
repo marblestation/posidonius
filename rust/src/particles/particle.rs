@@ -41,7 +41,12 @@ pub struct Particle {
     pub spin: Axes,
     pub dspin_dt: Axes,
     pub moment_of_inertia_ratio: f64, // Spin related
+    //
+    pub wind_k_factor: f64,
+    pub wind_rotation_saturation: f64,
+    pub wind_rotation_saturation_2: f64,
     pub wind_factor: f64, // Spin related
+    //
     pub tidal_acceleration: Axes,
     // Rotational flattening
     pub acceleration_induced_by_rotational_flattering: Axes,

@@ -19,6 +19,7 @@ class Universe(object):
         self._data['particles_evolvers'] = []
         self._data['n_particles'] = 0
         self._data['evolving_particles_exist'] = False
+        self._data['wind_effects_exist'] = False
         self._data['star_planet_dependent_dissipation_factors'] = {}
         self._data['temporary_copied_particles_radiuses'] = []
         self._data['temporary_copied_particles_masses'] = []
@@ -42,7 +43,7 @@ class Universe(object):
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
         self._data['n_particles'] -= 1 # Compensate the addition from the previous add_particle call
 
-    def add_particle(self, mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type):
+    def add_particle(self, mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
         if self._data['n_particles'] > MAX_PARTICLES:
             raise Exception("Maximum number of particles reached: {}".format(MAX_PARTICLES))
         particle = {}
@@ -80,6 +81,12 @@ class Universe(object):
         particle['orthogonal_component_of_the_tidal_force_due_to_planetary_tide'] = 0.0
         particle['general_relativity_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['radial_velocity'] = 0.0
+        particle['wind_k_factor'] = wind_k_factor
+        particle['wind_rotation_saturation'] = wind_rotation_saturation
+        particle['wind_rotation_saturation_2'] = particle['wind_rotation_saturation']*particle['wind_rotation_saturation']
+        if wind_k_factor != 0.:
+            self._data['wind_effects_exist'] = True;
+
         particle['moment_of_inertia_ratio'] = 1.0
         particle['mass_g'] = particle['mass'] * K2
         particle['dspin_dt'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
@@ -105,7 +112,7 @@ class Universe(object):
         self._data['temporary_copied_particle_positions'].append({u'x': 0.0, u'y': 0.0, u'z': 0.0})
         self._data['n_particles'] += 1
 
-    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity,  evolution_type):
+    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity,  evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
         rotation_period = None
         love_number = None
         if type(evolution_type) == NonEvolving:
@@ -168,10 +175,16 @@ class Universe(object):
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 1.94e-1 # Brown dwarf
 
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
 
 
-    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type):
+    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
+        """
+        Wind parametrisation (Bouvier 1997):
+
+        wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
+        wind_rotation_saturation = 14. * TWO_PI/25.0 # = 1.7592918860102842, wsat in units of the spin of the Sun today
+        """
         if type(evolution_type) not in (BolmontMathis2016, Leconte2011, Baraffe2015):
             raise Exception("Evolution type should be BolmontMathis2016 LeconteChabrier2013 or Baraffe2015!")
 
@@ -185,13 +198,14 @@ class Universe(object):
         # Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 4.992*3.845764e-2 # -66+64
 
+
         radius_factor = 1.
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 5.9e-2 # Sun
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
 
 
-    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type):
+    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
         if type(evolution_type) not in (Baraffe1998, NonEvolving) or mass != 0.10:
             raise Exception("Evolution type should be Baraffe1998 (mass = 0.10) or NonEvolving!")
 
@@ -210,7 +224,7 @@ class Universe(object):
         radius_factor = 0.845649342247916
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 2.0e-1 # M-dwarf
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
 
 
     def add_jupiter_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
