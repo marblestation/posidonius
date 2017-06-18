@@ -194,6 +194,7 @@ class Universe(object):
         obliquity = 0.
         spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
 
+        love_number = 0.03
         fluid_love_number = love_number
         # Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 4.992*3.845764e-2 # -66+64
