@@ -15,8 +15,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     filename = args.historic_snapshot_filename
     n_particles, data = read_history(filename)
-    star_data, planets_data, planets_keys = filter_history(n_particles, data)
+    star_data, planets_data, planets_keys = filter_history(n_particles, data, discard_first_hundred_years=True)
     star_mass = star_data['mass'][0]
+
+    ### Select one every two data points
+    #one_every_two = np.arange(len(star_data)) % 2 == 1
+    #star_data = star_data[one_every_two]
+    #for key in planets_keys:
+        #planets_data[key] = planets_data[key][one_every_two]
 
     #-------------------------------------------------------------------------------
     # Main

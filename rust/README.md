@@ -3,7 +3,7 @@
 
 ```bash
 cargo build --release
-cargo install
+cargo install --force
 ```
 
 # Prepare initial snapshots

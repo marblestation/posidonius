@@ -5,7 +5,7 @@ from constants import *
 class EvolutionType(object):
     def __init__(self, variant, mass=None):
         self._data = {}
-        if variant in ("BolmontMathis2016", "Baraffe2015", "Leconte2011", "Baraffe1998",):
+        if variant in ("BolmontMathis2016", "Baraffe2015", "Leconte2011", "Baraffe1998", "GalletBolmont2017"):
             self._data['fields'] = [float(mass)]
             self._data['variant'] = variant
         elif variant in ("LeconteChabrier2013", "NonEvolving"):
@@ -13,6 +13,8 @@ class EvolutionType(object):
         else:
             raise Exception("Unknown variant '{}'".format(variant))
 
+        if variant == "GalletBolmont2017":
+            print("WARNING: Bodies with GalletBolmont2017 evolution will ignore initial radius and dissipation factor.")
         if variant == "BolmontMathis2016":
             print("WARNING: Bodies with BolmontMathis2016 evolution will ignore initial radius and dissipation factor.")
         elif variant == "Baraffe2015":
@@ -266,6 +268,54 @@ class BolmontMathis2016(EvolutionType):
         time = data[:,0] * 365.25 - initial_time
         radius = data[:,1] * R_SUN
         inverse_tidal_q_factor = data[:,2]
+
+        evolver = {}
+        evolver['left_index'] = 0
+        evolver['evolution_type'] = self.get()
+        evolver['love_number'] = []
+        evolver['radius'] = radius.tolist()
+        evolver['time'] = time.tolist()
+        evolver['inverse_tidal_q_factor'] = inverse_tidal_q_factor.tolist()
+        evolver['radius_of_gyration_2'] = []
+        return evolver
+
+
+class GalletBolmont2017(EvolutionType):
+    """
+    Evolving dissipation
+    """
+    def __init__(self, mass):
+        super(GalletBolmont2017, self).__init__("GalletBolmont2017", mass=mass)
+
+    def get_evolver(self, initial_time):
+        mass = self._data['fields'][0]
+        if mass <= 0.301 and mass >= 0.299:
+            filename = "input/Gallet_Bolmont_2017/M_03_Z_0134.dat"
+        elif mass <= 0.401 and mass >= 0.399:
+            filename = "input/Gallet_Bolmont_2017/M_04_Z_0134.dat"
+        elif mass <= 0.601 and mass >= 0.599:
+            filename = "input/Gallet_Bolmont_2017/M_06_Z_0134.dat"
+        elif mass <= 0.701 and mass >= 0.699:
+            filename = "input/Gallet_Bolmont_2017/M_07_Z_0134.dat"
+        elif mass <= 0.801 and mass >= 0.799:
+            filename = "input/Gallet_Bolmont_2017/M_08_Z_0134.dat"
+        elif mass <= 0.901 and mass >= 0.899:
+            filename = "input/Gallet_Bolmont_2017/M_09_Z_0134.dat"
+        elif mass <= 1.001 and mass >= 0.999:
+            filename = "input/Gallet_Bolmont_2017/M_10_Z_0134.dat"
+        elif mass <= 1.101 and mass >= 1.099:
+            filename = "input/Gallet_Bolmont_2017/M_11_Z_0134.dat"
+        elif mass <= 1.201 and mass >= 1.199:
+            filename = "input/Gallet_Bolmont_2017/M_12_Z_0134.dat"
+        elif mass <= 1.401 and mass >= 1.399:
+            filename = "input/Gallet_Bolmont_2017/M_14_Z_0134.dat"
+        else:
+            raise Exception("The evolution type Gallet_Bolmont_2017 does not support a mass of {} Msun!".format(mass))
+
+        data = np.loadtxt(BASE_DIR+filename)
+        time = np.power(10., data[:,0]) * 365.25 - initial_time
+        radius = data[:,3] * R_SUN
+        inverse_tidal_q_factor = 1./np.power(10., data[:,10])
 
         evolver = {}
         evolver['left_index'] = 0

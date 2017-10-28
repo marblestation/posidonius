@@ -37,6 +37,7 @@ if __name__ == "__main__":
     star_rotation_period = 70.0 # hours
     star_angular_frequency = posidonius.constants.TWO_PI/(star_rotation_period/24.) # days^-1
     star_spin = posidonius.Axes(0., 0., star_angular_frequency)
+    #star_evolution_type = posidonius.GalletBolmont2017(star_mass) # mass = 0.30 .. 1.40
     #star_evolution_type = posidonius.BolmontMathis2016(star_mass) # mass = 0.40 .. 1.40
     #star_evolution_type = posidonius.Baraffe2015(star_mass) # mass = 0.01 .. 1.40
     #star_evolution_type = posidonius.Leconte2011(star_mass) # mass = 0.01 .. 0.08

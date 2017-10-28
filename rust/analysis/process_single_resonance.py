@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     filename = args.historic_snapshot_filename
     n_particles, data = read_history(filename)
-    star_data, planets_data, planets_keys = filter_history(n_particles, data)
+    star_data, planets_data, planets_keys = filter_history(n_particles, data, discard_first_hundred_years=False)
 
     planet_names = planets_keys
     nb_planets = len(planet_names)

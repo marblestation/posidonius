@@ -46,7 +46,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     filename = args.historic_snapshot_filename
     n_particles, data = read_history(filename)
-    star_data, planets_data, planets_keys = filter_history(n_particles, data)
+    star_data, planets_data, planets_keys = filter_history(n_particles, data, discard_first_hundred_years=False)
 
     output_figure_filename = os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + "_timed_resonances.png"
 

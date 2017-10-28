@@ -64,10 +64,11 @@ def read_history(filename):
     data = data.to_records()
     return n_particles, data
 
-def filter_history(n_particles, data):
+def filter_history(n_particles, data, discard_first_hundred_years=False):
     # Ignore first 100 years
     data['current_time'] /= 362.25 # From days to years
-    data = data[data['current_time'] >= 100.]
+    if discard_first_hundred_years:
+        data = data[data['current_time'] >= 100.]
 
     star = data['particle'] == 0
     star_data = data[star]

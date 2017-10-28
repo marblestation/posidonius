@@ -203,7 +203,7 @@ impl Universe {
     fn calculate_orthogonal_components(&mut self) {
         let central_body = true;
 
-        self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if BolmontMathis2016
+        self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if BolmontMathis2016/GalletBolmont2017
         self.calculate_scalar_product_of_vector_position_with_spin(); // Needed by tides and rotational flattening
         
         if self.consider_tides {
@@ -719,7 +719,7 @@ impl Universe {
     fn calculate_planet_dependent_dissipation_factors(&mut self) {
         let star_index = 0; // index
         match self.particles[star_index].evolution_type {
-            EvolutionType::BolmontMathis2016(_) => {
+            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) => {
                 if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
                     for particle in particles.iter() {
                         let frequency = (particle.velocity.x - star.spin.y*particle.position.z + star.spin.z*particle.position.y).powi(2)
@@ -743,7 +743,7 @@ impl Universe {
 
     pub fn planet_dependent_dissipation_factor(star_planet_dependent_dissipation_factors: &HashMap<usize, f64>,  id: &usize, evolution_type: EvolutionType, scaled_dissipation_factor: f64) -> f64 {
         match evolution_type {
-            EvolutionType::BolmontMathis2016(_) => {
+            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) => {
                 match star_planet_dependent_dissipation_factors.get(id) {
                     Some(&value) => value,
                     _ => scaled_dissipation_factor // This should not happen
@@ -834,7 +834,7 @@ impl Universe {
             // Lag angle
             ////////////////////////////////////////////////////////////////////
             particle.lag_angle = match evolver.evolution_type {
-                EvolutionType::BolmontMathis2016(_) => {
+                EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) => {
                         let inverse_tidal_q_factor = evolver.inverse_tidal_q_factor(current_time, 0.);
                         let epsilon_squared = particle.norm_spin_vector_2/SUN_DYN_FREQ;
                         // Normal formula = 3.d0*epsilon_squared*Q_str_inv/(4.d0*k2s)

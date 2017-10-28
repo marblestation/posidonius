@@ -2,6 +2,7 @@ use super::super::tools::{interpolate_b_spline};
 
 #[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub enum EvolutionType {
+    GalletBolmont2017(f64), // SolarLike EvolvingDissipation Evolving dissipation
     BolmontMathis2016(f64), // SolarLike EvolvingDissipation Evolving dissipation
     Baraffe2015(f64), // NEW
     Leconte2011(f64), // BrownDwarf
@@ -98,7 +99,7 @@ impl Evolver {
         // Excentric orbits needs more than one frequency to be described and it will be
         // included in future versions of this code.
         let (new_inverse_tidal_q_factor, left_index) = match self.evolution_type {
-            EvolutionType::BolmontMathis2016(_) => {
+            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) => {
                 interpolate_b_spline(&self.time[self.idx()..], &self.inverse_tidal_q_factor[self.idx()..], current_time)
             },
             _ => (current_inverse_tidal_q_factor, 0),

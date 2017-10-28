@@ -10,8 +10,8 @@ class Integrator(object):
         self._data['last_spin'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0}]*MAX_PARTICLES # For spin integration with the midpoint method
         self._data['current_time'] = 0.0
         self._data['current_iteration'] = 0
-        self._data['recovery_snapshot_period'] = 3652500.0
-        self._data['historic_snapshot_period'] = 36525.0
+        self._data['recovery_snapshot_period'] = float(recovery_snapshot_period)
+        self._data['historic_snapshot_period'] = float(historic_snapshot_period)
         self._data['last_recovery_snapshot_time'] = -1.0
         self._data['last_historic_snapshot_time'] = -1.0
         self._data['n_historic_snapshots'] = 0

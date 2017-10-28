@@ -1,7 +1,7 @@
 from axes import Axes
 from integrator import WHFast, Ias15, LeapFrog
 from constants import *
-from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016
+from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
 from tools import calculate_spin
 
 class Universe(object):
@@ -185,8 +185,8 @@ class Universe(object):
         wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
         wind_rotation_saturation = 14. * TWO_PI/25.0 # = 1.7592918860102842, wsat in units of the spin of the Sun today
         """
-        if type(evolution_type) not in (BolmontMathis2016, Leconte2011, Baraffe2015):
-            raise Exception("Evolution type should be BolmontMathis2016 LeconteChabrier2013 or Baraffe2015!")
+        if type(evolution_type) not in (BolmontMathis2016, Leconte2011, Baraffe2015, GalletBolmont2017):
+            raise Exception("Evolution type should be BolmontMathis2016 LeconteChabrier2013 Baraffe2015 or GalletBolmont2017!")
 
         # Typical rotation period: 24 hours
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
