@@ -1,9 +1,32 @@
 
 # Build and install
 
+Build and install posidonius executable (it will be copied into `$HOME/.cargo/bin/`):
+
 ```bash
 cargo build --release
 cargo install --force
+```
+
+Install the Posidonius python package to generate simulation cases:
+
+```bash
+cd generator/
+python setup.py install --user
+cd ..
+```
+
+The `--user` flag will install the package in your `$HOME/.local/lib/python2.7/site-packages/`.
+
+Both tools can be uninstalled by executing:
+
+```
+cargo uninstall posidonius
+cd generator/
+python setup.py install --user --record files.txt
+cat files.txt | xargs rm -rf
+rm -rf build/ posidonius.egg-info/ dist/ files.txt
+cd ..
 ```
 
 # Prepare initial snapshots

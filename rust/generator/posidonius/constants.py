@@ -2,7 +2,11 @@ import numpy as np
 import os
 
 MAX_PARTICLES = 10
-BASE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
+BASE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../"
+if not os.path.exists(BASE_DIR+"/input/"):
+    BASE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
+    if not os.path.exists(BASE_DIR+"/input/"):
+        raise Exception("Input directory with stellar models not found!")
 
 K = 0.01720209895 # Gaussian constant
 K2 = K*K
