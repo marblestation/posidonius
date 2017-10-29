@@ -1,5 +1,6 @@
 import os
 import glob
+import shutil
 from setuptools import setup
 
 def read(fname):
@@ -32,3 +33,10 @@ setup(
         'matplotlib',
     ],
 )
+
+for dirname in ["build/", "dist/", "posidonius.egg-info/"]:
+    print("Removing {}".format(dirname))
+    try:
+        shutil.rmtree(dirname)
+    except OSError:
+        pass

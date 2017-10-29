@@ -17,8 +17,9 @@ cargo install --force
 Install the Posidonius python package to generate simulation cases:
 
 ```bash
+wget http://obswww.unige.ch/~sblancoc/data/posidonius/input.tar.gz
+tar -zxvf input.tar.gz && rm -f input.tar.gz
 python setup.py install --user
-rm -rf build/ posidonius.egg-info/ dist/
 ```
 
 The `--user` flag will install the package in your `$HOME/.local/lib/python2.7/site-packages/`.
@@ -28,7 +29,7 @@ Both tools can be uninstalled by executing:
 ```
 cargo uninstall posidonius
 python setup.py install --user --record files.txt
-cat files.txt | xargs rm -rf && rm -rf build/ posidonius.egg-info/ dist/ files.txt
+cat files.txt | xargs rm -rf && rm -f files.txt
 ```
 
 ## Usage
@@ -71,27 +72,27 @@ posidonius resume target/example.bin target/example_history.bin
 While a simulation is in progress or when it has ended, the historic snapshot file can be interpreted to generate a plain text file and a plot with the history of the simulation:
 
 ```bash
-python analysis/process.py target/case3_history.bin
-python analysis/process.py target/case4_history.bin
-python analysis/process.py target/case7_history.bin
-python analysis/process.py target/example_history.bin
+python scripts/explore.py target/case3_history.bin
+python scripts/explore.py target/case4_history.bin
+python scripts/explore.py target/case7_history.bin
+python scripts/explore.py target/example_history.bin
 ```
 
 To explore what possible resonances might be present in the system:
 
 ```
-python analysis/process_timed_resonances.py target/case3_history.bin
-python analysis/process_timed_resonances.py target/case4_history.bin
-python analysis/process_timed_resonances.py target/case7_history.bin
-python analysis/process_timed_resonances.py target/example_history.bin
+python scripts/explore_timed_resonances.py target/case3_history.bin
+python scripts/explore_timed_resonances.py target/case4_history.bin
+python scripts/explore_timed_resonances.py target/case7_history.bin
+python scripts/explore_timed_resonances.py target/example_history.bin
 ```
 
 Finally, to study a given resonance (e.g., 3:2) between planet one and two:
 
 ```
-python analysis/process_single_resonance.py target/case3_history.bin 1 2 3 2
-python analysis/process_single_resonance.py target/case4_history.bin 1 2 3 2
-python analysis/process_single_resonance.py target/case7_history.bin 1 2 3 2
-python analysis/process_single_resonance.py target/example_history.bin 1 2 3 2
+python scripts/explore_single_resonance.py target/case3_history.bin 1 2 3 2
+python scripts/explore_single_resonance.py target/case4_history.bin 1 2 3 2
+python scripts/explore_single_resonance.py target/case7_history.bin 1 2 3 2
+python scripts/explore_single_resonance.py target/example_history.bin 1 2 3 2
 ```
 
