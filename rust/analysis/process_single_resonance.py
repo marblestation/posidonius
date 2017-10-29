@@ -1,5 +1,5 @@
 """
-Based on a script developed by Autiwa <autiwa@gmail.com>
+Based on a script developed by Dr. Christophe Cossou
 """
 import sys
 import os
@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter, ScalarFormatter
 import struct
 import argparse
-from common import *
+import posidonius
 
 
 ANGLE_MIN = - 90.
@@ -35,8 +35,8 @@ if __name__ == "__main__":
 
 
     filename = args.historic_snapshot_filename
-    n_particles, data = read_history(filename)
-    star_data, planets_data, planets_keys = filter_history(n_particles, data, discard_first_hundred_years=False)
+    n_particles, data = posidonius.analysis.history.read(filename)
+    star_data, planets_data, planets_keys = posidonius.analysis.history.classify(n_particles, data, discard_first_hundred_years=False)
 
     planet_names = planets_keys
     nb_planets = len(planet_names)
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # M: Mean anomaly (degrees)
     # q: periastron or perihelion (AU)
     # Q: apastron or aphelion (AU)
-    t, a, e, g, n, M, q, Q = calculate_resonance_data(planets_keys, planets_data)
+    t, a, e, g, n, M, q, Q = posidonius.analysis.resonances.calculate_resonance_data(planets_keys, planets_data)
 
     inner_planet = args.inner_planet
     outer_planet = args.outer_planet
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # environment in order to plot ALL the resonant angles and have x and
     # y numbers as close on from another as possible. There are q+1
     # resonant angles, the period ratio and w1 - w2, i.e q+3 plots
-    (nb_lines, nb_rows) = get_subplot_shape(q+3)
+    (nb_lines, nb_rows) = posidonius.analysis.resonances.get_subplot_shape(q+3)
 
     # on trace les plots
     myxfmt = ScalarFormatter(useOffset=True)

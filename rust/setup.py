@@ -14,8 +14,8 @@ setup(
     license = "GNU Affero General Public License",
     keywords = "N-Body simulations exoplanets tides",
     url = "http://www.blancocuaresma.com/s/",
-    packages=['posidonius', ],
-    data_files=[(basedir[3:], [filename for filename in glob.iglob('{}/*.*'.format(basedir))]) for basedir in glob.iglob("../input/*")],
+    packages=['posidonius', 'posidonius.analysis' ],
+    data_files=[(basedir, [filename for filename in glob.iglob('{}/*.*'.format(basedir))]) for basedir in glob.iglob("input/*")],
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -28,5 +28,7 @@ setup(
     ],
     install_requires=[
         'numpy',
+        'pandas',
+        'matplotlib',
     ],
 )

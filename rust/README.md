@@ -1,5 +1,11 @@
+# Posidonius
 
-# Build and install
+Posidonius is the successor of Mercury-T (Bolmont et al. 2015). It uses a symplectic integrator (WHFast, Rein & Tamayo 2015) to compute the evolution of positions and velocities, which is also combined with a midpoint integrator to calculate the spin evolution in a consistent way. As its predecessor, Posidonius takes into account tidal forces, rotational-flattening effects and general relativity corrections. It also includes different evolution models for FGKML stars and gaseous planets.
+
+The N-Body code is written in Rust and a python package is provided to easily define simulation cases in JSON format, which is readable by the Posidonius integrator.
+
+
+## Installation
 
 Build and install posidonius executable (it will be copied into `$HOME/.cargo/bin/`):
 
@@ -11,9 +17,8 @@ cargo install --force
 Install the Posidonius python package to generate simulation cases:
 
 ```bash
-cd generator/
 python setup.py install --user
-cd ..
+rm -rf build/ posidonius.egg-info/ dist/
 ```
 
 The `--user` flag will install the package in your `$HOME/.local/lib/python2.7/site-packages/`.
@@ -22,27 +27,26 @@ Both tools can be uninstalled by executing:
 
 ```
 cargo uninstall posidonius
-cd generator/
 python setup.py install --user --record files.txt
-cat files.txt | xargs rm -rf
-rm -rf build/ posidonius.egg-info/ dist/ files.txt
-cd ..
+cat files.txt | xargs rm -rf && rm -rf build/ posidonius.egg-info/ dist/ files.txt
 ```
 
-# Prepare initial snapshots
+## Usage
 
-Using the generator, the user can design his/her own simulation with a python script. The generator will create a json file with the simulation description, which can be read later on by Posidonius to start it.
+### Create a JSON case
+
+Using the generator, the user can design his/her own simulation with a python script. The generator will create a JSON file with the simulation description, which can be read later on by Posidonius to start it.
 
 ```bash
-python generator/case3.py target/case3.json
-python generator/case4.py target/case4.json
-python generator/case7.py target/case7.json
-python generator/example.py target/example.json
+python cases/case3.py target/case3.json
+python cases/case4.py target/case4.json
+python cases/case7.py target/case7.json
+python cases/example.py target/example.json
 ```
 
-# Start simulation from initial snapshot
+### Start the simulation of a JSON case
 
-A simulation can be started using its json file (describing the simulation). The recovery and historic snapshot file names should be specified. The former will contain the information needed to resume interrupted simulations, while he later stores the evolution of the simulation over the years.
+A simulation can be started using its JSON file (describing the simulation). The recovery and historic snapshot file names should be specified. The former will contain the information needed to resume interrupted simulations, while he later stores the evolution of the simulation over the years.
 
 ```bash
 posidonius start target/case3.json target/case3.bin target/case3_history.bin
@@ -51,7 +55,7 @@ posidonius start target/case7.json target/case7.bin target/case7_history.bin
 posidonius start target/example.json target/example.bin target/example_history.bin
 ```
 
-# Resume interrupted simulations
+### Resume an interrupted simulation
 
 Interrupted simulations can be restored using the recovery snapshot file. The historic snapshot filename has to be specified also to continue storing the history of the simulation.
 
@@ -62,7 +66,7 @@ posidonius resume target/case7.bin target/case7_history.bin
 posidonius resume target/example.bin target/example_history.bin
 ```
 
-# Analyse simulations
+### Analyse a simulation
 
 While a simulation is in progress or when it has ended, the historic snapshot file can be interpreted to generate a plain text file and a plot with the history of the simulation:
 

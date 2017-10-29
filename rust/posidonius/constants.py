@@ -10,11 +10,13 @@ if not os.path.exists(BASE_DIR+"/input/"):
 
 K = 0.01720209895 # Gaussian constant
 K2 = K*K
-G  = K2  # Gravitational constant with Mercury units
+G_MERCURY  = K2  # Gravitational constant with Mercury units
 G_SI = 6.6742367e-11  # m^3.kg^-1.s^-2 (S.I. units)
+G = G_MERCURY
 PI = np.pi
 TWO_PI = PI*2.
 DEG2RAD = PI / 180. # conversion factor from degrees to radians
+RAD2DEG = 180./PI
 
 R_SUN = 4.67920694e-3 # AU
 R_EARTH = 4.25874677e-5 # AU
@@ -25,3 +27,11 @@ M_SUN = 1.98892e30 # Kg
 
 M2EARTH = 1.9891e6/5.9794 # Factor for mass-radius relation (valid only for earth type planets)
 M2AU = 6.684587153547e-12 # 1 meter in AU
+
+#-------------------------------------------------------------------------------
+# Constants in S.I. units
+#-------------------------------------------------------------------------------
+DAY       =  24*3600.                 # s
+YEAR        =  365.25*24*3600           # s
+HOUR        =  3600.                    # s
+

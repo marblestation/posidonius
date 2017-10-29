@@ -5,8 +5,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
-from common import *
-
+import posidonius
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -14,8 +13,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     filename = args.historic_snapshot_filename
-    n_particles, data = read_history(filename)
-    star_data, planets_data, planets_keys = filter_history(n_particles, data, discard_first_hundred_years=True)
+    n_particles, data = posidonius.analysis.history.read(filename)
+    star_data, planets_data, planets_keys = posidonius.analysis.history.classify(n_particles, data, discard_first_hundred_years=True)
     star_mass = star_data['mass'][0]
 
     ### Select one every two data points
@@ -88,14 +87,14 @@ if __name__ == "__main__":
 
         planet_mass = planet_data['mass'][0]
         norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
-        corrotation_radius = ((G*Msun*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/day)**(-2./3.))/AU
+        corrotation_radius = ((posidonius.constants.G_SI*posidonius.constants.M_SUN*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/posidonius.constants.DAY)**(-2./3.))/posidonius.constants.AU
         planet_computed_data['corrotation_radius'] = corrotation_radius
 
         e = planet_data['eccentricity']
         alpha = (1.+15./2.*e**2+45./8.*e**4+5./16.*e**6)*1./(1.+3.*e**2+3./8.*e**4)*1./(1.-e**2)**1.5
-        pseudo_rot = alpha * np.sqrt(G*Msun*(star_mass+planet_mass))
-        #pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * hr) # Hours
-        pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * hr*24.) # Days
+        pseudo_rot = alpha * np.sqrt(posidonius.constants.G_SI*posidonius.constants.M_SUN*(star_mass+planet_mass))
+        #pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * posidonius.constants.HOUR) # Hours
+        pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*posidonius.constants.AU)**(-3./2.) * posidonius.constants.DAY) # Days
         planet_computed_data['pseudo_synchronization_period'] = pseudo_synchronization_period
 
 
@@ -103,27 +102,27 @@ if __name__ == "__main__":
         # Gravitationl energy lost of the system due to dissipation
         # Masses in kg
         k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
-        gravitational_energy_lost = energydot(planet_data['semi-major_axis']*AU, \
+        gravitational_energy_lost = posidonius.analysis.computation.energydot(planet_data['semi-major_axis']*posidonius.constants.AU, \
                                                 planet_data['eccentricity'], \
-                                                planet_norm_spin / day, \
+                                                planet_norm_spin / posidonius.constants.DAY, \
                                                 planet_obliquity * np.pi/180.0, \
-                                                G, \
-                                                planet_data['mass'] * Msun, \
-                                                star_mass * Msun, \
-                                                planet_data['radius'] * AU, \
-                                                k2pdelta * day)
+                                                posidonius.constants.G_SI, \
+                                                planet_data['mass'] * posidonius.constants.M_SUN, \
+                                                star_mass * posidonius.constants.M_SUN, \
+                                                planet_data['radius'] * posidonius.constants.AU, \
+                                                k2pdelta * posidonius.constants.DAY)
         planet_computed_data['gravitational_energy_lost'] = gravitational_energy_lost
 
         # The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
         # If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
-        mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
+        mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * posidonius.constants.AU, 2))
         planet_computed_data['mean_tidal_flux'] = mean_tidal_flux
 
 
         denergy_dt = planet_data['denergy_dt'] * 6.90125e37 # conversation from Msun.AU^2.day^-3 to W
         planet_computed_data['denergy_dt'] = denergy_dt
 
-        inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * AU, 2))
+        inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * posidonius.constants.AU, 2))
         planet_computed_data['inst_tidal_flux'] = inst_tidal_flux
 
         ################################################################################
@@ -151,18 +150,18 @@ if __name__ == "__main__":
         #G         =  6.6742367e-11            # m^3.kg^-1.s^-2
         #AU        =  1.49598e11               # m
         #Msun      =  1.98892e30               # kg
-        planet_orbital_period = 2*np.pi*np.sqrt(np.power(planet_data['semi-major_axis']*AU, 3)/(G*Msun*(star_data['mass']+planet_data['mass'])))
-        planet_computed_data['orbital_period'] = planet_orbital_period/(hr*24) # days
+        planet_orbital_period = 2*np.pi*np.sqrt(np.power(planet_data['semi-major_axis']*posidonius.constants.AU, 3)/(posidonius.constants.G_SI*posidonius.constants.M_SUN*(star_data['mass']+planet_data['mass'])))
+        planet_computed_data['orbital_period'] = planet_orbital_period/(posidonius.constants.DAY) # days
         ################################################################################
 
 
         ################################################################################
         ## Sum over all the planets values:
-        planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*Msun) * np.power(planet_data['radius']*AU, 2) * (planet_norm_spin/day)
+        planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*posidonius.constants.M_SUN) * np.power(planet_data['radius']*posidonius.constants.AU, 2) * (planet_norm_spin/posidonius.constants.DAY)
         total_planets_angular_momentum += planet_angular_momentum # If more than one planet is present, all of them should be added
 
         # Sum on number of planets to have total orbital momentum
-        planet_orbital_angular_momentum = (star_mass*Msun) * (planet_data['mass']*Msun) / ((star_mass*Msun) + (planet_data['mass']*Msun)) * planet_data['orbital_angular_momentum'] * ((AU*AU)/day) # kg.m^2.s-1
+        planet_orbital_angular_momentum = (star_mass*posidonius.constants.M_SUN) * (planet_data['mass']*posidonius.constants.M_SUN) / ((star_mass*posidonius.constants.M_SUN) + (planet_data['mass']*posidonius.constants.M_SUN)) * planet_data['orbital_angular_momentum'] * ((posidonius.constants.AU*posidonius.constants.AU)/posidonius.constants.DAY) # kg.m^2.s-1
         total_planets_orbital_angular_momentum += planet_orbital_angular_momentum # If more than one planet is present, all of them should be added
         ################################################################################
 
@@ -174,7 +173,7 @@ if __name__ == "__main__":
 
 
     # \Delta L / L
-    star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*Msun) * np.power(star_data['radius']*AU, 2) * (star_norm_spin/day)
+    star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*posidonius.constants.M_SUN) * np.power(star_data['radius']*posidonius.constants.AU, 2) * (star_norm_spin/posidonius.constants.DAY)
     initial_total_angular_momentum = total_planets_orbital_angular_momentum[0] + total_planets_angular_momentum[0] + star_angular_momentum[0]
     conservation_of_angular_momentum = np.abs(((total_planets_orbital_angular_momentum + total_planets_angular_momentum + star_angular_momentum) - initial_total_angular_momentum) / initial_total_angular_momentum)
     conservation_of_angular_momentum[0] = conservation_of_angular_momentum[1]

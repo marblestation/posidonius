@@ -1,118 +1,13 @@
-import os
-import pandas as pd
+"""
+Based on a script developed by Dr. Christophe Cossou
+"""
 import numpy as np
 from fractions import Fraction
-import struct
-
-
-#-------------------------------------------------------------------------------
-# Constants in S.I. units
-#-------------------------------------------------------------------------------
-Msun      =  1.98892e30               # kg
-Rsun      =  6.96e8                   # m
-AU        =  1.49598e11               # m
-day       =  24*3600.                 # s
-Rearth    =  6371.0e3                 # m
-
-G         =  6.6742367e-11            # m^3.kg^-1.s^-2
-
-yr        =  365.25*24*3600           # s
-hr        =  3600.                    # s
-
-Mjup      =  9.5511e-4 * Msun         # kg
-Mearth    =  3.e-6 * Msun             # kg
-Rjup      =  69173.e3                 # m
-
-RAD2DEG = 180./np.pi
-
-
-
-#-------------------------------------------------------------------------------
-# Functions
-#-------------------------------------------------------------------------------
-
-def read_history(filename):
-    f = open(filename, "rb")
-    # (np.floor(np.log10(np.max((100., 10.)))) - 2.)*10.
-
-    if not os.path.exists(filename):
-        raise Exception("File does not exists!")
-
-    fields = ('current_time', 'time_step', 'particle', 'position_x', 'position_y', 'position_z', 'spin_x', 'spin_y', 'spin_z', 'velocity_x', 'velocity_y', 'velocity_z', 'semi-major_axis', 'perihelion_distance', 'eccentricity', 'inclination', 'longitude_of_perihelion', 'longitude_of_ascending_node', 'mean_anomaly', 'orbital_angular_momentum_x', 'orbital_angular_momentum_y', 'orbital_angular_momentum_z', 'orbital_angular_momentum', 'denergy_dt', 'total_energy', 'total_angular_momentum', 'mass', 'radius', 'radius_of_gyration_2', 'scaled_dissipation_factor', 'love_number', 'lag_angle')
-
-    data = []
-    while True:
-        try:
-            row = f.read(8+8+4+8*(len(fields)-3))
-            vrow = struct.unpack('> d d i' + ' d'*(len(fields)-3), row)
-        except:
-            break
-        else:
-            data.append(vrow)
-
-    data = pd.DataFrame(data, columns=fields, index=np.arange(len(data)))
-    if len(data) == 0:
-        raise Exception("Empty file!")
-
-    # Force to always have N lines per snapshot corresponding to N particles
-    n_particles = int(data['particle'].max())+1
-    outer_particles = n_particles-1
-    last_particle = int(data.iloc[-1]['particle'])
-    excess = (n_particles - (outer_particles - last_particle)) % n_particles
-    if excess > 0:
-        data = data[:-1*excess]
-    data = data.to_records()
-    return n_particles, data
-
-def filter_history(n_particles, data, discard_first_hundred_years=False):
-    # Ignore first 100 years
-    data['current_time'] /= 362.25 # From days to years
-    if discard_first_hundred_years:
-        data = data[data['current_time'] >= 100.]
-
-    star = data['particle'] == 0
-    star_data = data[star]
-
-    planets_data = {}
-    planets_keys = [] # To ensure the order
-    for i in xrange(n_particles-1):
-        planets_data["{}".format(i+1)] = data[data['particle'] == i+1]
-        planets_keys.append("{}".format(i+1))
-
-    return star_data, planets_data, planets_keys
-
-#-------------------------------------------------------------------------------
-# Main process
-#-------------------------------------------------------------------------------
-# The 2 eccentricity dependant factors in the equation in a
-def Na1(e):
-    return (1.0+31.0/2.0*(e*e)+255.0/8.0*np.power(e, 4) \
-            + 185.0/16.0* np.power(e, 6) + 25.0/64.0* np.power(e,8)) / np.power((1.0- (e*e)), (15.0/2.0))
-
-def Na2(e):
-    return (1.+15./2.0*(e*e) + 45./8.0 * np.power(e, 4) + 5./16.0* np.power(e, 6)) / np.power((1.0- (e*e)), 6)
-
-def No2(e):
-    return (1.0 + 3.0 * (e*e) + 3.0/8.0 * np.power(e, 4)) / np.power((1.0- (e*e)), 5)
-
-def energydot(a, e, rotp, oblp, G, Mp, Ms, Rp, k2deltat_plan):
-    return 2. * Kplan(k2deltat_plan, G, Mp, Ms, Rp, a) \
-            * (Na1(e) - 2.0*Na2(e) * np.cos(oblp) * (rotp/(norb(G, Mp, Ms)*np.power(a, -1.5))) \
-            + (1.0 + np.power(np.cos(oblp),2))/2.0 * No2(e) * np.sqrt(1.0-(e*e)) * np.power(rotp/(norb(G, Mp, Ms)* np.power(a, -1.5)), 2))
-
-# Jeremys Ki factor :
-def Kplan(k2deltat_plan, G, Mp, Ms, Rp, a):
-    return 3./2. * k2deltat_plan * (G*(Mp*Mp)/Rp) * np.power(Ms/Mp,2) \
-            * np.power(Rp/a, 6) * np.power(norb(G,Mp,Ms) * np.power(a, -1.5), 2)
-
-# Mean orbital angular velocity without the a dependance         (m^3/2.s-1)
-def norb(G, Mp, Ms):
-    return np.sqrt(G) * np.sqrt(Mp+Ms)
+from posidonius.constants import RAD2DEG
 
 #-------------------------------------------------------------------------------
 # Resonances
 #-------------------------------------------------------------------------------
-
 
 def get_possible_resonances(periodRatio, uncertainty=0.05, denominator_limit=12, numerator_limit=20, sampling=10):
     """
@@ -170,7 +65,7 @@ def get_possible_resonances(periodRatio, uncertainty=0.05, denominator_limit=12,
 
     return resonances
 
-def isResonance(res, g_inner, n_inner, M_inner, g_outer, n_outer, M_outer, nb_points=50, angle_center_value=0, std_threshold=20.):
+def is_resonance(res, g_inner, n_inner, M_inner, g_outer, n_outer, M_outer, nb_points=50, angle_center_value=0, std_threshold=20.):
     """
     Given a resonance as a Fraction object, and g, n M for inner and
     outer planet, the function return if there is the resonance between
