@@ -16,8 +16,10 @@ class EvolutionType(object):
 
         if variant == "GalletBolmont2017":
             print("[WARNING {} UTC] Bodies with GalletBolmont2017 evolution will ignore initial radius and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] GalletBolmont2017 prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         if variant == "BolmontMathis2016":
             print("[WARNING {} UTC] Bodies with BolmontMathis2016 evolution will ignore initial radius and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] BolmontMathis2016 prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "Baraffe2015":
             print("[WARNING {} UTC] Bodies with Baraffe2015 evolution will ignore initial radius and radius of gyration.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "Leconte2011":

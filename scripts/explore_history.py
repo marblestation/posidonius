@@ -6,16 +6,22 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
 import posidonius
+import json
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('start_case_filename', action='store', help='Filename with the initial conditions of the simulation (e.g., universe_integrator.json)')
     parser.add_argument('historic_snapshot_filename', action='store', help='Filename with the historic snapshots of the simulation (e.g., universe_integrator_history.bin)')
 
     args = parser.parse_args()
+
+    universe_integrator_json = json.load(open(args.start_case_filename, "r"))
+
     filename = args.historic_snapshot_filename
     n_particles, data = posidonius.analysis.history.read(filename)
     star_data, planets_data, planets_keys = posidonius.analysis.history.classify(n_particles, data, discard_first_hundred_years=True)
     star_mass = star_data['mass'][0]
+
 
     ### Select one every two data points
     #one_every_two = np.arange(len(star_data)) % 2 == 1
@@ -116,6 +122,8 @@ if __name__ == "__main__":
         # The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
         # If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
         mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * posidonius.constants.AU, 2))
+        dissipation_factor_scale = universe_integrator_json['universe']['particles'][int(key)]['dissipation_factor_scale']
+        mean_tidal_flux *= dissipation_factor_scale
         planet_computed_data['mean_tidal_flux'] = mean_tidal_flux
 
 

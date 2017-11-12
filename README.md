@@ -80,10 +80,10 @@ The flag `--silent` can be added to avoid printing the current year of the simul
 While a simulation is in progress or when it has ended, the historic snapshot file can be interpreted to generate a plain text file and a plot with the history of the simulation:
 
 ```bash
-python scripts/explore_history.py target/case3_history.bin
-python scripts/explore_history.py target/case4_history.bin
-python scripts/explore_history.py target/case7_history.bin
-python scripts/explore_history.py target/example_history.bin
+python scripts/explore_history.py target/case3.json   target/case3_history.bin
+python scripts/explore_history.py target/case4.json   target/case4_history.bin
+python scripts/explore_history.py target/case7.json   target/case7_history.bin
+python scripts/explore_history.py target/example.json target/example_history.bin
 ```
 
 To explore what possible resonances might be present in the system:
