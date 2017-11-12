@@ -1,3 +1,4 @@
+extern crate time;
 use std::collections::HashMap;
 use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2};
 use super::{Evolver, EvolutionType};
@@ -18,7 +19,7 @@ pub struct Universe {
     pub consider_general_relativy: bool,
     star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
     temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
-    temporary_copied_particle_velocities: [Axes; MAX_PARTICLES], // For optimization purposes
+    temporary_copied_particle_velocities: [Axes; MAX_PARTICLES], // For optimization purposes (TODO: Delete and adapt python package)
     temporary_copied_particles_masses: [f64; MAX_PARTICLES], // For optimization purposes
     temporary_copied_particles_radiuses: [f64; MAX_PARTICLES], // For optimization purposes
 }
@@ -30,9 +31,6 @@ impl Universe {
             self.temporary_copied_particle_positions[i].x = particle.position.x;
             self.temporary_copied_particle_positions[i].y = particle.position.y;
             self.temporary_copied_particle_positions[i].z = particle.position.z;
-            self.temporary_copied_particle_velocities[i].x = particle.velocity.x;
-            self.temporary_copied_particle_velocities[i].y = particle.velocity.y;
-            self.temporary_copied_particle_velocities[i].z = particle.velocity.z;
             self.temporary_copied_particles_masses[i] = particle.mass;
             self.temporary_copied_particles_radiuses[i] = particle.radius;
         }
@@ -41,8 +39,7 @@ impl Universe {
 			particle_a.acceleration.x = 0.;
 			particle_a.acceleration.y = 0.;
 			particle_a.acceleration.z = 0.;
-            for (j, (((particle_b_position, particle_b_velocity), particle_b_radius), particle_b_mass)) in self.temporary_copied_particle_positions[..self.n_particles].iter()
-                                                                .zip(self.temporary_copied_particle_velocities[..self.n_particles].iter())
+            for (j, ((particle_b_position, particle_b_radius), particle_b_mass)) in self.temporary_copied_particle_positions[..self.n_particles].iter()
                                                                 .zip(self.temporary_copied_particles_radiuses[..self.n_particles].iter())
                                                                 .zip(self.temporary_copied_particles_masses[..self.n_particles].iter()).enumerate() {
                 if i == j {
@@ -56,18 +53,18 @@ impl Universe {
                 let distance_2 = dx*dx + dy*dy + dz*dz;
                 // Do not check twice the same pair of particles:
                 if i < j {
+                    // TODO: Optimize roche radius calculation and do it just once
+                    // Faber et al, 2005; Pacynski, 1971
+                    let roche_radius = (particle_a.radius/0.462)*(particle_a.mass/particle_b_mass).powf(-1./3.);
+                    if distance_2 <= roche_radius.powi(2) {
+                        panic!("[PANIC {} UTC] Particle {} was destroyed by particle {} due to strong tides (close encounter)!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
+                    }
                     // Check if particles are overlapping
-                    if distance_2 < (particle_a.radius + particle_b_radius).powi(2) {
-                        let dvx = particle_a.velocity.x - particle_b_velocity.x;
-                        let dvy = particle_a.velocity.y - particle_b_velocity.y;
-                        let dvz = particle_a.velocity.z - particle_b_velocity.z;
-                        // Check if particles are approaching each other by checking the sign of the non-normalized radial velocity
-                        if dvx*dx + dvy*dy + dvz*dz < 0. {
-                            panic!("Collision between particle {} and {}!", i, j);
-                        }
+                    if distance_2 <= (particle_a.radius + particle_b_radius).powi(2) {
+                        panic!("[PANIC {} UTC] Collision between particle {} and {}!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
                     }
                     if i == 0 && distance_2 > MAX_DISTANCE_2 {
-                        panic!("Particle {} has been ejected!", j);
+                        panic!("[PANIC {} UTC] Particle {} has been ejected!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), j);
                     }
                 }
                 //////////////////////////////////////////////////////////////////////

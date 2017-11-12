@@ -1,3 +1,4 @@
+import datetime
 from tools import interpolate_b_spline
 import numpy as np
 from constants import *
@@ -14,17 +15,17 @@ class EvolutionType(object):
             raise Exception("Unknown variant '{}'".format(variant))
 
         if variant == "GalletBolmont2017":
-            print("WARNING: Bodies with GalletBolmont2017 evolution will ignore initial radius and dissipation factor.")
+            print("[WARNING {} UTC] Bodies with GalletBolmont2017 evolution will ignore initial radius and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         if variant == "BolmontMathis2016":
-            print("WARNING: Bodies with BolmontMathis2016 evolution will ignore initial radius and dissipation factor.")
+            print("[WARNING {} UTC] Bodies with BolmontMathis2016 evolution will ignore initial radius and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "Baraffe2015":
-            print("WARNING: Bodies with Baraffe2015 evolution will ignore initial radius and radius of gyration.")
+            print("[WARNING {} UTC] Bodies with Baraffe2015 evolution will ignore initial radius and radius of gyration.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "Leconte2011":
-            print("WARNING: Bodies with Leconte2011 evolution will ignore initial radius and radius of gyration.")
+            print("[WARNING {} UTC] Bodies with Leconte2011 evolution will ignore initial radius and radius of gyration.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "Baraffe1998":
-            print("WARNING: Bodies with Baraffe1998 evolution will ignore initial radius.")
+            print("[WARNING {} UTC] Bodies with Baraffe1998 evolution will ignore initial radius.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "LeconteChabrier2013":
-            print("WARNING: Bodies with Jupiter evolution will ignore initial radius, radius of gyration and love number.")
+            print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration and love number.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
 
     def get(self):
         if type(self._data) == str:

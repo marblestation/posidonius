@@ -9,18 +9,18 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     filename = args.output_filename
-    #filename = posidonius.constants.BASE_DIR+"target/case7.json"
+    #filename = posidonius.constants.BASE_DIR+"target/case3.json"
 
     #initial_time = 4.5e6*365.25 # time [days] where simulation starts
     initial_time = 1.0e6*365.25 # time [days] where simulation starts
-    time_step = 0.08 # days
+    time_step = 0.001 # days
     #time_limit   = 4*time_step # days
     time_limit   = 365.25 * 1.0e8 # days
     historic_snapshot_period = 100.*365.25 # days
     recovery_snapshot_period = 100.*historic_snapshot_period # days
-    consider_tides = True
+    consider_tides = False
     consider_rotational_flattening = True
-    consider_general_relativy = True
+    consider_general_relativy = False
     universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy)
 
     star_mass = 0.08 # Solar masses
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     star_dissipation_factor_scale = 1.0
     star_radius_of_gyration_2 = 1.94e-1 # Brown dwarf
     star_love_number = 0.307
-    fluid_love_number = star_love_number
+    fluid_love_number = 0. # star_love_number
     star_position = posidonius.Axes(0., 0., 0.)
     star_velocity = posidonius.Axes(0., 0., 0.)
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     star_rotation_period = 70.0 # hours
     star_angular_frequency = posidonius.constants.TWO_PI/(star_rotation_period/24.) # days^-1
     star_spin = posidonius.Axes(0., 0., star_angular_frequency)
-    #star_evolution_type = posidonius.GalletBolmont2017(star_mass) # mass = 0.30 .. 1.40
+    #star_evolution_type = posidonius.GalletBolmont2017(star_mass) # mass = 0.30 .. 1.4
     #star_evolution_type = posidonius.BolmontMathis2016(star_mass) # mass = 0.40 .. 1.40
     #star_evolution_type = posidonius.Baraffe2015(star_mass) # mass = 0.01 .. 1.40
     #star_evolution_type = posidonius.Leconte2011(star_mass) # mass = 0.01 .. 0.08
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     planet1_radius = planet1_radius_factor * posidonius.constants.R_EARTH
 
     # Terrestrial:
-    k2pdelta = 2.465278e-3 # Terrestrial planet1s (no gas)
+    k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
     planet1_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet1_radius, 5))
     planet1_dissipation_factor_scale = 1.0
     planet1_radius_of_gyration_2 = 0.3308
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     a = 0.018;                             # semi-major axis (in AU)
-    e = 0.01;                              # eccentricity
+    e = 0.01;                               # eccentricity
     i = 0. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
     p = 0.;                                # argument of pericentre (degrees)
     n = 0. * posidonius.constants.DEG2RAD;                      # longitude of the ascending node (degrees)
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     planet1_position = posidonius.Axes(x, y, z)
     planet1_velocity = posidonius.Axes(vx, vy, vz)
 
-    #////// Initialization of planet1ary spin
+    #////// Initialization of planetary spin
     planet1_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
     planet1_rotation_period = 24. # hours
     planet1_angular_frequency = posidonius.constants.TWO_PI/(planet1_rotation_period/24.) # days^-1
@@ -138,12 +138,12 @@ if __name__ == "__main__":
     planet2_radius = planet2_radius_factor * posidonius.constants.R_EARTH
 
     # Terrestrial:
-    k2pdelta = 2.465278e-3 # Terrestrial planet2s (no gas)
+    k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
     planet2_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet2_radius, 5))
     planet2_dissipation_factor_scale = 1.0
     planet2_radius_of_gyration_2 = 0.3308
-    planet2_love_number = 0.305
-    planet2_fluid_love_number = planet2_love_number
+    planet2_love_number = 0.
+    planet2_fluid_love_number = 0.
 
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
@@ -160,8 +160,8 @@ if __name__ == "__main__":
     planet2_position = posidonius.Axes(x, y, z)
     planet2_velocity = posidonius.Axes(vx, vy, vz)
 
-    #////// Initialization of planet2ary spin
-    planet2_obliquity = 23. * posidonius.constants.DEG2RAD # 0.2 rad
+    #////// Initialization of planetary spin
+    planet2_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
     planet2_rotation_period = 24. # hours
     planet2_angular_frequency = posidonius.constants.TWO_PI/(planet2_rotation_period/24.) # days^-1
     # Pseudo-synchronization period

@@ -1,6 +1,30 @@
+import datetime
 import numpy as np
 from constants import *
 from axes import Axes
+
+def mass_radius_relation(planet_mass, planet_mass_type='factor', planet_percent_rock = 0.70):
+    """
+    For earth-like planets, calculate the planet radius factor given the planet
+    mass and the percentage of rock.
+
+    - planet_mass_type='factor': Planet mass is a factor of R_EARTH (recommended)
+    - planet_mass_type='AU': Planet mass is in AU
+    """
+    # Planetary radius in AU (rearth in AU) Rocky planet
+    #   Earth-like => mass-radius relationship from Fortney 2007
+    if planet_mass_type == 'factor':
+        planet_mass_factor = planet_mass
+        planet_radius_factor = (0.0592*planet_percent_rock + 0.0975) * np.power(np.log10(planet_mass_factor), 2) \
+                                + (0.2337*planet_percent_rock + 0.4938) * (np.log10(planet_mass_factor)) \
+                                + 0.3102*planet_percent_rock + 0.7932
+    elif planet_mass_type == 'AU':
+        planet_radius_factor = (0.0592*planet_percent_rock+0.0975) * np.power(np.log10(planet_mass) + np.log10(M2EARTH), 2) \
+                                 + (0.2337*planet_percent_rock+0.4938) * (np.log10(planet_mass) + np.log10(M2EARTH)) \
+                                 + 0.3102*planet_percent_rock+0.7932
+    else:
+        raise Exception("Unknown planet mass type: {}".format(planet_mass_type))
+    return planet_radius_factor # Factor to be multiplied by R_EARTH
 
 def calculate_keplerian_orbital_elements(gm, position, velocity):
     # ! Based on the implementation of Chambers in Mercury
@@ -495,7 +519,7 @@ def kepler_solution_for_a_hyperbola_hybrid_approach_for_low_n(e, capn0):
                orbel_flon = -orbel_flon
                capn = -capn
 
-            print("FLON : RETURNING WITHOUT COMPLETE CONVERGENCE")
+            print("[WARNING {} UTC] FLON : RETURNING WITHOUT COMPLETE CONVERGENCE".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
             diff = e * np.sinh(orbel_flon)  - orbel_flon - capn
             print("N, F, ecc * F.sinh() - F - N : ")
             print("{}, {}, {}".format(capn,orbel_flon,diff))
@@ -562,7 +586,7 @@ def kepler_solution_for_a_hyperbola_hybrid_approach(e, capn):
        x = orbel_fget
 
 
-    print("FGET : RETURNING WITHOUT COMPLETE CONVERGENCE")
+    print("[WARNING {} UTC] FGET : RETURNING WITHOUT COMPLETE CONVERGENCE".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
     return orbel_fget
 
 
@@ -670,7 +694,7 @@ def calculate_pseudo_synchronization_period(semi_major_axis, eccentricity, star_
                  * np.power(eccentricity, 6))*1./(1.+3.*np.power(eccentricity, 2)+3./8.
                  * np.power(eccentricity, 4))*1./np.power(1.-np.power(eccentricity, 2), 1.5)
     pseudo_rot = alpha * np.sqrt(G_SI*M_SUN*(star_mass+planet_mass)) # L^(3/2).T^(-1)
-    angular_frequency = pseudo_rot * np.power(semi_major_axis*AU, -3./2.) * HR * 24. # days^-1
+    angular_frequency = pseudo_rot * np.power(semi_major_axis*AU, -3./2.) * HOUR * 24. # days^-1
     pseudo_synchronization_period = TWO_PI/(angular_frequency) # days
 
     return pseudo_synchronization_period # days

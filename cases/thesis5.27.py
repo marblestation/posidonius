@@ -25,6 +25,12 @@ if __name__ == "__main__":
 
     star_mass = 0.08 # Solar masses
     star_radius_factor = 0.845649342247916
+    # [start correction] -------------------------------------------------------
+    # To reproduce Bolmont's thesis 2013 (although in this case it is not strictly needed because the star evolves):
+    #   Mercury-T was using R_SUN of 4.67920694e-3 AU which is not the IAU accepted value
+    #   thus, to reproduce Mercury-T results the star radius factor should be slighly modified:
+    star_radius_factor = star_radius_factor*(4.67920694e-3 / posidonius.constants.R_SUN)
+    # [end correction] ---------------------------------------------------------
     star_radius = star_radius_factor * posidonius.constants.R_SUN
     star_dissipation_factor = 2.006*3.845764e4 # -60+64
     star_dissipation_factor_scale = 1.0
@@ -51,10 +57,25 @@ if __name__ == "__main__":
 
     ############################################################################
     planet1_mass_factor = 1.0
+    # [start correction] -------------------------------------------------------
+    # To reproduce Bolmont's thesis 2013:
+    #   Mercury-T was using planet1_mass as 3.00e-6 M_SUN and that's not exactly 1 M_EARTH (as accepted by IAU)
+    #   thus, to reproduce Mercury-T results the mass factor should be slighly modified:
+    planet1_mass_factor = planet1_mass_factor * (3.00e-6 / posidonius.constants.M_EARTH) # 0.999000999000999
+    # [end correction] ---------------------------------------------------------
     planet1_mass = planet1_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
-    # planet1ary radius in AU (rearth in AU) Rocky planet1
-    planet1_radius_factor = 1.
+
+    # Earth-like => mass-radius relationship from Fortney 2007
+    planet1_radius_factor = posidonius.tools.mass_radius_relation(planet1_mass_factor, planet_mass_type='factor', planet_percent_rock=0.70)
+    # [start correction] -------------------------------------------------------
+    # To reproduce Bolmont's thesis 2013:
+    #   Mercury-T defined a different M2EARTH from the IAU accepted value
+    #   and M2EARTH was used to compute planet1_radius_factor, thus to reproduce
+    #   Mercury-T results the planet1_radius_factor has to be corrected:
+    planet1_radius_factor = planet1_radius_factor * 0.999756053794 # 1.0097617465214679
+    # [end correction] ---------------------------------------------------------
     planet1_radius = planet1_radius_factor * posidonius.constants.R_EARTH
+
     # Terrestrial:
     k2pdelta = 2.465278e-3 # Terrestrial planet1s (no gas)
     planet1_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet1_radius, 5))
@@ -100,10 +121,25 @@ if __name__ == "__main__":
 
     ############################################################################
     planet2_mass_factor = 10.0
+    # [start correction] -------------------------------------------------------
+    # To reproduce Bolmont's thesis 2013:
+    #   Mercury-T was using planet2_mass as 3.00e-6 M_SUN and that's not exactly 1 M_EARTH (as accepted by IAU)
+    #   thus, to reproduce Mercury-T results the mass factor should be slighly modified:
+    planet2_mass_factor = planet2_mass_factor * (3.00e-6 / posidonius.constants.M_EARTH) # 0.999000999000999
+    # [end correction] ---------------------------------------------------------
     planet2_mass = planet2_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
-    # planet2ary radius in AU (rearth in AU) Rocky planet2
-    planet2_radius_factor = 1.
+
+    # Earth-like => mass-radius relationship from Fortney 2007
+    planet2_radius_factor = posidonius.tools.mass_radius_relation(planet2_mass_factor, planet_mass_type='factor', planet_percent_rock=0.70)
+    # [start correction] -------------------------------------------------------
+    # To reproduce Bolmont's thesis 2013:
+    #   Mercury-T defined a different M2EARTH from the IAU accepted value
+    #   and M2EARTH was used to compute planet2_radius_factor, thus to reproduce
+    #   Mercury-T results the planet2_radius_factor has to be corrected:
+    planet2_radius_factor = planet2_radius_factor * 1.00046285582 # 1.8070338480688148
+    # [end correction] ---------------------------------------------------------
     planet2_radius = planet2_radius_factor * posidonius.constants.R_EARTH
+
     # Terrestrial:
     k2pdelta = 2.465278e-3 # Terrestrial planet2s (no gas)
     planet2_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet2_radius, 5))

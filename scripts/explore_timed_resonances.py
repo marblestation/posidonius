@@ -48,7 +48,10 @@ if __name__ == "__main__":
     n_particles, data = posidonius.analysis.history.read(filename)
     star_data, planets_data, planets_keys = posidonius.analysis.history.classify(n_particles, data, discard_first_hundred_years=False)
 
-    output_figure_filename = os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + "_timed_resonances.png"
+    output_figure_dirname = os.path.dirname(filename)
+    if len(output_figure_dirname) > 0:
+        output_figure_dirname += "/"
+    output_figure_filename = output_figure_dirname + os.path.splitext(os.path.basename(filename))[0] + "_timed_resonances.png"
 
     planet_names = planets_keys
     nb_planets = len(planet_names)
@@ -157,7 +160,7 @@ if __name__ == "__main__":
             if (abs(periodRatio_begin - periodRatio_end) > 0.02):
                 continue
 
-            resonances = posidonius.analysis.resonances.get_possible_resonances(periodRatio_end, uncertainty=UNCERTAINTY,
+            resonances = posidonius.analysis.resonances.get_possible_resonances(periodRatio_end, uncertainty=0.01 * float(UNCERTAINTY),
                         denominator_limit=DENOMINATOR_LIMIT, numerator_limit=NUMERATOR_LIMIT, sampling=NUMBER_OF_VALUES)
 
             # For each resonance we check if this one exist between the two considered planets

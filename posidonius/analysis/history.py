@@ -42,7 +42,7 @@ def read(filename):
 
 def classify(n_particles, data, discard_first_hundred_years=False):
     # Ignore first 100 years
-    data['current_time'] /= 362.25 # From days to years
+    data['current_time'] /= 365.25 # From days to years
     if discard_first_hundred_years:
         data = data[data['current_time'] >= 100.]
 

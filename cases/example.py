@@ -49,9 +49,11 @@ if __name__ == "__main__":
     ############################################################################
     planet_mass_factor = 1.0
     planet_mass = planet_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
-    # Planetary radius in AU (rearth in AU) Rocky planet
-    planet_radius_factor = 1.
+
+    # Earth-like => mass-radius relationship from Fortney 2007
+    planet_radius_factor = posidonius.tools.mass_radius_relation(planet_mass_factor, planet_mass_type='factor', planet_percent_rock=0.70)
     planet_radius = planet_radius_factor * posidonius.constants.R_EARTH
+
     # Terrestrial:
     k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
     planet_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet_radius, 5))

@@ -1,8 +1,9 @@
+extern crate time;
 use std;
 use super::constants::*;
 use super::particles::Axes;
 
-pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: Axes) -> (f64, f64, f64, f64, f64, f64, f64) {
+pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: Axes) -> (f64, f64, f64, f64, f64, f64, f64, f64) {
     // ! Based on the implementation of Chambers in Mercury
     // Calculates Keplerian orbital elements given relative coordinates and
     // velocities, and GM = G times the sum of the masses.
@@ -22,6 +23,7 @@ pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: A
     let mut p: f64; // longitude of perihelion (NOT argument of perihelion!!)
     let mut n: f64; // longitude of ascending node
     let mut l: f64; // mean anomaly (or mean longitude if eccentricity < 1.e-8)
+    let orbital_period: f64; // orbital_period (in days)
     // Local
     let hx = y * w  -  z * v;
     let hy = z * u  -  x * w;
@@ -126,7 +128,11 @@ pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: A
         l = modulus(l, TWO_PI);
     }
 
-    return (a, q, eccentricity, i, p, n, l)
+    // Given relative coordinates and velocities (of the body 1 respect to body 2),
+    // and GM = G times the sum of the masses (body 1 + body 2)
+    orbital_period = (TWO_PI / gm.sqrt()) * a.powf(3./2.); // in days
+
+    return (a, q, eccentricity, i, p, n, l, orbital_period)
 }
 
 
@@ -560,7 +566,7 @@ fn kepler_solution_for_a_hyperbola_hybrid_approach_for_low_n(e: f64, capn0: f64)
                orbel_flon = -orbel_flon;
                capn = -capn;
             }
-            println!("FLON : RETURNING WITHOUT COMPLETE CONVERGENCE");
+            println!("[WARNING {} UTC] FLON : RETURNING WITHOUT COMPLETE CONVERGENCE", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
             diff = e * orbel_flon.sinh()  - orbel_flon - capn;
             println!("N, F, ecc * F.sinh() - F - N : ");
             println!("{} {} {}", capn,orbel_flon,diff);
@@ -642,7 +648,7 @@ fn kepler_solution_for_a_hyperbola_hybrid_approach(e: f64, capn: f64) -> f64 {
        x = orbel_fget;
     }
   
-    println!("FGET : RETURNING WITHOUT COMPLETE CONVERGENCE");
+    println!("[WARNING {} UTC] FGET : RETURNING WITHOUT COMPLETE CONVERGENCE", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
     return orbel_fget;
 }
 
@@ -791,7 +797,7 @@ pub fn calculate_pseudo_synchronization_period(semi_major_axis: f64, eccentricit
                  * eccentricity.powi(6))*1./(1.+3.*eccentricity.powi(2)+3./8.
                  * eccentricity.powi(4))*1./(1.-eccentricity.powi(2)).powf(1.5);
     let pseudo_rot = alpha * (G_SI*M_SUN*(star_mass+planet_mass)).sqrt();
-    let angular_frequency = pseudo_rot * (semi_major_axis*AU).powf(-3./2.) * HR * 24.; // days^-1
+    let angular_frequency = pseudo_rot * (semi_major_axis*AU).powf(-3./2.) * HOUR * 24.; // days^-1
     let pseudo_synchronization_period = TWO_PI/(angular_frequency); // days
     pseudo_synchronization_period
 }

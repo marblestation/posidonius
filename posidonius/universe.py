@@ -1,8 +1,10 @@
+import os
+import datetime
 from axes import Axes
 from integrator import WHFast, Ias15, LeapFrog
 from constants import *
 from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
-from tools import calculate_spin
+from tools import calculate_spin, mass_radius_relation
 
 class Universe(object):
     def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy):
@@ -258,9 +260,7 @@ class Universe(object):
         fluid_love_number = 0.9532 # Earth
 
         # Earth-like => mass-radius relationship from Fortney 2007
-        radius_factor = (0.0592*0.7+0.0975) * np.power(np.log10(mass) + np.log10(M2EARTH), 2) \
-                                 + (0.2337*0.7+0.4938) * (np.log10(mass) + np.log10(M2EARTH)) \
-                                 + 0.3102*0.7+0.7932
+        radius_factor = mass_radius_relation(mass, planet_mass_type='AU', planet_percent_rock=0.70)
         radius = radius_factor * R_EARTH
         radius_of_gyration_2 = 3.308e-1 # Earth type planet
         k2pdelta = 2.465278e-3 # Terrestrial planets
@@ -335,5 +335,8 @@ class Universe(object):
             universe_integrator.write(filename)
         else:
             raise Exception("Unknown integtrator '{}'".format(integrator))
+        base_filename = os.path.splitext(filename)[0]
+        print("[INFO {} UTC] Start the simulation with:".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+        print("posidonius start {} {} {}".format(filename, base_filename+".bin", base_filename+"_history.bin"))
 
 

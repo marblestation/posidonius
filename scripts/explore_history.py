@@ -200,7 +200,7 @@ if __name__ == "__main__":
         planet_data = planets_data[key]
         ax.plot(planet_data['current_time'], planets_computed_data[key]['planet_obliquity'], label=key)
     ax.set_ylabel(field)
-    ax.set_ylim([0.0001, 100.0])
+    #ax.set_ylim([0.0001, 100.0])
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.legend(loc=0, prop={'size':8})

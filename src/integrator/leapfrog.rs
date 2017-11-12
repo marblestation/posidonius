@@ -1,3 +1,4 @@
+extern crate time;
 use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
@@ -76,13 +77,14 @@ impl LeapFrog {
                     current_time:0.,
                     current_iteration:0,
                     };
-        let mut s = DefaultHasher::new();
-        universe_integrator.hash(&mut s);
-        universe_integrator.hash = s.finish();
+        // Initialize physical values
+        let current_time = 0.;
+        universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
+        universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
         universe_integrator
     }
 
-    pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<LeapFrog, String> {
+    pub fn restore_snapshot(universe_integrator_snapshot_path: &Path, verify_integrity: bool) -> Result<LeapFrog, String> {
         let mut universe_integrator: LeapFrog;
         if universe_integrator_snapshot_path.exists() {
             // Open the path in read-only mode, returns `io::Result<File>`
@@ -107,12 +109,26 @@ impl LeapFrog {
                 universe_integrator = decode_from(&mut reader, SizeLimit::Infinite).unwrap();
             }
             if universe_integrator.hash == 0 {
-                println!("INFO: Created new simulation based on '{}'", universe_integrator_snapshot_path.display());
+                if verify_integrity && universe_integrator.current_time != 0. {
+                    panic!("[PANIC {} UTC] File '{}' has a zeroed hash (i.e., new simulation) but a current time different from zero ({:})", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display(), universe_integrator.current_time)
+                }
+                println!("[INFO {} UTC] Created new simulation based on '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
+                // Initialize physical values
                 let current_time = 0.;
                 universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
                 universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
             } else {
-                println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
+                // Verify hash for this universe at this moment of time
+                let mut s = DefaultHasher::new();
+                let restored_hash = universe_integrator.hash;
+                universe_integrator.hash = 0;
+                universe_integrator.hash(&mut s);
+                let computed_hash = s.finish();
+                if verify_integrity && restored_hash != computed_hash {
+                    panic!("[PANIC {} UTC] File '{}' seems corrupted because computed hash '{}' does not match restored hash '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display(), computed_hash, restored_hash)
+                }
+                universe_integrator.hash = restored_hash;
+                println!("[INFO {} UTC] Restored previous simulation from '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
             }
             return Ok(universe_integrator);
         } else {
@@ -125,7 +141,7 @@ impl LeapFrog {
 impl Integrator for LeapFrog {
 
 
-    fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>) -> Result<bool, String> {
+    fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>, silent_mode: bool) -> Result<bool, String> {
         // Output
         let first_snapshot_trigger = self.last_historic_snapshot_time < 0.;
         let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
@@ -135,8 +151,10 @@ impl Integrator for LeapFrog {
             self.last_historic_snapshot_time = self.n_historic_snapshots as f64*self.historic_snapshot_period; // Instead of self.current_time to avoid small deviations
             self.n_historic_snapshots += 1;
             let current_time_years = self.current_time/365.25;
-            print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
-            let _ = std::io::stdout().flush();
+            if ! silent_mode {
+                print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
+                let _ = std::io::stdout().flush();
+            }
         }
 
         // Calculate non-gravity accelerations.
@@ -175,6 +193,11 @@ impl Integrator for LeapFrog {
     fn prepare_for_recovery_snapshot(&mut self, universe_history_writer: &mut BufWriter<File>) {
         self.last_recovery_snapshot_time = self.current_time;
         universe_history_writer.flush().unwrap();
+        // Compute hash for this universe at this moment of time
+        let mut s = DefaultHasher::new();
+        self.hash = 0;
+        self.hash(&mut s);
+        self.hash = s.finish();
     }
 
 }

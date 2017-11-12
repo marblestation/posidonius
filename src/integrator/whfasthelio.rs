@@ -1,3 +1,4 @@
+extern crate time;
 use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
@@ -158,13 +159,14 @@ impl WHFastHelio {
                     timestep_warning: 0,
                     set_to_center_of_mass: false,
                     };
-        let mut s = DefaultHasher::new();
-        universe_integrator.hash(&mut s);
-        universe_integrator.hash = s.finish();
+        // Initialize physical values
+        let current_time = 0.;
+        universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
+        universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
         universe_integrator
     }
     
-    pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<WHFastHelio, String> {
+    pub fn restore_snapshot(universe_integrator_snapshot_path: &Path, verify_integrity: bool) -> Result<WHFastHelio, String> {
         let mut universe_integrator: WHFastHelio;
         if universe_integrator_snapshot_path.exists() {
             // Open the path in read-only mode, returns `io::Result<File>`
@@ -189,12 +191,26 @@ impl WHFastHelio {
                 universe_integrator = decode_from(&mut reader, SizeLimit::Infinite).unwrap();
             }
             if universe_integrator.hash == 0 {
-                println!("INFO: Created new simulation based on '{}'", universe_integrator_snapshot_path.display());
+                if verify_integrity && universe_integrator.current_time != 0. {
+                    panic!("[PANIC {} UTC] File '{}' has a zeroed hash (i.e., new simulation) but a current time different from zero ({})", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display(), universe_integrator.current_time)
+                }
+                println!("[INFO {} UTC] Created new simulation based on '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
+                // Initialize physical values
                 let current_time = 0.;
                 universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
                 universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
             } else {
-                println!("INFO: Restored previous simulation from '{}'", universe_integrator_snapshot_path.display());
+                // Verify hash for this universe at this moment of time
+                let mut s = DefaultHasher::new();
+                let restored_hash = universe_integrator.hash;
+                universe_integrator.hash = 0;
+                universe_integrator.hash(&mut s);
+                let computed_hash = s.finish();
+                if verify_integrity && restored_hash != computed_hash {
+                    panic!("[PANIC {} UTC] File '{}' seems corrupted because computed hash '{}' does not match restored hash '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display(), computed_hash, restored_hash)
+                }
+                universe_integrator.hash = restored_hash;
+                println!("[INFO {} UTC] Restored previous simulation from '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
             }
             return Ok(universe_integrator);
         } else {
@@ -205,7 +221,7 @@ impl WHFastHelio {
 
 impl Integrator for WHFastHelio {
 
-    fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>) -> Result<bool, String> {
+    fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>, silent_mode: bool) -> Result<bool, String> {
         // Output
         let first_snapshot_trigger = self.last_historic_snapshot_time < 0.;
         let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
@@ -219,8 +235,10 @@ impl Integrator for WHFastHelio {
             self.last_historic_snapshot_time = self.n_historic_snapshots as f64*self.historic_snapshot_period; // Instead of self.current_time to avoid small deviations
             self.n_historic_snapshots += 1;
             let current_time_years = self.current_time/365.25;
-            print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
-            let _ = std::io::stdout().flush();
+            if ! silent_mode {
+                print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
+                let _ = std::io::stdout().flush();
+            }
         }
 
         self.iterate_position_and_velocity_with_whfasthelio();
@@ -240,6 +258,11 @@ impl Integrator for WHFastHelio {
     fn prepare_for_recovery_snapshot(&mut self, universe_history_writer: &mut BufWriter<File>) {
         self.last_recovery_snapshot_time = self.current_time;
         universe_history_writer.flush().unwrap();
+        // Compute hash for this universe at this moment of time
+        self.hash = 0;
+        let mut s = DefaultHasher::new();
+        self.hash(&mut s);
+        self.hash = s.finish();
     }
 
 }
@@ -413,7 +436,7 @@ impl WHFastHelio {
             if _dt.abs()*invperiod > 1. && self.timestep_warning == 0 {
                 // Ignoring const qualifiers. This warning should not have any effect on
                 // other parts of the code, nor is it vital to show it.
-                println!("WHFast convergence issue. Timestep is larger than at least one orbital period.");
+                println!("[WARNING {} UTC] WHFast convergence issue. Timestep is larger than at least one orbital period.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
                 self.timestep_warning += 1;
             }
             //x = _dt*invperiod*x_per_period; // first order guess 
@@ -720,7 +743,7 @@ impl WHFastHelio {
             return;
         }
         if !self.is_synchronized {
-            panic!("Non synchronized particles cannot be moved to center of mass.")
+            panic!("[PANIC {} UTC] Non synchronized particles cannot be moved to center of mass.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap())
         }
 
         // Compute center of mass
@@ -757,7 +780,7 @@ impl WHFastHelio {
             return;
         }
         if !self.is_synchronized {
-            panic!("Non synchronized particles cannot be moved to star center.")
+            panic!("[PANIC {} UTC] Non synchronized particles cannot be moved to star center.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap())
         }
 
         if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {

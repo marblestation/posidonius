@@ -56,7 +56,10 @@ if __name__ == "__main__":
     inner_period_nb = args.inner_period
     outer_period_nb = args.outer_period
 
-    output_figure_filename = os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + "_resonance_{}_{}_between_{}_and_{}.png".format(inner_period_nb, outer_period_nb, inner_planet, outer_planet)
+    output_figure_dirname = os.path.dirname(filename)
+    if len(output_figure_dirname) > 0:
+        output_figure_dirname += "/"
+    output_figure_filename = output_figure_dirname + os.path.splitext(os.path.basename(filename))[0] + "_resonance_{}_{}_between_{}_and_{}.png".format(inner_period_nb, outer_period_nb, inner_planet, outer_planet)
 
     t = t[inner_planet] # time in years (== t[outer_planet])
     a_inner = a[inner_planet - 1] # demi-grand axe en ua

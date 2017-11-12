@@ -3,7 +3,8 @@ use std;
 pub const MAX_PARTICLES : usize = 10; // The optimal value matches the real number of bodies (it will generate smaller snapshots), but a greater number will work too.
 pub const MAX_DISTANCE : f64 = 100.; // AU
 pub const MAX_DISTANCE_2 : f64 = MAX_DISTANCE*MAX_DISTANCE; // AU
-
+//
+pub const MIN_ORBITAL_PERIOD_TIME_STEP_RATIO : f64 = 10.; // The orbital period should be N times greater than the time step to correctly integrate an orbit
 
 //// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).
@@ -24,22 +25,31 @@ pub const WHFAST_NMAX_NEWT : usize = 32;               // Maximum number of iter
 const K  : f64 = 0.01720209895;    // Gaussian constant 
 pub const K2 : f64 = K*K; 
 pub const G  : f64 = K2;  // Gravitational constant in Mercury units
-pub const G_SI : f64 = 6.6742367e-11;  // m^3.kg^-1.s^-2 (S.I. units)
 pub const PI : f64 = std::f64::consts::PI;
 pub const TWO_PI : f64 = std::f64::consts::PI * 2.;
 pub const DEG2RAD : f64 = std::f64::consts::PI / 180.; // conversion factor from degrees to radians
-pub const M2AU  : f64 = 6.684587153547e-12; // 1 meter in AU
-pub const AU : f64 = 1.49598e11; // m
-pub const HR: f64 = 3600.; // s
+pub const HOUR: f64 = 3600.; // s
+pub const DAY: f64 = 24.*HOUR; // s
+
+////////////////////////////////////////////////////////////////////////////////
+// The IAU 2009 system of astronomical constants: the report of the IAU working group on numerical standards for Fundamental Astronomy
+// https://en.wikipedia.org/wiki/Astronomical_constant
+pub const M_SUN : f64 =  1.9818e30; // Kg
+pub const M2EARTH : f64 = 332946.050895; // ratio sun/earth mass
+//pub const M_EARTH : f64 = M_SUN/M2EARTH; // kg
+pub const M_EARTH : f64 = 1./M2EARTH; // M_SUN
+pub const G_SI : f64 = 6.67428e-11;  // m^3.kg^-1.s^-2 (S.I. units)
+pub const AU : f64 = 1.49597870700e11; // m
+pub const M2AU  : f64 = 1./AU; // 6.684587122268445e-12 AU (1 meter in AU)
+pub const SPEED_OF_LIGHT : f64 = (2.99792458e8/AU)*DAY; // 173.14463267424034 AU/day
+pub const SPEED_OF_LIGHT_2 : f64 = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
+
+// Resolution B3 on recommended nominal conversion constants for selected solar and planetary properties
+// http://adsabs.harvard.edu/abs/2015arXiv151007674M
+pub const R_SUN : f64 = 6.957e8/AU;  // AU
+pub const R_EARTH : f64 = 6.3781e6/AU; // AU
+////////////////////////////////////////////////////////////////////////////////
 
 // Solar system
-pub const M_SUN : f64 =  1.98892e30; // Kg
-pub const R_SUN : f64 = 4.67920694e-3;  // AU
 pub const SUN_DYN_FREQ : f64 = K2/(R_SUN*R_SUN*R_SUN); // Needed for MathisSolarLike
-pub const R_EARTH : f64 = 4.25874677e-5; // AU
-pub const M_EARTH : f64 = 3.0e-6; // M_SUN
-pub const M2EARTH : f64 = (1.9891e6/5.9794); // Factor for mass-radius relation (valid only for earth type planets)
 
-// Speed of light in AU/day
-pub const SPEED_OF_LIGHT : f64 = 173.1444830225;
-pub const SPEED_OF_LIGHT_2 : f64 = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
