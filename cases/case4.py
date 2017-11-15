@@ -2,6 +2,28 @@ import posidonius
 import numpy as np
 import argparse
 
+def calculate_spin(angular_frequency, inclination, obliquity, position, velocity):
+    """
+    Old version of calculate spin used in all cases in Bolmont et al 2015 except
+    for cases 6, 6', 6'', 6''' and 7
+    """
+    if inclination == 0.:
+        # No inclination, spin can already be calculated:
+        x = angular_frequency * np.sin(obliquity) # zero if there is no obliquity
+        y = 0.
+        z = angular_frequency * np.cos(obliquity)
+    else:
+        # Calculation of orbital angular momentum (without mass and in AU^2/day)
+        horb_x = position.y() * velocity.z() - position.z() * velocity.y()
+        horb_y = position.z() * velocity.x() - position.x() * velocity.z()
+        horb_z = position.x() * velocity.y() - position.y() * velocity.x()
+        horbn = np.sqrt(np.power(horb_x, 2) + np.power(horb_y, 2) + np.power(horb_z, 2))
+        # Spin taking into consideration the inclination:
+        x = angular_frequency * (horb_x / (horbn * np.sin(inclination))) * np.sin(obliquity+inclination)
+        y = angular_frequency * (horb_y / (horbn * np.sin(inclination))) * np.sin(obliquity+inclination)
+        z = angular_frequency * np.cos(obliquity+inclination)
+    return posidonius.Axes(x, y, z)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -111,7 +133,7 @@ if __name__ == "__main__":
     #planet_angular_frequency = posidonius.constants.TWO_PI/(planet_pseudo_synchronization_period) # days^-1
     planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet_mass, planet_position, planet_velocity)
     planet_inclination = planet_keplerian_orbital_elements[3]
-    planet_spin = posidonius.calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity, planet_position, planet_velocity)
+    planet_spin = calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity, planet_position, planet_velocity)
 
     planet_evolution_type = posidonius.NonEvolving()
     universe.add_particle(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number, planet_position, planet_velocity, planet_spin, planet_evolution_type)

@@ -13,10 +13,10 @@ if __name__ == "__main__":
 
     #initial_time = 4.5e6*365.25 # time [days] where simulation starts
     initial_time = 1.0e6*365.25 # time [days] where simulation starts
-    time_step = 0.001 # days
+    time_step = 0.01 # days
     #time_limit   = 4*time_step # days
-    time_limit   = 365.25 * 1.0e8 # days
-    historic_snapshot_period = 100.*365.25 # days
+    time_limit   = 365.25 * 1.0e5 # days
+    historic_snapshot_period = 0.2*365.25 # days
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_tides = False
     consider_rotational_flattening = True
@@ -59,6 +59,8 @@ if __name__ == "__main__":
     # To reproduce Bolmont et al. 2015:
     #   Mercury-T was using planet1_mass as 3.00e-6 M_SUN and that's not exactly 1 M_EARTH (as accepted by IAU)
     #   thus, to reproduce Mercury-T results the mass factor should be slighly modified:
+    #       NOTE: This correction is different than for cases 3 and 4 because
+    #             constants were different between tidal and flattening tests
     planet1_mass_factor = planet1_mass_factor * (3.00e-6 / posidonius.constants.M_EARTH) # 0.999000999000999
     # [end correction] ---------------------------------------------------------
     planet1_mass = planet1_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
@@ -135,8 +137,6 @@ if __name__ == "__main__":
     #   Mercury-T defined a different M2EARTH from the IAU accepted value
     #   and M2EARTH was used to compute planet2_radius_factor, thus to reproduce
     #   Mercury-T results the planet2_radius_factor has to be corrected:
-    #       NOTE: This correction is different than for cases 3 and 4 because
-    #             constants were different between tidal and flattening tests
     planet2_radius_factor = planet2_radius_factor * 0.988988887019 # 1.0097617465214679
     # [end correction] ---------------------------------------------------------
     planet2_radius = planet2_radius_factor * posidonius.constants.R_EARTH

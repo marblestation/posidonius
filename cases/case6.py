@@ -70,7 +70,9 @@ if __name__ == "__main__":
     #   Mercury-T defined a different M2EARTH from the IAU accepted value
     #   and M2EARTH was used to compute planet1_radius_factor, thus to reproduce
     #   Mercury-T results the planet1_radius_factor has to be corrected:
-    planet1_radius_factor = planet1_radius_factor * 0.999756053794 # 1.0097617465214679
+    #       NOTE: This correction is different than for cases 3 and 4 because
+    #             constants were different between tidal and flattening tests
+    planet1_radius_factor = planet1_radius_factor * 0.988988887019 # 0.998886820497
     # [end correction] ---------------------------------------------------------
     planet1_radius = planet1_radius_factor * posidonius.constants.R_EARTH
 
@@ -133,7 +135,9 @@ if __name__ == "__main__":
     #   Mercury-T defined a different M2EARTH from the IAU accepted value
     #   and M2EARTH was used to compute planet2_radius_factor, thus to reproduce
     #   Mercury-T results the planet2_radius_factor has to be corrected:
-    planet2_radius_factor = planet2_radius_factor * 0.999756053794 # 1.0097617465214679
+    #       NOTE: This correction is different than for cases 3 and 4 because
+    #             constants were different between tidal and flattening tests
+    planet2_radius_factor = planet2_radius_factor * 0.988988887019 # 1.0097617465214679
     # [end correction] ---------------------------------------------------------
     planet2_radius = planet2_radius_factor * posidonius.constants.R_EARTH
 

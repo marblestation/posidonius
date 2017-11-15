@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     filename = args.historic_snapshot_filename
     n_particles, data = posidonius.analysis.history.read(filename)
-    star_data, planets_data, planets_keys = posidonius.analysis.history.classify(n_particles, data, discard_first_hundred_years=True)
+    star_data, planets_data, planets_keys = posidonius.analysis.history.classify(n_particles, data, discard_first_hundred_years=False)
     star_mass = star_data['mass'][0]
 
 
@@ -396,7 +396,7 @@ if __name__ == "__main__":
         data['planet'] = key
         data['semi-major_axis_AU'] = planet_data['semi-major_axis']
         data['corrotation_radius_AU'] = planets_computed_data[key]['corrotation_radius']
-        data['planet_obliquity_deg'] = planets_computed_data[key]['corrotation_radius']
+        data['planet_obliquity_deg'] = planets_computed_data[key]['planet_obliquity']
         data['eccentricity'] = planet_data['eccentricity']
         data['inclination_deg'] = planet_data['inclination'] * (180 / np.pi)
         data['energy_lost_due_to_tides_W_per_m2'] = planets_computed_data[key]['inst_tidal_flux']
@@ -414,7 +414,11 @@ if __name__ == "__main__":
             all_data = data
         else:
             all_data = pd.concat((all_data, data))
-    output_text_filename = os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + ".txt"
+
+    output_figure_dirname = os.path.dirname(filename)
+    if len(output_figure_dirname) > 0:
+        output_figure_dirname += "/"
+    output_text_filename = output_figure_dirname + os.path.splitext(os.path.basename(filename))[0] + ".txt"
     #output_text_filename = os.path.splitext(os.path.basename(filename))[0] + ".txt"
     all_data.to_csv(output_text_filename, sep="\t", index=False)
 

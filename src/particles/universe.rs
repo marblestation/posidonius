@@ -334,15 +334,23 @@ impl Universe {
                 //// Tidal force calculation (star) :: Only orthogonal component is needed
                 if central_body {
                     // - Third line of Equation 5 from Bolmont et al. 2015
-                    let star_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &star.id, star.evolution_type, star.scaled_dissipation_factor);
+                    //   This expression has R**10 (instead of R**5 in Eq. 5) 
+                    //   because it uses sigma (i.e., scaled_dissipation_factor) 
+                    //   and not k2$\Delta$t (between k2$\Delta$t and sigma 
+                    //   there is a R**5 factor as shown in Equation 28)
+                    let star_scaled_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &star.id, star.evolution_type, star.scaled_dissipation_factor);
                     particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass_g.powi(2))
                                                     * (star.radius.powi(10)) 
-                                                    * star_dissipation_factor / ( (K2.powi(2)) * distance_7);
+                                                    * star_scaled_dissipation_factor / ( (K2.powi(2)) * distance_7);
                     //particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass.powi(2))
                                                         //* (star.radius.powi(10)) 
                                                         //* star.scaled_dissipation_factor / (distance_7);
                 } else {
                     // - Second line of Equation 5 from Bolmont et al. 2015
+                    //   This expression has R**10 (instead of R**5 in Eq. 5) 
+                    //   because it uses sigma (i.e., scaled_dissipation_factor) 
+                    //   and not k2$\Delta$t (between k2$\Delta$t and sigma 
+                    //   there is a R**5 factor as shown in Equation 28)
                     particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (star.mass_g.powi(2))
                                                     * (particle.radius.powi(10))
                                                     * particle.scaled_dissipation_factor    / ( (K2.powi(2)) * distance_7);
@@ -376,10 +384,10 @@ impl Universe {
                 // Dissipative part of the radial tidal force
                 let factor1 = -13.5 * particle.radial_velocity / (particle.distance.powi(8) * K2*K2);
                 //let factor1 = -13.5 * particle.radial_velocity / particle.distance.powi(8);
-                let star_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &star.id, star.evolution_type, star.scaled_dissipation_factor);
+                let star_scaled_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &particle.id, star.evolution_type, star.scaled_dissipation_factor);
                 let term1 = planet_mass_2
                             * star.radius.powi(10)
-                            * star_dissipation_factor;
+                            * star_scaled_dissipation_factor;
                 let term2 = star_mass_2
                             * particle.radius.powi(10)
                             * particle.scaled_dissipation_factor;

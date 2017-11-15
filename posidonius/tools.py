@@ -702,19 +702,7 @@ def calculate_pseudo_synchronization_period(semi_major_axis, eccentricity, star_
 
 
 def calculate_spin(angular_frequency, inclination, obliquity, position, velocity):
-    if inclination == 0.:
-        # No inclination, spin can already be calculated:
-        x = angular_frequency * np.sin(obliquity) # zero if there is no obliquity
-        y = 0.
-        z = angular_frequency * np.cos(obliquity)
-    else:
-        # Calculation of orbital angular momentum (without mass and in AU^2/day)
-        horb_x = position.y() * velocity.z() - position.z() * velocity.y()
-        horb_y = position.z() * velocity.x() - position.x() * velocity.z()
-        horb_z = position.x() * velocity.y() - position.y() * velocity.x()
-        horbn = np.sqrt(np.power(horb_x, 2) + np.power(horb_y, 2) + np.power(horb_z, 2))
-        # Spin taking into consideration the inclination:
-        x = angular_frequency * (horb_x / (horbn * np.sin(inclination))) * np.sin(obliquity+inclination)
-        y = angular_frequency * (horb_y / (horbn * np.sin(inclination))) * np.sin(obliquity+inclination)
-        z = angular_frequency * np.cos(obliquity+inclination)
+    x = 0.
+    y = -1.*angular_frequency * np.sin(obliquity+inclination)
+    z = angular_frequency * np.cos(obliquity+inclination)
     return Axes(x, y, z)
