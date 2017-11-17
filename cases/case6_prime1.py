@@ -113,7 +113,7 @@ if __name__ == "__main__":
     #planet1_angular_frequency = posidonius.constants.TWO_PI/(planet1_pseudo_synchronization_period) # days^-1
     planet1_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet1_mass, planet1_position, planet1_velocity)
     planet1_inclination = planet1_keplerian_orbital_elements[3]
-    planet1_spin = posidonius.calculate_spin(planet1_angular_frequency, planet1_inclination, planet1_obliquity, planet1_position, planet1_velocity)
+    planet1_spin = posidonius.calculate_spin(planet1_angular_frequency, planet1_inclination, planet1_obliquity)
 
     planet1_evolution_type = posidonius.NonEvolving()
     universe.add_particle(planet1_mass, planet1_radius, planet1_dissipation_factor, planet1_dissipation_factor_scale, planet1_radius_of_gyration_2, planet1_love_number, planet1_fluid_love_number, planet1_position, planet1_velocity, planet1_spin, planet1_evolution_type)
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     #planet2_angular_frequency = posidonius.constants.TWO_PI/(planet2_pseudo_synchronization_period) # days^-1
     planet2_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet2_mass, planet2_position, planet2_velocity)
     planet2_inclination = planet2_keplerian_orbital_elements[3]
-    planet2_spin = posidonius.calculate_spin(planet2_angular_frequency, planet2_inclination, planet2_obliquity, planet2_position, planet2_velocity)
+    planet2_spin = posidonius.calculate_spin(planet2_angular_frequency, planet2_inclination, planet2_obliquity)
 
     planet2_evolution_type = posidonius.NonEvolving()
     universe.add_particle(planet2_mass, planet2_radius, planet2_dissipation_factor, planet2_dissipation_factor_scale, planet2_radius_of_gyration_2, planet2_love_number, planet2_fluid_love_number, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)

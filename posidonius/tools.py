@@ -701,7 +701,7 @@ def calculate_pseudo_synchronization_period(semi_major_axis, eccentricity, star_
 
 
 
-def calculate_spin(angular_frequency, inclination, obliquity, position, velocity):
+def calculate_spin(angular_frequency, inclination, obliquity):
     x = 0.
     y = -1.*angular_frequency * np.sin(obliquity+inclination)
     z = angular_frequency * np.cos(obliquity+inclination)

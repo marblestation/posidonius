@@ -167,7 +167,7 @@ class Universe(object):
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
         inclination = 0.
         obliquity = 0.
-        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
+        spin = calculate_spin(angular_frequency, inclination, obliquity)
 
         fluid_love_number = love_number
         # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
@@ -194,7 +194,7 @@ class Universe(object):
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
         inclination = 0.
         obliquity = 0.
-        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
+        spin = calculate_spin(angular_frequency, inclination, obliquity)
 
         love_number = 0.03
         fluid_love_number = love_number
@@ -216,7 +216,7 @@ class Universe(object):
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
         inclination = 0.
         obliquity = 0.
-        spin = calculate_spin(angular_frequency, inclination, obliquity, position, velocity)
+        spin = calculate_spin(angular_frequency, inclination, obliquity)
 
         love_number = 0.307 # M Dwarf
         fluid_love_number = love_number

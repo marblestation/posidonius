@@ -59,8 +59,6 @@ if __name__ == "__main__":
     # To reproduce Bolmont et al. 2015:
     #   Mercury-T was using planet1_mass as 3.00e-6 M_SUN and that's not exactly 1 M_EARTH (as accepted by IAU)
     #   thus, to reproduce Mercury-T results the mass factor should be slighly modified:
-    #       NOTE: This correction is different than for cases 3 and 4 because
-    #             constants were different between tidal and flattening tests
     planet1_mass_factor = planet1_mass_factor * (3.00e-6 / posidonius.constants.M_EARTH) # 0.999000999000999
     # [end correction] ---------------------------------------------------------
     planet1_mass = planet1_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
@@ -115,7 +113,7 @@ if __name__ == "__main__":
     #planet1_angular_frequency = posidonius.constants.TWO_PI/(planet1_pseudo_synchronization_period) # days^-1
     planet1_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet1_mass, planet1_position, planet1_velocity)
     planet1_inclination = planet1_keplerian_orbital_elements[3]
-    planet1_spin = posidonius.calculate_spin(planet1_angular_frequency, planet1_inclination, planet1_obliquity, planet1_position, planet1_velocity)
+    planet1_spin = posidonius.calculate_spin(planet1_angular_frequency, planet1_inclination, planet1_obliquity)
 
     planet1_evolution_type = posidonius.NonEvolving()
     universe.add_particle(planet1_mass, planet1_radius, planet1_dissipation_factor, planet1_dissipation_factor_scale, planet1_radius_of_gyration_2, planet1_love_number, planet1_fluid_love_number, planet1_position, planet1_velocity, planet1_spin, planet1_evolution_type)
@@ -137,6 +135,8 @@ if __name__ == "__main__":
     #   Mercury-T defined a different M2EARTH from the IAU accepted value
     #   and M2EARTH was used to compute planet2_radius_factor, thus to reproduce
     #   Mercury-T results the planet2_radius_factor has to be corrected:
+    #       NOTE: This correction is different than for cases 3 and 4 because
+    #             constants were different between tidal and flattening tests
     planet2_radius_factor = planet2_radius_factor * 0.988988887019 # 1.0097617465214679
     # [end correction] ---------------------------------------------------------
     planet2_radius = planet2_radius_factor * posidonius.constants.R_EARTH
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     #planet2_angular_frequency = posidonius.constants.TWO_PI/(planet2_pseudo_synchronization_period) # days^-1
     planet2_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet2_mass, planet2_position, planet2_velocity)
     planet2_inclination = planet2_keplerian_orbital_elements[3]
-    planet2_spin = posidonius.calculate_spin(planet2_angular_frequency, planet2_inclination, planet2_obliquity, planet2_position, planet2_velocity)
+    planet2_spin = posidonius.calculate_spin(planet2_angular_frequency, planet2_inclination, planet2_obliquity)
 
     planet2_evolution_type = posidonius.NonEvolving()
     universe.add_particle(planet2_mass, planet2_radius, planet2_dissipation_factor, planet2_dissipation_factor_scale, planet2_radius_of_gyration_2, planet2_love_number, planet2_fluid_love_number, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)
