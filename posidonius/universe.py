@@ -68,7 +68,13 @@ class Universe(object):
         particle['acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['torque'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['lag_angle'] = 0.0
-        particle['general_relativity_factor'] = 0.0
+        particle['mass_g'] = particle['mass'] * K2
+        if self._data['n_particles'] == 0:
+            # Central body
+            particle['general_relativity_factor'] = 0.0
+        else:
+            central_body_mass_g = self._data['particles'][0]['mass_g']
+            particle['general_relativity_factor'] =  central_body_mass_g*particle['mass_g'] / np.power(central_body_mass_g + particle['mass_g'], 2)
         particle['norm_velocity_vector'] = 0.0
         particle['tidal_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['scalar_product_of_vector_position_with_stellar_spin'] = 0.0
@@ -90,7 +96,6 @@ class Universe(object):
             self._data['wind_effects_exist'] = True;
 
         particle['moment_of_inertia_ratio'] = 1.0
-        particle['mass_g'] = particle['mass'] * K2
         particle['dspin_dt'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['wind_factor'] = 0.
         particle['distance'] = 0.0
