@@ -242,7 +242,9 @@ impl Integrator for WHFastHelio {
         }
 
         self.iterate_position_and_velocity_with_whfasthelio();
-        self.iterate_spin_with_midpoint_method();
+        if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
+            self.iterate_spin_with_midpoint_method();
+        }
 
         // ---------------------------------------------------------------------
         self.current_iteration += 1;
@@ -768,9 +770,9 @@ impl WHFastHelio {
             particle.velocity.x -= center_of_mass_velocity.x;
             particle.velocity.y -= center_of_mass_velocity.y;
             particle.velocity.z -= center_of_mass_velocity.z;
-            //particle.acceleration.x -= center_of_mass_acceleration.x; // Always zero
-            //particle.acceleration.y -= center_of_mass_acceleration.y;
-            //particle.acceleration.z -= center_of_mass_acceleration.z;
+            particle.acceleration.x -= center_of_mass_acceleration.x;
+            particle.acceleration.y -= center_of_mass_acceleration.y;
+            particle.acceleration.z -= center_of_mass_acceleration.z;
         }
         self.set_to_center_of_mass = true;
     }
@@ -791,9 +793,9 @@ impl WHFastHelio {
                 particle.velocity.x -= star.velocity.x;
                 particle.velocity.y -= star.velocity.y;
                 particle.velocity.z -= star.velocity.z;
-                //particle.acceleration.x -= star.acceleration.x; // Should be always zero
-                //particle.acceleration.y -= star.acceleration.y;
-                //particle.acceleration.z -= star.acceleration.z;
+                particle.acceleration.x -= star.acceleration.x;
+                particle.acceleration.y -= star.acceleration.y;
+                particle.acceleration.z -= star.acceleration.z;
             }
             star.position.x = 0.;
             star.position.y = 0.;
@@ -801,9 +803,9 @@ impl WHFastHelio {
             star.velocity.x = 0.;
             star.velocity.y = 0.;
             star.velocity.z = 0.;
-            //star.acceleration.x = 0.; // Should be always zero
-            //star.acceleration.y = 0.;
-            //star.acceleration.z = 0.;
+            star.acceleration.x = 0.;
+            star.acceleration.y = 0.;
+            star.acceleration.z = 0.;
         }
 
 
