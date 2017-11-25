@@ -15,7 +15,7 @@ if __name__ == "__main__":
     initial_time = 1.0e6*365.25 # time [days] where simulation starts
     time_step = 0.05 # days
     #time_limit   = 4*time_step # days
-    time_limit   = 365.25 * 1.0e8 # days
+    time_limit   = 365.25 * 1.0e5 # days
     historic_snapshot_period = 100.*365.25 # days
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_tides = False

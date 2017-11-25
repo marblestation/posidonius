@@ -328,9 +328,9 @@ class Universe(object):
             #self._data['n_particles'] -= n_dummy_particles
         return data
 
-    def write(self, filename, integrator="WHFast"):
+    def write(self, filename, integrator="WHFast", whfast_alternative_coordinates="DemocraticHeliocentric"):
         if integrator == "WHFast":
-            universe_integrator = WHFast(self._time_step, self._recovery_snapshot_period, self._historic_snapshot_period, self)
+            universe_integrator = WHFast(whfast_alternative_coordinates, self._time_step, self._recovery_snapshot_period, self._historic_snapshot_period, self)
             universe_integrator.write(filename)
         elif integrator == "Ias15":
             universe_integrator = Ias15(self._time_step, self._recovery_snapshot_period, self._historic_snapshot_period, self)
