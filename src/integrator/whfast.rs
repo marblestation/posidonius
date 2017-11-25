@@ -17,87 +17,76 @@ use std::path::Path;
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
 
-/// WHFastHelio (symplectic integrator) to be used always in safe mode (always sync because it is required by tides)
-/// and without correction (i.e. 2nd order integrator, comparable to mercury symplectic part of the hybrid integrator)
+/// Source: Rein & Tamayo, 2015
+/// WHFast is a complete reimplementation of the Wisdom-Holman integrator[1],
+/// designed to speed up the algorithm and increase its accuracy (e.g., related 
+/// to finite double floating-point precision, all real numbers cannot be 
+/// represented exactly and floating-point precision has consequences for the 
+/// numerical stability of any algorithm and the growth of numerical round-off 
+/// error). It is unbiased (i.e., the errors are random and uncorrelated), and
+/// has a very slow error growth. For sufficiently small timesteps, it achieves
+/// Brouwer’s law (i.e., the energy error grows as time to the power of one 
+/// half).
 ///
-/// "The original WHFast algorithm described in Rein & Tamayo
-/// (2015) was implemented in Jacobi coordinates. Jacobi coordinates
-/// lead to a better precision compared to heliocentric
-/// coordinates if orbits are well separated and do not cross each
-/// other. If close encounter occur, then heliocentric coordinates
-/// can help improve the integrator’s accuracy. For that reason we
-/// implemented a heliocentric version of WHFast in REBOUND. We
-/// call it WHFastHelio"
-/// Source: HERMES: a hybrid integrator for simulating close encounters and planetesimal migration
-///         Ari Silburt, Hanno Rein & Dan Tamayo
+/// WHFast is a symplectic integrator[2], althought its symplectic nature is 
+/// formally lost as soon as self-gravity or collisions are approximated or 
+/// when velocity dependent forces are included (such as tidal forces).
 ///
-///  https://en.wikipedia.org/wiki/N-body_problem#Few_bodies
-///  for N > 2, the N-body problem is chaotic,[37] which means that even small errors in
-///  integration may grow exponentially in time. Third, a simulation may be over large stretches of
-///  model time (e.g. millions of years) and numerical errors accumulate as integration time
-///  increases.
-///  There are a number of techniques to reduce errors in numerical integration.[18] Local
-///  coordinate systems are used to deal with widely differing scales in some problems, for example
-///  an Earth-Moon coordinate system in the context of a solar system simulation. Variational
-///  methods and perturbation theory can yield approximate analytic trajectories upon which the
-///  numerical integration can be a correction. The use of a symplectic integrator ensures that the
-///  simulation obeys Hamilton's equations to a high degree of accuracy and in particular that
-///  energy is conserved.
+/// This implementation is equivalent to the REBOUND code (Rein & Liu, 2011) in 
+/// safe mode (required by the tidal effects) and without correction (i.e. 2nd 
+/// order integrator, comparable to mercury symplectic part of the hybrid 
+/// integrator)
 ///
-///  https://arxiv.org/pdf/1110.4876v2.pdf
-///  These integrators are second order accurate
-///  and symplectic, their symplectic nature is formally lost
-///  as soon as self-gravity or collisions are approximated or when
-///  velocity dependent forces are included.
-///  NOTE: Which is the case for tidal forces
+/// Possible coordinates (only Democratic-Heliocentric coordinates available
+/// in Posidonius):
 ///
-///  https://arxiv.org/pdf/1110.4876v2.pdf
-///  A symplectic Wisdom-Holman mapping (WH, Wisdom
-///  & Holman 1991) is implemented as a module in
-///  integrator_wh.c. The implementation follows closely
-///  that by the SWIFT code4. The WH mapping is a mixed variable
-///  integrator that calculates the Keplerian motion of two bodies
-///  orbiting each other exactly up to machine precision during the
-///  drift sub-step. Thus, it is very accurate for problems in which
-///  the particle motion is dominated by a central 1/r potential and
-///  perturbations added in the kick sub-step are small. However,
-///  the WH integrator is substantially slower than the leap-frog
-///  integrator because Kepler’s equation is solved iteratively every
-///  time-step for every particle.
-///  The integrator assumes that the central object has the index 0
-///  in the particle array, that it is located at the origin and that it does
-///  not move. The coordinates of all particles are assumed to be the
-///  heliocentric frame. During the sub-time-steps the coordinates are
-///  converted to Jacobi coordinates (and back) according to their
-///  index. The particle with index 1 has the first Jacobi index, and
-///  so on. This works best if the particles are sorted according to
-///  their semi-major axis. Note that this is not done automatically
+/// - Jacobi coordinates: it leads to a better precision if orbits are well
+/// separated and do not cross each other.
+/// - Democratic-Heliocentric coordinates (a.k.a. canonical heliocentric, 
+/// Poincare or mixed-variables coordinates): better precision if there are
+/// close orbits and/or encounters.
+/// - WHDS: it splits the Hamiltonian into three parts (Hernandez and Dehnen, 
+/// 2017) and solves the two body problem exactly, contrary to the democratic
+/// heliocentric one. It keeps the democratic heliocentric properties of being
+/// more accurate with close orbits and encounters.
 ///
-/// https://arxiv.org/pdf/1506.01084v1.pdf
-/// a complete reimplementation
-/// of the Wisdom-Holman integrator. We show how to
-/// speed up the algorithm in several ways and dramatically increase
-/// its accuracy. Many of the improvements are related to finite double
-/// floating-point precision on modern computers (IEEE754, ISO
-/// 2011). The fact that almost all real numbers cannot be represented
-/// exactly in floating-point precision leads to important consequences
-/// for the numerical stability of any algorithm and the growth of numerical
-/// round-off error.
-/// To our knowledge, we present the first publicly available
-/// Wisdom-Holman integrator that is unbiased, i.e. the errors are random
-/// and uncorrelated. This leads to a very slow error growth. For
-/// sufficiently small timesteps, we achieve Brouwer’s law, i.e., the energy
-/// error grows as time to the power of one half.
-/// We have also sped up the integrator through various improvements
-/// to the integrator’s Kepler-solver. Our implementation allows
-/// for the evolution of variational equations (to determine whether orbits
-/// are chaotic) at almost no additional cost. Additionally, we implement
-/// so-called symplectic correctors up to order eleven to increase
-/// the accurary (Wisdom et al. 1996), allow for arbitrary unit
-/// choices, and do not tie the integration to a particular frame of reference.
+/// Sources:
+/// - Hernandez and Dehnen, 2017
+///     http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:1612.05329
+/// - Ari Silburt, Hanno Rein & Dan Tamayo
+///     HERMES: a hybrid integrator for simulating close encounters and planetesimal migration
+///     https://silburt.github.io/files/HERMES.pdf
+///
+/// 
+/// [1] Source: Rein & Liu, 2011
+///
+/// Symplectic Wisdom-Holman mappings (such as the implemented in the SWIFT 
+/// code4) are mixed variable integrator that calculates the Keplerian motion 
+/// of two bodies orbiting each other exactly up to machine precision during the
+/// drift sub-step. Thus, it is very accurate for problems in which
+/// the particle motion is dominated by a central 1/r potential and
+/// perturbations added in the kick sub-step are small. Kepler’s equation is 
+/// solved iteratively every time-step for every particle.
+///
+///
+/// [2] Source: https://en.wikipedia.org/wiki/N-body_problem#Few_bodies
+///
+/// For N > 2, the N-body problem is chaotic,[37] which means that even small errors in
+/// integration may grow exponentially in time. Third, a simulation may be over large stretches of
+/// model time (e.g. millions of years) and numerical errors accumulate as integration time
+/// increases.
+///
+/// There are a number of techniques to reduce errors in numerical integration.[18] Local
+/// coordinate systems are used to deal with widely differing scales in some problems, for example
+/// an Earth-Moon coordinate system in the context of a solar system simulation. Variational
+/// methods and perturbation theory can yield approximate analytic trajectories upon which the
+/// numerical integration can be a correction. The use of a symplectic integrator ensures that the
+/// simulation obeys Hamilton's equations to a high degree of accuracy and in particular that
+/// energy is conserved.
+///
 
 #[derive(Debug, Clone, RustcEncodable, RustcDecodable, PartialEq)]
-pub struct WHFastHelio {
+pub struct WHFast {
     time_step: f64,
     half_time_step: f64,
     pub universe: Universe,
@@ -110,25 +99,14 @@ pub struct WHFastHelio {
     last_historic_snapshot_time: f64,
     pub n_historic_snapshots: usize,
     pub hash: u64,
-    /**
-     * @brief Heliocentric coordinates
-     * @details This array contains the heliocentric coordinates of all particles.
-     * It is automatically filled and updated by WHfastDemocratic.
-     * Access this array with caution.
-     */
-    universe_heliocentric: Universe,
-
-    /**
-     * @cond PRIVATE
-     * Internal data structures below. Nothing to be changed by the user.
-     */
-    ///< Flag to determine if current particle structure is synchronized
+    universe_alternative_coordinates: Universe, // Jacobi, democractic-heliocentric or WHDS
+    /// Internal data structures below. Nothing to be changed by the user.
     is_synchronized: bool, 
     timestep_warning: usize ,
     set_to_center_of_mass: bool
 }
 
-impl Hash for WHFastHelio {
+impl Hash for WHFast {
     fn hash<H: Hasher>(&self, state: &mut H) {
         // Hash only works with certain types (for instance, it does not work with f64 values)
         // thus we convert the whole integrator to a string thanks to the debug trait
@@ -137,10 +115,10 @@ impl Hash for WHFastHelio {
     }
 }
 
-impl WHFastHelio {
-    pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> WHFastHelio {
-        let universe_heliocentric = universe.clone(); // Clone will not clone evolving types
-        let mut universe_integrator = WHFastHelio {
+impl WHFast {
+    pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> WHFast {
+        let universe_alternative_coordinates = universe.clone(); // Clone will not clone evolving types
+        let mut universe_integrator = WHFast {
                     time_step:time_step,
                     half_time_step:0.5*time_step,
                     recovery_snapshot_period:recovery_snapshot_period,
@@ -153,8 +131,8 @@ impl WHFastHelio {
                     last_spin:[Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
                     current_time:0.,
                     current_iteration:0,
-                    // WHFastHelio specifics:
-                    universe_heliocentric: universe_heliocentric,
+                    // WHFast specifics:
+                    universe_alternative_coordinates: universe_alternative_coordinates,
                     is_synchronized: true,
                     timestep_warning: 0,
                     set_to_center_of_mass: false,
@@ -166,8 +144,8 @@ impl WHFastHelio {
         universe_integrator
     }
     
-    pub fn restore_snapshot(universe_integrator_snapshot_path: &Path, verify_integrity: bool) -> Result<WHFastHelio, String> {
-        let mut universe_integrator: WHFastHelio;
+    pub fn restore_snapshot(universe_integrator_snapshot_path: &Path, verify_integrity: bool) -> Result<WHFast, String> {
+        let mut universe_integrator: WHFast;
         if universe_integrator_snapshot_path.exists() {
             // Open the path in read-only mode, returns `io::Result<File>`
             let mut snapshot_file = match File::open(&universe_integrator_snapshot_path) {
@@ -219,7 +197,7 @@ impl WHFastHelio {
     }
 }
 
-impl Integrator for WHFastHelio {
+impl Integrator for WHFast {
 
     fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>, silent_mode: bool) -> Result<bool, String> {
         // Output
@@ -270,8 +248,8 @@ impl Integrator for WHFastHelio {
 }
 
 
-impl WHFastHelio {
-    // WHFastHelio integrator
+impl WHFast {
+    // WHFast integrator
     fn iterate_position_and_velocity_with_whfasthelio(&mut self) {
         let time_step = self.time_step;
         let half_time_step = self.half_time_step;
@@ -279,16 +257,16 @@ impl WHFastHelio {
         self.move_to_center_of_mass();
         // ---------------------------------------------------------------------
         // A 'DKD'-like integrator will do the first 'D' part.
-        self.to_helio_posvel();
-        self.helio_kepler_steps(half_time_step);
-        self.helio_jump_step(half_time_step);
+        self.to_democratic_heliocentric_posvel();
+        self.kepler_steps(half_time_step);
+        self.jump_step(half_time_step);
         self.to_inertial_posvel();
         self.current_time += self.half_time_step;
         // ---------------------------------------------------------------------
 
         // Calculate accelerations.
-        let integrator_is_whfasthelio = true;
-        self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
+        let integrator_is_whfast = true;
+        self.universe.gravity_calculate_acceleration(integrator_is_whfast);
         
         // Calculate spin variation and non-gravity accelerations.
         self.move_to_star_center();
@@ -300,10 +278,10 @@ impl WHFastHelio {
 
         // ---------------------------------------------------------------------
         // A 'DKD'-like integrator will do the 'KD' part.
-        //self.to_helio_posvel(); // new (actually not new, but it makes sense, position and velocities have not changed)
-        self.helio_interaction_step(time_step);
-        self.helio_jump_step(half_time_step);
-        self.helio_kepler_steps(half_time_step);
+        //self.to_democratic_heliocentric_posvel(); // new (actually not new, but it makes sense, position and velocities have not changed)
+        self.interaction_step(time_step);
+        self.jump_step(half_time_step);
+        self.kepler_steps(half_time_step);
         self.to_inertial_posvel();
         self.current_time += self.half_time_step;
         // ---------------------------------------------------------------------
@@ -368,43 +346,43 @@ impl WHFastHelio {
 
     /***************************** 
      * Operators                 */
-    fn helio_jump_step(&mut self, _dt: f64){
+    fn jump_step(&mut self, _dt: f64){
         let m0 = self.universe.particles[0].mass;
         let mut px = 0.;
         let mut py = 0.;
         let mut pz = 0.;
-        for particle_heliocentric in self.universe_heliocentric.particles[1..self.universe_heliocentric.n_particles].iter() {
-            px += particle_heliocentric.mass* particle_heliocentric.velocity.x;
-            py += particle_heliocentric.mass* particle_heliocentric.velocity.y;
-            pz += particle_heliocentric.mass* particle_heliocentric.velocity.z;
+        for particle_alternative_coordinates in self.universe_alternative_coordinates.particles[1..self.universe_alternative_coordinates.n_particles].iter() {
+            px += particle_alternative_coordinates.mass* particle_alternative_coordinates.velocity.x;
+            py += particle_alternative_coordinates.mass* particle_alternative_coordinates.velocity.y;
+            pz += particle_alternative_coordinates.mass* particle_alternative_coordinates.velocity.z;
         }
-        for particle_heliocentric in self.universe_heliocentric.particles[1..self.universe_heliocentric.n_particles].iter_mut() {
-            particle_heliocentric.position.x += _dt * px/m0;
-            particle_heliocentric.position.y += _dt * py/m0;
-            particle_heliocentric.position.z += _dt * pz/m0;
-        }
-        self.is_synchronized = false;
-    }
-
-    fn helio_interaction_step(&mut self, _dt: f64){
-        for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..self.universe_heliocentric.n_particles].iter_mut().zip(self.universe.particles[1..self.universe.n_particles].iter()) {
-            particle_heliocentric.velocity.x += _dt*particle.acceleration.x;
-            particle_heliocentric.velocity.y += _dt*particle.acceleration.y;
-            particle_heliocentric.velocity.z += _dt*particle.acceleration.z;
+        for particle_alternative_coordinates in self.universe_alternative_coordinates.particles[1..self.universe_alternative_coordinates.n_particles].iter_mut() {
+            particle_alternative_coordinates.position.x += _dt * px/m0;
+            particle_alternative_coordinates.position.y += _dt * py/m0;
+            particle_alternative_coordinates.position.z += _dt * pz/m0;
         }
         self.is_synchronized = false;
     }
 
-    fn helio_kepler_steps(&mut self, time_step: f64){
+    fn interaction_step(&mut self, _dt: f64){
+        for (particle_alternative_coordinates, particle) in self.universe_alternative_coordinates.particles[1..self.universe_alternative_coordinates.n_particles].iter_mut().zip(self.universe.particles[1..self.universe.n_particles].iter()) {
+            particle_alternative_coordinates.velocity.x += _dt*particle.acceleration.x;
+            particle_alternative_coordinates.velocity.y += _dt*particle.acceleration.y;
+            particle_alternative_coordinates.velocity.z += _dt*particle.acceleration.z;
+        }
+        self.is_synchronized = false;
+    }
+
+    fn kepler_steps(&mut self, time_step: f64){
         let star_mass_g = self.universe.particles[0].mass_g;
 
         for i in 1..self.universe.n_particles {
             self.kepler_individual_step(i, star_mass_g, time_step);
         }
-        let star_heliocentric = &mut self.universe_heliocentric.particles[0];
-        star_heliocentric.position.x += time_step*star_heliocentric.velocity.x;
-        star_heliocentric.position.y += time_step*star_heliocentric.velocity.y;
-        star_heliocentric.position.z += time_step*star_heliocentric.velocity.z;
+        let star_alternative_coordinates = &mut self.universe_alternative_coordinates.particles[0];
+        star_alternative_coordinates.position.x += time_step*star_alternative_coordinates.velocity.x;
+        star_alternative_coordinates.position.y += time_step*star_alternative_coordinates.velocity.y;
+        star_alternative_coordinates.position.z += time_step*star_alternative_coordinates.velocity.z;
         self.is_synchronized = false;
     }
 
@@ -415,7 +393,7 @@ impl WHFastHelio {
         let p1_position;
         let p1_velocity;
         {
-            let p1 = &self.universe_heliocentric.particles[i];
+            let p1 = &self.universe_alternative_coordinates.particles[i];
             p1_position = p1.position.clone();
             p1_velocity = p1.velocity.clone();
         }
@@ -459,7 +437,7 @@ impl WHFastHelio {
         let mut old_x = x;
 
         //// Do one Newton step
-        gs = WHFastHelio::stiefel_gs3(beta, x);
+        gs = WHFast::stiefel_gs3(beta, x);
         let eta0_gs1_zeta0_gs2 = eta0*gs[1] + zeta0*gs[2];
         let mut ri = 1./(r0 + eta0_gs1_zeta0_gs2);
         x  = ri*(x*eta0_gs1_zeta0_gs2-eta0*gs[2]-zeta0*gs[3]+_dt);
@@ -472,7 +450,7 @@ impl WHFastHelio {
             x = beta*_dt/mass_g;
             let mut prev_x = [0.; WHFAST_NMAX_QUART+1];
             'outer: for n_lag in 1..WHFAST_NMAX_QUART {
-                gs = WHFastHelio::stiefel_gs3(beta, x);
+                gs = WHFast::stiefel_gs3(beta, x);
                 let f = r0*x + eta0*gs[2] + zeta0*gs[3] - _dt;
                 let fp = r0 + eta0*gs[1] + zeta0*gs[2];
                 let fpp = eta0*gs[0] + zeta0*gs[1];
@@ -496,7 +474,7 @@ impl WHFastHelio {
             for _ in 1..WHFAST_NMAX_NEWT {
                 old_x2 = old_x;
                 old_x = x;
-                gs = WHFastHelio::stiefel_gs3(beta, x);
+                gs = WHFast::stiefel_gs3(beta, x);
                 let eta0_gs1_zeta0_gs2 = eta0*gs[1] + zeta0*gs[2];
                 ri = 1./(r0 + eta0_gs1_zeta0_gs2);
                 x  = ri*(x*eta0_gs1_zeta0_gs2-eta0*gs[2]-zeta0*gs[3]+_dt);
@@ -527,7 +505,7 @@ impl WHFastHelio {
             }
             x = (x_max + x_min)/2.;
             loop {
-                gs = WHFastHelio::stiefel_gs3(beta, x);
+                gs = WHFast::stiefel_gs3(beta, x);
                 let s   = r0*x + eta0*gs[2] + zeta0*gs[3]-_dt;
                 if s >= 0. {
                     x_max = x;
@@ -557,7 +535,7 @@ impl WHFastHelio {
         let fd = -mass_g*gs[1]*r0i*ri; 
         let gd = -mass_g*gs[2]*ri; 
             
-        let p_j = &mut self.universe_heliocentric.particles[i];
+        let p_j = &mut self.universe_alternative_coordinates.particles[i];
         p_j.position.x += f*p1_position.x + g*p1_velocity.x;
         p_j.position.y += f*p1_position.y + g*p1_velocity.y;
         p_j.position.z += f*p1_position.z + g*p1_velocity.z;
@@ -571,7 +549,7 @@ impl WHFastHelio {
 
     fn stiefel_gs3(beta: f64, x: f64) -> [f64; 6] {
         let x2 = x.powi(2);
-        let mut gs = WHFastHelio::stumpff_cs3(beta*x2);
+        let mut gs = WHFast::stumpff_cs3(beta*x2);
         gs[1] *= x; 
         gs[2] *= x2; 
         gs[3] *= x2*x;
@@ -615,47 +593,43 @@ impl WHFastHelio {
     //***************************** 
     // Coordinate transformations 
     //***************************** 
-    /// Inertial to Democratic-Heliocentric coordinates (a.k.a. canonical heliocentric, Poincare or mixed-variables coordinates)
-    /// http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:1612.05329
-    /// TODO: Changes to the WHFastHelio integrator. This integrator now uses democratic heliocentric coordinates and a Hamiltonian splitted as proposed by Hernandez and Dehnen (2017), WHDS, which splits the Hamiltonian into three parts. It has the advantage that the integrator solves the two body problem exactly. It is not compatible with symplectic correctors, this functionality has been removed for WHFastHelio. For very high accuracy integrations of stable planetary systems, the WHFast integrator in Jacobi coordinated (and potentially symplectic correctors) should be better suited.
-    /// https://github.com/hannorein/rebound/blob/master/changelog.rst#version-324
-    fn to_helio_posvel(&mut self){
+    fn to_democratic_heliocentric_posvel(&mut self){
         {
-            let star_heliocentric = &mut self.universe_heliocentric.particles[0];
-            star_heliocentric.position.x  = 0.;
-            star_heliocentric.position.y  = 0.;
-            star_heliocentric.position.z  = 0.;
-            star_heliocentric.velocity.x = 0.;
-            star_heliocentric.velocity.y = 0.;
-            star_heliocentric.velocity.z = 0.;
-            star_heliocentric.mass  = 0.;
+            let star_alternative_coordinates = &mut self.universe_alternative_coordinates.particles[0];
+            star_alternative_coordinates.position.x  = 0.;
+            star_alternative_coordinates.position.y  = 0.;
+            star_alternative_coordinates.position.z  = 0.;
+            star_alternative_coordinates.velocity.x = 0.;
+            star_alternative_coordinates.velocity.y = 0.;
+            star_alternative_coordinates.velocity.z = 0.;
+            star_alternative_coordinates.mass  = 0.;
             for particle in self.universe.particles[0..self.universe.n_particles].iter() {
-                star_heliocentric.position.x  += particle.position.x *particle.mass;
-                star_heliocentric.position.y  += particle.position.y *particle.mass;
-                star_heliocentric.position.z  += particle.position.z *particle.mass;
-                star_heliocentric.velocity.x += particle.velocity.x*particle.mass;
-                star_heliocentric.velocity.y += particle.velocity.y*particle.mass;
-                star_heliocentric.velocity.z += particle.velocity.z*particle.mass;
-                star_heliocentric.mass  += particle.mass;
+                star_alternative_coordinates.position.x  += particle.position.x *particle.mass;
+                star_alternative_coordinates.position.y  += particle.position.y *particle.mass;
+                star_alternative_coordinates.position.z  += particle.position.z *particle.mass;
+                star_alternative_coordinates.velocity.x += particle.velocity.x*particle.mass;
+                star_alternative_coordinates.velocity.y += particle.velocity.y*particle.mass;
+                star_alternative_coordinates.velocity.z += particle.velocity.z*particle.mass;
+                star_alternative_coordinates.mass  += particle.mass;
             }
-            star_heliocentric.position.x  /= star_heliocentric.mass;
-            star_heliocentric.position.y  /= star_heliocentric.mass;
-            star_heliocentric.position.z  /= star_heliocentric.mass;
-            star_heliocentric.velocity.x /= star_heliocentric.mass;
-            star_heliocentric.velocity.y /= star_heliocentric.mass;
-            star_heliocentric.velocity.z /= star_heliocentric.mass;
+            star_alternative_coordinates.position.x  /= star_alternative_coordinates.mass;
+            star_alternative_coordinates.position.y  /= star_alternative_coordinates.mass;
+            star_alternative_coordinates.position.z  /= star_alternative_coordinates.mass;
+            star_alternative_coordinates.velocity.x /= star_alternative_coordinates.mass;
+            star_alternative_coordinates.velocity.y /= star_alternative_coordinates.mass;
+            star_alternative_coordinates.velocity.z /= star_alternative_coordinates.mass;
         }
 
         if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
-            if let Some((star_heliocentric, particles_heliocentric)) = self.universe_heliocentric.particles[..self.universe_heliocentric.n_particles].split_first_mut() {
-                for (particle_heliocentric, particle) in particles_heliocentric.iter_mut().zip(particles.iter()) {
-                    particle_heliocentric.position.x  = particle.position.x  - star.position.x ; 
-                    particle_heliocentric.position.y  = particle.position.y  - star.position.y ;
-                    particle_heliocentric.position.z  = particle.position.z  - star.position.z ;
-                    particle_heliocentric.velocity.x = particle.velocity.x - star_heliocentric.velocity.x;
-                    particle_heliocentric.velocity.y = particle.velocity.y - star_heliocentric.velocity.y;
-                    particle_heliocentric.velocity.z = particle.velocity.z - star_heliocentric.velocity.z;
-                    particle_heliocentric.mass  = particle.mass;
+            if let Some((star_alternative_coordinates, particles_alternative_coordinates)) = self.universe_alternative_coordinates.particles[..self.universe_alternative_coordinates.n_particles].split_first_mut() {
+                for (particle_alternative_coordinates, particle) in particles_alternative_coordinates.iter_mut().zip(particles.iter()) {
+                    particle_alternative_coordinates.position.x  = particle.position.x  - star.position.x ; 
+                    particle_alternative_coordinates.position.y  = particle.position.y  - star.position.y ;
+                    particle_alternative_coordinates.position.z  = particle.position.z  - star.position.z ;
+                    particle_alternative_coordinates.velocity.x = particle.velocity.x - star_alternative_coordinates.velocity.x;
+                    particle_alternative_coordinates.velocity.y = particle.velocity.y - star_alternative_coordinates.velocity.y;
+                    particle_alternative_coordinates.velocity.z = particle.velocity.z - star_alternative_coordinates.velocity.z;
+                    particle_alternative_coordinates.mass  = particle.mass;
                 }
             }
         }
@@ -663,13 +637,13 @@ impl WHFastHelio {
     }
 
     fn to_inertial_pos(&mut self) {
-        let mtot = self.universe_heliocentric.particles[0].mass;
+        let mtot = self.universe_alternative_coordinates.particles[0].mass;
         {
-            let mut new_star_position = self.universe_heliocentric.particles[0].position; // Copy
-            for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..self.universe_heliocentric.n_particles].iter().zip(self.universe.particles[1..self.universe.n_particles].iter()) {
-                new_star_position.x  -= particle_heliocentric.position.x*particle.mass/mtot;
-                new_star_position.y  -= particle_heliocentric.position.y*particle.mass/mtot;
-                new_star_position.z  -= particle_heliocentric.position.z*particle.mass/mtot;
+            let mut new_star_position = self.universe_alternative_coordinates.particles[0].position; // Copy
+            for (particle_alternative_coordinates, particle) in self.universe_alternative_coordinates.particles[1..self.universe_alternative_coordinates.n_particles].iter().zip(self.universe.particles[1..self.universe.n_particles].iter()) {
+                new_star_position.x  -= particle_alternative_coordinates.position.x*particle.mass/mtot;
+                new_star_position.y  -= particle_alternative_coordinates.position.y*particle.mass/mtot;
+                new_star_position.z  -= particle_alternative_coordinates.position.z*particle.mass/mtot;
             }
             let star = &mut self.universe.particles[0];
             star.position.x  = new_star_position.x;
@@ -677,10 +651,10 @@ impl WHFastHelio {
             star.position.z  = new_star_position.z;
         }
         if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
-            for (particle_heliocentric, particle) in self.universe_heliocentric.particles[1..self.universe_heliocentric.n_particles].iter().zip(particles.iter_mut()) {
-                particle.position.x = particle_heliocentric.position.x+star.position.x;
-                particle.position.y = particle_heliocentric.position.y+star.position.y;
-                particle.position.z = particle_heliocentric.position.z+star.position.z;
+            for (particle_alternative_coordinates, particle) in self.universe_alternative_coordinates.particles[1..self.universe_alternative_coordinates.n_particles].iter().zip(particles.iter_mut()) {
+                particle.position.x = particle_alternative_coordinates.position.x+star.position.x;
+                particle.position.y = particle_alternative_coordinates.position.y+star.position.y;
+                particle.position.z = particle_alternative_coordinates.position.z+star.position.z;
             }
         }
 
@@ -688,15 +662,15 @@ impl WHFastHelio {
     fn to_inertial_posvel(&mut self) {
         self.to_inertial_pos();
         let m0 = self.universe.particles[0].mass;
-        if let Some((star_heliocentric, particles_heliocentric)) = self.universe_heliocentric.particles[..self.universe_heliocentric.n_particles].split_first_mut() {
-            for (particle_heliocentric, particle) in particles_heliocentric.iter().zip(self.universe.particles[1..self.universe.n_particles].iter_mut()) {
-                particle.velocity.x = particle_heliocentric.velocity.x+star_heliocentric.velocity.x;
-                particle.velocity.y = particle_heliocentric.velocity.y+star_heliocentric.velocity.y;
-                particle.velocity.z = particle_heliocentric.velocity.z+star_heliocentric.velocity.z;
+        if let Some((star_alternative_coordinates, particles_alternative_coordinates)) = self.universe_alternative_coordinates.particles[..self.universe_alternative_coordinates.n_particles].split_first_mut() {
+            for (particle_alternative_coordinates, particle) in particles_alternative_coordinates.iter().zip(self.universe.particles[1..self.universe.n_particles].iter_mut()) {
+                particle.velocity.x = particle_alternative_coordinates.velocity.x+star_alternative_coordinates.velocity.x;
+                particle.velocity.y = particle_alternative_coordinates.velocity.y+star_alternative_coordinates.velocity.y;
+                particle.velocity.z = particle_alternative_coordinates.velocity.z+star_alternative_coordinates.velocity.z;
             }
         }
 
-        let mut new_star_velocity = self.universe_heliocentric.particles[0].velocity.clone();
+        let mut new_star_velocity = self.universe_alternative_coordinates.particles[0].velocity.clone();
         new_star_velocity.x = new_star_velocity.x;
         new_star_velocity.y = new_star_velocity.y;
         new_star_velocity.z = new_star_velocity.z;

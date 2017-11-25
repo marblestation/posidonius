@@ -25,7 +25,7 @@ class WHFast(Integrator):
     def __init__(self, time_step, recovery_snapshot_period, historic_snapshot_period, universe):
         super(WHFast, self).__init__(time_step, recovery_snapshot_period, historic_snapshot_period, universe)
         self._data['timestep_warning'] = 0
-        self._data['universe_heliocentric'] = self._data['universe'].copy()
+        self._data['universe_alternative_coordinates'] = self._data['universe'].copy()
         self._data['set_to_center_of_mass'] = False
         self._data['is_synchronized'] = True
 

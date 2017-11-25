@@ -1,11 +1,11 @@
 mod leapfrog;
 mod ias15;
-mod whfasthelio;
+mod whfast;
 pub mod output;
 
 pub use self::leapfrog::*;
 pub use self::ias15::*;
-pub use self::whfasthelio::*;
+pub use self::whfast::*;
 
 use std::io::{BufWriter};
 use std::fs::File;

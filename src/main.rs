@@ -93,7 +93,7 @@ fn main() {
     let first_universe_integrator_snapshot_path = Path::new(&first_universe_integrator_snapshot_filename);
     
     // Start/Resume from snapshot
-    let mut universe_integrator = match posidonius::WHFastHelio::restore_snapshot(&first_universe_integrator_snapshot_path, verify_integrity) {
+    let mut universe_integrator = match posidonius::WHFast::restore_snapshot(&first_universe_integrator_snapshot_path, verify_integrity) {
         Ok(restored_case) => { restored_case },
         Err(_) => { 
             if resume {

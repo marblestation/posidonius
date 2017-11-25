@@ -15,7 +15,7 @@ pub const INTEGRATOR_EPSILON : f64 = 1e-6;          // Precision parameter (defa
 pub const INTEGRATOR_MIN_DT : f64 = 0.;             // Minimum timestep used as a floor when adaptive timestepping is enabled (default: 0.).
 pub const SAFETY_FACTOR : f64 = 0.25;               // Maximum increase/deacrease of consecutve timesteps (default: 0.25).
 
-///// Constants for WHFastHelio
+///// Constants for WHFast
 pub const WHFAST_NMAX_QUART : usize = 64;               // Maximum number of iterations for quartic solver
 pub const WHFAST_NMAX_NEWT : usize = 32;               // Maximum number of iterations for Newton's method
 

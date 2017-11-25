@@ -25,7 +25,7 @@ pub struct Universe {
 }
 
 impl Universe {
-    pub fn gravity_calculate_acceleration(&mut self, integrator_is_whfasthelio: bool) {
+    pub fn gravity_calculate_acceleration(&mut self, integrator_is_whfast: bool) {
 
         for (i, particle) in self.particles[..self.n_particles].iter().enumerate() {
             self.temporary_copied_particle_positions[i].x = particle.position.x;
@@ -69,8 +69,8 @@ impl Universe {
                 }
                 //////////////////////////////////////////////////////////////////////
 
-                if integrator_is_whfasthelio && (i == 0 || j == 0) {
-                    // For WHFastHelio, ignore central body
+                if integrator_is_whfast && (i == 0 || j == 0) {
+                    // For WHFast democratic-heliocentric coordinates, ignore central body
                     continue
                 }
 
@@ -94,9 +94,9 @@ impl Universe {
             }
         }
 
-        if !integrator_is_whfasthelio {
+        if !integrator_is_whfast {
             // Tides require heliocentric point of reference, the star should continue in the zero point
-            // so we must compensate all the planets (but if WHFastHelio is being used, it is
+            // so we must compensate all the planets (but if WHFast is being used, it is
             // automatically done by the integrator):
             if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
                 for particle in particles.iter_mut() {

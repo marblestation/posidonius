@@ -174,8 +174,8 @@ impl Integrator for Ias15 {
         }
 
         // Calculate accelerations.
-        let integrator_is_whfasthelio = false;
-        self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
+        let integrator_is_whfast = false;
+        self.universe.gravity_calculate_acceleration(integrator_is_whfast);
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dspin_dt = true;
@@ -375,8 +375,8 @@ impl Ias15 {
 
 
                     // Calculate accelerations.
-                    let integrator_is_whfasthelio = false;
-                    self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
+                    let integrator_is_whfast = false;
+                    self.universe.gravity_calculate_acceleration(integrator_is_whfast);
                     // Calculate non-gravity accelerations.
                     let evolution = true;
                     let dspin_dt = true;

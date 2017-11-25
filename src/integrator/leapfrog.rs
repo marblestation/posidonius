@@ -168,8 +168,8 @@ impl Integrator for LeapFrog {
         self.integrator_part1();
 
         // Calculate accelerations.
-        let integrator_is_whfasthelio = false;
-        self.universe.gravity_calculate_acceleration(integrator_is_whfasthelio);
+        let integrator_is_whfast = false;
+        self.universe.gravity_calculate_acceleration(integrator_is_whfast);
 
         // Calculate non-gravity accelerations.
         let evolution = true;
