@@ -5,6 +5,7 @@ use std::fs::File;
 use super::Integrator;
 use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES};
 use super::super::particles::Universe;
+use super::super::particles::IgnoreGravityTerms;
 use super::super::particles::Particle;
 use super::super::particles::Axes;
 use super::output::{write_historic_snapshot};
@@ -85,6 +86,14 @@ use std::collections::hash_map::DefaultHasher;
 /// energy is conserved.
 ///
 
+#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
+pub enum CoordinatesType {
+    Jacobi,
+    DemocraticHeliocentric,
+    WHDS,
+}
+
+
 #[derive(Debug, Clone, RustcEncodable, RustcDecodable, PartialEq)]
 pub struct WHFast {
     time_step: f64,
@@ -100,6 +109,7 @@ pub struct WHFast {
     pub n_historic_snapshots: usize,
     pub hash: u64,
     universe_alternative_coordinates: Universe, // Jacobi, democractic-heliocentric or WHDS
+    alternative_coordinates_type: CoordinatesType,
     /// Internal data structures below. Nothing to be changed by the user.
     is_synchronized: bool, 
     timestep_warning: usize ,
@@ -116,7 +126,7 @@ impl Hash for WHFast {
 }
 
 impl WHFast {
-    pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> WHFast {
+    pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe, alternative_coordinates_type: CoordinatesType) -> WHFast {
         let universe_alternative_coordinates = universe.clone(); // Clone will not clone evolving types
         let mut universe_integrator = WHFast {
                     time_step:time_step,
@@ -133,6 +143,7 @@ impl WHFast {
                     current_iteration:0,
                     // WHFast specifics:
                     universe_alternative_coordinates: universe_alternative_coordinates,
+                    alternative_coordinates_type: alternative_coordinates_type,
                     is_synchronized: true,
                     timestep_warning: 0,
                     set_to_center_of_mass: false,
@@ -265,8 +276,8 @@ impl WHFast {
         // ---------------------------------------------------------------------
 
         // Calculate accelerations.
-        let integrator_is_whfast = true;
-        self.universe.gravity_calculate_acceleration(integrator_is_whfast);
+        let ignore_terms = IgnoreGravityTerms::WHFastTwo;
+        self.universe.gravity_calculate_acceleration(ignore_terms);
         
         // Calculate spin variation and non-gravity accelerations.
         self.move_to_star_center();

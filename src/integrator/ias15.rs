@@ -5,6 +5,7 @@ use std::fs::File;
 use super::Integrator;
 use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
 use super::super::particles::Universe;
+use super::super::particles::IgnoreGravityTerms;
 use super::output::{write_historic_snapshot};
 use rustc_serialize::json;
 use bincode::rustc_serialize::{decode_from};
@@ -174,8 +175,8 @@ impl Integrator for Ias15 {
         }
 
         // Calculate accelerations.
-        let integrator_is_whfast = false;
-        self.universe.gravity_calculate_acceleration(integrator_is_whfast);
+        let ignore_terms = IgnoreGravityTerms::None;
+        self.universe.gravity_calculate_acceleration(ignore_terms);
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dspin_dt = true;
@@ -375,8 +376,8 @@ impl Ias15 {
 
 
                     // Calculate accelerations.
-                    let integrator_is_whfast = false;
-                    self.universe.gravity_calculate_acceleration(integrator_is_whfast);
+                    let ignore_terms = IgnoreGravityTerms::None;
+                    self.universe.gravity_calculate_acceleration(ignore_terms);
                     // Calculate non-gravity accelerations.
                     let evolution = true;
                     let dspin_dt = true;

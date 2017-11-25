@@ -4,6 +4,7 @@ use std::io::{Write, BufWriter};
 use std::fs::File;
 use super::Integrator;
 use super::super::particles::Universe;
+use super::super::particles::IgnoreGravityTerms;
 use super::output::{write_historic_snapshot};
 use rustc_serialize::json;
 use bincode::rustc_serialize::{decode_from};
@@ -168,8 +169,8 @@ impl Integrator for LeapFrog {
         self.integrator_part1();
 
         // Calculate accelerations.
-        let integrator_is_whfast = false;
-        self.universe.gravity_calculate_acceleration(integrator_is_whfast);
+        let ignore_terms = IgnoreGravityTerms::None;
+        self.universe.gravity_calculate_acceleration(ignore_terms);
 
         // Calculate non-gravity accelerations.
         let evolution = true;

@@ -24,8 +24,15 @@ pub struct Universe {
     temporary_copied_particles_radiuses: [f64; MAX_PARTICLES], // For optimization purposes
 }
 
+#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
+pub enum IgnoreGravityTerms {
+    None,
+    WHFastOne,
+    WHFastTwo,
+}
+
 impl Universe {
-    pub fn gravity_calculate_acceleration(&mut self, integrator_is_whfast: bool) {
+    pub fn gravity_calculate_acceleration(&mut self, ignore_terms: IgnoreGravityTerms) {
 
         for (i, particle) in self.particles[..self.n_particles].iter().enumerate() {
             self.temporary_copied_particle_positions[i].x = particle.position.x;
@@ -69,8 +76,14 @@ impl Universe {
                 }
                 //////////////////////////////////////////////////////////////////////
 
-                if integrator_is_whfast && (i == 0 || j == 0) {
-                    // For WHFast democratic-heliocentric coordinates, ignore central body
+                if ignore_terms == IgnoreGravityTerms::WHFastOne && ((i == 1 || j == 0) || (i == 0 || j == 1)) {
+                    // For WHFast Jacobi coordinates, 
+                    // ignore some central body/first planet
+                    continue
+                }
+                if ignore_terms == IgnoreGravityTerms::WHFastTwo && (i == 0 || j == 0) {
+                    // For WHFast democratic-heliocentric & WHDS coordinates
+                    // completely ignore central body
                     continue
                 }
 
@@ -94,7 +107,7 @@ impl Universe {
             }
         }
 
-        if !integrator_is_whfast {
+        if ignore_terms != IgnoreGravityTerms::WHFastOne && ignore_terms != IgnoreGravityTerms::WHFastTwo {
             // Tides require heliocentric point of reference, the star should continue in the zero point
             // so we must compensate all the planets (but if WHFast is being used, it is
             // automatically done by the integrator):
