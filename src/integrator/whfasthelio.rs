@@ -281,6 +281,7 @@ impl WHFastHelio {
         // A 'DKD'-like integrator will do the first 'D' part.
         self.to_helio_posvel();
         self.helio_kepler_steps(half_time_step);
+        self.helio_jump_step(half_time_step);
         self.to_inertial_posvel();
         self.current_time += self.half_time_step;
         // ---------------------------------------------------------------------
@@ -299,9 +300,9 @@ impl WHFastHelio {
 
         // ---------------------------------------------------------------------
         // A 'DKD'-like integrator will do the 'KD' part.
-        self.to_helio_posvel();
+        //self.to_helio_posvel(); // new (actually not new, but it makes sense, position and velocities have not changed)
         self.helio_interaction_step(time_step);
-        self.helio_jump_step(time_step);
+        self.helio_jump_step(half_time_step);
         self.helio_kepler_steps(half_time_step);
         self.to_inertial_posvel();
         self.current_time += self.half_time_step;
@@ -614,6 +615,10 @@ impl WHFastHelio {
     //***************************** 
     // Coordinate transformations 
     //***************************** 
+    /// Inertial to Democratic-Heliocentric coordinates (a.k.a. canonical heliocentric, Poincare or mixed-variables coordinates)
+    /// http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:1612.05329
+    /// TODO: Changes to the WHFastHelio integrator. This integrator now uses democratic heliocentric coordinates and a Hamiltonian splitted as proposed by Hernandez and Dehnen (2017), WHDS, which splits the Hamiltonian into three parts. It has the advantage that the integrator solves the two body problem exactly. It is not compatible with symplectic correctors, this functionality has been removed for WHFastHelio. For very high accuracy integrations of stable planetary systems, the WHFast integrator in Jacobi coordinated (and potentially symplectic correctors) should be better suited.
+    /// https://github.com/hannorein/rebound/blob/master/changelog.rst#version-324
     fn to_helio_posvel(&mut self){
         {
             let star_heliocentric = &mut self.universe_heliocentric.particles[0];
@@ -682,9 +687,7 @@ impl WHFastHelio {
     }
     fn to_inertial_posvel(&mut self) {
         self.to_inertial_pos();
-        let mtot = self.universe_heliocentric.particles[0].mass;
         let m0 = self.universe.particles[0].mass;
-        let factor = mtot/m0;
         if let Some((star_heliocentric, particles_heliocentric)) = self.universe_heliocentric.particles[..self.universe_heliocentric.n_particles].split_first_mut() {
             for (particle_heliocentric, particle) in particles_heliocentric.iter().zip(self.universe.particles[1..self.universe.n_particles].iter_mut()) {
                 particle.velocity.x = particle_heliocentric.velocity.x+star_heliocentric.velocity.x;
@@ -694,9 +697,9 @@ impl WHFastHelio {
         }
 
         let mut new_star_velocity = self.universe_heliocentric.particles[0].velocity.clone();
-        new_star_velocity.x = new_star_velocity.x*factor;
-        new_star_velocity.y = new_star_velocity.y*factor;
-        new_star_velocity.z = new_star_velocity.z*factor;
+        new_star_velocity.x = new_star_velocity.x;
+        new_star_velocity.y = new_star_velocity.y;
+        new_star_velocity.z = new_star_velocity.z;
 
         if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {

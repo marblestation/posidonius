@@ -279,7 +279,7 @@ impl Universe {
                     // Integration of the spin (total torque tides):
                     //let factor = star.mass_g / (star.mass_g + particle.mass_g);
                     ////let factor = star.mass / (star.mass + particle.mass);
-                    let factor = K2 / (star.mass_g + particle.mass_g); // Simplification because later on we will devide by star.mass_g
+                    let factor = K2 / (star.mass_g + particle.mass_g); // Simplification because later on we will devide by star.mass_g [search SIMPLIFICATION]
                     //let factor = 1. / (star.mass + particle.mass);
                     torque.x += factor * n_tid_x;
                     torque.y += factor * n_tid_y;
@@ -306,7 +306,7 @@ impl Universe {
     fn calculate_dspin_dt(&mut self) {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             // - Equation 25 from Bolmont et al. 2015
-            let factor = - 1. / (star.radius_of_gyration_2 * star.radius.powi(2));
+            let factor = - 1. / (star.radius_of_gyration_2 * star.radius.powi(2)); // Simplification, we dont divide by star.mass_g because we did not mutliplied before (terms cancel out) [search SIMPLIFICATION]
             star.dspin_dt.x = factor * star.torque.x;
             star.dspin_dt.y = factor * star.torque.y;
             star.dspin_dt.z = factor * star.torque.z;
@@ -609,7 +609,7 @@ impl Universe {
                     // Integration of the spin (total torque rot):
                     //let factor = star.mass_g / (star.mass_g + particle.mass_g);
                     ////let factor = star.mass / (star.mass + particle.mass);
-                    let factor = K2 / (star.mass_g + particle.mass_g); // Simplification because later on we will devide by star.mass_g
+                    let factor = K2 / (star.mass_g + particle.mass_g); // Simplification because later on we will divide by star.mass_g [search SIMPLIFICATION]
                     //let factor = 1. / (star.mass + particle.mass);
                     torque.x += factor * n_rot_x;
                     torque.y += factor * n_rot_y;
