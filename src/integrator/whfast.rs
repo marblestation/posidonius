@@ -3,7 +3,7 @@ use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
 use super::Integrator;
-use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES};
+use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES, G};
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::particles::Particle;
@@ -38,8 +38,7 @@ use std::collections::hash_map::DefaultHasher;
 /// order integrator, comparable to mercury symplectic part of the hybrid 
 /// integrator)
 ///
-/// Possible coordinates (only Democratic-Heliocentric coordinates available
-/// in Posidonius):
+/// Possible coordinates:
 ///
 /// - Jacobi coordinates: it leads to a better precision if orbits are well
 /// separated and do not cross each other.
@@ -276,7 +275,11 @@ impl WHFast {
         // ---------------------------------------------------------------------
 
         // Calculate accelerations.
-        let ignore_terms = IgnoreGravityTerms::WHFastTwo;
+        let ignore_terms = match self.alternative_coordinates_type {
+            CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
+            CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
+            CoordinatesType::WHDS => IgnoreGravityTerms::WHFastTwo,
+        };
         self.universe.gravity_calculate_acceleration(ignore_terms);
         
         // Calculate spin variation and non-gravity accelerations.
@@ -289,7 +292,7 @@ impl WHFast {
 
         // ---------------------------------------------------------------------
         // A 'DKD'-like integrator will do the 'KD' part.
-        //self.inertial_to_alternative_posvel(); // new (actually not new, but it makes sense, position and velocities have not changed)
+        //self.inertial_to_alternative_posvel(); // not needed because position, velocities and masses have not changed
         self.interaction_step(time_step);
         self.jump_step(half_time_step);
         self.kepler_steps(half_time_step);
@@ -418,7 +421,27 @@ impl WHFast {
     }
 
     fn jacobi_interaction_step(&mut self, _dt: f64){
-        panic!("Not implemented!");
+        self.inertial_to_jacobi_acc();
+        let softening = 1e-12;
+        let m0 = self.universe.particles[0].mass;
+        if let Some((_, particles_alternative_coordinates)) = self.universe_alternative_coordinates.particles[..self.universe.n_particles].split_first_mut() {
+            let mut eta = m0;
+            for (i, particle_alternative_coordinates) in particles_alternative_coordinates.iter_mut().enumerate() {
+                eta += particle_alternative_coordinates.mass;
+                particle_alternative_coordinates.velocity.x += _dt * particle_alternative_coordinates.acceleration.x;
+                particle_alternative_coordinates.velocity.y += _dt * particle_alternative_coordinates.acceleration.y;
+                particle_alternative_coordinates.velocity.z += _dt * particle_alternative_coordinates.acceleration.z;
+                if i > 0 { // The star is already out of the loop, ignore first planet too (it should be the closer to the star)
+                    let rj2i = 1./(particle_alternative_coordinates.position.x.powi(2) + particle_alternative_coordinates.position.y.powi(2) + particle_alternative_coordinates.position.z.powi(2) + softening);
+                    let rji = rj2i.sqrt();
+                    let rj3im = rji*rj2i*G*eta;
+                    let prefac = _dt*rj3im;
+                    particle_alternative_coordinates.velocity.x += prefac * particle_alternative_coordinates.position.x;
+                    particle_alternative_coordinates.velocity.y += prefac * particle_alternative_coordinates.position.y;
+                    particle_alternative_coordinates.velocity.z += prefac * particle_alternative_coordinates.position.z;
+                }
+            }
+        }
     }
 
     fn democratic_heliocentric_interaction_step(&mut self, _dt: f64){
@@ -456,7 +479,7 @@ impl WHFast {
     fn jacobi_kepler_steps(&mut self, time_step: f64){
         let mut star_planets_mass_g = self.universe.particles[0].mass_g;
         for i in 1..self.universe.n_particles {
-            star_planets_mass_g += self.universe.particles[i].mass_g;
+            star_planets_mass_g += self.universe_alternative_coordinates.particles[i].mass_g;
             self.kepler_individual_step(i, star_planets_mass_g, time_step);
         }
     }
@@ -471,7 +494,7 @@ impl WHFast {
     fn whds_kepler_steps(&mut self, time_step: f64){
         let star_mass_g = self.universe.particles[0].mass_g;
         for i in 1..self.universe.n_particles {
-            let star_planet_mass_g = star_mass_g + self.universe.particles[i].mass_g;
+            let star_planet_mass_g = star_mass_g + self.universe_alternative_coordinates.particles[i].mass_g;
             self.kepler_individual_step(i, star_planet_mass_g, time_step);
         }
     }
@@ -685,22 +708,88 @@ impl WHFast {
     //***************************** 
     fn inertial_to_alternative_posvel(&mut self){
         match self.alternative_coordinates_type {
-            CoordinatesType::Jacobi => self.intertial_to_jacobi_posvel(),
-            CoordinatesType::DemocraticHeliocentric => self.intertial_to_democratic_heliocentric_posvel(),
-            CoordinatesType::WHDS => self.intertial_to_whds_posvel(),
+            CoordinatesType::Jacobi => self.inertial_to_jacobi_posvel(),
+            CoordinatesType::DemocraticHeliocentric => self.inertial_to_democratic_heliocentric_posvel(),
+            CoordinatesType::WHDS => self.inertial_to_whds_posvel(),
         };
         self.is_synchronized = true;
     }
 
-    fn intertial_to_jacobi_posvel(&mut self){
-        panic!("Not implemented!");
+    fn inertial_to_jacobi_posvel(&mut self){
+        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
+            let m0 = star.mass;
+            let mut eta = m0;
+            let mut s_x = eta * star.position.x;
+            let mut s_y = eta * star.position.y;
+            let mut s_z = eta * star.position.z;
+            let mut s_vx = eta * star.velocity.x;
+            let mut s_vy = eta * star.velocity.y;
+            let mut s_vz = eta * star.velocity.z;
+            if let Some((star_alternative_coordinates, particles_alternative_coordinates)) = self.universe_alternative_coordinates.particles[..self.universe.n_particles].split_first_mut() {
+                for (particle_alternative_coordinates, particle) in particles_alternative_coordinates.iter_mut().zip(particles.iter()) {
+                    let ei = 1./eta;
+                    eta += particle.mass;
+                    let pme = eta*ei;
+                    particle_alternative_coordinates.mass = particle.mass;
+                    particle_alternative_coordinates.mass_g = particle.mass_g;
+                    particle_alternative_coordinates.position.x = particle.position.x - s_x*ei;
+                    particle_alternative_coordinates.position.y = particle.position.y - s_y*ei;
+                    particle_alternative_coordinates.position.z = particle.position.z - s_z*ei;
+                    particle_alternative_coordinates.velocity.x = particle.velocity.x - s_vx*ei;
+                    particle_alternative_coordinates.velocity.y = particle.velocity.y - s_vy*ei;
+                    particle_alternative_coordinates.velocity.z = particle.velocity.z - s_vz*ei;
+                    s_x  = s_x  * pme + particle.mass*particle_alternative_coordinates.position.x ;
+                    s_y  = s_y  * pme + particle.mass*particle_alternative_coordinates.position.y ;
+                    s_z  = s_z  * pme + particle.mass*particle_alternative_coordinates.position.z ;
+                    s_vx = s_vx * pme + particle.mass*particle_alternative_coordinates.velocity.x;
+                    s_vy = s_vy * pme + particle.mass*particle_alternative_coordinates.velocity.y;
+                    s_vz = s_vz * pme + particle.mass*particle_alternative_coordinates.velocity.z;
+                }
+                let mtot = eta;
+                let mtot_i = 1./mtot;
+                star_alternative_coordinates.mass = mtot;
+                star_alternative_coordinates.position.x = s_x * mtot_i;
+                star_alternative_coordinates.position.y = s_y * mtot_i;
+                star_alternative_coordinates.position.z = s_z * mtot_i;
+                star_alternative_coordinates.velocity.x = s_vx * mtot_i;
+                star_alternative_coordinates.velocity.y = s_vy * mtot_i;
+                star_alternative_coordinates.velocity.z = s_vz * mtot_i;
+            }
+        }
     }
 
-    fn intertial_to_democratic_heliocentric_posvel(&mut self){
+    fn inertial_to_jacobi_acc(&mut self){
+        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
+            if let Some((star_alternative_coordinates, particles_alternative_coordinates)) = self.universe_alternative_coordinates.particles[..self.universe.n_particles].split_first_mut() {
+                let mut eta = star.mass;
+                let mut s_ax = eta * star.acceleration.x;
+                let mut s_ay = eta * star.acceleration.y;
+                let mut s_az = eta * star.acceleration.z;
+                for (particle_alternative_coordinates, particle) in particles_alternative_coordinates.iter_mut().zip(particles.iter()) {
+                    let ei = 1./eta;
+                    eta += particle.mass;
+                    let pme = eta*ei;
+                    particle_alternative_coordinates.acceleration.x = particle.acceleration.x - s_ax*ei;
+                    particle_alternative_coordinates.acceleration.y = particle.acceleration.y - s_ay*ei;
+                    particle_alternative_coordinates.acceleration.z = particle.acceleration.z - s_az*ei;
+                    s_ax = s_ax * pme + particle.mass*particle_alternative_coordinates.acceleration.x;
+                    s_ay = s_ay * pme + particle.mass*particle_alternative_coordinates.acceleration.y;
+                    s_az = s_az * pme + particle.mass*particle_alternative_coordinates.acceleration.z;
+                }
+                let mtot = eta;
+                let mtot_i = 1./mtot;
+                star_alternative_coordinates.acceleration.x = s_ax * mtot_i;
+                star_alternative_coordinates.acceleration.y = s_ay * mtot_i;
+                star_alternative_coordinates.acceleration.z = s_az * mtot_i;
+            }
+        }
+    }
+
+    fn inertial_to_democratic_heliocentric_posvel(&mut self){
         self.inertial_to_whds_and_democratic_heliocentric_posvel();
     }
 
-    fn intertial_to_whds_posvel(&mut self){
+    fn inertial_to_whds_posvel(&mut self){
         self.inertial_to_whds_and_democratic_heliocentric_posvel();
     }
 
@@ -714,6 +803,7 @@ impl WHFast {
             star_alternative_coordinates.velocity.y = 0.;
             star_alternative_coordinates.velocity.z = 0.;
             star_alternative_coordinates.mass = 0.;
+            star_alternative_coordinates.mass_g = 0.;
             for particle in self.universe.particles[0..self.universe.n_particles].iter() {
                 star_alternative_coordinates.position.x += particle.position.x*particle.mass;
                 star_alternative_coordinates.position.y += particle.position.y*particle.mass;
@@ -722,6 +812,7 @@ impl WHFast {
                 star_alternative_coordinates.velocity.y += particle.velocity.y*particle.mass;
                 star_alternative_coordinates.velocity.z += particle.velocity.z*particle.mass;
                 star_alternative_coordinates.mass += particle.mass;
+                star_alternative_coordinates.mass_g += particle.mass_g;
             }
             let mtot = star_alternative_coordinates.mass;
             star_alternative_coordinates.position.x /= mtot;
@@ -742,12 +833,12 @@ impl WHFast {
                     particle_alternative_coordinates.velocity.y = particle.velocity.y - star_alternative_coordinates.velocity.y;
                     particle_alternative_coordinates.velocity.z = particle.velocity.z - star_alternative_coordinates.velocity.z;
                     particle_alternative_coordinates.mass = particle.mass;
+                    particle_alternative_coordinates.mass_g = particle.mass_g;
                     if self.alternative_coordinates_type == CoordinatesType::WHDS {
                         let factor = (star.mass+particle.mass)/star.mass; // mf complete
                         particle_alternative_coordinates.velocity.x *= factor;
                         particle_alternative_coordinates.velocity.y *= factor;
                         particle_alternative_coordinates.velocity.z *= factor;
-
                     }
                 }
             }
@@ -765,8 +856,48 @@ impl WHFast {
     }
 
     fn jacobi_to_inertial_posvel(&mut self) {
-        self.jacobi_to_inertial_pos();
-        panic!("Not implemented!");
+        if let Some((star_alternative_coordinates, particles_alternative_coordinates)) = self.universe_alternative_coordinates.particles[..self.universe.n_particles].split_first_mut() {
+            let m0 = star_alternative_coordinates.mass;
+            let mut eta = m0;
+            let mut s_x = eta * star_alternative_coordinates.position.x;
+            let mut s_y = eta * star_alternative_coordinates.position.y;
+            let mut s_z = eta * star_alternative_coordinates.position.z;
+            let mut s_vx = eta * star_alternative_coordinates.velocity.x;
+            let mut s_vy = eta * star_alternative_coordinates.velocity.y;
+            let mut s_vz = eta * star_alternative_coordinates.velocity.z;
+            if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
+                for (particle, particle_alternative_coordinates) in particles.iter_mut().rev().zip(particles_alternative_coordinates.iter().rev()) {
+                    let ei = 1./eta;
+                    s_x  = (s_x  - particle.mass*particle_alternative_coordinates.position.x) * ei;
+                    s_y  = (s_y  - particle.mass*particle_alternative_coordinates.position.y) * ei;
+                    s_z  = (s_z  - particle.mass*particle_alternative_coordinates.position.z) * ei;
+                    s_vx = (s_vx - particle.mass*particle_alternative_coordinates.velocity.x) * ei;
+                    s_vy = (s_vy - particle.mass*particle_alternative_coordinates.velocity.y) * ei;
+                    s_vz = (s_vz - particle.mass*particle_alternative_coordinates.velocity.z) * ei;
+                    particle.position.x = particle_alternative_coordinates.position.x + s_x;
+                    particle.position.y = particle_alternative_coordinates.position.y + s_y;
+                    particle.position.z = particle_alternative_coordinates.position.z + s_z;
+                    particle.velocity.x = particle_alternative_coordinates.velocity.x + s_vx;
+                    particle.velocity.y = particle_alternative_coordinates.velocity.y + s_vy;
+                    particle.velocity.z = particle_alternative_coordinates.velocity.z + s_vz;
+                    eta -= particle.mass;
+                    s_x  *= eta;
+                    s_y  *= eta;
+                    s_z  *= eta;
+                    s_vx *= eta;
+                    s_vy *= eta;
+                    s_vz *= eta;
+                }
+                let mtot = eta;
+                let mtot_i = 1./mtot;
+                star.position.x = s_x * mtot_i;
+                star.position.y = s_y * mtot_i;
+                star.position.z = s_z * mtot_i;
+                star.velocity.x = s_vx * mtot_i;
+                star.velocity.y = s_vy * mtot_i;
+                star.velocity.z = s_vz * mtot_i;
+            }
+        }
     }
 
     fn democratic_heliocentric_to_inertial_posvel(&mut self) {
@@ -812,10 +943,6 @@ impl WHFast {
             star.velocity.y = new_star_velocity.y;
             star.velocity.z = new_star_velocity.z;
         }
-    }
-
-    fn jacobi_to_inertial_pos(&mut self) {
-        panic!("Not implemented!");
     }
 
     fn whds_and_democratic_heliocentric_to_inertial_pos(&mut self) {

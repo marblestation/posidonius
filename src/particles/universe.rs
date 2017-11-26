@@ -33,6 +33,7 @@ pub enum IgnoreGravityTerms {
 
 impl Universe {
     pub fn gravity_calculate_acceleration(&mut self, ignore_terms: IgnoreGravityTerms) {
+        //let softening = 1e-12;
 
         for (i, particle) in self.particles[..self.n_particles].iter().enumerate() {
             self.temporary_copied_particle_positions[i].x = particle.position.x;
@@ -76,9 +77,9 @@ impl Universe {
                 }
                 //////////////////////////////////////////////////////////////////////
 
-                if ignore_terms == IgnoreGravityTerms::WHFastOne && ((i == 1 || j == 0) || (i == 0 || j == 1)) {
+                if ignore_terms == IgnoreGravityTerms::WHFastOne && ((i == 1 && j == 0) || (i == 0 && j == 1)) {
                     // For WHFast Jacobi coordinates, 
-                    // ignore some central body/first planet
+                    // ignore interaction between central body and first planet
                     continue
                 }
                 if ignore_terms == IgnoreGravityTerms::WHFastTwo && (i == 0 || j == 0) {
@@ -98,6 +99,7 @@ impl Universe {
                 //let dy = particle_a.position.y - particle_b_position.y;
                 //let dz = particle_a.position.z - particle_b_position.z;
                 //let r = (dx*dx + dy*dy + dz*dz).sqrt();
+                //let r = (distance_2 + softening).sqrt();
                 let r = distance_2.sqrt();
                 let prefact = -G/(r*r*r) * particle_b_mass;
 
