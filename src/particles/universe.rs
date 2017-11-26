@@ -65,14 +65,14 @@ impl Universe {
                     // Faber et al, 2005; Pacynski, 1971
                     let roche_radius = (particle_a.radius/0.462)*(particle_a.mass/particle_b_mass).powf(-1./3.);
                     if distance_2 <= roche_radius.powi(2) {
-                        panic!("[PANIC {} UTC] Particle {} was destroyed by particle {} due to strong tides (close encounter)!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
+                        panic!("\n[PANIC {} UTC] Particle {} was destroyed by particle {} due to strong tides (close encounter)!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
                     }
                     // Check if particles are overlapping
                     if distance_2 <= (particle_a.radius + particle_b_radius).powi(2) {
-                        panic!("[PANIC {} UTC] Collision between particle {} and {}!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
+                        panic!("\n[PANIC {} UTC] Collision between particle {} and {}!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
                     }
                     if i == 0 && distance_2 > MAX_DISTANCE_2 {
-                        panic!("[PANIC {} UTC] Particle {} has been ejected!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), j);
+                        panic!("\n[PANIC {} UTC] Particle {} has been ejected!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), j);
                     }
                 }
                 //////////////////////////////////////////////////////////////////////
