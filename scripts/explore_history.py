@@ -416,10 +416,7 @@ if __name__ == "__main__":
             all_data = pd.concat((all_data, data))
 
     output_figure_dirname = os.path.dirname(filename)
-    if len(output_figure_dirname) > 0:
-        output_figure_dirname += "/"
-    output_text_filename = output_figure_dirname + os.path.splitext(os.path.basename(filename))[0] + ".txt"
-    #output_text_filename = os.path.splitext(os.path.basename(filename))[0] + ".txt"
+    output_text_filename = os.path.join(output_figure_dirname, os.path.splitext(os.path.basename(filename))[0] + ".txt")
     all_data.to_csv(output_text_filename, sep="\t", index=False)
 
     print("Output plain text file written to: {}".format(output_text_filename))

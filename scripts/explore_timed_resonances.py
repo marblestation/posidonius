@@ -49,9 +49,7 @@ if __name__ == "__main__":
     star_data, planets_data, planets_keys = posidonius.analysis.history.classify(n_particles, data, discard_first_hundred_years=False)
 
     output_figure_dirname = os.path.dirname(filename)
-    if len(output_figure_dirname) > 0:
-        output_figure_dirname += "/"
-    output_figure_filename = output_figure_dirname + os.path.splitext(os.path.basename(filename))[0] + "_timed_resonances.png"
+    output_figure_filename = os.path.join(output_figure_dirname, output_figure_dirname + os.path.splitext(os.path.basename(filename))[0] + "_timed_resonances.png")
 
     planet_names = planets_keys
     nb_planets = len(planet_names)
