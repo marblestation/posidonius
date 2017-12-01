@@ -1,6 +1,6 @@
 extern crate time;
 use std::collections::HashMap;
-use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2};
+use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2, DBL_EPSILON_2};
 use super::{Evolver, EvolutionType};
 use super::{Particle};
 use super::{Axes};
@@ -171,7 +171,8 @@ impl Universe {
                 }
 
                 if self.consider_general_relativy {
-                    self.calculate_general_relativity_acceleration();
+                    //self._calculate_general_relativity_acceleration();
+                    self.calculate_reboundx_general_relativity_acceleration();
                 }
 
                 self.apply_acceleration_corrections();
@@ -408,6 +409,7 @@ impl Universe {
     pub fn calculate_denergy_dt(&mut self) {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {
+                // - Equation 32 from Bolmont et al. 2015
                 //// Instantaneous energy loss dE/dt due to tides
                 //// in Msun.AU^2.day^(-3)
                 //radial_tidal_force_for_energy_loss_calculation = factor1 * term2; // Ftidr_diss
@@ -480,7 +482,249 @@ impl Universe {
         }
     }
 
-    fn calculate_general_relativity_acceleration(&mut self) {
+    ///--------------------------------------------------------------------------------
+    /// [start] General Relativity based on REBOUND gr.c
+    fn calculate_reboundx_general_relativity_acceleration(&mut self) {
+        //println!("C2: {:e} | G: {:e}", SPEED_OF_LIGHT_2, G);
+        // Calculate Newtonian accelerations in the current setup and considering all particles
+        // (the current integrator may have not considered all of them)
+        let mut newtonian_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
+        //for (newtonian_acceleration, particle) in newtonian_accelerations[..self.n_particles].iter_mut().zip(self.particles[..self.n_particles].iter()) {
+            //////newtonian_acceleration.x = 0.;
+            //////newtonian_acceleration.y = 0.;
+            //////newtonian_acceleration.z = 0.;
+            ////////newtonian_acceleration.x = particle.acceleration.x;
+            ////////newtonian_acceleration.y = particle.acceleration.y;
+            ////////newtonian_acceleration.z = particle.acceleration.z;
+            //println!("Original Particle a {:?}", particle.acceleration);
+            //println!("Original Particle x {:?}", particle.position);
+            //println!("Original Particle v {:?}", particle.velocity);
+            //println!("+++")
+        //}
+
+        for (i, particle_a) in self.particles[..self.n_particles].iter().enumerate() {
+            if let Some((newtonian_acceleration_a, newtonian_accelerations_b)) = newtonian_accelerations[i..self.n_particles].split_first_mut() {
+                for (newtonian_acceleration_b, particle_b) in newtonian_accelerations_b[..self.n_particles-i-1].iter_mut().zip( self.particles[i+1..self.n_particles].iter()) {
+                    let dx = particle_a.position.x - particle_b.position.x;
+                    let dy = particle_a.position.y - particle_b.position.y;
+                    let dz = particle_a.position.z - particle_b.position.z;
+                    let r2 = dx.powi(2) + dy.powi(2) + dz.powi(2);
+                    //println!("r2 {:e} {:e} {:e} {:e}", r2, dx.powi(2), dy.powi(2), dz.powi(2));
+                    let r = r2.sqrt();
+                    let prefac = G/(r2*r);
+                    //println!("prefac {:e} = {:e}/({:e}*{:e})", prefac, G, r2, r);
+                    let prefac_mass_a = prefac*particle_a.mass;
+                    let prefac_mass_b = prefac*particle_b.mass;
+                    //println!("-- mass_a {:e} | mass_b {:e}", particle_a.mass, particle_b.mass);
+                    //println!("* berfore: {:e}", newtonian_acceleration_a.x);
+                    newtonian_acceleration_a.x -= prefac_mass_b*dx;
+                    //println!("* after: {:e}", newtonian_acceleration_a.x);
+                    newtonian_acceleration_a.y -= prefac_mass_b*dy;
+                    newtonian_acceleration_a.z -= prefac_mass_b*dz;
+                    //println!("+ berfore: {:e}", newtonian_acceleration_b.x);
+                    newtonian_acceleration_b.x += prefac_mass_a*dx;
+                    //println!("+ after: {:e}", newtonian_acceleration_b.x);
+                    newtonian_acceleration_b.y += prefac_mass_a*dy;
+                    newtonian_acceleration_b.z += prefac_mass_a*dz;
+                }
+            }
+        }
+
+        //for (newtonian_acceleration, particle) in newtonian_accelerations[..self.n_particles].iter_mut().zip(self.particles[..self.n_particles].iter()) {
+            //println!("Recomputed Particle a {:?}", newtonian_acceleration);
+        //}
+
+        //println!("Planet 1 {:?}", newtonian_accelerations[1]);
+        //println!("Planet 2 {:?}", newtonian_accelerations[2]);
+        //println!("Star {:?}", newtonian_accelerations[0]);
+        //println!("---");
+
+        // Transform to Jacobi coordinates
+        //reb_transformations_inertial_to_jacobi_posvelacc(ps, ps_j, ps, N);
+        let (jacobi_star_mass, _jacobi_star_position, _jacobi_star_velocity, _jacobi_star_acceleration, jacobi_particles_positions, jacobi_particles_velocities, mut jacobi_particles_accelerations) = self.inertial_to_jacobi_posvelacc(newtonian_accelerations);
+
+        //println!("Star {:?}", jacobi_star_mass);
+        //println!("---");
+
+        let mu = self.particles[0].mass_g;
+        //println!("$$$$$$$$$$ {:e}", mu);
+        for ((jacobi_particle_acceleration, jacobi_particle_velocity), jacobi_particle_position) in jacobi_particles_accelerations[..self.n_particles-1].iter_mut()
+                                                                                                        .zip(jacobi_particles_velocities[..self.n_particles-1].iter())
+                                                                                                        .zip(jacobi_particles_positions[..self.n_particles-1].iter()) {
+            //println!("Transformed Planets a {:?}", jacobi_particle_acceleration);
+            //println!("Transformed Planets x {:?}", jacobi_particle_position);
+            //println!("Transformed Planets v {:?}", jacobi_particle_velocity);
+            //println!("...");
+            let mut vi = Axes{x: jacobi_particle_velocity.x, y: jacobi_particle_velocity.y, z: jacobi_particle_velocity.z};
+            let mut vi2 = jacobi_particle_velocity.x.powi(2) + jacobi_particle_velocity.y.powi(2) + jacobi_particle_velocity.z.powi(2);
+            let ri = (jacobi_particle_position.x.powi(2) + jacobi_particle_position.y.powi(2) + jacobi_particle_position.z.powi(2)).sqrt();
+            let mut factor_a = (0.5*vi2 + 3.*mu/ri)/SPEED_OF_LIGHT_2;
+            let mut old_v = Axes{x:0., y:0., z:0.};
+
+            let max_iterations = 10;
+            //println!("$$$$$ a {:e}", factor_a);
+            for q in 0..max_iterations {
+                old_v.x = vi.x;
+                old_v.y = vi.y;
+                old_v.z = vi.z;
+                vi.x = jacobi_particle_velocity.x/(1.-factor_a);
+                vi.y = jacobi_particle_velocity.y/(1.-factor_a);
+                vi.z = jacobi_particle_velocity.z/(1.-factor_a);
+                vi2 =vi.x*vi.x + vi.y*vi.y + vi.z*vi.z;
+                factor_a = (0.5*vi2 + 3.*mu/ri)/SPEED_OF_LIGHT_2;
+                //println!("$$$$$ a {:e}", factor_a);
+                let dvx = vi.x - old_v.x;
+                let dvy = vi.y - old_v.y;
+                let dvz = vi.z - old_v.z;
+                if (dvx*dvx + dvy*dvy + dvz*dvz)/vi2 < DBL_EPSILON_2 {
+                    break;
+                } else if q == max_iterations {
+                    println!("[WARNING {} UTC] {} iterations in general relativity failed to converge. This is typically because the perturbation is too strong for the current implementation.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), max_iterations);
+                }
+            }
+
+            let factor_b = (mu/ri - 1.5*vi2)*mu/(ri*ri*ri)/SPEED_OF_LIGHT_2;
+            let rdotrdot = jacobi_particle_position.x*jacobi_particle_velocity.x
+                            + jacobi_particle_position.y*jacobi_particle_velocity.y
+                            + jacobi_particle_position.z*jacobi_particle_velocity.z;
+            let vidot = Axes{x: jacobi_particle_acceleration.x + factor_b*jacobi_particle_position.x,
+                                y: jacobi_particle_acceleration.y + factor_b*jacobi_particle_position.y,
+                                z: jacobi_particle_acceleration.z + factor_b*jacobi_particle_position.z};
+            let vdotvdot = vi.x*vidot.x + vi.y*vidot.y + vi.z*vidot.z;
+            let factor_d = (vdotvdot - 3.*mu/(ri*ri*ri)*rdotrdot)/SPEED_OF_LIGHT_2;
+            //println!("$$$$$ factors: {:e} {:e} {:e}", factor_b, factor_a, factor_d);
+            jacobi_particle_acceleration.x = factor_b*(1.-factor_a)*jacobi_particle_position.x - factor_a*jacobi_particle_acceleration.x - factor_d*vi.x;
+            jacobi_particle_acceleration.y = factor_b*(1.-factor_a)*jacobi_particle_position.y - factor_a*jacobi_particle_acceleration.y - factor_d*vi.y;
+            jacobi_particle_acceleration.z = factor_b*(1.-factor_a)*jacobi_particle_position.z - factor_a*jacobi_particle_acceleration.z - factor_d*vi.z;
+        }
+
+
+        let jacobi_star_acceleration = Axes{x:0., y:0., z:0.};
+        //println!("---");
+        //println!("Resulting Planet 1 acc {:?}", jacobi_particles_accelerations[0]);
+        //println!("Resulting Planet 2 acc {:?}", jacobi_particles_accelerations[1]);
+        let (star_acceleration, particles_accelerations) = self.jacobi_to_inertial_acc(jacobi_star_mass, jacobi_star_acceleration, jacobi_particles_accelerations);
+        //println!("---");
+        //println!("Resulting transformed Planet 1 acc {:?}", particles_accelerations[0]);
+        //println!("Resulting transformed Planet 2 acc {:?}", particles_accelerations[1]);
+        //println!("Resulting transformed Star acc {:?}", star_acceleration);
+        //println!("---");
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            for (particle, particle_acceleration) in particles.iter_mut().zip(particles_accelerations[..self.n_particles-1].iter()){
+                particle.general_relativity_acceleration.x = particle_acceleration.x;
+                particle.general_relativity_acceleration.y = particle_acceleration.y;
+                particle.general_relativity_acceleration.z = particle_acceleration.z;
+                //println!("{:?}", particle_acceleration);
+            }
+            star.general_relativity_acceleration.x = star_acceleration.x;
+            star.general_relativity_acceleration.y = star_acceleration.y;
+            star.general_relativity_acceleration.z = star_acceleration.z;
+            //println!("{:?}", star_acceleration);
+            //println!("---");
+        }
+        //panic!("end");
+    }
+
+    fn inertial_to_jacobi_posvelacc(&mut self, newtonian_accelerations: [Axes; MAX_PARTICLES]) -> (f64, Axes, Axes, Axes, [Axes; MAX_PARTICLES-1], [Axes; MAX_PARTICLES-1], [Axes; MAX_PARTICLES-1]) {
+        let mut jacobi_star_mass = 0.;
+        let mut jacobi_star_position = Axes{x:0., y:0., z:0. };
+        let mut jacobi_star_velocity = Axes{x:0., y:0., z:0. };
+        let mut jacobi_star_acceleration = Axes{x:0., y:0., z:0. };
+        let mut jacobi_particles_positions = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES-1];
+        let mut jacobi_particles_velocities = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES-1];
+        let mut jacobi_particles_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES-1];
+
+        if let Some((star_newtonian_acceleration, particles_newtonian_accelerations)) = newtonian_accelerations[..self.n_particles].split_first() {
+            if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+                let m0 = star.mass;
+                let mut eta = m0;
+                let mut s_x = eta * star.position.x;
+                let mut s_y = eta * star.position.y;
+                let mut s_z = eta * star.position.z;
+                let mut s_vx = eta * star.velocity.x;
+                let mut s_vy = eta * star.velocity.y;
+                let mut s_vz = eta * star.velocity.z;
+                let mut s_ax = eta * star_newtonian_acceleration.x;
+                let mut s_ay = eta * star_newtonian_acceleration.y;
+                let mut s_az = eta * star_newtonian_acceleration.z;
+                for ((((jacobi_particle_position, jacobi_particle_velocity), jacobi_particle_acceleration), particle), particle_newtonian_acceleration) in jacobi_particles_positions[..self.n_particles-1].iter_mut()
+                                                                        .zip(jacobi_particles_velocities[..self.n_particles-1].iter_mut())
+                                                                            .zip(jacobi_particles_accelerations[..self.n_particles-1].iter_mut())
+                                                                            .zip(particles.iter())
+                                                                            .zip(particles_newtonian_accelerations.iter()) {
+                    let ei = 1./eta;
+                    eta += particle.mass;
+                    let pme = eta*ei;
+                    jacobi_particle_position.x = particle.position.x - s_x*ei;
+                    jacobi_particle_position.y = particle.position.y - s_y*ei;
+                    jacobi_particle_position.z = particle.position.z - s_z*ei;
+                    jacobi_particle_velocity.x = particle.velocity.x - s_vx*ei;
+                    jacobi_particle_velocity.y = particle.velocity.y - s_vy*ei;
+                    jacobi_particle_velocity.z = particle.velocity.z - s_vz*ei;
+                    jacobi_particle_acceleration.x = particle_newtonian_acceleration.x - s_ax*ei;
+                    jacobi_particle_acceleration.y = particle_newtonian_acceleration.y - s_ay*ei;
+                    jacobi_particle_acceleration.z = particle_newtonian_acceleration.z - s_az*ei;
+                    s_x  = s_x  * pme + particle.mass*jacobi_particle_position.x ;
+                    s_y  = s_y  * pme + particle.mass*jacobi_particle_position.y ;
+                    s_z  = s_z  * pme + particle.mass*jacobi_particle_position.z ;
+                    s_vx = s_vx * pme + particle.mass*jacobi_particle_velocity.x;
+                    s_vy = s_vy * pme + particle.mass*jacobi_particle_velocity.y;
+                    s_vz = s_vz * pme + particle.mass*jacobi_particle_velocity.z;
+                    s_ax = s_ax * pme + particle.mass*jacobi_particle_acceleration.x;
+                    s_ay = s_ay * pme + particle.mass*jacobi_particle_acceleration.y;
+                    s_az = s_az * pme + particle.mass*jacobi_particle_acceleration.z;
+                }
+                let mtot = eta;
+                let mtot_i = 1./mtot;
+                jacobi_star_mass = mtot;
+                jacobi_star_position.x = s_x * mtot_i;
+                jacobi_star_position.y = s_y * mtot_i;
+                jacobi_star_position.z = s_z * mtot_i;
+                jacobi_star_velocity.x = s_vx * mtot_i;
+                jacobi_star_velocity.y = s_vy * mtot_i;
+                jacobi_star_velocity.z = s_vz * mtot_i;
+                jacobi_star_acceleration.x = s_ax * mtot_i;
+                jacobi_star_acceleration.y = s_ay * mtot_i;
+                jacobi_star_acceleration.z = s_az * mtot_i;
+            }
+        }
+        return(jacobi_star_mass, jacobi_star_position, jacobi_star_velocity, jacobi_star_acceleration, jacobi_particles_positions, jacobi_particles_velocities, jacobi_particles_accelerations)
+    }
+
+    fn jacobi_to_inertial_acc(&mut self, jacobi_star_mass: f64, jacobi_star_acceleration: Axes, jacobi_particles_accelerations: [Axes; MAX_PARTICLES-1]) -> (Axes, [Axes; MAX_PARTICLES-1]) {
+        let mut star_acceleration = Axes{x:0., y:0., z:0. };
+        let mut particles_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES-1];
+
+        let mut eta = jacobi_star_mass;
+        let mut s_ax = eta * jacobi_star_acceleration.x;
+        let mut s_ay = eta * jacobi_star_acceleration.y;
+        let mut s_az = eta * jacobi_star_acceleration.z;
+        for ((particle_acceleration, particle), jacobi_particle_acceleration) in particles_accelerations[..self.n_particles-1].iter_mut().rev()
+                                                                                    .zip(self.particles[1..self.n_particles].iter().rev())
+                                                                                    .zip((jacobi_particles_accelerations[..self.n_particles-1].iter().rev())) {
+            let ei = 1./eta;
+            s_ax = (s_ax - particle.mass*jacobi_particle_acceleration.x) * ei;
+            s_ay = (s_ay - particle.mass*jacobi_particle_acceleration.y) * ei;
+            s_az = (s_az - particle.mass*jacobi_particle_acceleration.z) * ei;
+            particle_acceleration.x = jacobi_particle_acceleration.x + s_ax;
+            particle_acceleration.y = jacobi_particle_acceleration.y + s_ay;
+            particle_acceleration.z = jacobi_particle_acceleration.z + s_az;
+            eta -= particle.mass;
+            s_ax *= eta;
+            s_ay *= eta;
+            s_az *= eta;
+        }
+        let mtot = eta;
+        let mtot_i = 1./mtot;
+        star_acceleration.x = s_ax * mtot_i;
+        star_acceleration.y = s_ay * mtot_i;
+        star_acceleration.z = s_az * mtot_i;
+        return(star_acceleration, particles_accelerations)
+    }
+    /// [end] General Relativity based on REBOUND gr.c
+    ///--------------------------------------------------------------------------------
+
+    fn _calculate_general_relativity_acceleration(&mut self) {
 
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             let factor2 = K2 / star.mass_g;

@@ -19,6 +19,9 @@ pub const SAFETY_FACTOR : f64 = 0.25;               // Maximum increase/deacreas
 pub const WHFAST_NMAX_QUART : usize = 64;               // Maximum number of iterations for quartic solver
 pub const WHFAST_NMAX_NEWT : usize = 32;               // Maximum number of iterations for Newton's method
 
+pub const DBL_EPSILON: f64 = 2.2204460492503131e-16; // https://en.wikipedia.org/wiki/Machine_epsilon
+pub const DBL_EPSILON_2 : f64 = DBL_EPSILON*DBL_EPSILON;
+
 
 //// Physical constants
 // These are the same units as used by the mercury6 code.
