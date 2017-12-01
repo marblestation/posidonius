@@ -218,7 +218,9 @@ impl Integrator for WHFast {
             if self.set_to_center_of_mass {
                 self.move_to_star_center();
             }
-            self.universe.calculate_denergy_dt();
+            if self.universe.consider_tides {
+                self.universe.calculate_denergy_dt();
+            }
             write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
             self.last_historic_snapshot_time = self.n_historic_snapshots as f64*self.historic_snapshot_period; // Instead of self.current_time to avoid small deviations
             self.n_historic_snapshots += 1;

@@ -164,8 +164,11 @@ impl Integrator for Ias15 {
         let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
+            if self.universe.consider_tides {
+                self.universe.calculate_denergy_dt();
+            }
             write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
-            self.last_historic_snapshot_time = self.current_time;
+            self.last_historic_snapshot_time = self.n_historic_snapshots as f64*self.historic_snapshot_period; // Instead of self.current_time to avoid small deviations
             self.n_historic_snapshots += 1;
             let current_time_years = self.current_time/365.25;
             if ! silent_mode {

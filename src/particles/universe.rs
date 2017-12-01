@@ -186,24 +186,9 @@ impl Universe {
     }
 
 
-    pub fn initialize_torque(&mut self) {
-        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
-            for particle in particles.iter_mut() {
-                particle.torque.x = 0.;
-                particle.torque.y = 0.;
-                particle.torque.z = 0.;
-            }
-            star.torque.x = 0.;
-            star.torque.y = 0.;
-            star.torque.z = 0.;
-        }
-    }
-
     fn calculate_torques(&mut self) {
         let central_body = true;
 
-        self.initialize_torque();
-        
         if self.consider_tides {
             self.calculate_torque_due_to_tides(central_body);
             self.calculate_torque_due_to_tides(!central_body);
@@ -303,18 +288,18 @@ impl Universe {
                     torque.y += factor * n_tid_y;
                     torque.z += factor * n_tid_z;
                 } else {
-                    particle.torque.x = n_tid_x;
-                    particle.torque.y = n_tid_y;
-                    particle.torque.z = n_tid_z;
+                    particle.torque_due_to_tides.x = n_tid_x;
+                    particle.torque_due_to_tides.y = n_tid_y;
+                    particle.torque_due_to_tides.z = n_tid_z;
                 }
 
             }
 
             if central_body {
                 // - Equation 25 from Bolmont et al. 2015
-                star.torque.x = torque.x;
-                star.torque.y = torque.y;
-                star.torque.z = torque.z;
+                star.torque_due_to_tides.x = torque.x;
+                star.torque_due_to_tides.y = torque.y;
+                star.torque_due_to_tides.z = torque.z;
             }
         }
 
@@ -325,9 +310,9 @@ impl Universe {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             // - Equation 25 from Bolmont et al. 2015
             let factor = - 1. / (star.radius_of_gyration_2 * star.radius.powi(2)); // Simplification, we dont divide by star.mass_g because we did not mutliplied before (terms cancel out) [search SIMPLIFICATION]
-            star.dspin_dt.x = factor * star.torque.x;
-            star.dspin_dt.y = factor * star.torque.y;
-            star.dspin_dt.z = factor * star.torque.z;
+            star.dspin_dt.x = factor * (star.torque_due_to_tides.x + star.torque_induced_by_rotational_flattening.x);
+            star.dspin_dt.y = factor * (star.torque_due_to_tides.y + star.torque_induced_by_rotational_flattening.y);
+            star.dspin_dt.z = factor * (star.torque_due_to_tides.z + star.torque_induced_by_rotational_flattening.z);
 
             for particle in particles.iter_mut() {
                 //let factor1 = star.mass_g / (star.mass_g + particle.mass_g);
@@ -336,9 +321,9 @@ impl Universe {
                 let factor = - K2 * star.mass_g / (particle.mass_g * (particle.mass_g + star.mass_g) 
                                 * particle.radius_of_gyration_2 * particle.radius.powi(2));
                 // - Equation 25 from Bolmont et al. 2015
-                particle.dspin_dt.x = factor * particle.torque.x;
-                particle.dspin_dt.y = factor * particle.torque.y;
-                particle.dspin_dt.z = factor * particle.torque.z;
+                particle.dspin_dt.x = factor * (particle.torque_due_to_tides.x + particle.torque_induced_by_rotational_flattening.x);
+                particle.dspin_dt.y = factor * (particle.torque_due_to_tides.y + particle.torque_induced_by_rotational_flattening.y);
+                particle.dspin_dt.z = factor * (particle.torque_due_to_tides.z + particle.torque_induced_by_rotational_flattening.z);
             }
         }
     }
@@ -434,7 +419,7 @@ impl Universe {
                             + (particle.spin.z*particle.position.x - particle.spin.x*particle.position.z - particle.velocity.y) * particle.velocity.y
                             + (particle.spin.x*particle.position.y - particle.spin.y*particle.position.x - particle.velocity.z) * particle.velocity.z))
                             + star.mass_g/(star.mass_g + particle.mass_g) 
-                            * (particle.torque.x*particle.spin.x + particle.torque.y*particle.spin.y + particle.torque.z*particle.spin.z);
+                            * (particle.torque_due_to_tides.x*particle.spin.x + particle.torque_due_to_tides.y*particle.spin.y + particle.torque_due_to_tides.z*particle.spin.z);
             }
         }
     }
@@ -633,17 +618,17 @@ impl Universe {
                     torque.y += factor * n_rot_y;
                     torque.z += factor * n_rot_z;
                 } else {
-                    particle.torque.x += n_rot_x; // Add to the torque due to tides (if computed)
-                    particle.torque.y += n_rot_y;
-                    particle.torque.z += n_rot_z;
+                    particle.torque_induced_by_rotational_flattening.x = n_rot_x;
+                    particle.torque_induced_by_rotational_flattening.y = n_rot_y;
+                    particle.torque_induced_by_rotational_flattening.z = n_rot_z;
                 }
             }
 
             if central_body {
                 // - Equation 25 from Bolmont et al. 2015
-                star.torque.x += torque.x; // Add to the torque due to tides (if computed)
-                star.torque.y += torque.y;
-                star.torque.z += torque.z;
+                star.torque_induced_by_rotational_flattening.x = torque.x;
+                star.torque_induced_by_rotational_flattening.y = torque.y;
+                star.torque_induced_by_rotational_flattening.z = torque.z;
             }
         }
     }

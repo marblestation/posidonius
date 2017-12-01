@@ -66,7 +66,8 @@ class Universe(object):
 
         particle['id'] = self._data['n_particles']
         particle['acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['torque'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['torque_due_to_tides'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['torque_induced_by_rotational_flattening'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['lag_angle'] = 0.0
         particle['mass_g'] = particle['mass'] * K2
         if self._data['n_particles'] == 0:

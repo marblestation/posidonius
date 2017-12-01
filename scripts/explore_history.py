@@ -103,35 +103,41 @@ if __name__ == "__main__":
         pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*posidonius.constants.AU)**(-3./2.) * posidonius.constants.DAY) # Days
         planet_computed_data['pseudo_synchronization_period'] = pseudo_synchronization_period
 
+        if universe_integrator_json['universe']['consider_tides']:
+            ### Calculation of energydot and tidal flux, in W/m2
+            # Gravitationl energy lost of the system due to dissipation
+            # Masses in kg
+            k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
+            gravitational_energy_lost = posidonius.analysis.computation.energydot(planet_data['semi-major_axis']*posidonius.constants.AU, \
+                                                    planet_data['eccentricity'], \
+                                                    planet_norm_spin / posidonius.constants.DAY, \
+                                                    planet_obliquity * np.pi/180.0, \
+                                                    posidonius.constants.G_SI, \
+                                                    planet_data['mass'] * posidonius.constants.M_SUN, \
+                                                    star_mass * posidonius.constants.M_SUN, \
+                                                    planet_data['radius'] * posidonius.constants.AU, \
+                                                    k2pdelta * posidonius.constants.DAY)
+            planet_computed_data['gravitational_energy_lost'] = gravitational_energy_lost
 
-        ### Calculation of energydot and tidal flux, in W/m2
-        # Gravitationl energy lost of the system due to dissipation
-        # Masses in kg
-        k2pdelta = 2.465278e-3 # Terrestrial planets (no gas)
-        gravitational_energy_lost = posidonius.analysis.computation.energydot(planet_data['semi-major_axis']*posidonius.constants.AU, \
-                                                planet_data['eccentricity'], \
-                                                planet_norm_spin / posidonius.constants.DAY, \
-                                                planet_obliquity * np.pi/180.0, \
-                                                posidonius.constants.G_SI, \
-                                                planet_data['mass'] * posidonius.constants.M_SUN, \
-                                                star_mass * posidonius.constants.M_SUN, \
-                                                planet_data['radius'] * posidonius.constants.AU, \
-                                                k2pdelta * posidonius.constants.DAY)
-        planet_computed_data['gravitational_energy_lost'] = gravitational_energy_lost
+            # The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
+            # If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
+            mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * posidonius.constants.AU, 2))
+            dissipation_factor_scale = universe_integrator_json['universe']['particles'][int(key)]['dissipation_factor_scale']
+            mean_tidal_flux *= dissipation_factor_scale
+            planet_computed_data['mean_tidal_flux'] = mean_tidal_flux
 
-        # The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
-        # If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
-        mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * posidonius.constants.AU, 2))
-        dissipation_factor_scale = universe_integrator_json['universe']['particles'][int(key)]['dissipation_factor_scale']
-        mean_tidal_flux *= dissipation_factor_scale
-        planet_computed_data['mean_tidal_flux'] = mean_tidal_flux
+            denergy_dt = planet_data['denergy_dt'] * 6.90125e37 # conversation from Msun.AU^2.day^-3 to W
+            planet_computed_data['denergy_dt'] = denergy_dt
 
+            inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * posidonius.constants.AU, 2))
+            planet_computed_data['inst_tidal_flux'] = inst_tidal_flux
+        else:
+            zeros = np.zeros(len(planet_computed_data['planet_rotation_period']))
+            planet_computed_data['gravitational_energy_lost'] = zeros
+            planet_computed_data['mean_tidal_flux'] = zeros
+            planet_computed_data['denergy_dt'] = zeros
+            planet_computed_data['inst_tidal_flux'] = zeros
 
-        denergy_dt = planet_data['denergy_dt'] * 6.90125e37 # conversation from Msun.AU^2.day^-3 to W
-        planet_computed_data['denergy_dt'] = denergy_dt
-
-        inst_tidal_flux = denergy_dt / (4 * np.pi * np.power(planet_data['radius'] * posidonius.constants.AU, 2))
-        planet_computed_data['inst_tidal_flux'] = inst_tidal_flux
 
         ################################################################################
         ## Star obliquity (with respect to a planet)
@@ -382,8 +388,8 @@ if __name__ == "__main__":
     ax.set_xlim([100.0, 1.0e8])
     plt.tight_layout()
 
-    output_figure_filename = os.path.dirname(filename) + "/" + os.path.splitext(os.path.basename(filename))[0] + ".png"
-    #output_figure_filename = os.path.splitext(os.path.basename(filename))[0] + ".png"
+    output_figure_dirname = os.path.dirname(filename)
+    output_figure_filename = os.path.join(output_figure_dirname, os.path.splitext(os.path.basename(filename))[0] + ".png")
     plt.savefig(output_figure_filename)
     #plt.show()
     print("Output figure file written to: {}".format(output_figure_filename))
@@ -415,8 +421,8 @@ if __name__ == "__main__":
         else:
             all_data = pd.concat((all_data, data))
 
-    output_figure_dirname = os.path.dirname(filename)
-    output_text_filename = os.path.join(output_figure_dirname, os.path.splitext(os.path.basename(filename))[0] + ".txt")
+    output_text_dirname = os.path.dirname(filename)
+    output_text_filename = os.path.join(output_text_dirname, os.path.splitext(os.path.basename(filename))[0] + ".txt")
     all_data.to_csv(output_text_filename, sep="\t", index=False)
 
     print("Output plain text file written to: {}".format(output_text_filename))
