@@ -178,13 +178,14 @@ impl Integrator for Ias15 {
         }
 
         // Calculate accelerations.
-        let ignore_terms = IgnoreGravityTerms::None;
-        self.universe.gravity_calculate_acceleration(ignore_terms);
+        let ignore_gravity_terms = IgnoreGravityTerms::None;
+        let ignored_gravity_terms = ignore_gravity_terms;
+        self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dspin_dt = true;
         let accelerations = true;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
 
         self.integrator();
         self.current_iteration += 1;
@@ -379,13 +380,14 @@ impl Ias15 {
 
 
                     // Calculate accelerations.
-                    let ignore_terms = IgnoreGravityTerms::None;
-                    self.universe.gravity_calculate_acceleration(ignore_terms);
+                    let ignore_gravity_terms = IgnoreGravityTerms::None;
+                    let ignored_gravity_terms = ignore_gravity_terms;
+                    self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
                     // Calculate non-gravity accelerations.
                     let evolution = true;
                     let dspin_dt = true;
                     let accelerations = true;
-                    self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
+                    self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.acceleration.x;

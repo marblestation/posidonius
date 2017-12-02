@@ -161,25 +161,27 @@ impl Integrator for LeapFrog {
             }
         }
 
+        let ignore_gravity_terms = IgnoreGravityTerms::None;
+        let ignored_gravity_terms = ignore_gravity_terms;
+
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dspin_dt = true;
         let accelerations = false;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
 
 
         // A 'DKD'-like integrator will do the first 'D' part.
         self.integrator_part1();
 
         // Calculate accelerations.
-        let ignore_terms = IgnoreGravityTerms::None;
-        self.universe.gravity_calculate_acceleration(ignore_terms);
+        self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
 
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dspin_dt = true;
         let accelerations = true;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
 
 
         // A 'DKD'-like integrator will do the 'KD' part.

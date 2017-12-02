@@ -16,7 +16,7 @@ pub struct Universe {
     pub wind_effects_exist: bool,
     pub consider_tides: bool,
     pub consider_rotational_flattening: bool,
-    pub consider_general_relativy: bool,
+    pub consider_general_relativy: ConsiderGeneralRelativity,
     star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
     temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
     temporary_copied_particle_velocities: [Axes; MAX_PARTICLES], // For optimization purposes (TODO: Delete and adapt python package)
@@ -29,6 +29,14 @@ pub enum IgnoreGravityTerms {
     None,
     WHFastOne,
     WHFastTwo,
+}
+
+#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
+pub enum ConsiderGeneralRelativity {
+    None,
+    Kidder1995, // MercuryT
+    Anderson1975, // REBOUNDx gr
+    Newhall1983, // REBOUNDx gr full
 }
 
 impl Universe {
@@ -129,14 +137,14 @@ impl Universe {
         }
     }
 
-    pub fn calculate_additional_effects(&mut self, current_time: f64, evolution: bool, dspin_dt: bool, accelerations: bool) {
+    pub fn calculate_additional_effects(&mut self, current_time: f64, evolution: bool, dspin_dt: bool, accelerations: bool, ignored_gravity_terms: IgnoreGravityTerms) {
         if (evolution && self.evolving_particles_exist) || 
             ((dspin_dt || accelerations) && self.consider_rotational_flattening) {
             self.calculate_norm_spin(); // Needed for rotational flattening (torque and accelerations) and evolution
         }
 
         if (dspin_dt && (self.consider_tides || self.consider_rotational_flattening)) ||
-            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy)) {
+            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy != ConsiderGeneralRelativity::None)) {
             self.calculate_distance_and_velocities(); // Needed for tides, rotational flattening, general relativity and evolution
         }
 
@@ -149,7 +157,7 @@ impl Universe {
         }
 
         if (dspin_dt && (self.consider_tides || self.consider_rotational_flattening)) ||
-            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy)) {
+            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy != ConsiderGeneralRelativity::None)) {
 
             self.calculate_orthogonal_components(); // Needed for torques and additional accelerations
 
@@ -159,7 +167,7 @@ impl Universe {
                 self.calculate_dspin_dt();
             }
 
-            if accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy) {
+            if accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy != ConsiderGeneralRelativity::None) {
                 if self.consider_tides {
                     self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
                     self.calculate_tidal_acceleration();
@@ -170,12 +178,14 @@ impl Universe {
                     self.calculate_acceleration_induced_by_rotational_flattering();
                 }
 
-                if self.consider_general_relativy {
-                    //self._calculate_general_relativity_acceleration();
-                    self.calculate_reboundx_general_relativity_acceleration();
+                match self.consider_general_relativy {
+                    ConsiderGeneralRelativity::Kidder1995 => self.calculate_kidder1995_general_relativity_acceleration(),
+                    ConsiderGeneralRelativity::Anderson1975 => self.calculate_anderson1975_general_relativity_acceleration(ignored_gravity_terms),
+                    ConsiderGeneralRelativity::Newhall1983 => self.calculate_newhall1983_general_relativity_acceleration(ignored_gravity_terms),
+                    ConsiderGeneralRelativity::None => {}
                 }
 
-                self.apply_acceleration_corrections();
+                self.apply_acceleration_corrections(ignored_gravity_terms);
 
                 //for (i, particle) in self.particles[1..self.n_particles].iter().enumerate() {
                 //for (i, particle) in self.particles[0..self.n_particles].iter().enumerate() {
@@ -218,30 +228,66 @@ impl Universe {
         }
     }
 
-    fn apply_acceleration_corrections(&mut self) {
+    fn apply_acceleration_corrections(&mut self, ignored_gravity_terms: IgnoreGravityTerms) {
         // Add the tidal+flattening+general relativity accelerations to the gravitational one (already computed)
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {
                 if self.consider_tides {
-                    particle.acceleration.x += particle.tidal_acceleration.x - star.tidal_acceleration.x;
-                    particle.acceleration.y += particle.tidal_acceleration.y - star.tidal_acceleration.y;
-                    particle.acceleration.z += particle.tidal_acceleration.z - star.tidal_acceleration.z;
-                    //println!("Tides acceleration {:e} {:e} {:e}", particle.tidal_acceleration.x, particle.tidal_acceleration.y, particle.tidal_acceleration.z);
+                        particle.acceleration.x += particle.tidal_acceleration.x;
+                        particle.acceleration.y += particle.tidal_acceleration.y;
+                        particle.acceleration.z += particle.tidal_acceleration.z;
                 }
 
                 if self.consider_rotational_flattening {
-                    particle.acceleration.x += particle.acceleration_induced_by_rotational_flattering.x - star.acceleration_induced_by_rotational_flattering.x;
-                    particle.acceleration.y += particle.acceleration_induced_by_rotational_flattering.y - star.acceleration_induced_by_rotational_flattering.y;
-                    particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z - star.acceleration_induced_by_rotational_flattering.z;
-                    //println!("Rot acceleration {:e} {:e} {:e}", particle.acceleration_induced_by_rotational_flattering.x, particle.acceleration_induced_by_rotational_flattering.y, particle.acceleration_induced_by_rotational_flattering.z);
+                    particle.acceleration.x += particle.acceleration_induced_by_rotational_flattering.x;
+                    particle.acceleration.y += particle.acceleration_induced_by_rotational_flattering.y;
+                    particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z;
                 }
 
-                if self.consider_general_relativy {
-                    particle.acceleration.x += particle.general_relativity_acceleration.x - star.general_relativity_acceleration.x;
-                    particle.acceleration.y += particle.general_relativity_acceleration.y - star.general_relativity_acceleration.y;
-                    particle.acceleration.z += particle.general_relativity_acceleration.z - star.general_relativity_acceleration.z;
-                    //println!("GR acceleration {:e} {:e} {:e}", particle.general_relativity_acceleration.x, particle.general_relativity_acceleration.y, particle.general_relativity_acceleration.z);
+                if self.consider_general_relativy != ConsiderGeneralRelativity::None {
+                    particle.acceleration.x += particle.general_relativity_acceleration.x;
+                    particle.acceleration.y += particle.general_relativity_acceleration.y;
+                    particle.acceleration.z += particle.general_relativity_acceleration.z;
                 } 
+            }
+            if ignored_gravity_terms == IgnoreGravityTerms::WHFastOne {
+                if self.consider_tides {
+                        star.acceleration.x += star.tidal_acceleration.x;
+                        star.acceleration.y += star.tidal_acceleration.y;
+                        star.acceleration.z += star.tidal_acceleration.z;
+                }
+
+                if self.consider_rotational_flattening {
+                    star.acceleration.x += star.acceleration_induced_by_rotational_flattering.x;
+                    star.acceleration.y += star.acceleration_induced_by_rotational_flattering.y;
+                    star.acceleration.z += star.acceleration_induced_by_rotational_flattering.z;
+                }
+
+                if self.consider_general_relativy != ConsiderGeneralRelativity::None {
+                    star.acceleration.x += star.general_relativity_acceleration.x;
+                    star.acceleration.y += star.general_relativity_acceleration.y;
+                    star.acceleration.z += star.general_relativity_acceleration.z;
+                } 
+            } else {
+                for particle in particles.iter_mut() {
+                    if self.consider_tides {
+                            particle.acceleration.x -= star.tidal_acceleration.x;
+                            particle.acceleration.y -= star.tidal_acceleration.y;
+                            particle.acceleration.z -= star.tidal_acceleration.z;
+                    }
+
+                    if self.consider_rotational_flattening {
+                        particle.acceleration.x -= star.acceleration_induced_by_rotational_flattering.x;
+                        particle.acceleration.y -= star.acceleration_induced_by_rotational_flattering.y;
+                        particle.acceleration.z -= star.acceleration_induced_by_rotational_flattering.z;
+                    }
+
+                    if self.consider_general_relativy != ConsiderGeneralRelativity::None {
+                        particle.acceleration.x -= star.general_relativity_acceleration.x;
+                        particle.acceleration.y -= star.general_relativity_acceleration.y;
+                        particle.acceleration.z -= star.general_relativity_acceleration.z;
+                    } 
+                }
             }
         }
     }
@@ -481,14 +527,262 @@ impl Universe {
             star.tidal_acceleration.z = -1.0 * factor2 * sum_total_tidal_force.z;
         }
     }
+    
+    ///--------------------------------------------------------------------------------
+    /// [start] General Relativity FULL based on REBOUND gr.c
+    fn calculate_newhall1983_general_relativity_acceleration(&mut self, ignored_gravity_terms: IgnoreGravityTerms) {
+        let mut a_const = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; // array that stores the value of the constant term
+        let mut a_new = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; // stores the newly calculated term
+        let mut rs = [[0.; MAX_PARTICLES]; MAX_PARTICLES];
+        let mut drs = [[Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; MAX_PARTICLES];
+        
+        let a_newton = self.get_newtonian_accelerations(ignored_gravity_terms);
+
+        for (i, ((drs_i, rs_i), particle_i)) in 
+                                        drs[..self.n_particles].iter_mut()
+                                        .zip(rs[..self.n_particles].iter_mut())
+                                        .zip(self.particles[..self.n_particles].iter())
+                                        .enumerate() {
+            // compute distances
+            for (j, (drs_i_j, particle_j)) in drs_i[..self.n_particles].iter_mut()
+                                            .zip(self.particles[..self.n_particles].iter())
+                                            .enumerate() {
+                if j != i{
+                    drs_i_j.x = particle_i.position.x - particle_j.position.x;
+                    drs_i_j.y = particle_i.position.y - particle_j.position.y;
+                    drs_i_j.z = particle_i.position.z - particle_j.position.z;
+                    rs_i[j] = (drs_i_j.x.powi(2) + drs_i_j.y.powi(2) + drs_i_j.z.powi(2)).sqrt();
+                    //println!("i j: {} {} {:e}", i, j, rs_i[j]);
+                }
+            }
+        }
+
+        for (i, (((a_const_i, drs_i), rs_i), particle_i)) in a_const[..self.n_particles].iter_mut()
+                                                .zip(drs[..self.n_particles].iter())
+                                                .zip(rs[..self.n_particles].iter())
+                                                .zip(self.particles[..self.n_particles].iter())
+                                                .enumerate() {
+
+            // then compute the constant terms:
+            let mut a_constx = 0.;
+            let mut a_consty = 0.;
+            let mut a_constz = 0.;
+            // 1st constant part
+            for (j, (drs_i_j, particle_j)) in drs_i[..self.n_particles].iter()
+                                            .zip(self.particles[..self.n_particles].iter())
+                                            .enumerate() {
+                if j != i {
+                    let dxij = drs_i_j.x;
+                    let dyij = drs_i_j.y;
+                    let dzij = drs_i_j.z;
+                    let rij2 = rs_i[j].powi(2);
+                    let rij3 = rij2*rs_i[j];
+
+                    let mut a1 = 0.;
+                    for (k, (particle_k, rs_i_k)) in self.particles[..self.n_particles].iter()
+                                                    .zip(rs_i[..self.n_particles].iter())
+                                                        .enumerate() {
+                        if k != i {
+                            a1 += (4./(SPEED_OF_LIGHT_2)) * G*particle_k.mass/rs_i_k;
+                        }
+                    }
+
+                    let mut a2 = 0.;
+                    for (l, (particle_l, rs_l)) in self.particles[..self.n_particles].iter()
+                                                    .zip(rs[..self.n_particles].iter())
+                                                        .enumerate() {
+                        if l != j {
+                            a2 += (1./(SPEED_OF_LIGHT_2)) * G*particle_l.mass/rs_l[j];
+                        }
+                    }
+
+                    let vi2= particle_i.velocity.x.powi(2) + particle_i.velocity.y.powi(2) + particle_i.velocity.z.powi(2);
+                    let a3 = -vi2/SPEED_OF_LIGHT_2;
+                    
+                    let vj2 = particle_j.velocity.x.powi(2) + particle_j.velocity.y.powi(2) + particle_j.velocity.z.powi(2);
+                    let a4 = -2.*vj2/SPEED_OF_LIGHT_2;
+
+                    let a5 = (4./SPEED_OF_LIGHT_2) * (particle_i.velocity.x*particle_j.velocity.x + particle_i.velocity.y*particle_j.velocity.y + particle_i.velocity.z*particle_j.velocity.z);
+
+                    let a6_0 = dxij*particle_j.velocity.x + dyij*particle_j.velocity.y + dzij*particle_j.velocity.z;
+                    let a6 = (3./(2.*SPEED_OF_LIGHT_2)) * a6_0.powi(2)/rij2;
+
+                    let factor1 = a1 + a2 + a3 + a4 + a5 + a6;
+                    //println!("factors {:e} {:e} {:e} {:e} {:e} {:e}", a1, a2, a3, a4, a5, a6);
+                    a_constx += G*particle_j.mass*dxij*factor1/rij3;
+                    a_consty += G*particle_j.mass*dyij*factor1/rij3;
+                    a_constz += G*particle_j.mass*dzij*factor1/rij3;
+
+                    // 2nd constant part
+                    let dvxij = particle_i.velocity.x - particle_j.velocity.x; 
+                    let dvyij = particle_i.velocity.y - particle_j.velocity.y; 
+                    let dvzij = particle_i.velocity.z - particle_j.velocity.z; 
+
+                    let factor2 = dxij*(4.*particle_i.velocity.x - 3.*particle_j.velocity.x) + dyij*(4.*particle_i.velocity.y -3.*particle_j.velocity.y) + dzij*(4.*particle_i.velocity.z - 3.*particle_j.velocity.z);
+
+                    a_constx += G*particle_j.mass*factor2*dvxij/rij3/SPEED_OF_LIGHT_2;
+                    a_consty += G*particle_j.mass*factor2*dvyij/rij3/SPEED_OF_LIGHT_2;
+                    a_constz += G*particle_j.mass*factor2*dvzij/rij3/SPEED_OF_LIGHT_2;
+                }
+            }
+            a_const_i.x = a_constx;
+            a_const_i.y = a_consty;
+            a_const_i.z = a_constz;
+            //println!("a_const_i {:?}", a_const_i);
+        }
+
+
+        let dev_limit = 1.0e-30;
+        let max_iterations = 10;
+        // Now running the substitution again and again through the loop below
+        for k in 0..max_iterations {
+            let a_old = a_new.clone();
+            // now add on the non-constant term
+            for (i, (((a_new_i, drs_i), rs_i), a_const_i)) in a_new[..self.n_particles].iter_mut()
+                                            .zip(drs[..self.n_particles].iter())
+                                            .zip(rs[..self.n_particles].iter())
+                                            .zip(a_const[..self.n_particles].iter())
+                                            .enumerate() {
+                let mut non_constx = 0.;
+                let mut non_consty = 0.;
+                let mut non_constz = 0.;
+                for (j, ((((a_old_j, a_newton_j), drs_i_j), rs_i_j), particle_j)) in a_old[..self.n_particles].iter()
+                                                                                            .zip(a_newton[..self.n_particles].iter())
+                                                                                            .zip(drs_i[..self.n_particles].iter())
+                                                                                            .zip(rs_i[..self.n_particles].iter())
+                                                                                            .zip(self.particles[..self.n_particles].iter())
+                                                                                            .enumerate() {
+                    if j != i {
+                        let dxij = drs_i_j.x;
+                        let dyij = drs_i_j.y;
+                        let dzij = drs_i_j.z;
+                        let rij = rs_i_j;
+                        let rij2 = rij.powi(2);
+                        let rij3 = rij2*rij;
+                        non_constx += (G*particle_j.mass*dxij/rij3)*(dxij*(a_newton_j.x+a_old_j.x)+dyij*(a_newton_j.y+a_old_j.y)+
+                                    dzij*(a_newton_j.z+a_old_j.z))/(2.*SPEED_OF_LIGHT_2) + (7./(2.*SPEED_OF_LIGHT_2))*G*particle_j.mass*(a_newton_j.x+a_old_j.x)/rij;
+                        non_consty += (G*particle_j.mass*dyij/rij3)*(dxij*(a_newton_j.x+a_old_j.x)+dyij*(a_newton_j.y+a_old_j.y)+
+                                    dzij*(a_newton_j.z+a_old_j.z))/(2.*SPEED_OF_LIGHT_2) + (7./(2.*SPEED_OF_LIGHT_2))*G*particle_j.mass*(a_newton_j.y+a_old_j.y)/rij;
+                        non_constz += (G*particle_j.mass*dzij/rij3)*(dxij*(a_newton_j.x+a_old_j.x)+dyij*(a_newton_j.y+a_old_j.y)+
+                                    dzij*(a_newton_j.z+a_old_j.z))/(2.*SPEED_OF_LIGHT_2) + (7./(2.*SPEED_OF_LIGHT_2))*G*particle_j.mass*(a_newton_j.z+a_old_j.z)/rij;
+                    }
+                }
+                a_new_i.x = a_const_i.x + non_constx;
+                a_new_i.y = a_const_i.y + non_consty;
+                a_new_i.z = a_const_i.z + non_constz;
+                //println!("non_constx {:?}", non_constx);
+                //println!("non_consty {:?}", non_consty);
+                //println!("non_constz {:?}", non_constz);
+            }
+            
+            // break out loop if a_new is converging
+            let mut maxdev = 0.;
+            let mut dx = 0.;
+            let mut dy = 0.;
+            let mut dz = 0.;
+            for (a_new_i, a_old_i) in a_new[..self.n_particles].iter()
+                                    .zip(a_old[..self.n_particles].iter()) {
+                if a_new_i.x.abs() < dev_limit {
+                    dx = (a_new_i.x - a_old_i.x).abs() / a_new_i.x;
+                }
+                if a_new_i.y.abs() < dev_limit {
+                    dy = (a_new_i.y - a_old_i.y).abs() / a_new_i.y;
+                }
+                if a_new_i.z.abs() < dev_limit {
+                    dz = (a_new_i.z - a_old_i.z).abs() / a_new_i.z;
+                }
+                if dx > maxdev { maxdev = dx; }
+                if dy > maxdev { maxdev = dy; }
+                if dz > maxdev { maxdev = dz; }
+
+            }
+
+            if maxdev < dev_limit {
+                break;
+            } else if k == max_iterations {
+                println!("[WARNING {} UTC] {} iterations in general relativity failed to converge.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), max_iterations);
+            }
+
+        }
+        
+        // update acceleration in particles
+        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            if let Some((a_new_star, a_new_particles)) = a_new[..self.n_particles].split_first_mut() {
+                for (particle, a_new_particle) in particles.iter_mut().zip(a_new_particles.iter()){
+                    particle.general_relativity_acceleration.x = a_new_particle.x;
+                    particle.general_relativity_acceleration.y = a_new_particle.y;
+                    particle.general_relativity_acceleration.z = a_new_particle.z;
+                    //println!("{:?}", a_new_particle);
+                }
+                star.general_relativity_acceleration.x = a_new_star.x;
+                star.general_relativity_acceleration.y = a_new_star.y;
+                star.general_relativity_acceleration.z = a_new_star.z;
+                //println!("{:?}", a_new_star);
+            }
+        }
+        //panic!("end");
+
+    }
+    /// [end] General Relativity FULL based on REBOUND gr.c
+    ///--------------------------------------------------------------------------------
+
+    fn get_newtonian_accelerations(&self, ignored_gravity_terms: IgnoreGravityTerms) -> [Axes; MAX_PARTICLES] {
+        let mut newtonian_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; 
+        for (newtonian_acceleration, particle) in newtonian_accelerations.iter_mut().zip(self.particles[..self.n_particles].iter()) {
+            newtonian_acceleration.x = particle.acceleration.x;
+            newtonian_acceleration.y = particle.acceleration.y;
+            newtonian_acceleration.z = particle.acceleration.z;
+        }
+        // If some terms where ignored by the integrator, they should be added
+        if ignored_gravity_terms == IgnoreGravityTerms::WHFastOne || ignored_gravity_terms == IgnoreGravityTerms::WHFastTwo {
+            let n_particles;
+            if ignored_gravity_terms == IgnoreGravityTerms::WHFastOne {
+                n_particles = 2;
+            } else {
+                n_particles = self.n_particles;
+            }
+            if let Some((star, particles)) = self.particles[..n_particles].split_first() {
+                if let Some((star_newtonian_acceleration, particles_newtonian_accelerations)) = newtonian_accelerations[..n_particles].split_first_mut() {
+                    for (a_newton_particle, particle_newtonian_acceleration) in particles_newtonian_accelerations.iter_mut().zip(particles.iter()) {
+                        let dx = star.position.x - particle_newtonian_acceleration.position.x;
+                        let dy = star.position.y - particle_newtonian_acceleration.position.y;
+                        let dz = star.position.z - particle_newtonian_acceleration.position.z;
+                        let r2 = dx.powi(2) + dy.powi(2) + dz.powi(2);
+                        //println!("r2 {:e} {:e} {:e} {:e}", r2, dx.powi(2), dy.powi(2), dz.powi(2));
+                        let r = r2.sqrt();
+                        let prefac = G/(r2*r);
+                        //println!("prefac {:e} = {:e}/({:e}*{:e})", prefac, G, r2, r);
+                        let prefac_mass_star = prefac*star.mass;
+                        let prefac_mass_particle = prefac*particle_newtonian_acceleration.mass;
+                        //println!("-- mass_a {:e} | mass_b {:e}", star.mass, particle_newtonian_acceleration.mass);
+                        //println!("* berfore: {:e}", star_newtonian_acceleration.x);
+                        star_newtonian_acceleration.x -= prefac_mass_particle*dx;
+                        //println!("* after: {:e}", star_newtonian_acceleration.x);
+                        star_newtonian_acceleration.y -= prefac_mass_particle*dy;
+                        star_newtonian_acceleration.z -= prefac_mass_particle*dz;
+                        //println!("+ berfore: {:e}", a_newton_particle.x);
+                        a_newton_particle.x += prefac_mass_star*dx;
+                        //println!("+ after: {:e}", a_newton_particle.x);
+                        a_newton_particle.y += prefac_mass_star*dy;
+                        a_newton_particle.z += prefac_mass_star*dz;
+                    }
+                }
+            }
+        }
+        return newtonian_accelerations;
+    }
+
+
+
+
 
     ///--------------------------------------------------------------------------------
     /// [start] General Relativity based on REBOUND gr.c
-    fn calculate_reboundx_general_relativity_acceleration(&mut self) {
+    fn calculate_anderson1975_general_relativity_acceleration(&mut self, ignored_gravity_terms: IgnoreGravityTerms) {
         //println!("C2: {:e} | G: {:e}", SPEED_OF_LIGHT_2, G);
         // Calculate Newtonian accelerations in the current setup and considering all particles
         // (the current integrator may have not considered all of them)
-        let mut newtonian_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
+        //let mut newtonian_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
         //for (newtonian_acceleration, particle) in newtonian_accelerations[..self.n_particles].iter_mut().zip(self.particles[..self.n_particles].iter()) {
             //////newtonian_acceleration.x = 0.;
             //////newtonian_acceleration.y = 0.;
@@ -502,33 +796,39 @@ impl Universe {
             //println!("+++")
         //}
 
-        for (i, particle_a) in self.particles[..self.n_particles].iter().enumerate() {
-            if let Some((newtonian_acceleration_a, newtonian_accelerations_b)) = newtonian_accelerations[i..self.n_particles].split_first_mut() {
-                for (newtonian_acceleration_b, particle_b) in newtonian_accelerations_b[..self.n_particles-i-1].iter_mut().zip( self.particles[i+1..self.n_particles].iter()) {
-                    let dx = particle_a.position.x - particle_b.position.x;
-                    let dy = particle_a.position.y - particle_b.position.y;
-                    let dz = particle_a.position.z - particle_b.position.z;
-                    let r2 = dx.powi(2) + dy.powi(2) + dz.powi(2);
-                    //println!("r2 {:e} {:e} {:e} {:e}", r2, dx.powi(2), dy.powi(2), dz.powi(2));
-                    let r = r2.sqrt();
-                    let prefac = G/(r2*r);
-                    //println!("prefac {:e} = {:e}/({:e}*{:e})", prefac, G, r2, r);
-                    let prefac_mass_a = prefac*particle_a.mass;
-                    let prefac_mass_b = prefac*particle_b.mass;
-                    //println!("-- mass_a {:e} | mass_b {:e}", particle_a.mass, particle_b.mass);
-                    //println!("* berfore: {:e}", newtonian_acceleration_a.x);
-                    newtonian_acceleration_a.x -= prefac_mass_b*dx;
-                    //println!("* after: {:e}", newtonian_acceleration_a.x);
-                    newtonian_acceleration_a.y -= prefac_mass_b*dy;
-                    newtonian_acceleration_a.z -= prefac_mass_b*dz;
-                    //println!("+ berfore: {:e}", newtonian_acceleration_b.x);
-                    newtonian_acceleration_b.x += prefac_mass_a*dx;
-                    //println!("+ after: {:e}", newtonian_acceleration_b.x);
-                    newtonian_acceleration_b.y += prefac_mass_a*dy;
-                    newtonian_acceleration_b.z += prefac_mass_a*dz;
-                }
-            }
-        }
+        // TODO: Incorporate this pattern in gravity calculation
+        //for (i, particle_a) in self.particles[..self.n_particles].iter().enumerate() {
+            //if let Some((newtonian_acceleration_a, newtonian_accelerations_b)) = newtonian_accelerations[i..self.n_particles].split_first_mut() {
+                //for (newtonian_acceleration_b, particle_b) in newtonian_accelerations_b[..self.n_particles-i-1].iter_mut().zip( self.particles[i+1..self.n_particles].iter()) {
+                    //let dx = particle_a.position.x - particle_b.position.x;
+                    //let dy = particle_a.position.y - particle_b.position.y;
+                    //let dz = particle_a.position.z - particle_b.position.z;
+                    //let r2 = dx.powi(2) + dy.powi(2) + dz.powi(2);
+                    ////println!("r2 {:e} {:e} {:e} {:e}", r2, dx.powi(2), dy.powi(2), dz.powi(2));
+                    //let r = r2.sqrt();
+                    //let prefac = G/(r2*r);
+                    ////println!("prefac {:e} = {:e}/({:e}*{:e})", prefac, G, r2, r);
+                    //let prefac_mass_a = prefac*particle_a.mass;
+                    //let prefac_mass_b = prefac*particle_b.mass;
+                    ////println!("-- mass_a {:e} | mass_b {:e}", particle_a.mass, particle_b.mass);
+                    ////println!("* berfore: {:e}", newtonian_acceleration_a.x);
+                    //newtonian_acceleration_a.x -= prefac_mass_b*dx;
+                    ////println!("* after: {:e}", newtonian_acceleration_a.x);
+                    //newtonian_acceleration_a.y -= prefac_mass_b*dy;
+                    //newtonian_acceleration_a.z -= prefac_mass_b*dz;
+                    ////println!("+ berfore: {:e}", newtonian_acceleration_b.x);
+                    //newtonian_acceleration_b.x += prefac_mass_a*dx;
+                    ////println!("+ after: {:e}", newtonian_acceleration_b.x);
+                    //newtonian_acceleration_b.y += prefac_mass_a*dy;
+                    //newtonian_acceleration_b.z += prefac_mass_a*dz;
+                //}
+            //}
+        //}
+        //println!("-------");
+        let newtonian_accelerations = self.get_newtonian_accelerations(ignored_gravity_terms);
+        //println!("a_newton: {:?}", a_newton);
+        //println!("newtonian_accelerations: {:?}", newtonian_accelerations);
+        //panic!("end");
 
         //for (newtonian_acceleration, particle) in newtonian_accelerations[..self.n_particles].iter_mut().zip(self.particles[..self.n_particles].iter()) {
             //println!("Recomputed Particle a {:?}", newtonian_acceleration);
@@ -724,7 +1024,7 @@ impl Universe {
     /// [end] General Relativity based on REBOUND gr.c
     ///--------------------------------------------------------------------------------
 
-    fn _calculate_general_relativity_acceleration(&mut self) {
+    fn calculate_kidder1995_general_relativity_acceleration(&mut self) {
 
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             let factor2 = K2 / star.mass_g;

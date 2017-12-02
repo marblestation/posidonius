@@ -6,6 +6,17 @@ from constants import *
 from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
 from tools import calculate_spin, mass_radius_relation
 
+class ConsiderGeneralRelativity(object):
+    def __init__(self, variant):
+        self._data = {}
+        if variant in ("Kidder1995", "Anderson1975", "Newhall1983", "None"):
+            self._data = variant
+        else:
+            raise Exception("Unknown variant '{}'".format(variant))
+
+    def get(self):
+        return self._data
+
 class Universe(object):
     def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy):
         self._time_step = time_step
@@ -16,7 +27,11 @@ class Universe(object):
         self._data['initial_time'] = float(initial_time)
         self._data['consider_tides'] = consider_tides
         self._data['consider_rotational_flattening'] = consider_rotational_flattening
-        self._data['consider_general_relativy'] = consider_general_relativy
+        if consider_general_relativy == True:
+            consider_general_relativy = "Kidder1995" # MercuryT
+        elif consider_general_relativy == False:
+            consider_general_relativy = "None"
+        self._data['consider_general_relativy'] = ConsiderGeneralRelativity(consider_general_relativy).get()
         self._data['particles'] = []
         self._data['particles_evolvers'] = []
         self._data['n_particles'] = 0

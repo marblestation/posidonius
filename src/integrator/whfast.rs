@@ -277,19 +277,20 @@ impl WHFast {
         // ---------------------------------------------------------------------
 
         // Calculate accelerations.
-        let ignore_terms = match self.alternative_coordinates_type {
+        let ignore_gravity_terms = match self.alternative_coordinates_type {
             CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
             CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
             CoordinatesType::WHDS => IgnoreGravityTerms::WHFastTwo,
         };
-        self.universe.gravity_calculate_acceleration(ignore_terms);
+        let ignored_gravity_terms = ignore_gravity_terms;
+        self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
         
         // Calculate spin variation and non-gravity accelerations.
         self.move_to_star_center();
         let evolution = true;
         let dspin_dt = false;
         let accelerations = true;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
         self.move_to_center_of_mass();
 
         // ---------------------------------------------------------------------
@@ -308,18 +309,24 @@ impl WHFast {
         let time_step = self.time_step;
         let half_time_step = self.half_time_step;
 
+        let ignored_gravity_terms = match self.alternative_coordinates_type {
+            CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
+            CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
+            CoordinatesType::WHDS => IgnoreGravityTerms::WHFastTwo,
+        };
+
         // Midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
         let evolution = false; // Don't evolve particles at this point or it messes up the conservation of angular momentum
         let dspin_dt = true;
         let accelerations = false;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
 
         self.save_current_spin();
         self.spin_step(half_time_step);
         let evolution = false; // Don't evolve particles at this point or it messes up the conservation of angular momentum
         let dspin_dt = true;
         let accelerations = false;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
         self.restore_last_spin();
         self.spin_step(time_step);
     }
@@ -1028,9 +1035,9 @@ impl WHFast {
             particle.velocity.x -= center_of_mass_velocity.x;
             particle.velocity.y -= center_of_mass_velocity.y;
             particle.velocity.z -= center_of_mass_velocity.z;
-            particle.acceleration.x -= center_of_mass_acceleration.x;
-            particle.acceleration.y -= center_of_mass_acceleration.y;
-            particle.acceleration.z -= center_of_mass_acceleration.z;
+            //particle.acceleration.x -= center_of_mass_acceleration.x; // Acceleration should not be modified, they are the same regardless of the reference point
+            //particle.acceleration.y -= center_of_mass_acceleration.y;
+            //particle.acceleration.z -= center_of_mass_acceleration.z;
         }
         self.set_to_center_of_mass = true;
     }
@@ -1051,9 +1058,9 @@ impl WHFast {
                 particle.velocity.x -= star.velocity.x;
                 particle.velocity.y -= star.velocity.y;
                 particle.velocity.z -= star.velocity.z;
-                particle.acceleration.x -= star.acceleration.x;
-                particle.acceleration.y -= star.acceleration.y;
-                particle.acceleration.z -= star.acceleration.z;
+                //particle.acceleration.x -= star.acceleration.x; // Acceleration should not be modified, they are the same regardless of the reference point
+                //particle.acceleration.y -= star.acceleration.y;
+                //particle.acceleration.z -= star.acceleration.z;
             }
             star.position.x = 0.;
             star.position.y = 0.;
@@ -1061,9 +1068,9 @@ impl WHFast {
             star.velocity.x = 0.;
             star.velocity.y = 0.;
             star.velocity.z = 0.;
-            star.acceleration.x = 0.;
-            star.acceleration.y = 0.;
-            star.acceleration.z = 0.;
+            //star.acceleration.x = 0.;
+            //star.acceleration.y = 0.;
+            //star.acceleration.z = 0.;
         }
 
 
