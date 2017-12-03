@@ -36,10 +36,15 @@ class WHFast(Integrator):
     def __init__(self, alternative_coordinates, time_step, recovery_snapshot_period, historic_snapshot_period, universe):
         super(WHFast, self).__init__(time_step, recovery_snapshot_period, historic_snapshot_period, universe)
         self._data['timestep_warning'] = 0
-        self._data['universe_alternative_coordinates'] = self._data['universe'].copy()
         self._data['alternative_coordinates_type'] = CoordinatesType(alternative_coordinates).get()
-        self._data['set_to_center_of_mass'] = False
-        self._data['is_synchronized'] = True
+        self._data['particles_alternative_coordinates'] = []
+        particle_alternative_coordinates = {}
+        particle_alternative_coordinates['mass'] = 0.
+        particle_alternative_coordinates['mass_g'] = 0.
+        particle_alternative_coordinates['position'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle_alternative_coordinates['velocity'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle_alternative_coordinates['acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        self._data['particles_alternative_coordinates'] = [particle_alternative_coordinates] * MAX_PARTICLES
 
 class LeapFrog(Integrator):
     def __init__(self, time_step, recovery_snapshot_period, historic_snapshot_period, universe):

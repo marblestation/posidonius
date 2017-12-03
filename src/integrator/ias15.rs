@@ -6,6 +6,7 @@ use super::Integrator;
 use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
+use super::super::particles::Axes;
 use super::output::{write_historic_snapshot};
 use rustc_serialize::json;
 use bincode::rustc_serialize::{decode_from};
@@ -164,6 +165,7 @@ impl Integrator for Ias15 {
         let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
+            self.inertial_to_heliocentric_posvelacc();
             if self.universe.consider_tides {
                 self.universe.calculate_denergy_dt();
             }
@@ -181,11 +183,13 @@ impl Integrator for Ias15 {
         let ignore_gravity_terms = IgnoreGravityTerms::None;
         let ignored_gravity_terms = ignore_gravity_terms;
         self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
+        self.inertial_to_heliocentric_posvelacc();
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dspin_dt = true;
         let accelerations = true;
         self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
+        self.heliocentric_to_inertial_posvelacc();
 
         self.integrator();
         self.current_iteration += 1;
@@ -261,15 +265,15 @@ impl Ias15 {
         loop {
 
             for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
-                self.x0[3*k]   = particle.position.x;
-                self.x0[3*k+1] = particle.position.y;
-                self.x0[3*k+2] = particle.position.z;
-                self.v0[3*k]   = particle.velocity.x;
-                self.v0[3*k+1] = particle.velocity.y;
-                self.v0[3*k+2] = particle.velocity.z;
-                self.a0[3*k]   = particle.acceleration.x;
-                self.a0[3*k+1] = particle.acceleration.y;  
-                self.a0[3*k+2] = particle.acceleration.z;
+                self.x0[3*k]   = particle.inertial_position.x;
+                self.x0[3*k+1] = particle.inertial_position.y;
+                self.x0[3*k+2] = particle.inertial_position.z;
+                self.v0[3*k]   = particle.inertial_velocity.x;
+                self.v0[3*k+1] = particle.inertial_velocity.y;
+                self.v0[3*k+2] = particle.inertial_velocity.z;
+                self.a0[3*k]   = particle.inertial_acceleration.x;
+                self.a0[3*k+1] = particle.inertial_acceleration.y;  
+                self.a0[3*k+2] = particle.inertial_acceleration.z;
             }
 
             // Find g values from b values predicted at the last call (Eqs. 7 of Everhart)
@@ -342,13 +346,13 @@ impl Ias15 {
 
                         // Equation 7 in paper 2015MNRAS.446.1424R
                         let xk0: f64  = self.csx[k0] + (self.s[8]*self.b[6][k0] + self.s[7]*self.b[5][k0] + self.s[6]*self.b[4][k0] + self.s[5]*self.b[3][k0] + self.s[4]*self.b[2][k0] + self.s[3]*self.b[1][k0] + self.s[2]*self.b[0][k0] + self.s[1]*self.a0[k0] + self.s[0]*self.v0[k0] );
-                        particle.position.x = xk0 + self.x0[k0];
+                        particle.inertial_position.x = xk0 + self.x0[k0];
 
                         let xk1: f64  = self.csx[k1] + (self.s[8]*self.b[6][k1] + self.s[7]*self.b[5][k1] + self.s[6]*self.b[4][k1] + self.s[5]*self.b[3][k1] + self.s[4]*self.b[2][k1] + self.s[3]*self.b[1][k1] + self.s[2]*self.b[0][k1] + self.s[1]*self.a0[k1] + self.s[0]*self.v0[k1] );
-                        particle.position.y = xk1 + self.x0[k1];
+                        particle.inertial_position.y = xk1 + self.x0[k1];
 
                         let xk2: f64 = self.csx[k2] + (self.s[8]*self.b[6][k2] + self.s[7]*self.b[5][k2] + self.s[6]*self.b[4][k2] + self.s[5]*self.b[3][k2] + self.s[4]*self.b[2][k2] + self.s[3]*self.b[1][k2] + self.s[2]*self.b[0][k2] + self.s[1]*self.a0[k2] + self.s[0]*self.v0[k2] );
-                        particle.position.z = xk2 + self.x0[k2];
+                        particle.inertial_position.z = xk2 + self.x0[k2];
                     }
                 
                     if INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT {
@@ -370,11 +374,11 @@ impl Ias15 {
 
                             // Equation 6 in paper 2015MNRAS.446.1424R
                             let vk0 =  self.csv[k0] + self.s[7]*self.b[6][k0] + self.s[6]*self.b[5][k0] + self.s[5]*self.b[4][k0] + self.s[4]*self.b[3][k0] + self.s[3]*self.b[2][k0] + self.s[2]*self.b[1][k0] + self.s[1]*self.b[0][k0] + self.s[0]*self.a0[k0];
-                            particle.velocity.x = vk0 + self.v0[k0];
+                            particle.inertial_velocity.x = vk0 + self.v0[k0];
                             let vk1 =  self.csv[k1] + self.s[7]*self.b[6][k1] + self.s[6]*self.b[5][k1] + self.s[5]*self.b[4][k1] + self.s[4]*self.b[3][k1] + self.s[3]*self.b[2][k1] + self.s[2]*self.b[1][k1] + self.s[1]*self.b[0][k1] + self.s[0]*self.a0[k1];
-                            particle.velocity.y = vk1 + self.v0[k1];
+                            particle.inertial_velocity.y = vk1 + self.v0[k1];
                             let vk2 =  self.csv[k2] + self.s[7]*self.b[6][k2] + self.s[6]*self.b[5][k2] + self.s[5]*self.b[4][k2] + self.s[4]*self.b[3][k2] + self.s[3]*self.b[2][k2] + self.s[2]*self.b[1][k2] + self.s[1]*self.b[0][k2] + self.s[0]*self.a0[k2];
-                            particle.velocity.z = vk2 + self.v0[k2];
+                            particle.inertial_velocity.z = vk2 + self.v0[k2];
                         }
                     }
 
@@ -383,16 +387,18 @@ impl Ias15 {
                     let ignore_gravity_terms = IgnoreGravityTerms::None;
                     let ignored_gravity_terms = ignore_gravity_terms;
                     self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
+                    self.inertial_to_heliocentric_posvelacc();
                     // Calculate non-gravity accelerations.
                     let evolution = true;
                     let dspin_dt = true;
                     let accelerations = true;
                     self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
+                    self.heliocentric_to_inertial_posvelacc();
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
-                        self.at[3*k]   = particle.acceleration.x;
-                        self.at[3*k+1] = particle.acceleration.y;  
-                        self.at[3*k+2] = particle.acceleration.z;
+                        self.at[3*k]   = particle.inertial_acceleration.x;
+                        self.at[3*k+1] = particle.inertial_acceleration.y;  
+                        self.at[3*k+2] = particle.inertial_acceleration.z;
                     }
 
                     // Update G values using Eqs. 4 of Everhart, and update B values using Eqs. 5
@@ -532,12 +538,12 @@ impl Ias15 {
                     let mut maxb6k: f64 = 0.0;
                     // Looping over all particles and all 3 components of the acceleration. 
                     for (i, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
-                        let v2 = particle.velocity.x*particle.velocity.x
-                                    +particle.velocity.y*particle.velocity.y
-                                    +particle.velocity.z*particle.velocity.z;
-                        let x2 = particle.position.x*particle.position.x
-                                    +particle.position.y*particle.position.y
-                                    +particle.position.z*particle.position.z;
+                        let v2 = particle.inertial_velocity.x*particle.inertial_velocity.x
+                                    +particle.inertial_velocity.y*particle.inertial_velocity.y
+                                    +particle.inertial_velocity.z*particle.inertial_velocity.z;
+                        let x2 = particle.inertial_position.x*particle.inertial_position.x
+                                    +particle.inertial_position.y*particle.inertial_position.y
+                                    +particle.inertial_position.z*particle.inertial_position.z;
 
                         // Skip slowly varying accelerations
                         if (v2*self.time_step*self.time_step/x2).abs() < 1e-16 {
@@ -591,13 +597,13 @@ impl Ias15 {
                 if (dt_new/dt_done).abs() < SAFETY_FACTOR {	// New timestep is significantly smaller.
                     // Reset particles
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter_mut().enumerate() {
-                        particle.position.x = self.x0[3*k+0];	// Set inital position
-                        particle.position.y = self.x0[3*k+1];
-                        particle.position.z = self.x0[3*k+2];
+                        particle.inertial_position.x = self.x0[3*k+0];	// Set inital position
+                        particle.inertial_position.y = self.x0[3*k+1];
+                        particle.inertial_position.z = self.x0[3*k+2];
 
-                        particle.velocity.x = self.v0[3*k+0];	// Set inital velocity
-                        particle.velocity.y = self.v0[3*k+1];
-                        particle.velocity.z = self.v0[3*k+2];
+                        particle.inertial_velocity.x = self.v0[3*k+0];	// Set inital velocity
+                        particle.inertial_velocity.y = self.v0[3*k+1];
+                        particle.inertial_velocity.z = self.v0[3*k+2];
                     }
                     self.time_step = dt_new;
                     if self.time_step_last_success != 0. {		// Do not predict next self.e/self.b values if this is the first time step.
@@ -648,13 +654,13 @@ impl Ias15 {
 
             // Swap particle buffers
             for (k, particle) in self.universe.particles[..self.universe.n_particles].iter_mut().enumerate() {
-                particle.position.x = self.x0[3*k+0];	// Set final position
-                particle.position.y = self.x0[3*k+1];
-                particle.position.z = self.x0[3*k+2];
+                particle.inertial_position.x = self.x0[3*k+0];	// Set final position
+                particle.inertial_position.y = self.x0[3*k+1];
+                particle.inertial_position.z = self.x0[3*k+2];
 
-                particle.velocity.x = self.v0[3*k+0];	// Set final velocity
-                particle.velocity.y = self.v0[3*k+1];
-                particle.velocity.z = self.v0[3*k+2];
+                particle.inertial_velocity.x = self.v0[3*k+0];	// Set final velocity
+                particle.inertial_velocity.y = self.v0[3*k+1];
+                particle.inertial_velocity.z = self.v0[3*k+2];
 
                 if particle.moment_of_inertia_ratio != 1. {
                     particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.time_step * particle.dspin_dt.x;
@@ -729,6 +735,97 @@ impl Ias15 {
             self.b[4][k] = self.e[4][k] + be4;
             self.b[5][k] = self.e[5][k] + be5;
             self.b[6][k] = self.e[6][k] + be6;
+        }
+    }
+
+    fn heliocentric_to_inertial_posvelacc(&mut self) {
+        // Formulation:
+        //
+        // inertial_position = heliocentric_position - (1/total_mass) * sum(particle.mass * particle.position)
+        // inertial_velocity = heliocentric_velocity - (1/total_mass) * sum(particle.mass * particle.velocity)
+        // inertial_acceleration = heliocentric_acceleration - (1/total_mass) * sum(particle.mass * particle.acceleration)
+        //
+        // Compute center of mass
+        let mut reference_position = Axes{x:0., y:0., z:0.};
+        let mut reference_velocity = Axes{x:0., y:0., z:0.};
+        let mut reference_acceleration = Axes{x:0., y:0., z:0.};
+        let mut total_mass = 0.;
+
+        for particle in self.universe.particles[..self.universe.n_particles].iter() {
+            reference_position.x      += particle.inertial_position.x*particle.mass;
+            reference_position.y      += particle.inertial_position.y*particle.mass;
+            reference_position.z      += particle.inertial_position.z*particle.mass;
+            reference_velocity.x      += particle.inertial_velocity.x*particle.mass;
+            reference_velocity.y      += particle.inertial_velocity.y*particle.mass;
+            reference_velocity.z      += particle.inertial_velocity.z*particle.mass;
+            reference_acceleration.x  += particle.inertial_acceleration.x*particle.mass;
+            reference_acceleration.y  += particle.inertial_acceleration.y*particle.mass;
+            reference_acceleration.z  += particle.inertial_acceleration.z*particle.mass;
+            total_mass += particle.mass;
+        }
+        reference_position.x /= total_mass;
+        reference_position.y /= total_mass;
+        reference_position.z /= total_mass;
+        reference_velocity.x /= total_mass;
+        reference_velocity.y /= total_mass;
+        reference_velocity.z /= total_mass;
+        reference_acceleration.x /= total_mass;
+        reference_acceleration.y /= total_mass;
+        reference_acceleration.z /= total_mass;
+
+        // Convert heliocentric to inertial
+        for particle in self.universe.particles[0..self.universe.n_particles].iter_mut() {
+            particle.inertial_position.x = particle.position.x - reference_position.x;
+            particle.inertial_position.y = particle.position.y - reference_position.y;
+            particle.inertial_position.z = particle.position.z - reference_position.z;
+            particle.inertial_velocity.x = particle.velocity.x - reference_velocity.x;
+            particle.inertial_velocity.y = particle.velocity.y - reference_velocity.y;
+            particle.inertial_velocity.z = particle.velocity.z - reference_velocity.z;
+            particle.inertial_acceleration.x = particle.acceleration.x - reference_acceleration.x;
+            particle.inertial_acceleration.y = particle.acceleration.y - reference_acceleration.y;
+            particle.inertial_acceleration.z = particle.acceleration.z - reference_acceleration.z;
+        }
+    }
+
+    fn inertial_to_heliocentric_posvelacc(&mut self) {
+        //// Equivalent formulation to substractinga stellar inertial position/velocity/acceleration:
+        ////
+        //// heliocentric_position = inertial_position + (1/star.mass) * sum(particle.mass * particle.position)
+        //// heliocentric_velocity = inertial_velocity + (1/star.mass) * sum(particle.mass * particle.velocity)
+        //// heliocentric_acceleration = inertial_acceleration + (1/star.mass) * sum(particle.mass * particle.acceleration)
+        self.inertial_to_heliocentric_posvel();
+        self.inertial_to_heliocentric_acc();
+    }
+
+    fn inertial_to_heliocentric_posvel(&mut self) {
+        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
+            for particle in particles.iter_mut() {
+                particle.position.x = particle.inertial_position.x - star.inertial_position.x;
+                particle.position.y = particle.inertial_position.y - star.inertial_position.y;
+                particle.position.z = particle.inertial_position.z - star.inertial_position.z;
+                particle.velocity.x = particle.inertial_velocity.x - star.inertial_velocity.x;
+                particle.velocity.y = particle.inertial_velocity.y - star.inertial_velocity.y;
+                particle.velocity.z = particle.inertial_velocity.z - star.inertial_velocity.z;
+            }
+            star.position.x = 0.;
+            star.position.y = 0.;
+            star.position.z = 0.;
+            star.velocity.x = 0.;
+            star.velocity.y = 0.;
+            star.velocity.z = 0.;
+        }
+    }
+
+    fn inertial_to_heliocentric_acc(&mut self) {
+        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
+            for particle in particles.iter_mut() {
+                particle.acceleration.x = particle.inertial_acceleration.x - star.inertial_acceleration.x;
+                particle.acceleration.y = particle.inertial_acceleration.y - star.inertial_acceleration.y;
+                particle.acceleration.z = particle.inertial_acceleration.z - star.inertial_acceleration.z;
+            }
+            star.acceleration.x = 0.;
+            star.acceleration.y = 0.;
+            star.acceleration.z = 0.;
         }
     }
 

@@ -15,9 +15,15 @@ pub struct Particle {
                             // susceptibility of its shape to change in response to a tidal potential.
     pub fluid_love_number: f64,   // love number for a completely fluid planet (used for rotational flattening effects)
     //
+    // In the heliocentric frame the star is at rest with respect to the origin of the coordinate system
     pub position: Axes,
     pub velocity: Axes,
     pub acceleration: Axes,
+    // In the inertial frame the center of mass of a system is at rest with respect to the origin of the coordinate system
+    // (i.e., barycentric frame)
+    pub inertial_position: Axes,
+    pub inertial_velocity: Axes,
+    pub inertial_acceleration: Axes,
     //
     pub radial_velocity: f64,
     pub norm_velocity_vector: f64,

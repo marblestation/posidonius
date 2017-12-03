@@ -14,3 +14,12 @@ class Axes(object):
 
     def z(self):
         return self._data['z']
+
+    def set_x(self, x):
+        self._data['x'] = x
+
+    def set_y(self, y):
+        self._data['y'] = y
+
+    def set_z(self, z):
+        self._data['z'] = z

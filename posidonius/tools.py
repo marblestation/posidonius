@@ -3,6 +3,31 @@ import numpy as np
 from constants import *
 from axes import Axes
 
+def get_center_of_mass_of_pair(center_of_mass_position, center_of_mass_velocity, center_of_mass_acceleration, center_of_mass_mass, particle):
+    center_of_mass_position.set_x(center_of_mass_position.x()*center_of_mass_mass + particle['position']['x']*particle['mass'])
+    center_of_mass_position.set_y(center_of_mass_position.y()*center_of_mass_mass + particle['position']['y']*particle['mass'])
+    center_of_mass_position.set_z(center_of_mass_position.z()*center_of_mass_mass + particle['position']['z']*particle['mass'])
+    center_of_mass_velocity.set_x(center_of_mass_velocity.x()*center_of_mass_mass + particle['velocity']['x']*particle['mass'])
+    center_of_mass_velocity.set_y(center_of_mass_velocity.y()*center_of_mass_mass + particle['velocity']['y']*particle['mass'])
+    center_of_mass_velocity.set_z(center_of_mass_velocity.z()*center_of_mass_mass + particle['velocity']['z']*particle['mass'])
+    center_of_mass_acceleration.set_x(center_of_mass_acceleration.x()*center_of_mass_mass + particle['acceleration']['x']*particle['mass'])
+    center_of_mass_acceleration.set_y(center_of_mass_acceleration.y()*center_of_mass_mass + particle['acceleration']['y']*particle['mass'])
+    center_of_mass_acceleration.set_z(center_of_mass_acceleration.z()*center_of_mass_mass + particle['acceleration']['z']*particle['mass'])
+
+    new_center_of_mass_mass = center_of_mass_mass + particle['mass']
+    if new_center_of_mass_mass > 0.:
+        center_of_mass_position.set_x(center_of_mass_position.x() / new_center_of_mass_mass)
+        center_of_mass_position.set_y(center_of_mass_position.y() / new_center_of_mass_mass)
+        center_of_mass_position.set_z(center_of_mass_position.z() / new_center_of_mass_mass)
+        center_of_mass_velocity.set_x(center_of_mass_velocity.x() / new_center_of_mass_mass)
+        center_of_mass_velocity.set_y(center_of_mass_velocity.y() / new_center_of_mass_mass)
+        center_of_mass_velocity.set_z(center_of_mass_velocity.z() / new_center_of_mass_mass)
+        center_of_mass_acceleration.set_x(center_of_mass_acceleration.x() / new_center_of_mass_mass)
+        center_of_mass_acceleration.set_y(center_of_mass_acceleration.y() / new_center_of_mass_mass)
+        center_of_mass_acceleration.set_z(center_of_mass_acceleration.z() / new_center_of_mass_mass)
+
+    return new_center_of_mass_mass
+
 def mass_radius_relation(planet_mass, planet_mass_type='factor', planet_percent_rock = 0.70):
     """
     For earth-like planets, calculate the planet radius factor given the planet

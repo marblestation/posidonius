@@ -190,7 +190,8 @@ if __name__ == "__main__":
     star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*posidonius.constants.M_SUN) * np.power(star_data['radius']*posidonius.constants.AU, 2) * (star_norm_spin/posidonius.constants.DAY)
     initial_total_angular_momentum = total_planets_orbital_angular_momentum[0] + total_planets_angular_momentum[0] + star_angular_momentum[0]
     conservation_of_angular_momentum = np.abs(((total_planets_orbital_angular_momentum + total_planets_angular_momentum + star_angular_momentum) - initial_total_angular_momentum) / initial_total_angular_momentum)
-    conservation_of_angular_momentum[0] = conservation_of_angular_momentum[1]
+    if len(conservation_of_angular_momentum) > 1:
+        conservation_of_angular_momentum[0] = conservation_of_angular_momentum[1]
     #conservation_of_angular_momentum = np.abs(star_data['total_angular_momentum'] - star_data['total_angular_momentum'][0]) / star_data['total_angular_momentum'][0]
 
 

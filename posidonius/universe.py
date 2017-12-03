@@ -4,7 +4,7 @@ from axes import Axes
 from integrator import WHFast, Ias15, LeapFrog
 from constants import *
 from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
-from tools import calculate_spin, mass_radius_relation
+from tools import calculate_spin, mass_radius_relation, get_center_of_mass_of_pair
 
 class ConsiderGeneralRelativity(object):
     def __init__(self, variant):
@@ -75,6 +75,10 @@ class Universe(object):
         particle['velocity'] = velocity.get()
         particle['spin'] = spin.get()
         particle['evolution_type'] = evolution_type.get()
+
+        particle['inertial_position'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['inertial_velocity'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['inertial_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
 
         if type(evolution_type) != NonEvolving:
             self._data['evolving_particles_exist'] = True;
@@ -327,9 +331,34 @@ class Universe(object):
 
 
 
+    def populate_inertial_frame(self):
+        # Compute center of mass
+        center_of_mass_position = Axes(0., 0., 0.)
+        center_of_mass_velocity = Axes(0., 0., 0.)
+        center_of_mass_acceleration = Axes(0., 0., 0.)
+        center_of_mass_mass = 0.;
+
+        for particle in self._data['particles']:
+            center_of_mass_mass = get_center_of_mass_of_pair(center_of_mass_position,
+                                                                    center_of_mass_velocity,
+                                                                    center_of_mass_acceleration,
+                                                                    center_of_mass_mass,
+                                                                    particle)
+
+        for particle in self._data['particles']:
+            particle['inertial_position']['x'] = particle['position']['x'] - center_of_mass_position.x()
+            particle['inertial_position']['y'] = particle['position']['y'] - center_of_mass_position.y()
+            particle['inertial_position']['z'] = particle['position']['z'] - center_of_mass_position.z()
+            particle['inertial_velocity']['x'] = particle['velocity']['x'] - center_of_mass_velocity.x()
+            particle['inertial_velocity']['y'] = particle['velocity']['y'] - center_of_mass_velocity.y()
+            particle['inertial_velocity']['z'] = particle['velocity']['z'] - center_of_mass_velocity.z()
+
+
 
 
     def get(self):
+        self.populate_inertial_frame()
+
         # Add dummy particles to fill the vector
         n_dummy_particles = MAX_PARTICLES - self._data['n_particles']
         for i in xrange(n_dummy_particles):
