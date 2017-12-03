@@ -19,7 +19,10 @@ if __name__ == "__main__":
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_tides = True
     consider_rotational_flattening = True
-    consider_general_relativy = True
+    #consider_general_relativy = False
+    consider_general_relativy = "Kidder1995" # Assumes one central massive body
+    #consider_general_relativy = "Anderson1975" # Assumes one central massive body
+    #consider_general_relativy = "Newhall1983" # Considers all bodies
     universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy)
 
     star_mass = 0.08 # Solar masses
@@ -96,6 +99,9 @@ if __name__ == "__main__":
     planet_evolution_type = posidonius.NonEvolving()
     universe.add_particle(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number, planet_position, planet_velocity, planet_spin, planet_evolution_type)
 
-    universe.write(filename)
+    whfast_alternative_coordinates="DemocraticHeliocentric"
+    #whfast_alternative_coordinates="WHDS"
+    #whfast_alternative_coordinates="Jacobi"
+    universe.write(filename, whfast_alternative_coordinates=whfast_alternative_coordinates)
 
 

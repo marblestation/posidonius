@@ -1,7 +1,6 @@
 import posidonius
 import numpy as np
 import argparse
-import datetime
 
 def calculate_spin(angular_frequency, inclination, obliquity, position, velocity):
     """
@@ -30,9 +29,6 @@ if __name__ == "__main__":
     parser.add_argument('output_filename', action='store', help='Filename where the initial snapshot will be stored (e.g., universe_integrator.json)')
 
     args = parser.parse_args()
-
-    print("[INFO {} UTC] Thesis5.28b is equivalent to Thesis5.27 case.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
-
     filename = args.output_filename
     #filename = posidonius.constants.BASE_DIR+"target/case7.json"
 
@@ -45,7 +41,10 @@ if __name__ == "__main__":
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_tides = True
     consider_rotational_flattening = False
-    consider_general_relativy = True
+    #consider_general_relativy = False
+    consider_general_relativy = "Kidder1995" # Assumes one central massive body
+    #consider_general_relativy = "Anderson1975" # Assumes one central massive body
+    #consider_general_relativy = "Newhall1983" # Considers all bodies
     universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy)
 
     star_mass = 0.08 # Solar masses
@@ -58,7 +57,7 @@ if __name__ == "__main__":
     # [end correction] ---------------------------------------------------------
     star_radius = star_radius_factor * posidonius.constants.R_SUN
     star_dissipation_factor = 2.006*3.845764e4 # -60+64
-    star_dissipation_factor_scale = 1.0
+    star_dissipation_factor_scale = 10.0
     star_radius_of_gyration_2 = 1.94e-1 # Brown dwarf
     star_love_number = 0.307
     fluid_love_number = star_love_number
@@ -112,8 +111,8 @@ if __name__ == "__main__":
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     a = 0.018;                             # semi-major axis (in AU)
-    e = 0.00001;                              # eccentricity
-    i = 5. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
+    e = 0.01;                              # eccentricity
+    i = 1. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
     p = 0.;                                # argument of pericentre (degrees)
     n = 0. * posidonius.constants.DEG2RAD;                      # longitude of the ascending node (degrees)
     l = 0. * posidonius.constants.DEG2RAD;                      # mean anomaly (degrees)
@@ -125,7 +124,7 @@ if __name__ == "__main__":
     planet1_velocity = posidonius.Axes(vx, vy, vz)
 
     #////// Initialization of planet1ary spin
-    planet1_obliquity = 0.01#11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
+    planet1_obliquity = 0.2 #11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
     planet1_rotation_period = 24. # hours
     planet1_angular_frequency = posidonius.constants.TWO_PI/(planet1_rotation_period/24.) # days^-1
     # Pseudo-synchronization period
@@ -145,7 +144,7 @@ if __name__ == "__main__":
     universe.add_earth_like(planet1_mass, planet1_dissipation_factor_scale, planet1_position, planet1_velocity, planet1_spin, planet1_evolution_type)
 
     ############################################################################
-    planet2_mass_factor = 10.0
+    planet2_mass_factor = 1.0
     # [start correction] -------------------------------------------------------
     # To reproduce Bolmont's thesis 2013:
     #   Mercury-T was using planet2_mass as 3.00e-6 M_SUN and that's not exactly 1 M_EARTH (as accepted by IAU)
@@ -161,23 +160,23 @@ if __name__ == "__main__":
     #   Mercury-T defined a different M2EARTH from the IAU accepted value
     #   and M2EARTH was used to compute planet2_radius_factor, thus to reproduce
     #   Mercury-T results the planet2_radius_factor has to be corrected:
-    planet2_radius_factor = planet2_radius_factor * 1.00046285582 # 1.8070338480688148
+    planet2_radius_factor = planet2_radius_factor * 0.999756053794 # 1.0097617465214679
     # [end correction] ---------------------------------------------------------
     planet2_radius = planet2_radius_factor * posidonius.constants.R_EARTH
 
     # Terrestrial:
     k2pdelta = 2.465278e-3 # Terrestrial planet2s (no gas)
     planet2_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet2_radius, 5))
-    planet2_dissipation_factor_scale = 10.0
+    planet2_dissipation_factor_scale = 1.0
     planet2_radius_of_gyration_2 = 0.3308
     planet2_love_number = 0.305
     planet2_fluid_love_number = planet2_love_number
 
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
-    a = 0.1;                             # semi-major axis (in AU)
-    e = 0.5;                               # eccentricity
-    i = 1. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
+    a = 0.025;                             # semi-major axis (in AU)
+    e = 0.01;                               # eccentricity
+    i = 2. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
     p = 0.;                                # argument of pericentre (degrees)
     n = 0. * posidonius.constants.DEG2RAD;                      # longitude of the ascending node (degrees)
     l = 0. * posidonius.constants.DEG2RAD;                      # mean anomaly (degrees)
@@ -208,6 +207,8 @@ if __name__ == "__main__":
     #universe.add_particle(planet2_mass, planet2_radius, planet2_dissipation_factor, planet2_dissipation_factor_scale, planet2_radius_of_gyration_2, planet2_love_number, planet2_fluid_love_number, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)
     universe.add_earth_like(planet2_mass, planet2_dissipation_factor_scale, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)
 
-    universe.write(filename)
-
+    whfast_alternative_coordinates="DemocraticHeliocentric"
+    #whfast_alternative_coordinates="WHDS"
+    #whfast_alternative_coordinates="Jacobi"
+    universe.write(filename, whfast_alternative_coordinates=whfast_alternative_coordinates)
 

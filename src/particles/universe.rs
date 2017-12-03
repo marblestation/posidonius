@@ -787,6 +787,7 @@ impl Universe {
                         //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);
                     }
                 }
+                panic!("Please, contact Posidonius authors before using BolmontMathis2016/GalletBolmont2017 evolutionary models. They may not be ready yet for scientific explotation.")
             },
             _ => {},
         }

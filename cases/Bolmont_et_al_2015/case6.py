@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     #initial_time = 4.5e6*365.25 # time [days] where simulation starts
     initial_time = 1.0e6*365.25 # time [days] where simulation starts
-    time_step = 0.01 # days
+    time_step = 0.08 # days
     #time_limit   = 4*time_step # days
     time_limit   = 365.25 * 1.0e5 # days
     historic_snapshot_period = 100.*365.25 # days
@@ -21,6 +21,9 @@ if __name__ == "__main__":
     consider_tides = False
     consider_rotational_flattening = True
     consider_general_relativy = False
+    #consider_general_relativy = "Kidder1995" # Assumes one central massive body
+    #consider_general_relativy = "Anderson1975" # Assumes one central massive body
+    #consider_general_relativy = "Newhall1983" # Considers all bodies
     universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy)
 
     star_mass = 0.08 # Solar masses
@@ -72,7 +75,7 @@ if __name__ == "__main__":
     #   Mercury-T results the planet1_radius_factor has to be corrected:
     #       NOTE: This correction is different than for cases 3 and 4 because
     #             constants were different between tidal and flattening tests
-    planet1_radius_factor = planet1_radius_factor * 0.988988887019 # 1.0097617465214679
+    planet1_radius_factor = planet1_radius_factor * 0.988988887019 # 0.998886820497
     # [end correction] ---------------------------------------------------------
     planet1_radius = planet1_radius_factor * posidonius.constants.R_EARTH
 
@@ -183,6 +186,9 @@ if __name__ == "__main__":
     planet2_evolution_type = posidonius.NonEvolving()
     universe.add_particle(planet2_mass, planet2_radius, planet2_dissipation_factor, planet2_dissipation_factor_scale, planet2_radius_of_gyration_2, planet2_love_number, planet2_fluid_love_number, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)
 
-    universe.write(filename)
+    whfast_alternative_coordinates="DemocraticHeliocentric"
+    #whfast_alternative_coordinates="WHDS"
+    #whfast_alternative_coordinates="Jacobi"
+    universe.write(filename, whfast_alternative_coordinates=whfast_alternative_coordinates)
 
 

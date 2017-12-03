@@ -31,11 +31,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     filename = args.output_filename
-    #filename = posidonius.constants.BASE_DIR+"target/case4.json"
+    #filename = posidonius.constants.BASE_DIR+"target/case3.json"
 
     #initial_time = 4.5e6*365.25 # time [days] where simulation starts
     initial_time = 1.0e6*365.25 # time [days] where simulation starts
-    time_step = 0.05 # days
+    time_step = 0.08 # days
     #time_limit   = 4*time_step # days
     time_limit   = 365.25 * 1.0e8 # days
     historic_snapshot_period = 100.*365.25 # days
@@ -43,17 +43,21 @@ if __name__ == "__main__":
     consider_tides = True
     consider_rotational_flattening = False
     consider_general_relativy = False
+    #consider_general_relativy = "Kidder1995" # Assumes one central massive body
+    #consider_general_relativy = "Anderson1975" # Assumes one central massive body
+    #consider_general_relativy = "Newhall1983" # Considers all bodies
     universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy)
 
     star_mass = 0.08 # Solar masses
     star_radius_factor = 0.845649342247916
     # [start correction] -------------------------------------------------------
-    # To reproduce Bolmont et al. 2015 (although in this case it is not strictly needed because the star evolves):
+    # To reproduce Bolmont et al. 2015:
     #   Mercury-T was using R_SUN of 4.67920694e-3 AU which is not the IAU accepted value
     #   thus, to reproduce Mercury-T results the star radius factor should be slighly modified:
     star_radius_factor = star_radius_factor*(4.67920694e-3 / posidonius.constants.R_SUN)
     # [end correction] ---------------------------------------------------------
     star_radius = star_radius_factor * posidonius.constants.R_SUN
+
     star_dissipation_factor = 2.006*3.845764e4 # -60+64
     star_dissipation_factor_scale = 1.0
     star_radius_of_gyration_2 = 1.94e-1 # Brown dwarf
@@ -69,10 +73,10 @@ if __name__ == "__main__":
     #star_evolution_type = posidonius.GalletBolmont2017(star_mass) # mass = 0.30 .. 1.40
     #star_evolution_type = posidonius.BolmontMathis2016(star_mass) # mass = 0.40 .. 1.40
     #star_evolution_type = posidonius.Baraffe2015(star_mass) # mass = 0.01 .. 1.40
-    star_evolution_type = posidonius.Leconte2011(star_mass) # mass = 0.01 .. 0.08
+    #star_evolution_type = posidonius.Leconte2011(star_mass) # mass = 0.01 .. 0.08
     #star_evolution_type = posidonius.Baraffe1998(star_mass) # Sun (mass = 1.0) or M-Dwarf (mass = 0.1)
     #star_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
-    #star_evolution_type = posidonius.NonEvolving()
+    star_evolution_type = posidonius.NonEvolving()
     universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, fluid_love_number, star_position, star_velocity, star_spin, star_evolution_type)
 
     ############################################################################
@@ -108,7 +112,7 @@ if __name__ == "__main__":
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     a = 0.018;                             # semi-major axis (in AU)
     e = 0.1;                               # eccentricity
-    i = 0. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
+    i = 5. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
     p = 0.;                                # argument of pericentre (degrees)
     n = 0. * posidonius.constants.DEG2RAD;                      # longitude of the ascending node (degrees)
     l = 0. * posidonius.constants.DEG2RAD;                      # mean anomaly (degrees)
@@ -138,6 +142,9 @@ if __name__ == "__main__":
     planet_evolution_type = posidonius.NonEvolving()
     universe.add_particle(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number, planet_position, planet_velocity, planet_spin, planet_evolution_type)
 
-    universe.write(filename)
+    whfast_alternative_coordinates="DemocraticHeliocentric"
+    #whfast_alternative_coordinates="WHDS"
+    #whfast_alternative_coordinates="Jacobi"
+    universe.write(filename, whfast_alternative_coordinates=whfast_alternative_coordinates)
 
 
