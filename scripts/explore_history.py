@@ -173,10 +173,6 @@ if __name__ == "__main__":
         ## Sum over all the planets values:
         planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*posidonius.constants.M_SUN) * np.power(planet_data['radius']*posidonius.constants.AU, 2) * (planet_norm_spin/posidonius.constants.DAY)
         total_planets_angular_momentum += planet_angular_momentum # If more than one planet is present, all of them should be added
-
-        # Sum on number of planets to have total orbital momentum
-        planet_orbital_angular_momentum = (star_mass*posidonius.constants.M_SUN) * (planet_data['mass']*posidonius.constants.M_SUN) / ((star_mass*posidonius.constants.M_SUN) + (planet_data['mass']*posidonius.constants.M_SUN)) * planet_data['orbital_angular_momentum'] * ((posidonius.constants.AU*posidonius.constants.AU)/posidonius.constants.DAY) # kg.m^2.s-1
-        total_planets_orbital_angular_momentum += planet_orbital_angular_momentum # If more than one planet is present, all of them should be added
         ################################################################################
 
         ################################################################################
@@ -184,6 +180,38 @@ if __name__ == "__main__":
         planets_computed_data[key] = planet_computed_data
         ################################################################################
 
+    ################################################################################
+    ### [start] compute total planets orbital angular momentum for one star and N planets
+    factors_a = []
+    cross_products = []
+    r_terms = []
+    v_terms = []
+    star_mass_msun = star_data['mass'][0]*posidonius.constants.M_SUN
+    accumulative_mass = star_mass_msun
+    for key in planets_keys:
+        planet_mass_msun = planets_data[key]['mass'][0]*posidonius.constants.M_SUN
+        numerator = accumulative_mass * planet_mass_msun
+        accumulative_mass += planet_mass_msun
+        factor_a = numerator / accumulative_mass
+        factors_a.append(factor_a)
+
+        r = np.vstack((planets_data[key]['position_x'],planets_data[key]['position_y'], planets_data[key]['position_z']))
+        v = np.vstack((planets_data[key]['velocity_x'], planets_data[key]['velocity_y'], planets_data[key]['velocity_z']))
+        for (r_term, v_term) in zip(r_terms, v_terms):
+            r -= r_term
+            v -= v_term
+        r_terms.append(planet_mass_msun/accumulative_mass * r)
+        v_terms.append(planet_mass_msun/accumulative_mass * v)
+
+        x = np.cross(r.T, v.T)
+        cross_products.append(x)
+
+    lorb = np.zeros((len(star_data), 3))
+    for (a, rxv) in zip(factors_a, cross_products):
+        lorb += a*rxv
+    total_planets_orbital_angular_momentum = np.sqrt(np.sum(np.power(lorb, 2), axis=1)) * ((posidonius.constants.AU*posidonius.constants.AU)/posidonius.constants.DAY) # kg.m^2.s-1
+    ### [end] compute total planets orbital angular momentum for one star and N planets
+    ################################################################################
 
 
     # \Delta L / L
