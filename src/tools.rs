@@ -135,6 +135,42 @@ pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: A
     return (a, q, eccentricity, i, p, n, l, orbital_period)
 }
 
+pub fn calculate_perihelion_distance_and_eccentricity(gm: f64, position: Axes, velocity: Axes) -> (f64, f64) {
+    // ! Based on the implementation of Chambers in Mercury
+    // Calculates Keplerian orbital elements given relative coordinates and
+    // velocities, and GM = G times the sum of the masses.
+
+    // Input
+    let x = position.x;
+    let y = position.y;
+    let z = position.z;
+    let u = velocity.x;
+    let v = velocity.y;
+    let w = velocity.z;
+    // Output
+    let q: f64; // perihelion distance
+    let eccentricity: f64; // eccentricity
+    // Local
+    let hx = y * w  -  z * v;
+    let hy = z * u  -  x * w;
+    let hz = x * v  -  y * u;
+    let h2 = hx.powf(2.) + hy.powf(2.) + hz.powf(2.);
+    let v2 = u * u  +  v * v  +  w * w;
+    let r = (x*x + y*y + z*z).sqrt();
+    let s = h2 / gm;
+
+    // Eccentricity and perihelion distance
+    let temp = 1.  +  s * (v2 / gm  -  2. / r);
+    if temp <= 0. {
+        eccentricity = 0.;
+    } else {
+        eccentricity = temp.sqrt();
+    }
+    q = s / (1. + eccentricity);
+
+    return(q, eccentricity)
+}
+
 
 
 pub fn calculate_cartesian_coordinates(gm: f64, q: f64, e: f64, i0: f64, p: f64, n0: f64, l: f64)  -> (f64, f64, f64, f64, f64, f64) {

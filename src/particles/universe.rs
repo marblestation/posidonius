@@ -1,6 +1,7 @@
 extern crate time;
 use std::collections::HashMap;
 use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2, DBL_EPSILON_2};
+use super::super::tools::calculate_perihelion_distance_and_eccentricity;
 use super::{Evolver, EvolutionType};
 use super::{Particle};
 use super::{Axes};
@@ -773,13 +774,30 @@ impl Universe {
         match self.particles[star_index].evolution_type {
             EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) => {
                 if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+                    let star_norm_spin_vector = star.norm_spin_vector_2.sqrt();
                     for particle in particles.iter() {
-                        let frequency = (particle.velocity.x - star.spin.y*particle.position.z + star.spin.z*particle.position.y).powi(2)
-                                    + (particle.velocity.y - star.spin.z*particle.position.x + star.spin.x*particle.position.z).powi(2)
-                                    + (particle.velocity.z - star.spin.x*particle.position.y + star.spin.y*particle.position.x).powi(2);
-                        // two_times_the_inverse_of_the_excitation_frequency: 2/w
-                        // inverse_of_half_the_excitation_frequency : 1/(w/2)
-                        let inverse_of_half_the_excitation_frequency = particle.distance / frequency;
+                        //
+                        //// Excitation frequency needed by the model based on the
+                        // instantaneous frequency (using positions, velocities and spins)
+                        //let frequency = (particle.velocity.x - star.spin.y*particle.position.z + star.spin.z*particle.position.y).powi(2)
+                                    //+ (particle.velocity.y - star.spin.z*particle.position.x + star.spin.x*particle.position.z).powi(2)
+                                    //+ (particle.velocity.z - star.spin.x*particle.position.y + star.spin.y*particle.position.x).powi(2);
+                        //let inverse_of_half_the_excitation_frequency = particle.distance / frequency;
+                        // NOTE:  two_times_the_inverse_of_the_excitation_frequency: 2/w
+                        //        inverse_of_half_the_excitation_frequency : 1/(w/2)
+                        //
+                        //// Excitation frequency needed by the model based on the
+                        // mean frequency (using mean motion and spin). 
+                        //
+                        // NOTE: The model is already here being used outside the 
+                        // validity domain, it seems not justified to use an 
+                        // instantaneous frequency.
+                        let gm = star.mass_g+particle.mass_g;
+                        let (perihelion_distance, eccentricity) = calculate_perihelion_distance_and_eccentricity(gm, particle.position, particle.velocity);
+                        let mean_motion = gm.sqrt() * (perihelion_distance/(1.0 - eccentricity)).powf(-1.5);
+                        let half_the_excitation_frequency = (star_norm_spin_vector - mean_motion).abs();
+                        let inverse_of_half_the_excitation_frequency = 1./half_the_excitation_frequency;
+
                         let planet_dependent_dissipation_factor = star.dissipation_factor_scale * 2.0 * K2
                             * star.lag_angle * inverse_of_half_the_excitation_frequency / (3.0*star.radius.powi(5));
 
@@ -901,6 +919,8 @@ impl Universe {
         }
 
     }
+
+
 
     ////////////////////////////////////////////////////////////////////////////
     //--------------------------------------------------------------------------
