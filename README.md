@@ -43,9 +43,9 @@ cat files.txt | xargs rm -rf && rm -f files.txt
 The user can design his/her own simulation with a python script, which will create a JSON file with the simulation description. This file can be read later on by Posidonius to start the simulation. The code includes several examples in the cases directory, and they can be executed by running:
 
 ```bash
-python cases/case3.py target/case3.json
-python cases/case4.py target/case4.json
-python cases/case7.py target/case7.json
+python cases/Bolmont_et_al_2015/case3.py target/case3.json
+python cases/Bolmont_et_al_2015/case4.py target/case4.json
+python cases/Bolmont_et_al_2015/case7.py target/case7.json
 python cases/example.py target/example.json
 ```
 

@@ -269,7 +269,7 @@ class Universe(object):
         # TODO: What k2pdelta/dissipation_factor is the recommended?
         #k2pdelta = 8.101852e-9 # Gas giant
         k2pdelta = 2.893519e-7 # Gas giant for Jupiter: 2-3d-2 s, here in day (Leconte)
-        dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius))
+        dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
         #dissipation_factor = 2.006*3.845764e4 // Gas giant
 
         radius_of_gyration_2 = 2.54e-1 # Gas giant
@@ -322,7 +322,7 @@ class Universe(object):
         # TODO: What k2pdelta/dissipation_factor is the recommended?
         #k2pdelta = 8.101852e-9 # Gas giant
         k2pdelta = 2.893519e-7 # Gas giant for Jupiter: 2-3d-2 s, here in day (Leconte)
-        dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius))
+        dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
         #dissipation_factor = 2.006*3.845764e4 // Gas giant
 
         radius_of_gyration_2 = 2.54e-1 # Gas giant
