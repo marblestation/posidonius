@@ -29,10 +29,10 @@ use std::collections::hash_map::DefaultHasher;
 pub struct Ias15 {
     time_step: f64,
     pub universe: Universe,
-    current_time: f64,
+    pub current_time: f64,
     current_iteration: u32,
-    recovery_snapshot_period: f64,
-    historic_snapshot_period: f64,
+    pub recovery_snapshot_period: f64,
+    pub historic_snapshot_period: f64,
     last_recovery_snapshot_time: f64,
     last_historic_snapshot_time: f64,
     pub n_historic_snapshots: usize,

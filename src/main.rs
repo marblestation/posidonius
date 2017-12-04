@@ -1,5 +1,6 @@
 extern crate posidonius;
 extern crate time;
+#[macro_use]
 extern crate clap;
 use clap::{Arg, App, SubCommand, AppSettings};
 use posidonius::Integrator;
@@ -56,6 +57,14 @@ fn main() {
                                         .long("silent")
                                         .multiple(false)
                                         .help("Only print INFO/WARNING/ERROR messages"))
+                                    .arg(Arg::with_name("change_historic_snapshot_period")
+                                        .long("historic-snapshot-period")
+                                        .value_name("days")
+                                        .help("Set new historic snapshots period in days."))
+                                    .arg(Arg::with_name("change_recovery_snapshot_period")
+                                        .long("recovery-snapshot-period")
+                                        .value_name("days")
+                                        .help("Set new recovery snapshots period in days."))
                                     )
                             .setting(AppSettings::SubcommandRequiredElseHelp)
                           .get_matches();
@@ -66,6 +75,8 @@ fn main() {
     let verify_integrity;
     let silent_mode;
     let resume;
+    let new_historic_snapshot_period;
+    let new_recovery_snapshot_period;
 
     match matches.subcommand() {
         ("start", Some(start_matches)) =>{
@@ -75,6 +86,8 @@ fn main() {
             silent_mode = start_matches.is_present("silent");
             verify_integrity = start_matches.is_present("no-verify-integrity");
             resume = false;
+            new_historic_snapshot_period = -1.0;
+            new_recovery_snapshot_period = -1.0;
         },
         ("resume", Some(resume_matches)) =>{
             universe_integrator_snapshot_filename = resume_matches.value_of("resume_case_filename").unwrap();
@@ -83,6 +96,8 @@ fn main() {
             silent_mode = resume_matches.is_present("silent");
             verify_integrity = ! resume_matches.is_present("no-verify-integrity");
             resume = true;
+            new_historic_snapshot_period = value_t!(resume_matches.value_of("change_historic_snapshot_period"), f64).unwrap_or(-1.);
+            new_recovery_snapshot_period = value_t!(resume_matches.value_of("change_recovery_snapshot_period"), f64).unwrap_or(-1.);
         },
         ("", None)   => unreachable!(),
         _            => unreachable!(),
@@ -103,6 +118,26 @@ fn main() {
             }
         },
     };
+
+    if universe_integrator.current_time > 0. {
+        let current_time_years = universe_integrator.current_time/365.25;
+        println!("[INFO {} UTC] Continuing from year {:0.0} ({:0.1e}).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), current_time_years, current_time_years);
+    }
+
+    if new_historic_snapshot_period > 0. && universe_integrator.historic_snapshot_period != new_historic_snapshot_period {
+        println!("[INFO {} UTC] The historic snapshot period changed from {} to {} days: {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator.historic_snapshot_period, new_historic_snapshot_period, universe_history_filename);
+        universe_integrator.historic_snapshot_period = new_historic_snapshot_period;
+    } else {
+        println!("[INFO {} UTC] A historic snapshot will be saved every {} days: {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator.historic_snapshot_period, universe_history_filename);
+    }
+    
+    if new_recovery_snapshot_period > 0. && universe_integrator.recovery_snapshot_period != new_recovery_snapshot_period {
+        println!("[INFO {} UTC] The recovery snapshot period changed from {} to {} days: {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator.recovery_snapshot_period, new_recovery_snapshot_period, universe_integrator_snapshot_filename);
+        universe_integrator.recovery_snapshot_period = new_recovery_snapshot_period;
+    } else {
+        println!("[INFO {} UTC] A recovery snapshot will be saved every {} days: {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator.recovery_snapshot_period, universe_integrator_snapshot_filename);
+    }
+
 
     //// Other integrators:
     //let mut universe_integrator = posidonius::Ias15::restore_snapshot(&first_universe_integrator_snapshot_path).unwrap();

@@ -98,10 +98,10 @@ pub struct WHFast {
     half_time_step: f64,
     pub universe: Universe,
     last_spin: [Axes; MAX_PARTICLES], // For spin integration with the midpoint method
-    current_time: f64,
+    pub current_time: f64,
     current_iteration: usize,
-    recovery_snapshot_period: f64,
-    historic_snapshot_period: f64,
+    pub recovery_snapshot_period: f64,
+    pub historic_snapshot_period: f64,
     last_recovery_snapshot_time: f64,
     last_historic_snapshot_time: f64,
     pub n_historic_snapshots: usize,
@@ -187,7 +187,7 @@ impl WHFast {
                 if verify_integrity && universe_integrator.current_time != 0. {
                     panic!("[PANIC {} UTC] File '{}' has a zeroed hash (i.e., new simulation) but a current time different from zero ({})", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display(), universe_integrator.current_time)
                 }
-                println!("[INFO {} UTC] Created new simulation based on '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
+                println!("[INFO {} UTC] Created new simulation based on '{}'.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
                 // Initialize physical values
                 let current_time = 0.;
                 universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
@@ -203,7 +203,7 @@ impl WHFast {
                     panic!("[PANIC {} UTC] File '{}' seems corrupted because computed hash '{}' does not match restored hash '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display(), computed_hash, restored_hash)
                 }
                 universe_integrator.hash = restored_hash;
-                println!("[INFO {} UTC] Restored previous simulation from '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
+                println!("[INFO {} UTC] Restored previous simulation from '{}'.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
             }
             return Ok(universe_integrator);
         } else {
