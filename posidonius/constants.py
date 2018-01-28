@@ -8,10 +8,6 @@ if not os.path.exists(BASE_DIR+"/input/"):
     if not os.path.exists(BASE_DIR+"/input/"):
         raise Exception("Input directory with stellar models not found!")
 
-K = 0.01720209895 # Gaussian constant
-K2 = K*K
-G_MERCURY  = K2  # Gravitational constant with Mercury units
-G = G_MERCURY
 PI = np.pi
 TWO_PI = PI*2.
 DEG2RAD = PI / 180. # conversion factor from degrees to radians
@@ -36,11 +32,18 @@ R_EARTH = 6.3781e6 # m
 R_EARTH = R_EARTH/AU # 4.263496512454037e-05 AU
 ################################################################################
 
-
 #-------------------------------------------------------------------------------
 # Constants in S.I. units
 #-------------------------------------------------------------------------------
 HOUR      =  3600.                    # s
 DAY       =  24.*HOUR                 # s
 YEAR      =  365.25*DAY               # s
+
+#-------------------------------------------------------------------------------
+# Constants in the units used in the Mercury code
+#-------------------------------------------------------------------------------
+G_MERCURY = G_SI/(np.power(AU,3))*M_SUN*(DAY*DAY) # Gravitational constant with Mercury units
+G = G_MERCURY
+K2 = G_MERCURY
+K = np.sqrt(G_MERCURY) # Gaussian constant (in Mercury is 0.01720209895 but it does not follow from the recommended IAU constants)
 

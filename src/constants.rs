@@ -24,10 +24,6 @@ pub const DBL_EPSILON_2 : f64 = DBL_EPSILON*DBL_EPSILON;
 
 
 //// Physical constants
-// These are the same units as used by the mercury6 code.
-const K  : f64 = 0.01720209895;    // Gaussian constant 
-pub const K2 : f64 = K*K; 
-pub const G  : f64 = K2;  // Gravitational constant in Mercury units
 pub const PI : f64 = std::f64::consts::PI;
 pub const TWO_PI : f64 = std::f64::consts::PI * 2.;
 pub const DEG2RAD : f64 = std::f64::consts::PI / 180.; // conversion factor from degrees to radians
@@ -52,6 +48,15 @@ pub const SPEED_OF_LIGHT_2 : f64 = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
 pub const R_SUN : f64 = 6.957e8/AU;  // AU
 pub const R_EARTH : f64 = 6.3781e6/AU; // AU
 ////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// Constants in the units used in the Mercury code
+////////////////////////////////////////////////////////////////////////////////
+const G_MERCURY : f64 = G_SI/(AU*AU*AU * M_SUN * DAY*DAY); // Gravitational constant with Mercury units
+pub const G : f64 = G_MERCURY;
+pub const K2 : f64 = G_MERCURY;
+//const K  : f64 = G_MERCURY.sqrt(); // Gaussian constant (in Mercury is 0.01720209895 but it does not follow from the recommended IAU constants)
+
 
 // Solar system
 pub const SUN_DYN_FREQ : f64 = K2/(R_SUN*R_SUN*R_SUN); // Needed for MathisSolarLike
