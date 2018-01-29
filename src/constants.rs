@@ -52,7 +52,7 @@ pub const R_EARTH : f64 = 6.3781e6/AU; // AU
 ////////////////////////////////////////////////////////////////////////////////
 // Constants in the units used in the Mercury code
 ////////////////////////////////////////////////////////////////////////////////
-const G_MERCURY : f64 = G_SI/(AU*AU*AU * M_SUN * DAY*DAY); // Gravitational constant with Mercury units
+const G_MERCURY : f64 = G_SI/(AU*AU*AU) * M_SUN * (DAY*DAY); // Gravitational constant with Mercury units
 pub const G : f64 = G_MERCURY;
 pub const K2 : f64 = G_MERCURY;
 //const K  : f64 = G_MERCURY.sqrt(); // Gaussian constant (in Mercury is 0.01720209895 but it does not follow from the recommended IAU constants)
