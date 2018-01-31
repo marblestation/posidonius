@@ -7,8 +7,7 @@ class EvolutionType(object):
     def __init__(self, variant, mass=None):
         self._data = {}
         if variant in ("BolmontMathis2016", "Baraffe2015", "Leconte2011", "Baraffe1998", "GalletBolmont2017"):
-            self._data['fields'] = [float(mass)]
-            self._data['variant'] = variant
+            self._data[variant] = float(mass)
         elif variant in ("LeconteChabrier2013", "NonEvolving"):
             self._data = variant
         else:
@@ -40,7 +39,7 @@ class Leconte2011(EvolutionType):
         super(Leconte2011, self).__init__("Leconte2011", mass=mass)
 
     def get_evolver(self, initial_time):
-        mass = self._data['fields'][0]
+        mass = self._data[self.__class__.__name__]
         if mass <= 0.0101 and mass >= 0.0099:
             filename = "input/Leconte_2011/mass_10.0000.dat"
         elif mass <= 0.0121 and mass >= 0.0119:
@@ -100,7 +99,7 @@ class Baraffe2015(EvolutionType):
         super(Baraffe2015, self).__init__("Baraffe2015", mass=mass)
 
     def get_evolver(self, initial_time):
-        mass = self._data['fields'][0]
+        mass = self._data[self.__class__.__name__]
         if mass <= 0.0101 and mass >= 0.0099:
             filename = "input/Baraffe_2015/0010_Msun.tsv"
         elif mass <= 0.0151 and mass >= 0.0149:
@@ -182,7 +181,7 @@ class Baraffe1998(EvolutionType):
         super(Baraffe1998, self).__init__("Baraffe1998", mass=mass)
 
     def get_evolver(self, initial_time):
-        mass = self._data['fields'][0]
+        mass = self._data[self.__class__.__name__]
         if np.abs(mass - 0.10) < 1e-7:
             # M Dwarf
             filename = "input/Baraffe_1998/01Msun.dat"
@@ -241,7 +240,7 @@ class BolmontMathis2016(EvolutionType):
         super(BolmontMathis2016, self).__init__("BolmontMathis2016", mass=mass)
 
     def get_evolver(self, initial_time):
-        mass = self._data['fields'][0]
+        mass = self._data[self.__class__.__name__]
         if mass <= 0.401 and mass >= 0.399:
             filename = "input/Bolmont_Mathis_2016/L04Z02r.dat"
         elif mass <= 0.501 and mass >= 0.499:
@@ -291,7 +290,7 @@ class GalletBolmont2017(EvolutionType):
         super(GalletBolmont2017, self).__init__("GalletBolmont2017", mass=mass)
 
     def get_evolver(self, initial_time):
-        mass = self._data['fields'][0]
+        mass = self._data[self.__class__.__name__]
         if mass <= 0.301 and mass >= 0.299:
             filename = "input/Gallet_Bolmont_2017/M_03_Z_0134.dat"
         elif mass <= 0.401 and mass >= 0.399:
