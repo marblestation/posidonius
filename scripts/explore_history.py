@@ -93,8 +93,8 @@ if __name__ == "__main__":
 
         planet_mass = planet_data['mass'][0]
         norm_spin = np.sqrt(np.power(star_data['spin_x'], 2) + np.power(star_data['spin_y'], 2) + np.power(star_data['spin_z'], 2))
-        corrotation_radius = ((posidonius.constants.G_SI*posidonius.constants.M_SUN*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/posidonius.constants.DAY)**(-2./3.))/posidonius.constants.AU
-        planet_computed_data['corrotation_radius'] = corrotation_radius
+        corotation_radius = ((posidonius.constants.G_SI*posidonius.constants.M_SUN*(star_mass+planet_mass))**(1/3.)) * ((norm_spin/posidonius.constants.DAY)**(-2./3.))/posidonius.constants.AU
+        planet_computed_data['corotation_radius'] = corotation_radius
 
         e = planet_data['eccentricity']
         alpha = (1.+15./2.*e**2+45./8.*e**4+5./16.*e**6)*1./(1.+3.*e**2+3./8.*e**4)*1./(1.-e**2)**1.5
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     for key in planets_keys:
         planet_data = planets_data[key]
         line, = ax.plot(planet_data['current_time'], planet_data[field], label=key)
-        ax.plot(planet_data['current_time'], planets_computed_data[key]['corrotation_radius'], label=None, ls="--", c=line.get_color()) # Corrotation
+        ax.plot(planet_data['current_time'], planets_computed_data[key]['corotation_radius'], label=None, ls="--", c=line.get_color()) # corotation
     ax.set_ylabel(field+" (AU)")
     #ax.set_ylim([0.005, 0.028])
     ax.set_xscale('log')
@@ -430,7 +430,7 @@ if __name__ == "__main__":
         data = pd.DataFrame(planet_data['current_time'], columns=['current_time'])
         data['planet'] = key
         data['semi-major_axis_AU'] = planet_data['semi-major_axis']
-        data['corrotation_radius_AU'] = planets_computed_data[key]['corrotation_radius']
+        data['corotation_radius_AU'] = planets_computed_data[key]['corotation_radius']
         data['planet_obliquity_deg'] = planets_computed_data[key]['planet_obliquity']
         data['eccentricity'] = planet_data['eccentricity']
         data['inclination_deg'] = planet_data['inclination'] * (180 / np.pi)
