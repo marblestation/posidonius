@@ -173,7 +173,7 @@ impl Universe {
         }
 
         if (dspin_dt && (self.consider_tides || self.consider_rotational_flattening)) ||
-            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy != ConsiderGeneralRelativity::None)) {
+            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None)) {
             self.calculate_distance_and_velocities(); // Needed for tides, rotational flattening, general relativity and evolution
         }
 
@@ -186,7 +186,7 @@ impl Universe {
         }
 
         if (dspin_dt && (self.consider_tides || self.consider_rotational_flattening)) ||
-            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy != ConsiderGeneralRelativity::None)) {
+            (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None)) {
 
             self.calculate_orthogonal_components(); // Needed for torques and additional accelerations
 
@@ -196,7 +196,7 @@ impl Universe {
                 self.calculate_dspin_dt();
             }
 
-            if accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativy != ConsiderGeneralRelativity::None) {
+            if accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None) {
                 if self.consider_tides {
                     self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
                     self.calculate_tidal_acceleration();
@@ -207,7 +207,7 @@ impl Universe {
                     self.calculate_acceleration_induced_by_rotational_flattering();
                 }
 
-                match self.consider_general_relativy {
+                match self.consider_general_relativity {
                     ConsiderGeneralRelativity::Kidder1995 => self.calculate_kidder1995_general_relativity_acceleration(),
                     ConsiderGeneralRelativity::Anderson1975 => self.calculate_anderson1975_general_relativity_acceleration(ignored_gravity_terms),
                     ConsiderGeneralRelativity::Newhall1983 => self.calculate_newhall1983_general_relativity_acceleration(ignored_gravity_terms),
@@ -273,7 +273,7 @@ impl Universe {
                     particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z - star.acceleration_induced_by_rotational_flattering.z;
                 }
 
-                if self.consider_general_relativy != ConsiderGeneralRelativity::None {
+                if self.consider_general_relativity != ConsiderGeneralRelativity::None {
                     particle.acceleration.x += particle.general_relativity_acceleration.x - star.general_relativity_acceleration.x;
                     particle.acceleration.y += particle.general_relativity_acceleration.y - star.general_relativity_acceleration.y;
                     particle.acceleration.z += particle.general_relativity_acceleration.z - star.general_relativity_acceleration.z;

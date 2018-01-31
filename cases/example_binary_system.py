@@ -19,8 +19,8 @@ if __name__ == "__main__":
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_tides = True
     consider_rotational_flattening = True
-    consider_general_relativy = "Newhall1983"
-    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy)
+    consider_general_relativity = "Newhall1983"
+    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativity)
 
     star1_mass = 1.0 # Solar masses
     star1_radius_factor = 1.0

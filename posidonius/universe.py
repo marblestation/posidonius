@@ -18,7 +18,7 @@ class ConsiderGeneralRelativity(object):
         return self._data
 
 class Universe(object):
-    def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativy):
+    def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativity):
         self._time_step = time_step
         self._recovery_snapshot_period = recovery_snapshot_period
         self._historic_snapshot_period = historic_snapshot_period
@@ -27,11 +27,11 @@ class Universe(object):
         self._data['initial_time'] = float(initial_time)
         self._data['consider_tides'] = consider_tides
         self._data['consider_rotational_flattening'] = consider_rotational_flattening
-        if consider_general_relativy == True:
-            consider_general_relativy = "Kidder1995" # MercuryT
-        elif consider_general_relativy == False:
-            consider_general_relativy = "None"
-        self._data['consider_general_relativy'] = ConsiderGeneralRelativity(consider_general_relativy).get()
+        if consider_general_relativity == True:
+            consider_general_relativity = "Kidder1995" # MercuryT
+        elif consider_general_relativity == False:
+            consider_general_relativity = "None"
+        self._data['consider_general_relativity'] = ConsiderGeneralRelativity(consider_general_relativity).get()
         self._data['particles'] = []
         self._data['particles_evolvers'] = []
         self._data['n_particles'] = 0
