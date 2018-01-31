@@ -1,6 +1,6 @@
 use super::super::tools::{interpolate_b_spline};
 
-#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum EvolutionType {
     GalletBolmont2017(f64), // SolarLike EvolvingDissipation Evolving dissipation
     BolmontMathis2016(f64), // SolarLike EvolvingDissipation Evolving dissipation
@@ -12,7 +12,7 @@ pub enum EvolutionType {
 
 }
 
-#[derive(Debug, RustcEncodable, RustcDecodable, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Evolver {
     pub evolution_type: EvolutionType,
     pub time: Vec<f64>,

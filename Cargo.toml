@@ -16,7 +16,9 @@ debug = false
 
 [dependencies]
 time = "*"
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
 bincode = "*"
 csv = "*"
-rustc-serialize = "*"
 clap = "*"

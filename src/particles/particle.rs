@@ -1,7 +1,7 @@
 use super::{EvolutionType};
 use super::{Axes};
 
-#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Particle {
     pub id: usize, // Unique internal identifier
     pub mass: f64,

@@ -6,7 +6,7 @@ use super::{Evolver, EvolutionType};
 use super::{Particle};
 use super::{Axes};
 
-#[derive(Debug, Clone, RustcEncodable, RustcDecodable, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Universe {
     pub initial_time: f64,
     pub time_limit: f64,
@@ -17,7 +17,7 @@ pub struct Universe {
     pub wind_effects_exist: bool,
     pub consider_tides: bool,
     pub consider_rotational_flattening: bool,
-    pub consider_general_relativy: ConsiderGeneralRelativity,
+    pub consider_general_relativity: ConsiderGeneralRelativity,
     star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
     temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
     temporary_copied_particle_velocities: [Axes; MAX_PARTICLES], // For optimization purposes (TODO: Delete and adapt python package)
@@ -25,14 +25,14 @@ pub struct Universe {
     temporary_copied_particles_radiuses: [f64; MAX_PARTICLES], // For optimization purposes
 }
 
-#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum IgnoreGravityTerms {
     None,
     WHFastOne,
     WHFastTwo,
 }
 
-#[derive(Debug, Copy, Clone, RustcEncodable, RustcDecodable, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ConsiderGeneralRelativity {
     None,
     Kidder1995, // MercuryT

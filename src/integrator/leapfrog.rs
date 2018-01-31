@@ -1,4 +1,3 @@
-extern crate time;
 use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
@@ -7,9 +6,9 @@ use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::particles::Axes;
 use super::output::{write_historic_snapshot};
-use rustc_serialize::json;
-use bincode::rustc_serialize::{decode_from};
-use bincode::SizeLimit;
+use time;
+use serde_json;
+use bincode;
 use std::io::{BufReader};
 use std::io::Read;
 use std::path::Path;
@@ -40,7 +39,7 @@ use std::collections::hash_map::DefaultHasher;
 ///the velocities are again advanced for half a time-step. L
 
 
-#[derive(Debug, Clone, RustcEncodable, RustcDecodable, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LeapFrog {
     time_step: f64,
     half_time_step: f64,
@@ -105,10 +104,10 @@ impl LeapFrog {
                     Err(why) => return Err(format!("Couldn't read {}: {}", universe_integrator_snapshot_path.display(), why)),
                     Ok(_) => {}
                 }
-                universe_integrator = json::decode(&json_encoded).unwrap();
+                universe_integrator = serde_json::from_str(&json_encoded).unwrap();
             } else {
                 let mut reader = BufReader::new(snapshot_file);
-                universe_integrator = decode_from(&mut reader, SizeLimit::Infinite).unwrap();
+                universe_integrator = bincode::deserialize_from(&mut reader, bincode::Infinite).unwrap();
             }
             if universe_integrator.hash == 0 {
                 if verify_integrity && universe_integrator.current_time != 0. {

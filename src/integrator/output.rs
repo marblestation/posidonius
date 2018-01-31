@@ -1,21 +1,18 @@
-extern crate time;
-extern crate rustc_serialize;
-extern crate bincode;
 use std::fs::File;
 use std::fs::{OpenOptions};
 use std::io::{Write, BufWriter};
 use super::super::Integrator;
 use super::super::particles::Universe;
 use super::super::tools::calculate_keplerian_orbital_elements;
-use bincode::rustc_serialize::{encode_into};
-use bincode::SizeLimit;
-use rustc_serialize::Encodable;
-use rustc_serialize::json;
+use bincode;
+use time;
+use serde::ser::Serialize;
+use serde_json;
 use std::path::Path;
 use std::fs;
 use super::super::constants::{MIN_ORBITAL_PERIOD_TIME_STEP_RATIO};
 
-pub fn write_recovery_snapshot<I: Integrator+Encodable>(snapshot_path: &Path, universe_integrator: &I) {
+pub fn write_recovery_snapshot<I: Integrator+Serialize>(snapshot_path: &Path, universe_integrator: &I) {
     // It can be excessively inefficient to work directly with something that implements Write. For
     // example, every call to write on File results in a system call. A BufWriter keeps an
     // in-memory buffer of data and writes it to an underlying writer in large, infrequent batches.
@@ -34,11 +31,11 @@ pub fn write_recovery_snapshot<I: Integrator+Encodable>(snapshot_path: &Path, un
     let mut writer = BufWriter::new(File::create(&snapshot_path).unwrap());
 
     if snapshot_path.extension().unwrap() == "json" {
-        let json_encoded = json::encode(&universe_integrator).unwrap();
+        let json_encoded = serde_json::to_string(&universe_integrator).unwrap();
         writer.write(json_encoded.as_bytes()).unwrap();
     } else {
         // Binary
-        encode_into(&universe_integrator, &mut writer, SizeLimit::Infinite).unwrap(); // bin
+        bincode::serialize_into(&mut writer, &universe_integrator, bincode::Infinite).unwrap(); // bin
     }
 
 }
@@ -104,7 +101,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         particle.velocity.y,
                         particle.velocity.z,
                     );
-        bincode::rustc_serialize::encode_into(&output, universe_history_writer, bincode::SizeLimit::Infinite).unwrap();
+        bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
 
         if particle.id > 0 {
             //// Only for planets
@@ -135,7 +132,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                             horbn,
                             particle.denergy_dt,                // Msun.AU^2.day^-3
                         );
-            bincode::rustc_serialize::encode_into(&output, universe_history_writer, bincode::SizeLimit::Infinite).unwrap();
+            bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
         } else {
             let output = (
                             0.,
@@ -151,7 +148,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                             0.,
                             0.,
                         );
-            bincode::rustc_serialize::encode_into(&output, universe_history_writer, bincode::SizeLimit::Infinite).unwrap();
+            bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
         }
 
         let output = (
@@ -164,7 +161,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         particle.love_number,
                         particle.lag_angle,
                     );
-        bincode::rustc_serialize::encode_into(&output, universe_history_writer, bincode::SizeLimit::Infinite).unwrap();
+        bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
 
     }
 }
