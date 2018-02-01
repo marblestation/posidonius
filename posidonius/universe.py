@@ -146,7 +146,7 @@ class Universe(object):
             rotation_period = 70.0 # hours
             love_number = 0.307 # BrownDwarf
         elif type(evolution_type) in (Leconte2011, Baraffe2015):
-            mass = evolution_type._data[str(type(evolution_type))][0]
+            mass = evolution_type._data[evolution_type.__class__.__name__]
 
             if mass <= 0.0101 and mass >= 0.0099:
                 rotation_period = 8.0
