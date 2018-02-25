@@ -113,10 +113,10 @@ if __name__ == "__main__":
     a = 0.018;                             # semi-major axis (in AU)
     e = 0.1;                               # eccentricity
     i = 5. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
-    p = 0.;                                # argument of pericentre (degrees)
+    p = 0. * posidonius.constants.DEG2RAD;                                # argument of pericentre (degrees)
     n = 0. * posidonius.constants.DEG2RAD;                      # longitude of the ascending node (degrees)
     l = 0. * posidonius.constants.DEG2RAD;                      # mean anomaly (degrees)
-    p = (p + n) * posidonius.constants.DEG2RAD;                 # Convert to longitude of perihelion !!
+    p = (p + n);                 # Convert to longitude of perihelion !!
     q = a * (1.0 - e);                     # perihelion distance
     gm = posidonius.constants.G*(planet_mass+star_mass);
     x, y, z, vx, vy, vz = posidonius.calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
