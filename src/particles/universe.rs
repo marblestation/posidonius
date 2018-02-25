@@ -262,23 +262,40 @@ impl Universe {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {
                 if self.consider_tides {
-                    particle.acceleration.x += particle.tidal_acceleration.x - star.tidal_acceleration.x;
-                    particle.acceleration.y += particle.tidal_acceleration.y - star.tidal_acceleration.y;
-                    particle.acceleration.z += particle.tidal_acceleration.z - star.tidal_acceleration.z;
+                    particle.inertial_acceleration.x += particle.tidal_acceleration.x;
+                    particle.inertial_acceleration.y += particle.tidal_acceleration.y;
+                    particle.inertial_acceleration.z += particle.tidal_acceleration.z;
                 }
 
                 if self.consider_rotational_flattening {
-                    particle.acceleration.x += particle.acceleration_induced_by_rotational_flattering.x - star.acceleration_induced_by_rotational_flattering.x;
-                    particle.acceleration.y += particle.acceleration_induced_by_rotational_flattering.y - star.acceleration_induced_by_rotational_flattering.y;
-                    particle.acceleration.z += particle.acceleration_induced_by_rotational_flattering.z - star.acceleration_induced_by_rotational_flattering.z;
+                    particle.inertial_acceleration.x += particle.acceleration_induced_by_rotational_flattering.x;
+                    particle.inertial_acceleration.y += particle.acceleration_induced_by_rotational_flattering.y;
+                    particle.inertial_acceleration.z += particle.acceleration_induced_by_rotational_flattering.z;
                 }
 
                 if self.consider_general_relativity != ConsiderGeneralRelativity::None {
-                    particle.acceleration.x += particle.general_relativity_acceleration.x - star.general_relativity_acceleration.x;
-                    particle.acceleration.y += particle.general_relativity_acceleration.y - star.general_relativity_acceleration.y;
-                    particle.acceleration.z += particle.general_relativity_acceleration.z - star.general_relativity_acceleration.z;
+                    particle.inertial_acceleration.x += particle.general_relativity_acceleration.x;
+                    particle.inertial_acceleration.y += particle.general_relativity_acceleration.y;
+                    particle.inertial_acceleration.z += particle.general_relativity_acceleration.z;
                 } 
             }
+            if self.consider_tides {
+                star.inertial_acceleration.x += star.tidal_acceleration.x;
+                star.inertial_acceleration.y += star.tidal_acceleration.y;
+                star.inertial_acceleration.z += star.tidal_acceleration.z;
+            }
+
+            if self.consider_rotational_flattening {
+                star.inertial_acceleration.x += star.acceleration_induced_by_rotational_flattering.x;
+                star.inertial_acceleration.y += star.acceleration_induced_by_rotational_flattering.y;
+                star.inertial_acceleration.z += star.acceleration_induced_by_rotational_flattering.z;
+            }
+
+            if self.consider_general_relativity != ConsiderGeneralRelativity::None {
+                star.inertial_acceleration.x += star.general_relativity_acceleration.x;
+                star.inertial_acceleration.y += star.general_relativity_acceleration.y;
+                star.inertial_acceleration.z += star.general_relativity_acceleration.z;
+            } 
         }
     }
     
@@ -993,40 +1010,17 @@ impl Universe {
 
 
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
-            // This algorithm computes general_relativity_acceleration in the inertial frame
-            // we need to convert it to the heliocentric frame to be consistent with the rest of
-            // additional forces by:
-            //
-            // inertial_position = heliocentric_position - (1/total_mass) * sum(particle.mass * particle.position)
-            // inertial_velocity = heliocentric_velocity - (1/total_mass) * sum(particle.mass * particle.velocity)
-            // inertial_acceleration = heliocentric_acceleration - (1/total_mass) * sum(particle.mass * particle.acceleration)
-            //
-            // heliocentric_position = inertial_position + (1/star.mass) * sum(particle.mass * particle.position)
-            // heliocentric_velocity = inertial_velocity + (1/star.mass) * sum(particle.mass * particle.velocity)
-            // heliocentric_acceleration = inertial_acceleration + (1/star.mass) * sum(particle.mass * particle.acceleration)
-            //
-            // 1.- Compute second term using only general relativity accelerations
-            let mut reference_gr_acceleration = Axes{x:0., y:0., z:0.};
-            reference_gr_acceleration.x  = star_acceleration.x*star.mass;
-            reference_gr_acceleration.y  = star_acceleration.y*star.mass;
-            reference_gr_acceleration.z  = star_acceleration.z*star.mass;
-            for (particle, particle_acceleration) in particles.iter().zip(particles_accelerations.iter()) {
-                reference_gr_acceleration.x += particle_acceleration.x*particle.mass;
-                reference_gr_acceleration.y += particle_acceleration.y*particle.mass;
-                reference_gr_acceleration.z += particle_acceleration.z*particle.mass;
-            }
-            reference_gr_acceleration.x /= star.mass;
-            reference_gr_acceleration.y /= star.mass;
-            reference_gr_acceleration.z /= star.mass;
-            // 2.- Convert from inertial to heliocentric
+            // This algorithm computes general_relativity_acceleration in the inertial frame,
+            // which is the same coordinate system that is expressed all the rest of additional
+            // effects
             for (particle, particle_acceleration) in particles.iter_mut().zip(particles_accelerations[..self.n_particles-1].iter()){
-                particle.general_relativity_acceleration.x = particle_acceleration.x + reference_gr_acceleration.x;
-                particle.general_relativity_acceleration.y = particle_acceleration.y + reference_gr_acceleration.y;
-                particle.general_relativity_acceleration.z = particle_acceleration.z + reference_gr_acceleration.z;
+                particle.general_relativity_acceleration.x = particle_acceleration.x;
+                particle.general_relativity_acceleration.y = particle_acceleration.y;
+                particle.general_relativity_acceleration.z = particle_acceleration.z;
             }
-            star.general_relativity_acceleration.x = star_acceleration.x + reference_gr_acceleration.x;
-            star.general_relativity_acceleration.y = star_acceleration.y + reference_gr_acceleration.y;
-            star.general_relativity_acceleration.z = star_acceleration.z + reference_gr_acceleration.z;
+            star.general_relativity_acceleration.x = star_acceleration.x;
+            star.general_relativity_acceleration.y = star_acceleration.y;
+            star.general_relativity_acceleration.z = star_acceleration.z;
         }
     }
 
@@ -1357,40 +1351,17 @@ impl Universe {
         // update acceleration in particles
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             if let Some((a_new_star, a_new_particles)) = a_new[..self.n_particles].split_first_mut() {
-                // This algorithm computes general_relativity_acceleration in the inertial frame
-                // we need to convert it to the heliocentric frame to be consistent with the rest of
-                // additional forces by subtracting star.inertial_acceleration
-                //
-                // inertial_position = heliocentric_position - (1/total_mass) * sum(particle.mass * particle.position)
-                // inertial_velocity = heliocentric_velocity - (1/total_mass) * sum(particle.mass * particle.velocity)
-                // inertial_acceleration = heliocentric_acceleration - (1/total_mass) * sum(particle.mass * particle.acceleration)
-                //
-                // heliocentric_position = inertial_position + (1/star.mass) * sum(particle.mass * particle.position)
-                // heliocentric_velocity = inertial_velocity + (1/star.mass) * sum(particle.mass * particle.velocity)
-                // heliocentric_acceleration = inertial_acceleration + (1/star.mass) * sum(particle.mass * particle.acceleration)
-                //
-                // 1.- Compute second term using only general relativity accelerations
-                let mut reference_gr_acceleration = Axes{x:0., y:0., z:0.};
-                reference_gr_acceleration.x  = a_new_star.x*star.mass;
-                reference_gr_acceleration.y  = a_new_star.y*star.mass;
-                reference_gr_acceleration.z  = a_new_star.z*star.mass;
-                for (particle, particle_acceleration) in particles.iter().zip(a_new_particles.iter()) {
-                    reference_gr_acceleration.x += particle_acceleration.x*particle.mass;
-                    reference_gr_acceleration.y += particle_acceleration.y*particle.mass;
-                    reference_gr_acceleration.z += particle_acceleration.z*particle.mass;
-                }
-                reference_gr_acceleration.x /= star.mass;
-                reference_gr_acceleration.y /= star.mass;
-                reference_gr_acceleration.z /= star.mass;
-                // 2.- Convert from inertial to heliocentric
+                // This algorithm computes general_relativity_acceleration in the inertial frame,
+                // which is the same coordinate system that is expressed all the rest of additional
+                // effects
                 for (particle, a_new_particle) in particles.iter_mut().zip(a_new_particles.iter()){
-                    particle.general_relativity_acceleration.x = a_new_particle.x + reference_gr_acceleration.x;
-                    particle.general_relativity_acceleration.y = a_new_particle.y + reference_gr_acceleration.y;
-                    particle.general_relativity_acceleration.z = a_new_particle.z + reference_gr_acceleration.z;
+                    particle.general_relativity_acceleration.x = a_new_particle.x;
+                    particle.general_relativity_acceleration.y = a_new_particle.y;
+                    particle.general_relativity_acceleration.z = a_new_particle.z;
                 }
-                star.general_relativity_acceleration.x = a_new_star.x + reference_gr_acceleration.x;
-                star.general_relativity_acceleration.y = a_new_star.y + reference_gr_acceleration.y;
-                star.general_relativity_acceleration.z = a_new_star.z + reference_gr_acceleration.z;
+                star.general_relativity_acceleration.x = a_new_star.x;
+                star.general_relativity_acceleration.y = a_new_star.y;
+                star.general_relativity_acceleration.z = a_new_star.z;
             }
         }
 

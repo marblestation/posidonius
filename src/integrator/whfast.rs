@@ -219,7 +219,8 @@ impl Integrator for WHFast {
         let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
-            self.inertial_to_heliocentric_posvelacc();
+            //self.inertial_to_heliocentric_posvelacc();
+            self.inertial_to_heliocentric_posvel();
             if self.universe.consider_tides {
                 self.universe.calculate_denergy_dt();
             }
@@ -233,10 +234,17 @@ impl Integrator for WHFast {
             }
         }
 
-        self.iterate_position_and_velocity_with_whfasthelio();
         if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
-            self.iterate_spin_with_midpoint_method();
+            self.inertial_to_heliocentric_posvel();
+            self.iterate_spin_with_midpoint_method_part1()
         }
+        self.iterate_position_and_velocity_with_whfasthelio_part1(); // updates alternative pos/vel by half-step and computes accelerations
+        if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
+            self.alternative_to_inertial_posvel(); // dspin_dt requires heliocentric pos/vel
+            self.inertial_to_heliocentric_posvel();
+            self.iterate_spin_with_midpoint_method_part2();
+        }
+        self.iterate_position_and_velocity_with_whfasthelio_part2(); // updates alternative and inertial pos/vel by half-step
 
         // ---------------------------------------------------------------------
         self.current_iteration += 1;
@@ -264,8 +272,8 @@ impl Integrator for WHFast {
 
 impl WHFast {
     // WHFast integrator
-    fn iterate_position_and_velocity_with_whfasthelio(&mut self) {
-        let time_step = self.time_step;
+    fn iterate_position_and_velocity_with_whfasthelio_part1(&mut self) {
+        //let time_step = self.time_step;
         let half_time_step = self.half_time_step;
 
         // ---------------------------------------------------------------------
@@ -274,7 +282,6 @@ impl WHFast {
         self.kepler_steps(half_time_step);
         self.jump_step(half_time_step);
         self.alternative_to_inertial_posvel();
-        self.current_time += self.half_time_step;
         // ---------------------------------------------------------------------
 
         // Calculate accelerations.
@@ -285,32 +292,64 @@ impl WHFast {
         };
         let ignored_gravity_terms = ignore_gravity_terms;
         self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
-        self.inertial_to_heliocentric_posvelacc();
+        //self.inertial_to_heliocentric_posvelacc(); // no need because gravities where directly saved to inertial
+        self.inertial_to_heliocentric_posvel();
         
         // Calculate spin variation and non-gravity accelerations.
-        let evolution = true;
+        // - Positions and velocities are needed in heliocentric
+        // - But accelerations are computed in barycentric and added to inertial_coordinates.acceleration
+        let mut evolution = true;
+        if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
+            evolution = false; // already evolved in midpoint for the same current time (evolving more than one for a given current time will lead to a wrong computation of the moment of inertia)
+        }
         let dspin_dt = false;
-        let accelerations = true;
+        let accelerations = true; 
         self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
-        self.heliocentric_to_inertial_posvelacc();
 
+        //self.heliocentric_to_inertial_posvelacc(); // not needed because position, velocities and masses have not changed
+        //self.inertial_to_alternative_posvel(); // not needed because position, velocities and masses have not changed
+        //
         // ---------------------------------------------------------------------
         // A 'DKD'-like integrator will do the 'KD' part.
         //self.inertial_to_alternative_posvel(); // not needed because position, velocities and masses have not changed
-        self.interaction_step(time_step);
+        //self.interaction_step(time_step); // Instead of a full interaction step, we do half so that we can complete the midpoint integration of the spin
+        //
+        // .....................................................................
+        // Second part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
+        self.interaction_step(half_time_step); // changes alternative velocities
+        self.current_time += self.half_time_step;
+    }
+
+    fn iterate_position_and_velocity_with_whfasthelio_part2(&mut self) {
+        let half_time_step = self.half_time_step;
+
+        // Continue the WHFAST integration
+        self.interaction_step(half_time_step);
         self.jump_step(half_time_step);
         self.kepler_steps(half_time_step);
         self.alternative_to_inertial_posvel();
         self.current_time += self.half_time_step;
     }
+    
+    fn iterate_spin_with_midpoint_method_part1(&mut self) {
+        let ignored_gravity_terms = match self.alternative_coordinates_type {
+            CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
+            CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
+            CoordinatesType::WHDS => IgnoreGravityTerms::WHFastTwo,
+        };
 
-    fn iterate_spin_with_midpoint_method(&mut self) {
+        // First part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
+        let evolution = true;
+        let dspin_dt = true;
+        let accelerations = false;
+        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
+        // .....................................................................
+    }
+
+    fn iterate_spin_with_midpoint_method_part2(&mut self) {
         let time_step = self.time_step;
         let half_time_step = self.half_time_step;
         
-        // ---------------------------------------------------------------------
-        self.inertial_to_heliocentric_posvel();
-
         let ignored_gravity_terms = match self.alternative_coordinates_type {
             CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
             CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
@@ -318,19 +357,18 @@ impl WHFast {
         };
 
         // Midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
-        let evolution = false; // Don't evolve particles at this point or it messes up the conservation of angular momentum
-        let dspin_dt = true;
-        let accelerations = false;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
-
         self.save_current_spin();
         self.spin_step(half_time_step);
-        let evolution = false; // Don't evolve particles at this point or it messes up the conservation of angular momentum
+        // Calculate spin variation and non-gravity accelerations.
+        // - Positions and velocities are needed in heliocentric
+        // - But accelerations are computed in barycentric and added to inertial_coordinates.acceleration
+        let evolution = false;
         let dspin_dt = true;
-        let accelerations = false;
+        let accelerations = false; 
         self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
         self.restore_last_spin();
         self.spin_step(time_step);
+        // .....................................................................
     }
 
     fn save_current_spin(&mut self) {
@@ -452,33 +490,23 @@ impl WHFast {
     }
 
     fn democratic_heliocentric_interaction_step(&mut self, _dt: f64){
-        // Democratic heliocentric ignores the star acceleration, it gravity is
-        // always zero. But when additional forces are computed and transformed
-        // to inertial coordinates, the star adquires a tiny acceleration. Thus
-        // we take it into account by subtracting it to the rest of the particles
-        // acceleration
-        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
+        if let Some((_, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
             for (particle_alternative_coordinates, particle) in self.particles_alternative_coordinates[1..self.universe.n_particles].iter_mut().zip(particles.iter()) {
-                particle_alternative_coordinates.velocity.x += _dt*(particle.inertial_acceleration.x - star.inertial_acceleration.x);
-                particle_alternative_coordinates.velocity.y += _dt*(particle.inertial_acceleration.y - star.inertial_acceleration.y);
-                particle_alternative_coordinates.velocity.z += _dt*(particle.inertial_acceleration.z - star.inertial_acceleration.z);
+                particle_alternative_coordinates.velocity.x += _dt*particle.inertial_acceleration.x;
+                particle_alternative_coordinates.velocity.y += _dt*particle.inertial_acceleration.y;
+                particle_alternative_coordinates.velocity.z += _dt*particle.inertial_acceleration.z;
             }
         }
     }
 
     fn whds_interaction_step(&mut self, _dt: f64){
-        // WHDS ignores the star acceleration, it gravity is always zero. 
-        // But when additional forces are computed and transformed
-        // to inertial coordinates, the star adquires a tiny acceleration. Thus
-        // we take it into account by subtracting it to the rest of the particles
-        // acceleration
         if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
             let m0 = star.mass;
             for (particle_alternative_coordinates, particle) in self.particles_alternative_coordinates[1..self.universe.n_particles].iter_mut().zip(particles.iter()) {
                 let factor = m0+particle.mass; // mf numerator
-                particle_alternative_coordinates.velocity.x += _dt*factor*(particle.inertial_acceleration.x - star.inertial_acceleration.x)/m0;
-                particle_alternative_coordinates.velocity.y += _dt*factor*(particle.inertial_acceleration.y - star.inertial_acceleration.x)/m0;
-                particle_alternative_coordinates.velocity.z += _dt*factor*(particle.inertial_acceleration.z - star.inertial_acceleration.x)/m0;
+                particle_alternative_coordinates.velocity.x += _dt*factor*particle.inertial_acceleration.x/m0;
+                particle_alternative_coordinates.velocity.y += _dt*factor*particle.inertial_acceleration.y/m0;
+                particle_alternative_coordinates.velocity.z += _dt*factor*particle.inertial_acceleration.z/m0;
             }
         }
     }
@@ -987,60 +1015,60 @@ impl WHFast {
 
     }
 
-    fn inertial_to_heliocentric_posvelacc(&mut self) {
-        self.inertial_to_heliocentric_posvel();
-        self.inertial_to_heliocentric_acc();
-        //// Equivalent formulation to substractinga stellar inertial position/velocity/acceleration:
-        ////
-        //// heliocentric_position = inertial_position + (1/star.mass) * sum(particle.mass * particle.position)
-        //// heliocentric_velocity = inertial_velocity + (1/star.mass) * sum(particle.mass * particle.velocity)
-        //// heliocentric_acceleration = inertial_acceleration + (1/star.mass) * sum(particle.mass * particle.acceleration)
-        ////
-        //let mut reference_position = Axes{x:0., y:0., z:0.};
-        //let mut reference_velocity = Axes{x:0., y:0., z:0.};
-        //let mut reference_acceleration = Axes{x:0., y:0., z:0.};
-        //let star_mass = self.universe.particles[0].mass;
+    //fn inertial_to_heliocentric_posvelacc(&mut self) {
+        //self.inertial_to_heliocentric_posvel();
+        //self.inertial_to_heliocentric_acc();
+        ////// Equivalent formulation to substractinga stellar inertial position/velocity/acceleration:
+        //////
+        ////// heliocentric_position = inertial_position + (1/star.mass) * sum(particle.mass * particle.position)
+        ////// heliocentric_velocity = inertial_velocity + (1/star.mass) * sum(particle.mass * particle.velocity)
+        ////// heliocentric_acceleration = inertial_acceleration + (1/star.mass) * sum(particle.mass * particle.acceleration)
+        //////
+        ////let mut reference_position = Axes{x:0., y:0., z:0.};
+        ////let mut reference_velocity = Axes{x:0., y:0., z:0.};
+        ////let mut reference_acceleration = Axes{x:0., y:0., z:0.};
+        ////let star_mass = self.universe.particles[0].mass;
 
-        //for particle in self.universe.particles[..self.universe.n_particles].iter() {
-            //reference_position.x      += particle.position.x*particle.mass;
-            //reference_position.y      += particle.position.y*particle.mass;
-            //reference_position.z      += particle.position.z*particle.mass;
-            //reference_velocity.x      += particle.velocity.x*particle.mass;
-            //reference_velocity.y      += particle.velocity.y*particle.mass;
-            //reference_velocity.z      += particle.velocity.z*particle.mass;
-            //reference_acceleration.x  += particle.acceleration.x*particle.mass;
-            //reference_acceleration.y  += particle.acceleration.y*particle.mass;
-            //reference_acceleration.z  += particle.acceleration.z*particle.mass;
-        //}
-        //reference_position.x /= star_mass;
-        //reference_position.y /= star_mass;
-        //reference_position.z /= star_mass;
-        //reference_velocity.x /= star_mass;
-        //reference_velocity.y /= star_mass;
-        //reference_velocity.z /= star_mass;
-        //reference_acceleration.x /= star_mass;
-        //reference_acceleration.y /= star_mass;
-        //reference_acceleration.z /= star_mass;
+        ////for particle in self.universe.particles[..self.universe.n_particles].iter() {
+            ////reference_position.x      += particle.position.x*particle.mass;
+            ////reference_position.y      += particle.position.y*particle.mass;
+            ////reference_position.z      += particle.position.z*particle.mass;
+            ////reference_velocity.x      += particle.velocity.x*particle.mass;
+            ////reference_velocity.y      += particle.velocity.y*particle.mass;
+            ////reference_velocity.z      += particle.velocity.z*particle.mass;
+            ////reference_acceleration.x  += particle.acceleration.x*particle.mass;
+            ////reference_acceleration.y  += particle.acceleration.y*particle.mass;
+            ////reference_acceleration.z  += particle.acceleration.z*particle.mass;
+        ////}
+        ////reference_position.x /= star_mass;
+        ////reference_position.y /= star_mass;
+        ////reference_position.z /= star_mass;
+        ////reference_velocity.x /= star_mass;
+        ////reference_velocity.y /= star_mass;
+        ////reference_velocity.z /= star_mass;
+        ////reference_acceleration.x /= star_mass;
+        ////reference_acceleration.y /= star_mass;
+        ////reference_acceleration.z /= star_mass;
 
-        //for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
-            //println!("++ before position {:?}", particle.position);
-            //particle.position.x = particle.inertial_position.x + reference_position.x;
-            //particle.position.y = particle.inertial_position.y + reference_position.y;
-            //particle.position.z = particle.inertial_position.z + reference_position.z;
-            //println!("++ after position {:?}", particle.position);
-            //println!("++ before velocity {:?}", particle.velocity);
-            //particle.velocity.x = particle.inertial_velocity.x + reference_velocity.x;
-            //particle.velocity.y = particle.inertial_velocity.y + reference_velocity.y;
-            //particle.velocity.z = particle.inertial_velocity.z + reference_velocity.z;
-            //println!("++ after velocity {:?}", particle.velocity);
-            //println!("++ before acceleration {:?}", particle.velocity);
-            //particle.acceleration.x = particle.inertial_acceleration.x + reference_acceleration.x;
-            //particle.acceleration.y = particle.inertial_acceleration.y + reference_acceleration.y;
-            //particle.acceleration.z = particle.inertial_acceleration.z + reference_acceleration.z;
-            //println!("++ after acceleration {:?}", particle.velocity);
-        //}
-        //println!("-----------------");
-    }
+        ////for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
+            ////println!("++ before position {:?}", particle.position);
+            ////particle.position.x = particle.inertial_position.x + reference_position.x;
+            ////particle.position.y = particle.inertial_position.y + reference_position.y;
+            ////particle.position.z = particle.inertial_position.z + reference_position.z;
+            ////println!("++ after position {:?}", particle.position);
+            ////println!("++ before velocity {:?}", particle.velocity);
+            ////particle.velocity.x = particle.inertial_velocity.x + reference_velocity.x;
+            ////particle.velocity.y = particle.inertial_velocity.y + reference_velocity.y;
+            ////particle.velocity.z = particle.inertial_velocity.z + reference_velocity.z;
+            ////println!("++ after velocity {:?}", particle.velocity);
+            ////println!("++ before acceleration {:?}", particle.velocity);
+            ////particle.acceleration.x = particle.inertial_acceleration.x + reference_acceleration.x;
+            ////particle.acceleration.y = particle.inertial_acceleration.y + reference_acceleration.y;
+            ////particle.acceleration.z = particle.inertial_acceleration.z + reference_acceleration.z;
+            ////println!("++ after acceleration {:?}", particle.velocity);
+        ////}
+        ////println!("-----------------");
+    //}
 
     fn inertial_to_heliocentric_posvel(&mut self) {
         if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
@@ -1061,67 +1089,67 @@ impl WHFast {
         }
     }
 
-    fn inertial_to_heliocentric_acc(&mut self) {
-        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
-            for particle in particles.iter_mut() {
-                particle.acceleration.x = particle.inertial_acceleration.x - star.inertial_acceleration.x;
-                particle.acceleration.y = particle.inertial_acceleration.y - star.inertial_acceleration.y;
-                particle.acceleration.z = particle.inertial_acceleration.z - star.inertial_acceleration.z;
-            }
-            star.acceleration.x = 0.;
-            star.acceleration.y = 0.;
-            star.acceleration.z = 0.;
-        }
-    }
+    //fn inertial_to_heliocentric_acc(&mut self) {
+        //if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
+            //for particle in particles.iter_mut() {
+                //particle.acceleration.x = particle.inertial_acceleration.x - star.inertial_acceleration.x;
+                //particle.acceleration.y = particle.inertial_acceleration.y - star.inertial_acceleration.y;
+                //particle.acceleration.z = particle.inertial_acceleration.z - star.inertial_acceleration.z;
+            //}
+            //star.acceleration.x = 0.;
+            //star.acceleration.y = 0.;
+            //star.acceleration.z = 0.;
+        //}
+    //}
 
 
-    fn heliocentric_to_inertial_posvelacc(&mut self) {
-        // Formulation:
-        //
-        // inertial_position = heliocentric_position - (1/total_mass) * sum(particle.mass * particle.position)
-        // inertial_velocity = heliocentric_velocity - (1/total_mass) * sum(particle.mass * particle.velocity)
-        // inertial_acceleration = heliocentric_acceleration - (1/total_mass) * sum(particle.mass * particle.acceleration)
-        //
-        // Compute center of mass
-        let mut reference_position = Axes{x:0., y:0., z:0.};
-        let mut reference_velocity = Axes{x:0., y:0., z:0.};
-        let mut reference_acceleration = Axes{x:0., y:0., z:0.};
-        let mut total_mass = 0.;
+    //fn heliocentric_to_inertial_posvelacc(&mut self) {
+        //// Formulation:
+        ////
+        //// inertial_position = heliocentric_position - (1/total_mass) * sum(particle.mass * particle.position)
+        //// inertial_velocity = heliocentric_velocity - (1/total_mass) * sum(particle.mass * particle.velocity)
+        //// inertial_acceleration = heliocentric_acceleration - (1/total_mass) * sum(particle.mass * particle.acceleration)
+        ////
+        //// Compute center of mass
+        //let mut reference_position = Axes{x:0., y:0., z:0.};
+        //let mut reference_velocity = Axes{x:0., y:0., z:0.};
+        //let mut reference_acceleration = Axes{x:0., y:0., z:0.};
+        //let mut total_mass = 0.;
 
-        for particle in self.universe.particles[..self.universe.n_particles].iter() {
-            reference_position.x      += particle.position.x*particle.mass;
-            reference_position.y      += particle.position.y*particle.mass;
-            reference_position.z      += particle.position.z*particle.mass;
-            reference_velocity.x      += particle.velocity.x*particle.mass;
-            reference_velocity.y      += particle.velocity.y*particle.mass;
-            reference_velocity.z      += particle.velocity.z*particle.mass;
-            reference_acceleration.x  += particle.acceleration.x*particle.mass;
-            reference_acceleration.y  += particle.acceleration.y*particle.mass;
-            reference_acceleration.z  += particle.acceleration.z*particle.mass;
-            total_mass += particle.mass;
-        }
-        reference_position.x /= total_mass;
-        reference_position.y /= total_mass;
-        reference_position.z /= total_mass;
-        reference_velocity.x /= total_mass;
-        reference_velocity.y /= total_mass;
-        reference_velocity.z /= total_mass;
-        reference_acceleration.x /= total_mass;
-        reference_acceleration.y /= total_mass;
-        reference_acceleration.z /= total_mass;
+        //for particle in self.universe.particles[..self.universe.n_particles].iter() {
+            //reference_position.x      += particle.position.x*particle.mass;
+            //reference_position.y      += particle.position.y*particle.mass;
+            //reference_position.z      += particle.position.z*particle.mass;
+            //reference_velocity.x      += particle.velocity.x*particle.mass;
+            //reference_velocity.y      += particle.velocity.y*particle.mass;
+            //reference_velocity.z      += particle.velocity.z*particle.mass;
+            //reference_acceleration.x  += particle.acceleration.x*particle.mass;
+            //reference_acceleration.y  += particle.acceleration.y*particle.mass;
+            //reference_acceleration.z  += particle.acceleration.z*particle.mass;
+            //total_mass += particle.mass;
+        //}
+        //reference_position.x /= total_mass;
+        //reference_position.y /= total_mass;
+        //reference_position.z /= total_mass;
+        //reference_velocity.x /= total_mass;
+        //reference_velocity.y /= total_mass;
+        //reference_velocity.z /= total_mass;
+        //reference_acceleration.x /= total_mass;
+        //reference_acceleration.y /= total_mass;
+        //reference_acceleration.z /= total_mass;
 
-        // Convert heliocentric to inertial
-        for particle in self.universe.particles[0..self.universe.n_particles].iter_mut() {
-            particle.inertial_position.x = particle.position.x - reference_position.x;
-            particle.inertial_position.y = particle.position.y - reference_position.y;
-            particle.inertial_position.z = particle.position.z - reference_position.z;
-            particle.inertial_velocity.x = particle.velocity.x - reference_velocity.x;
-            particle.inertial_velocity.y = particle.velocity.y - reference_velocity.y;
-            particle.inertial_velocity.z = particle.velocity.z - reference_velocity.z;
-            particle.inertial_acceleration.x = particle.acceleration.x - reference_acceleration.x;
-            particle.inertial_acceleration.y = particle.acceleration.y - reference_acceleration.y;
-            particle.inertial_acceleration.z = particle.acceleration.z - reference_acceleration.z;
-        }
-    }
+        //// Convert heliocentric to inertial
+        //for particle in self.universe.particles[0..self.universe.n_particles].iter_mut() {
+            //particle.inertial_position.x = particle.position.x - reference_position.x;
+            //particle.inertial_position.y = particle.position.y - reference_position.y;
+            //particle.inertial_position.z = particle.position.z - reference_position.z;
+            //particle.inertial_velocity.x = particle.velocity.x - reference_velocity.x;
+            //particle.inertial_velocity.y = particle.velocity.y - reference_velocity.y;
+            //particle.inertial_velocity.z = particle.velocity.z - reference_velocity.z;
+            //particle.inertial_acceleration.x = particle.acceleration.x - reference_acceleration.x;
+            //particle.inertial_acceleration.y = particle.acceleration.y - reference_acceleration.y;
+            //particle.inertial_acceleration.z = particle.acceleration.z - reference_acceleration.z;
+        //}
+    //}
 
 }
