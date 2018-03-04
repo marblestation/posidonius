@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib as mpl
 mpl.use('Agg')
+mpl.rcParams['agg.path.chunksize'] = 10000
 import matplotlib.pyplot as plt
 import argparse
 import posidonius

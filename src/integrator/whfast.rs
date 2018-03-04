@@ -233,18 +233,60 @@ impl Integrator for WHFast {
                 let _ = std::io::stdout().flush();
             }
         }
+        
+        // Calculate non-gravity accelerations.
+        // - Positions and velocities are needed in heliocentric
+        // - But accelerations are computed in barycentric and added to inertial_coordinates.acceleration
+        let ignored_gravity_terms = match self.alternative_coordinates_type {
+            CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
+            CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
+            CoordinatesType::WHDS => IgnoreGravityTerms::WHFastTwo,
+        };
+        let ignore_gravity_terms = ignored_gravity_terms;
 
-        if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
-            self.inertial_to_heliocentric_posvel();
-            self.iterate_spin_with_midpoint_method_part1()
-        }
-        self.iterate_position_and_velocity_with_whfasthelio_part1(); // updates alternative pos/vel by half-step and computes accelerations
-        if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
-            self.alternative_to_inertial_posvel(); // dspin_dt requires heliocentric pos/vel
-            self.inertial_to_heliocentric_posvel();
-            self.iterate_spin_with_midpoint_method_part2();
+        let time_step = self.time_step;
+        let half_time_step = self.half_time_step;
+        // A 'DKD'-like integrator will do the first 'D' part:
+        self.iterate_position_and_velocity_with_whfasthelio_part1(); // updates alternative pos/vel by half-step
+        self.universe.gravity_calculate_acceleration(ignore_gravity_terms); // computes gravitational inertial accelerations
+        //self.inertial_to_heliocentric_posvelacc(); // no need because gravities where directly saved to inertial
+        self.inertial_to_heliocentric_posvel(); // required to compute additional effects
+        // A 'DKD'-like integrator will do the 'KD' part:
+        if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+            // - First part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
+            let evolution = true;
+            let dspin_dt = true;
+            let accelerations = false;
+            self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+            self.save_current_spin();
+            self.spin_step(half_time_step);
+            //..................................................................
+            let evolution = false; // Only evolve once per step (evolving more than once for a given current time will lead to a wrong computation of the moment of inertia)
+            let dspin_dt = false;
+            let accelerations = true; 
+            self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+            self.interaction_step(half_time_step); // changes alternative velocities using inertial accelerations
+            self.current_time += self.half_time_step;
+            //..................................................................
+            // - Second part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
+            let evolution = false; // Only evolve once per step (evolving more than once for a given current time will lead to a wrong computation of the moment of inertia)
+            let dspin_dt = true;
+            let accelerations = false; 
+            self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+            self.restore_last_spin();
+            self.spin_step(time_step);
+            //..................................................................
+            self.interaction_step(half_time_step); // changes alternative velocities using inertial accelerations
+        } else {
+            let evolution = true;
+            let dspin_dt = false;
+            let accelerations = true; 
+            self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+            self.interaction_step(time_step); // changes alternative velocities using inertial accelerations
+            self.current_time += self.half_time_step;
         }
         self.iterate_position_and_velocity_with_whfasthelio_part2(); // updates alternative and inertial pos/vel by half-step
+        self.current_time += self.half_time_step;
 
         // ---------------------------------------------------------------------
         self.current_iteration += 1;
@@ -273,7 +315,6 @@ impl Integrator for WHFast {
 impl WHFast {
     // WHFast integrator
     fn iterate_position_and_velocity_with_whfasthelio_part1(&mut self) {
-        //let time_step = self.time_step;
         let half_time_step = self.half_time_step;
 
         // ---------------------------------------------------------------------
@@ -283,94 +324,18 @@ impl WHFast {
         self.jump_step(half_time_step);
         self.alternative_to_inertial_posvel();
         // ---------------------------------------------------------------------
-
-        // Calculate accelerations.
-        let ignore_gravity_terms = match self.alternative_coordinates_type {
-            CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
-            CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
-            CoordinatesType::WHDS => IgnoreGravityTerms::WHFastTwo,
-        };
-        let ignored_gravity_terms = ignore_gravity_terms;
-        self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
-        //self.inertial_to_heliocentric_posvelacc(); // no need because gravities where directly saved to inertial
-        self.inertial_to_heliocentric_posvel();
-        
-        // Calculate spin variation and non-gravity accelerations.
-        // - Positions and velocities are needed in heliocentric
-        // - But accelerations are computed in barycentric and added to inertial_coordinates.acceleration
-        let mut evolution = true;
-        if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
-            evolution = false; // already evolved in midpoint for the same current time (evolving more than one for a given current time will lead to a wrong computation of the moment of inertia)
-        }
-        let dspin_dt = false;
-        let accelerations = true; 
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
-
-        //self.heliocentric_to_inertial_posvelacc(); // not needed because position, velocities and masses have not changed
-        //self.inertial_to_alternative_posvel(); // not needed because position, velocities and masses have not changed
-        //
-        // ---------------------------------------------------------------------
-        // A 'DKD'-like integrator will do the 'KD' part.
-        //self.inertial_to_alternative_posvel(); // not needed because position, velocities and masses have not changed
-        //self.interaction_step(time_step); // Instead of a full interaction step, we do half so that we can complete the midpoint integration of the spin
-        //
-        // .....................................................................
-        // Second part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
-        self.interaction_step(half_time_step); // changes alternative velocities
-        self.current_time += self.half_time_step;
     }
+
 
     fn iterate_position_and_velocity_with_whfasthelio_part2(&mut self) {
         let half_time_step = self.half_time_step;
 
-        // Continue the WHFAST integration
-        self.interaction_step(half_time_step);
+        // Continue the WHFAST integration ('KD' part)
         self.jump_step(half_time_step);
         self.kepler_steps(half_time_step);
         self.alternative_to_inertial_posvel();
-        self.current_time += self.half_time_step;
     }
     
-    fn iterate_spin_with_midpoint_method_part1(&mut self) {
-        let ignored_gravity_terms = match self.alternative_coordinates_type {
-            CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
-            CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
-            CoordinatesType::WHDS => IgnoreGravityTerms::WHFastTwo,
-        };
-
-        // First part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
-        let evolution = true;
-        let dspin_dt = true;
-        let accelerations = false;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
-        // .....................................................................
-    }
-
-    fn iterate_spin_with_midpoint_method_part2(&mut self) {
-        let time_step = self.time_step;
-        let half_time_step = self.half_time_step;
-        
-        let ignored_gravity_terms = match self.alternative_coordinates_type {
-            CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
-            CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
-            CoordinatesType::WHDS => IgnoreGravityTerms::WHFastTwo,
-        };
-
-        // Midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
-        self.save_current_spin();
-        self.spin_step(half_time_step);
-        // Calculate spin variation and non-gravity accelerations.
-        // - Positions and velocities are needed in heliocentric
-        // - But accelerations are computed in barycentric and added to inertial_coordinates.acceleration
-        let evolution = false;
-        let dspin_dt = true;
-        let accelerations = false; 
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
-        self.restore_last_spin();
-        self.spin_step(time_step);
-        // .....................................................................
-    }
-
     fn save_current_spin(&mut self) {
         for (particle, spin) in self.universe.particles[..self.universe.n_particles].iter().zip(self.last_spin[..self.universe.n_particles].iter_mut()) {
             spin.x = particle.spin.x;
