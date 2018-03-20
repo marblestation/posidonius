@@ -252,7 +252,7 @@ impl Integrator for WHFast {
         //self.inertial_to_heliocentric_posvelacc(); // no need because gravities where directly saved to inertial
         self.inertial_to_heliocentric_posvel(); // required to compute additional effects
         // A 'DKD'-like integrator will do the 'KD' part:
-        if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+        if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
             // - First part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
             let evolution = true;
             let dspin_dt = true;
