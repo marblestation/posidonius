@@ -4,7 +4,6 @@ use std::fs::File;
 use super::Integrator;
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
-use super::super::particles::Axes;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
 use std::path::Path;
@@ -127,7 +126,7 @@ impl Integrator for LeapFrog {
         let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
-            self.inertial_to_heliocentric_posvelacc();
+            self.inertial_to_heliocentric_posvel();
             if self.universe.consider_tides {
                 self.universe.calculate_denergy_dt();
             }
@@ -136,7 +135,7 @@ impl Integrator for LeapFrog {
             self.n_historic_snapshots += 1;
             let current_time_years = self.current_time/365.25;
             if ! silent_mode {
-                print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
+                print!("Year: {:0.0} ({:0.1e}) | Time step: {:0.3} days                    \r", current_time_years, current_time_years, self.time_step);
                 let _ = std::io::stdout().flush();
             }
         }
@@ -144,13 +143,12 @@ impl Integrator for LeapFrog {
         let ignore_gravity_terms = IgnoreGravityTerms::None;
         let ignored_gravity_terms = ignore_gravity_terms;
 
-        self.inertial_to_heliocentric_posvelacc();
+        self.inertial_to_heliocentric_posvel();
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dspin_dt = true;
         let accelerations = false;
         self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
-        self.heliocentric_to_inertial_posvelacc();
 
 
         // A 'DKD'-like integrator will do the first 'D' part.
@@ -158,14 +156,13 @@ impl Integrator for LeapFrog {
 
         // Calculate accelerations.
         self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
-        self.inertial_to_heliocentric_posvelacc();
+        self.inertial_to_heliocentric_posvel();
 
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dspin_dt = true;
         let accelerations = true;
         self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
-        self.heliocentric_to_inertial_posvelacc();
 
 
         // A 'DKD'-like integrator will do the 'KD' part.
@@ -251,65 +248,6 @@ impl LeapFrog {
         self.current_time += self.half_time_step;
     }
 
-    fn heliocentric_to_inertial_posvelacc(&mut self) {
-        // Formulation:
-        //
-        // inertial_position = heliocentric_position - (1/total_mass) * sum(particle.mass * particle.position)
-        // inertial_velocity = heliocentric_velocity - (1/total_mass) * sum(particle.mass * particle.velocity)
-        // inertial_acceleration = heliocentric_acceleration - (1/total_mass) * sum(particle.mass * particle.acceleration)
-        //
-        // Compute center of mass
-        let mut reference_position = Axes{x:0., y:0., z:0.};
-        let mut reference_velocity = Axes{x:0., y:0., z:0.};
-        let mut reference_acceleration = Axes{x:0., y:0., z:0.};
-        let mut total_mass = 0.;
-
-        for particle in self.universe.particles[..self.universe.n_particles].iter() {
-            reference_position.x      += particle.position.x*particle.mass;
-            reference_position.y      += particle.position.y*particle.mass;
-            reference_position.z      += particle.position.z*particle.mass;
-            reference_velocity.x      += particle.velocity.x*particle.mass;
-            reference_velocity.y      += particle.velocity.y*particle.mass;
-            reference_velocity.z      += particle.velocity.z*particle.mass;
-            reference_acceleration.x  += particle.acceleration.x*particle.mass;
-            reference_acceleration.y  += particle.acceleration.y*particle.mass;
-            reference_acceleration.z  += particle.acceleration.z*particle.mass;
-            total_mass += particle.mass;
-        }
-        reference_position.x /= total_mass;
-        reference_position.y /= total_mass;
-        reference_position.z /= total_mass;
-        reference_velocity.x /= total_mass;
-        reference_velocity.y /= total_mass;
-        reference_velocity.z /= total_mass;
-        reference_acceleration.x /= total_mass;
-        reference_acceleration.y /= total_mass;
-        reference_acceleration.z /= total_mass;
-
-        // Convert heliocentric to inertial
-        for particle in self.universe.particles[0..self.universe.n_particles].iter_mut() {
-            particle.inertial_position.x = particle.position.x - reference_position.x;
-            particle.inertial_position.y = particle.position.y - reference_position.y;
-            particle.inertial_position.z = particle.position.z - reference_position.z;
-            particle.inertial_velocity.x = particle.velocity.x - reference_velocity.x;
-            particle.inertial_velocity.y = particle.velocity.y - reference_velocity.y;
-            particle.inertial_velocity.z = particle.velocity.z - reference_velocity.z;
-            particle.inertial_acceleration.x = particle.acceleration.x - reference_acceleration.x;
-            particle.inertial_acceleration.y = particle.acceleration.y - reference_acceleration.y;
-            particle.inertial_acceleration.z = particle.acceleration.z - reference_acceleration.z;
-        }
-    }
-
-    fn inertial_to_heliocentric_posvelacc(&mut self) {
-        //// Equivalent formulation to substractinga stellar inertial position/velocity/acceleration:
-        ////
-        //// heliocentric_position = inertial_position + (1/star.mass) * sum(particle.mass * particle.position)
-        //// heliocentric_velocity = inertial_velocity + (1/star.mass) * sum(particle.mass * particle.velocity)
-        //// heliocentric_acceleration = inertial_acceleration + (1/star.mass) * sum(particle.mass * particle.acceleration)
-        self.inertial_to_heliocentric_posvel();
-        self.inertial_to_heliocentric_acc();
-    }
-
     fn inertial_to_heliocentric_posvel(&mut self) {
         if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {
@@ -326,19 +264,6 @@ impl LeapFrog {
             star.velocity.x = 0.;
             star.velocity.y = 0.;
             star.velocity.z = 0.;
-        }
-    }
-
-    fn inertial_to_heliocentric_acc(&mut self) {
-        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
-            for particle in particles.iter_mut() {
-                particle.acceleration.x = particle.inertial_acceleration.x - star.inertial_acceleration.x;
-                particle.acceleration.y = particle.inertial_acceleration.y - star.inertial_acceleration.y;
-                particle.acceleration.z = particle.inertial_acceleration.z - star.inertial_acceleration.z;
-            }
-            star.acceleration.x = 0.;
-            star.acceleration.y = 0.;
-            star.acceleration.z = 0.;
         }
     }
 

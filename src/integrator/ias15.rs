@@ -5,7 +5,6 @@ use super::Integrator;
 use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
-use super::super::particles::Axes;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
 use std::path::Path;
@@ -45,6 +44,7 @@ pub struct Ias15 {
     x0: Vec<f64>, // Temporary buffer for position (used for initial values at h=0)
     v0: Vec<f64>, // Temporary buffer for velcoity (used for initial values at h=0)
     a0: Vec<f64>, // Temporary buffer for acceleration (used for initial values at h=0)
+    r0: Vec<f64>, // Temporary buffer for acceleration (used for initial values at h=0)
     // Compensated summation coefficients
     csx : Vec<f64>,
     csv : Vec<f64>,
@@ -86,6 +86,7 @@ impl Ias15 {
                     x0  : vec![0.; 3*n_particles],
                     v0  : vec![0.; 3*n_particles],
                     a0  : vec![0.; 3*n_particles],
+                    r0  : vec![0.; n_particles],
                     csx : vec![0.; 3*n_particles],
                     csv : vec![0.; 3*n_particles],
                     s   : [0.; 9],
@@ -144,7 +145,7 @@ impl Integrator for Ias15 {
         let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
-            self.inertial_to_heliocentric_posvelacc();
+            self.inertial_to_heliocentric_posvel();
             if self.universe.consider_tides {
                 self.universe.calculate_denergy_dt();
             }
@@ -153,7 +154,7 @@ impl Integrator for Ias15 {
             self.n_historic_snapshots += 1;
             let current_time_years = self.current_time/365.25;
             if ! silent_mode {
-                print!("Year: {:0.0} ({:0.1e})                                              \r", current_time_years, current_time_years);
+                print!("Year: {:0.0} ({:0.1e}) | Time step: {:0.3} days                    \r", current_time_years, current_time_years, self.time_step);
                 let _ = std::io::stdout().flush();
             }
         }
@@ -162,13 +163,12 @@ impl Integrator for Ias15 {
         let ignore_gravity_terms = IgnoreGravityTerms::None;
         let ignored_gravity_terms = ignore_gravity_terms;
         self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
-        self.inertial_to_heliocentric_posvelacc();
+        self.inertial_to_heliocentric_posvel();
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dspin_dt = true;
         let accelerations = true;
         self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
-        self.heliocentric_to_inertial_posvelacc();
 
         self.integrator();
         self.current_iteration += 1;
@@ -200,7 +200,8 @@ impl Ias15 {
     
         // Gauss-Radau spacings for substeps within a sequence, for the 15th order 
         // integrator. The sum of the h values should be 3.733333333333333
-        let h : [f64; 8]	= [ 0.0, 0.0562625605369221464656521910, 0.1802406917368923649875799428, 0.3526247171131696373739077702, 0.5471536263305553830014485577, 0.7342101772154105410531523211, 0.8853209468390957680903597629, 0.9775206135612875018911745004]; 
+        let h : [f64; 8]	= [ 0.0, 0.0562625605369221464656521910318, 0.180240691736892364987579942780, 0.352624717113169637373907769648, 0.547153626330555383001448554766, 0.734210177215410531523210605558, 0.885320946839095768090359771030, 0.977520613561287501891174488626 ]; 
+
 
         ////// Constants to compute g values
         //
@@ -213,7 +214,8 @@ impl Ias15 {
             //}
         //}
         //
-        let r : [f64; 28] = [0.0562625605369221464656522, 0.1802406917368923649875799, 0.1239781311999702185219278, 0.3526247171131696373739078, 0.2963621565762474909082556, 0.1723840253762772723863278, 0.5471536263305553830014486, 0.4908910657936332365357964, 0.3669129345936630180138686, 0.1945289092173857456275408, 0.7342101772154105410531523, 0.6779476166784883945875001, 0.5539694854785181760655724, 0.3815854601022409036792446, 0.1870565508848551580517038, 0.8853209468390957680903598, 0.8290583863021736216247076, 0.7050802551022034031027798, 0.5326962297259261307164520, 0.3381673205085403850889112, 0.1511107696236852270372074, 0.9775206135612875018911745, 0.9212580530243653554255223, 0.7972799218243951369035946, 0.6248958964481178645172667, 0.4303669872307321188897259, 0.2433104363458769608380222, 0.0921996667221917338008147];
+        let r : [f64; 28] = [0.0562625605369221464656522, 0.1802406917368923649875799, 0.1239781311999702185219278, 0.3526247171131696373739078, 0.2963621565762474909082556, 0.1723840253762772723863278, 0.5471536263305553830014486, 0.4908910657936332365357964, 0.3669129345936630180138686, 0.1945289092173857456275408, 0.7342101772154105315232106, 0.6779476166784883850575584, 0.5539694854785181665356307, 0.3815854601022408941493028, 0.1870565508848551485217621, 0.8853209468390957680903598, 0.8290583863021736216247076, 0.7050802551022034031027798, 0.5326962297259261307164520, 0.3381673205085403850889112, 0.1511107696236852365671492, 0.9775206135612875018911745, 0.9212580530243653554255223, 0.7972799218243951369035945, 0.6248958964481178645172667, 0.4303669872307321188897259, 0.2433104363458769703679639, 0.0921996667221917338008147];
+
 
         ////// Constants to convert between b and g arrays (c = c21, c31, c32, c41, c42...)
         //
@@ -236,10 +238,9 @@ impl Ias15 {
             //d[n] = d[n-j] + h[j];
         //}
         //
-        let c : [f64; 21] = [-0.0562625605369221464656522, 0.0101408028300636299864818, -0.2365032522738145114532321, -0.0035758977292516175949345, 0.0935376952594620658957485, -0.5891279693869841488271399, 0.0019565654099472210769006, -0.0547553868890686864408084, 0.4158812000823068616886219, -1.1362815957175395318285885, -0.0014365302363708915610919, 0.0421585277212687082291130, -0.3600995965020568162530901, 1.2501507118406910366792415, -1.8704917729329500728817408, 0.0012717903090268677658020, -0.0387603579159067708505249, 0.3609622434528459872559689, -1.4668842084004269779203515, 2.9061362593084293206895457, -2.7558127197720458409721005];
-        let d : [f64; 21] = [0.0562625605369221464656522, 0.0031654757181708292499905, 0.2365032522738145114532321, 0.0001780977692217433881125, 0.0457929855060279188954539, 0.5891279693869841488271399, 0.0000100202365223291272096, 0.0084318571535257015445000, 0.2535340690545692665214616, 1.1362815957175395318285885, 0.0000005637641639318207610, 0.0015297840025004658189490, 0.0978342365324440053653648, 0.8752546646840910912297246, 1.8704917729329500728817408, 0.0000000317188154017613665, 0.0002762930909826476593130, 0.0360285539837364596003871, 0.5767330002770787313544596, 2.2485887607691598182153473, 2.7558127197720458409721005];
+        let c : [f64; 21] = [-0.0562625605369221464656522, 0.0101408028300636299864818, -0.2365032522738145114532321, -0.0035758977292516175949345, 0.0935376952594620658957485, -0.5891279693869841488271399, 0.0019565654099472210769006, -0.0547553868890686864408084, 0.4158812000823068616886219, -1.1362815957175395318285885, -0.0014365302363708915424460, 0.0421585277212687077072973, -0.3600995965020568122897665, 1.2501507118406910258505441, -1.8704917729329500633517991, 0.0012717903090268677492943, -0.0387603579159067703699046, 0.3609622434528459832253398, -1.4668842084004269643701553, 2.9061362593084293014237913, -2.7558127197720458314421588];
 
-
+        let d : [f64; 21] = [0.0562625605369221464656522, 0.0031654757181708292499905, 0.2365032522738145114532321, 0.0001780977692217433881125, 0.0457929855060279188954539, 0.5891279693869841488271399, 0.0000100202365223291272096, 0.0084318571535257015445000, 0.2535340690545692665214616, 1.1362815957175395318285885, 0.0000005637641639318207610, 0.0015297840025004658189490, 0.0978342365324440053653648, 0.8752546646840910912297246, 1.8704917729329500633517991, 0.0000000317188154017613665, 0.0002762930909826476593130, 0.0360285539837364596003871, 0.5767330002770787313544596, 2.2485887607691597933926895, 2.7558127197720458314421588];
 
 
         loop {
@@ -254,6 +255,7 @@ impl Ias15 {
                 self.a0[3*k]   = particle.inertial_acceleration.x;
                 self.a0[3*k+1] = particle.inertial_acceleration.y;  
                 self.a0[3*k+2] = particle.inertial_acceleration.z;
+                self.r0[k]   = particle.radius; // Required to correctly compute the momen of inertia if a step is repeated after evolution was applied
             }
 
             // Find g values from b values predicted at the last call (Eqs. 7 of Everhart)
@@ -266,10 +268,11 @@ impl Ias15 {
                 self.g[5][k] = self.b[6][k]*d[20] + self.b[5][k];
                 self.g[6][k] = self.b[6][k];
             }
+            //println!("\n{}\n", self.g[0][1]);
 
             let t_beginning = self.current_time;
-            let mut predictor_corrector_error: f64 = 1e10;
-            //let mut predictor_corrector_error: f64 = 1e300;
+            //let mut predictor_corrector_error: f64 = 1e10;
+            let mut predictor_corrector_error: f64 = 1e300;
             let mut predictor_corrector_error_last: f64 = 2.;
             let mut iterations : i32 = 0;	
 
@@ -315,7 +318,7 @@ impl Ias15 {
                     self.s[8] = 7. * self.s[7] * h[n] / 9.;
                     
                     self.current_time = t_beginning + self.s[0];
-                    //println!("Interval {} with substep {} of {}", n, self.s[0], self.time_step);
+                    //println!("Interval {} with substep {} of {} ({})", n, self.s[0], self.time_step, h[n]);
 
                     //// Prepare particles arrays for force calculation
                     // Predict positions at interval n using self.b values
@@ -325,15 +328,17 @@ impl Ias15 {
                         let k2 : usize = 3*i+2;
 
                         // Equation 7 in paper 2015MNRAS.446.1424R
-                        let xk0: f64  = self.csx[k0] + (self.s[8]*self.b[6][k0] + self.s[7]*self.b[5][k0] + self.s[6]*self.b[4][k0] + self.s[5]*self.b[3][k0] + self.s[4]*self.b[2][k0] + self.s[3]*self.b[1][k0] + self.s[2]*self.b[0][k0] + self.s[1]*self.a0[k0] + self.s[0]*self.v0[k0] );
+                        let xk0: f64  = -self.csx[k0] + (self.s[8]*self.b[6][k0] + self.s[7]*self.b[5][k0] + self.s[6]*self.b[4][k0] + self.s[5]*self.b[3][k0] + self.s[4]*self.b[2][k0] + self.s[3]*self.b[1][k0] + self.s[2]*self.b[0][k0] + self.s[1]*self.a0[k0] + self.s[0]*self.v0[k0] );
                         particle.inertial_position.x = xk0 + self.x0[k0];
 
-                        let xk1: f64  = self.csx[k1] + (self.s[8]*self.b[6][k1] + self.s[7]*self.b[5][k1] + self.s[6]*self.b[4][k1] + self.s[5]*self.b[3][k1] + self.s[4]*self.b[2][k1] + self.s[3]*self.b[1][k1] + self.s[2]*self.b[0][k1] + self.s[1]*self.a0[k1] + self.s[0]*self.v0[k1] );
+                        let xk1: f64  = -self.csx[k1] + (self.s[8]*self.b[6][k1] + self.s[7]*self.b[5][k1] + self.s[6]*self.b[4][k1] + self.s[5]*self.b[3][k1] + self.s[4]*self.b[2][k1] + self.s[3]*self.b[1][k1] + self.s[2]*self.b[0][k1] + self.s[1]*self.a0[k1] + self.s[0]*self.v0[k1] );
                         particle.inertial_position.y = xk1 + self.x0[k1];
 
-                        let xk2: f64 = self.csx[k2] + (self.s[8]*self.b[6][k2] + self.s[7]*self.b[5][k2] + self.s[6]*self.b[4][k2] + self.s[5]*self.b[3][k2] + self.s[4]*self.b[2][k2] + self.s[3]*self.b[1][k2] + self.s[2]*self.b[0][k2] + self.s[1]*self.a0[k2] + self.s[0]*self.v0[k2] );
+                        let xk2: f64 = -self.csx[k2] + (self.s[8]*self.b[6][k2] + self.s[7]*self.b[5][k2] + self.s[6]*self.b[4][k2] + self.s[5]*self.b[3][k2] + self.s[4]*self.b[2][k2] + self.s[3]*self.b[1][k2] + self.s[2]*self.b[0][k2] + self.s[1]*self.a0[k2] + self.s[0]*self.v0[k2] );
                         particle.inertial_position.z = xk2 + self.x0[k2];
                     }
+                    //println!("\n{:?}\n",self.universe.particles[1].inertial_position);
+                    //println!("\n{}\t{}\t{}\n", self.x0[3], self.x0[4], self.x0[5]);
                 
                     if INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT {
                         // If necessary, calculate velocity predictors too, from Eqn. 10 of Everhart
@@ -361,19 +366,20 @@ impl Ias15 {
                             particle.inertial_velocity.z = vk2 + self.v0[k2];
                         }
                     }
+                    //println!("\n{:?}\n",self.universe.particles[1].inertial_velocity);
 
 
                     // Calculate accelerations.
                     let ignore_gravity_terms = IgnoreGravityTerms::None;
                     let ignored_gravity_terms = ignore_gravity_terms;
                     self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
-                    self.inertial_to_heliocentric_posvelacc();
+                    self.inertial_to_heliocentric_posvel();
                     // Calculate non-gravity accelerations.
                     let evolution = true;
                     let dspin_dt = true;
                     let accelerations = true;
                     self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
-                    self.heliocentric_to_inertial_posvelacc();
+                    //println!("{:?}", self.universe.particles[1].inertial_acceleration);
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.inertial_acceleration.x;
@@ -388,6 +394,7 @@ impl Ias15 {
                                     let tmp = self.g[0][k];
                                     self.g[0][k]  = (self.at[k] - self.a0[k]) / r[0];
                                     self.b[0][k] += self.g[0][k] - tmp;
+                                    //println!("{}", self.b[0][k]);
                                 }
                             },
                         2 => {
@@ -398,6 +405,7 @@ impl Ias15 {
                                     tmp = self.g[1][k] - tmp;
                                     self.b[0][k] += tmp * c[0];
                                     self.b[1][k] += tmp;
+                                    //println!("{}", self.b[1][k]);
                                 }
                             },
                         3 => {
@@ -409,6 +417,7 @@ impl Ias15 {
                                     self.b[0][k] += tmp * c[1];
                                     self.b[1][k] += tmp * c[2];
                                     self.b[2][k] += tmp;
+                                    //println!("{}", self.b[2][k]);
                                 }
                             },
                         4 => {
@@ -421,6 +430,7 @@ impl Ias15 {
                                     self.b[1][k] += tmp * c[4];
                                     self.b[2][k] += tmp * c[5];
                                     self.b[3][k] += tmp;
+                                    //println!("{}", self.b[3][k]);
                                 }
                             },
                         5 => {
@@ -434,6 +444,7 @@ impl Ias15 {
                                     self.b[2][k] += tmp * c[8];
                                     self.b[3][k] += tmp * c[9];
                                     self.b[4][k] += tmp;
+                                    //println!("{}", self.b[4][k]);
                                 }
                             },
                         6 => {
@@ -448,6 +459,7 @@ impl Ias15 {
                                     self.b[3][k] += tmp * c[13];
                                     self.b[4][k] += tmp * c[14];
                                     self.b[5][k] += tmp;
+                                    //println!("{}", self.b[5][k]);
                                 }
                             },
                         7 => {
@@ -465,6 +477,7 @@ impl Ias15 {
                                     self.b[4][k] += tmp * c[19];
                                     self.b[5][k] += tmp * c[20];
                                     self.b[6][k] += tmp;
+                                    //println!("{}", self.b[6][k]);
                                     
                                     // Monitor change in self.b[6][k] relative to self.at[k]. The predictor corrector scheme is converged if it is close to 0.
                                     if INTEGRATOR_EPSILON_GLOBAL {
@@ -476,6 +489,7 @@ impl Ias15 {
                                         if b6ktmp.is_normal() && b6ktmp>maxb6ktmp {
                                             maxb6ktmp = b6ktmp;
                                         }
+                                        //println!("{} {}", maxak, maxb6ktmp);
                                     } else {
                                         let ak  = self.at[k];
                                         let b6ktmp = tmp; 
@@ -552,11 +566,15 @@ impl Ias15 {
                         }
                     }
                 }
+                //println!("** {}", integrator_error);
 
                 let mut dt_new: f64;
                 if  integrator_error.is_normal() { 	
                     // if error estimate is available, then increase by more educated guess
-                    dt_new = (INTEGRATOR_EPSILON/integrator_error).powf(1./7.) * dt_done;
+                    //dt_new = (INTEGRATOR_EPSILON/integrator_error).powf(1./7.) * dt_done;
+                    dt_new = self.sqrt7(INTEGRATOR_EPSILON/integrator_error) * dt_done;
+                    //println!("{} {} {}", INTEGRATOR_EPSILON, self.sqrt7(INTEGRATOR_EPSILON/integrator_error), (INTEGRATOR_EPSILON/integrator_error).powf(1./7.));
+                    //println!("{} {}", dt_new, dt_done);
                 } else {
                 	// In the rare case that the error estimate doesn't give a finite number (e.g. when all forces accidentally cancel up to machine precission).
                     dt_new = dt_done/SAFETY_FACTOR; // by default, increase timestep a little
@@ -584,6 +602,13 @@ impl Ias15 {
                         particle.inertial_velocity.x = self.v0[3*k+0];	// Set inital velocity
                         particle.inertial_velocity.y = self.v0[3*k+1];
                         particle.inertial_velocity.z = self.v0[3*k+2];
+
+                        particle.inertial_acceleration.x = self.a0[3*k+0];	// Set inital acceleration
+                        particle.inertial_acceleration.y = self.a0[3*k+1];
+                        particle.inertial_acceleration.z = self.a0[3*k+2];
+
+                        // Required to correctly compute the momen of inertia if a step is repeated after evolution was applied
+                        particle.radius = self.r0[k];	// Set inital radius
                     }
                     self.time_step = dt_new;
                     if self.time_step_last_success != 0. {		// Do not predict next self.e/self.b values if this is the first time step.
@@ -592,14 +617,16 @@ impl Ias15 {
                         self.predict_next_step(ratio);
                     }
                     
+                    //println!("Step rejected, repeating with new timestep {}", self.time_step);
                     continue; // Step rejected. Do again. 
-                }		
+                }
                 if (dt_new/dt_done).abs() > 1.0 {	// New timestep is larger.
                     if dt_new/dt_done > 1./SAFETY_FACTOR {
                         dt_new = dt_done / SAFETY_FACTOR;	// Don't increase the timestep by too much compared to the last one.
                     }
                 }
                 self.time_step = dt_new;
+                //println!("New timestep {}", self.time_step);
             }
             ////////////////////////////////////////////////////////////////////
             //// END: Find new timestep
@@ -628,9 +655,11 @@ impl Ias15 {
                     self.v0[k]    = a + self.csv[k];
                     self.csv[k]  += a - self.v0[k];
                 }
+                //println!("{} {} {} {}", self.x0[k], self.v0[k], self.csx[k], self.csv[k]);
             }
 
             self.current_time += dt_done;
+            self.time_step_last_success = dt_done;
 
             // Swap particle buffers
             for (k, particle) in self.universe.particles[..self.universe.n_particles].iter_mut().enumerate() {
@@ -641,6 +670,7 @@ impl Ias15 {
                 particle.inertial_velocity.x = self.v0[3*k+0];	// Set final velocity
                 particle.inertial_velocity.y = self.v0[3*k+1];
                 particle.inertial_velocity.z = self.v0[3*k+2];
+                //println!("{:?} {:?}", particle.inertial_position, particle.inertial_velocity);
 
                 if particle.moment_of_inertia_ratio != 1. {
                     particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.time_step * particle.dspin_dt.x;
@@ -659,8 +689,6 @@ impl Ias15 {
                 }
             }
 
-            self.time_step_last_success = dt_done;
-
             //self.copybuffers(&mut self.e, &mut self.er);		
             //self.copybuffers(&mut self.b, &mut self.br);		
             self.er = self.e.clone();
@@ -678,103 +706,64 @@ impl Ias15 {
     //fn predict_next_step(self, e : &mut [[f64; 3*N_PARTICLES]; 7], b : &mut [[f64; 3*N_PARTICLES]; 7], 
                             //_e : [[f64; 3*N_PARTICLES]; 7], _b: [[f64; 3*N_PARTICLES]; 7],
                             //ratio: f64) {
-        // Predict new B values to use at the start of the next sequence. The predicted
-        // values from the last call are saved as E. The correction, BD, between the
-        // actual and predicted values of B is applied in advance as a correction.
-        //
-        let q1 = ratio;
-        let q2 = q1 * q1;
-        let q3 = q1 * q2;
-        let q4 = q2 * q2;
-        let q5 = q2 * q3;
-        let q6 = q3 * q3;
-        let q7 = q3 * q4;
+        if ratio > 20. {
+            // Do not predict if stepsize increase is very large.
+            for k in 0..3*self.n_particles {
+                self.e[0][k] = 0.;
+                self.e[1][k] = 0.;
+                self.e[2][k] = 0.;
+                self.e[3][k] = 0.;
+                self.e[4][k] = 0.;
+                self.e[5][k] = 0.;
+                self.e[6][k] = 0.;
+                self.b[0][k] = 0.;
+                self.b[1][k] = 0.;
+                self.b[2][k] = 0.;
+                self.b[3][k] = 0.;
+                self.b[4][k] = 0.;
+                self.b[5][k] = 0.;
+                self.b[6][k] = 0.;
+            }
+        } else {
+            // Predict new B values to use at the start of the next sequence. The predicted
+            // values from the last call are saved as E. The correction, BD, between the
+            // actual and predicted values of B is applied in advance as a correction.
+            //
+            let q1 = ratio;
+            let q2 = q1 * q1;
+            let q3 = q1 * q2;
+            let q4 = q2 * q2;
+            let q5 = q2 * q3;
+            let q6 = q3 * q3;
+            let q7 = q3 * q4;
 
-        for k in 0..3*self.n_particles {
-            let be0 = self.br[0][k] - self.er[0][k];
-            let be1 = self.br[1][k] - self.er[1][k];
-            let be2 = self.br[2][k] - self.er[2][k];
-            let be3 = self.br[3][k] - self.er[3][k];
-            let be4 = self.br[4][k] - self.er[4][k];
-            let be5 = self.br[5][k] - self.er[5][k];
-            let be6 = self.br[6][k] - self.er[6][k];
+            for k in 0..3*self.n_particles {
+                let be0 = self.br[0][k] - self.er[0][k];
+                let be1 = self.br[1][k] - self.er[1][k];
+                let be2 = self.br[2][k] - self.er[2][k];
+                let be3 = self.br[3][k] - self.er[3][k];
+                let be4 = self.br[4][k] - self.er[4][k];
+                let be5 = self.br[5][k] - self.er[5][k];
+                let be6 = self.br[6][k] - self.er[6][k];
 
-            // Estimate B values for the next sequence (Eqs. 13 of Everhart).
-            self.e[0][k] = q1*(self.br[6][k]* 7.0 + self.br[5][k]* 6.0 + self.br[4][k]* 5.0 + self.br[3][k]* 4.0 + self.br[2][k]* 3.0 + self.br[1][k]*2.0 + self.br[0][k]);
-            self.e[1][k] = q2*(self.br[6][k]*21.0 + self.br[5][k]*15.0 + self.br[4][k]*10.0 + self.br[3][k]* 6.0 + self.br[2][k]* 3.0 + self.br[1][k]);
-            self.e[2][k] = q3*(self.br[6][k]*35.0 + self.br[5][k]*20.0 + self.br[4][k]*10.0 + self.br[3][k]* 4.0 + self.br[2][k]);
-            self.e[3][k] = q4*(self.br[6][k]*35.0 + self.br[5][k]*15.0 + self.br[4][k]* 5.0 + self.br[3][k]);
-            self.e[4][k] = q5*(self.br[6][k]*21.0 + self.br[5][k]* 6.0 + self.br[4][k]);
-            self.e[5][k] = q6*(self.br[6][k]* 7.0 + self.br[5][k]);
-            self.e[6][k] = q7* self.br[6][k];
-            
-            self.b[0][k] = self.e[0][k] + be0;
-            self.b[1][k] = self.e[1][k] + be1;
-            self.b[2][k] = self.e[2][k] + be2;
-            self.b[3][k] = self.e[3][k] + be3;
-            self.b[4][k] = self.e[4][k] + be4;
-            self.b[5][k] = self.e[5][k] + be5;
-            self.b[6][k] = self.e[6][k] + be6;
+                // Estimate B values for the next sequence (Eqs. 13 of Everhart).
+                self.e[0][k] = q1*(self.br[6][k]* 7.0 + self.br[5][k]* 6.0 + self.br[4][k]* 5.0 + self.br[3][k]* 4.0 + self.br[2][k]* 3.0 + self.br[1][k]*2.0 + self.br[0][k]);
+                self.e[1][k] = q2*(self.br[6][k]*21.0 + self.br[5][k]*15.0 + self.br[4][k]*10.0 + self.br[3][k]* 6.0 + self.br[2][k]* 3.0 + self.br[1][k]);
+                self.e[2][k] = q3*(self.br[6][k]*35.0 + self.br[5][k]*20.0 + self.br[4][k]*10.0 + self.br[3][k]* 4.0 + self.br[2][k]);
+                self.e[3][k] = q4*(self.br[6][k]*35.0 + self.br[5][k]*15.0 + self.br[4][k]* 5.0 + self.br[3][k]);
+                self.e[4][k] = q5*(self.br[6][k]*21.0 + self.br[5][k]* 6.0 + self.br[4][k]);
+                self.e[5][k] = q6*(self.br[6][k]* 7.0 + self.br[5][k]);
+                self.e[6][k] = q7* self.br[6][k];
+                
+                self.b[0][k] = self.e[0][k] + be0;
+                self.b[1][k] = self.e[1][k] + be1;
+                self.b[2][k] = self.e[2][k] + be2;
+                self.b[3][k] = self.e[3][k] + be3;
+                self.b[4][k] = self.e[4][k] + be4;
+                self.b[5][k] = self.e[5][k] + be5;
+                self.b[6][k] = self.e[6][k] + be6;
+            }
         }
-    }
-
-    fn heliocentric_to_inertial_posvelacc(&mut self) {
-        // Formulation:
-        //
-        // inertial_position = heliocentric_position - (1/total_mass) * sum(particle.mass * particle.position)
-        // inertial_velocity = heliocentric_velocity - (1/total_mass) * sum(particle.mass * particle.velocity)
-        // inertial_acceleration = heliocentric_acceleration - (1/total_mass) * sum(particle.mass * particle.acceleration)
-        //
-        // Compute center of mass
-        let mut reference_position = Axes{x:0., y:0., z:0.};
-        let mut reference_velocity = Axes{x:0., y:0., z:0.};
-        let mut reference_acceleration = Axes{x:0., y:0., z:0.};
-        let mut total_mass = 0.;
-
-        for particle in self.universe.particles[..self.universe.n_particles].iter() {
-            reference_position.x      += particle.inertial_position.x*particle.mass;
-            reference_position.y      += particle.inertial_position.y*particle.mass;
-            reference_position.z      += particle.inertial_position.z*particle.mass;
-            reference_velocity.x      += particle.inertial_velocity.x*particle.mass;
-            reference_velocity.y      += particle.inertial_velocity.y*particle.mass;
-            reference_velocity.z      += particle.inertial_velocity.z*particle.mass;
-            reference_acceleration.x  += particle.inertial_acceleration.x*particle.mass;
-            reference_acceleration.y  += particle.inertial_acceleration.y*particle.mass;
-            reference_acceleration.z  += particle.inertial_acceleration.z*particle.mass;
-            total_mass += particle.mass;
-        }
-        reference_position.x /= total_mass;
-        reference_position.y /= total_mass;
-        reference_position.z /= total_mass;
-        reference_velocity.x /= total_mass;
-        reference_velocity.y /= total_mass;
-        reference_velocity.z /= total_mass;
-        reference_acceleration.x /= total_mass;
-        reference_acceleration.y /= total_mass;
-        reference_acceleration.z /= total_mass;
-
-        // Convert heliocentric to inertial
-        for particle in self.universe.particles[0..self.universe.n_particles].iter_mut() {
-            particle.inertial_position.x = particle.position.x - reference_position.x;
-            particle.inertial_position.y = particle.position.y - reference_position.y;
-            particle.inertial_position.z = particle.position.z - reference_position.z;
-            particle.inertial_velocity.x = particle.velocity.x - reference_velocity.x;
-            particle.inertial_velocity.y = particle.velocity.y - reference_velocity.y;
-            particle.inertial_velocity.z = particle.velocity.z - reference_velocity.z;
-            particle.inertial_acceleration.x = particle.acceleration.x - reference_acceleration.x;
-            particle.inertial_acceleration.y = particle.acceleration.y - reference_acceleration.y;
-            particle.inertial_acceleration.z = particle.acceleration.z - reference_acceleration.z;
-        }
-    }
-
-    fn inertial_to_heliocentric_posvelacc(&mut self) {
-        //// Equivalent formulation to substractinga stellar inertial position/velocity/acceleration:
-        ////
-        //// heliocentric_position = inertial_position + (1/star.mass) * sum(particle.mass * particle.position)
-        //// heliocentric_velocity = inertial_velocity + (1/star.mass) * sum(particle.mass * particle.velocity)
-        //// heliocentric_acceleration = inertial_acceleration + (1/star.mass) * sum(particle.mass * particle.acceleration)
-        self.inertial_to_heliocentric_posvel();
-        self.inertial_to_heliocentric_acc();
     }
 
     fn inertial_to_heliocentric_posvel(&mut self) {
@@ -796,17 +785,14 @@ impl Ias15 {
         }
     }
 
-    fn inertial_to_heliocentric_acc(&mut self) {
-        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
-            for particle in particles.iter_mut() {
-                particle.acceleration.x = particle.inertial_acceleration.x - star.inertial_acceleration.x;
-                particle.acceleration.y = particle.inertial_acceleration.y - star.inertial_acceleration.y;
-                particle.acceleration.z = particle.inertial_acceleration.z - star.inertial_acceleration.z;
-            }
-            star.acceleration.x = 0.;
-            star.acceleration.y = 0.;
-            star.acceleration.z = 0.;
+    fn sqrt7(&self, a: f64) -> f64 {
+        // Machine independent implementation of powf(1./7.)
+        let mut x: f64 = 1.;
+        for _k in 0..20 { // A smaller number should be ok too.
+            let x6 = x*x*x*x*x*x;
+            x += (a/x6-x)/7.;
         }
+        x
     }
 
 }

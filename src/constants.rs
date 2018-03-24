@@ -4,7 +4,7 @@ pub const MAX_PARTICLES : usize = 10; // The optimal value matches the real numb
 pub const MAX_DISTANCE : f64 = 100.; // AU
 pub const MAX_DISTANCE_2 : f64 = MAX_DISTANCE*MAX_DISTANCE; // AU
 //
-pub const MIN_ORBITAL_PERIOD_TIME_STEP_RATIO : f64 = 10.; // The orbital period should be N times greater than the time step to correctly integrate an orbit
+pub const MIN_ORBITAL_PERIOD_TIME_STEP_RATIO : f64 = 5.; // The orbital period should be N times greater than the time step to correctly integrate an orbit
 
 //// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).

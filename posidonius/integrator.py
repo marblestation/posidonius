@@ -65,6 +65,7 @@ class Ias15(Integrator):
         self._data['x0'] = [0.,] *  3*MAX_PARTICLES
         self._data['v0'] = [0.,] *  3*MAX_PARTICLES
         self._data['a0'] = [0.,] *  3*MAX_PARTICLES
+        self._data['r0'] = [0.,] *  MAX_PARTICLES
         self._data['csx'] = [0.,] * 3*MAX_PARTICLES
         self._data['csv'] = [0.,] * 3*MAX_PARTICLES
         self._data['s'] = [0.,] * 9
