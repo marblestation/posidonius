@@ -6,7 +6,6 @@ use clap::{Arg, App, SubCommand, AppSettings};
 use posidonius::Integrator;
 use std::path::Path;
 
-
 fn main() {
     let t1 = time::precise_time_s();
 
@@ -28,11 +27,6 @@ fn main() {
                                         .required(true)
                                         .index(3)
                                         .help("Historic snapshot filename")) 
-                                    .arg(Arg::with_name("no-verify-integrity")
-                                        .short("n")
-                                        .long("no-verify-integrity")
-                                        .multiple(false)
-                                        .help("Do not verify file integrity"))
                                     .arg(Arg::with_name("silent")
                                         .short("s")
                                         .long("silent")
@@ -47,11 +41,6 @@ fn main() {
                                     .arg(Arg::with_name("historic_snapshot_filename")
                                         .required(true)
                                         .help("Historic snapshot filename")) 
-                                    .arg(Arg::with_name("no-verify-integrity")
-                                        .short("n")
-                                        .long("no-verify-integrity")
-                                        .multiple(false)
-                                        .help("Do not verify file integrity"))
                                     .arg(Arg::with_name("silent")
                                         .short("s")
                                         .long("silent")
@@ -72,7 +61,6 @@ fn main() {
     let first_universe_integrator_snapshot_filename;
     let universe_integrator_snapshot_filename;
     let universe_history_filename;
-    let verify_integrity;
     let silent_mode;
     let resume;
     let new_historic_snapshot_period;
@@ -84,7 +72,6 @@ fn main() {
             universe_integrator_snapshot_filename = start_matches.value_of("snapshot_filename").unwrap();
             universe_history_filename = start_matches.value_of("historic_snapshot_filename").unwrap();
             silent_mode = start_matches.is_present("silent");
-            verify_integrity = start_matches.is_present("no-verify-integrity");
             resume = false;
             new_historic_snapshot_period = -1.0;
             new_recovery_snapshot_period = -1.0;
@@ -94,7 +81,6 @@ fn main() {
             first_universe_integrator_snapshot_filename = &universe_integrator_snapshot_filename;
             universe_history_filename = resume_matches.value_of("historic_snapshot_filename").unwrap();
             silent_mode = resume_matches.is_present("silent");
-            verify_integrity = ! resume_matches.is_present("no-verify-integrity");
             resume = true;
             new_historic_snapshot_period = value_t!(resume_matches.value_of("change_historic_snapshot_period"), f64).unwrap_or(-1.);
             new_recovery_snapshot_period = value_t!(resume_matches.value_of("change_recovery_snapshot_period"), f64).unwrap_or(-1.);
@@ -108,7 +94,7 @@ fn main() {
     let first_universe_integrator_snapshot_path = Path::new(&first_universe_integrator_snapshot_filename);
     
     // Start/Resume from snapshot
-    let mut universe_integrator = match posidonius::WHFast::restore_snapshot(&first_universe_integrator_snapshot_path, verify_integrity) {
+    let mut boxed_universe_integrator : Box<Integrator> = match posidonius::output::restore_snapshot(&first_universe_integrator_snapshot_path) {
         Ok(restored_case) => { restored_case },
         Err(_) => { 
             if resume {
@@ -119,34 +105,12 @@ fn main() {
         },
     };
 
-    if universe_integrator.current_time > 0. {
-        let current_time_years = universe_integrator.current_time/365.25;
-        println!("[INFO {} UTC] Continuing from year {:0.0} ({:0.1e}).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), current_time_years, current_time_years);
-    }
-
-    if new_historic_snapshot_period > 0. && universe_integrator.historic_snapshot_period != new_historic_snapshot_period {
-        println!("[INFO {} UTC] The historic snapshot period changed from {} to {} days: {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator.historic_snapshot_period, new_historic_snapshot_period, universe_history_filename);
-        universe_integrator.historic_snapshot_period = new_historic_snapshot_period;
-    } else {
-        println!("[INFO {} UTC] A historic snapshot will be saved every {} days: {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator.historic_snapshot_period, universe_history_filename);
-    }
-    
-    if new_recovery_snapshot_period > 0. && universe_integrator.recovery_snapshot_period != new_recovery_snapshot_period {
-        println!("[INFO {} UTC] The recovery snapshot period changed from {} to {} days: {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator.recovery_snapshot_period, new_recovery_snapshot_period, universe_integrator_snapshot_filename);
-        universe_integrator.recovery_snapshot_period = new_recovery_snapshot_period;
-    } else {
-        println!("[INFO {} UTC] A recovery snapshot will be saved every {} days: {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator.recovery_snapshot_period, universe_integrator_snapshot_filename);
-    }
-
-
-    //// Other integrators:
-    //let mut universe_integrator = posidonius::Ias15::restore_snapshot(&first_universe_integrator_snapshot_path).unwrap();
-    //let mut universe_integrator = posidonius::LeapFrog::restore_snapshot(&first_universe_integrator_snapshot_path).unwrap();
+    boxed_universe_integrator.set_snapshot_periods(new_historic_snapshot_period, new_recovery_snapshot_period);
 
     // Create/recover historic snapshot
-    let expected_n_bytes = (universe_integrator.n_historic_snapshots as u64) 
+    let expected_n_bytes = (boxed_universe_integrator.get_n_historic_snapshots() as u64) 
                                 * posidonius::output::n_bytes_per_particle_in_historic_snapshot()
-                                * (universe_integrator.universe.n_particles as u64);
+                                * (boxed_universe_integrator.get_n_particles() as u64);
     let universe_history_path = Path::new(&universe_history_filename);
 
     if !resume && universe_integrator_snapshot_path.exists() {
@@ -159,20 +123,23 @@ fn main() {
 
     // Simulate
     loop {
-        match universe_integrator.iterate(&mut universe_history_writer, silent_mode) {
+        match boxed_universe_integrator.iterate(&mut universe_history_writer, silent_mode) {
             Ok(recovery_snapshot_time_trigger) => {
                 if recovery_snapshot_time_trigger {
                     // Save a universe snapshot so that we can resume in case of failure
-                    universe_integrator.prepare_for_recovery_snapshot(&mut universe_history_writer);
-                    posidonius::output::write_recovery_snapshot(&universe_integrator_snapshot_path, &universe_integrator);
+                    boxed_universe_integrator.write_recovery_snapshot(&universe_integrator_snapshot_path, &mut universe_history_writer);
                 }
             },
-            Err(e) => { println!("[ERROR {} UTC] {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), e); break; }
+            Err(e) => { println!("[WARNING {} UTC] {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), e); break; }
         };
     }
 
     let t2 = time::precise_time_s();
     let d = t2 - t1;
-    println!("[INFO {} UTC] Execution time: {} seconds", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), d);
+    if !resume {
+        println!("[INFO {} UTC] Execution time: {} seconds", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), d);
+    } else {
+        println!("[INFO {} UTC] Execution time since last resume: {} seconds", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), d);
+    }
 }
 

@@ -6,12 +6,8 @@ use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTI
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::particles::Axes;
-use super::output::{write_historic_snapshot};
+use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
-use serde_json;
-use bincode;
-use std::io::{BufReader};
-use std::io::Read;
 use std::path::Path;
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
@@ -131,6 +127,7 @@ impl Hash for WHFast {
 }
 
 impl WHFast {
+
     pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe, alternative_coordinates_type: CoordinatesType) -> WHFast {
         let particles_alternative_coordinates = [AlternativeCoordinates{mass: 0., mass_g: 0., position: Axes{x: 0., y:0., z:0.}, velocity: Axes{x: 0., y:0., z:0.}, acceleration: Axes{x: 0., y:0., z:0.}}; MAX_PARTICLES];
         let mut universe_integrator = WHFast {
@@ -157,61 +154,46 @@ impl WHFast {
         universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
         universe_integrator
     }
-    
-    pub fn restore_snapshot(universe_integrator_snapshot_path: &Path, verify_integrity: bool) -> Result<WHFast, String> {
-        let mut universe_integrator: WHFast;
-        if universe_integrator_snapshot_path.exists() {
-            // Open the path in read-only mode, returns `io::Result<File>`
-            let mut snapshot_file = match File::open(&universe_integrator_snapshot_path) {
-                // The `description` method of `io::Error` returns a string that
-                // describes the error
-                Err(why) => return Err(format!("Couldn't open {}: {}", universe_integrator_snapshot_path.display(), why)),
-                Ok(file) => file,
-            };
 
-
-            if universe_integrator_snapshot_path.extension().unwrap() == "json" { 
-                //// Deserialize using `json::decode`
-                let mut json_encoded = String::new();
-                match snapshot_file.read_to_string(&mut json_encoded) {
-                    Err(why) => return Err(format!("Couldn't read {}: {}", universe_integrator_snapshot_path.display(), why)),
-                    Ok(_) => {}
-                }
-                universe_integrator = serde_json::from_str(&json_encoded).unwrap();
-            } else {
-                let mut reader = BufReader::new(snapshot_file);
-                universe_integrator = bincode::deserialize_from(&mut reader, bincode::Infinite).unwrap();
-            }
-            if universe_integrator.hash == 0 {
-                if verify_integrity && universe_integrator.current_time != 0. {
-                    panic!("[PANIC {} UTC] File '{}' has a zeroed hash (i.e., new simulation) but a current time different from zero ({})", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display(), universe_integrator.current_time)
-                }
-                println!("[INFO {} UTC] Created new simulation based on '{}'.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
-                // Initialize physical values
-                let current_time = 0.;
-                universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
-                universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
-            } else {
-                // Verify hash for this universe at this moment of time
-                let mut s = DefaultHasher::new();
-                let restored_hash = universe_integrator.hash;
-                universe_integrator.hash = 0;
-                universe_integrator.hash(&mut s);
-                let computed_hash = s.finish();
-                if verify_integrity && restored_hash != computed_hash {
-                    panic!("[PANIC {} UTC] File '{}' seems corrupted because computed hash '{}' does not match restored hash '{}'", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display(), computed_hash, restored_hash)
-                }
-                universe_integrator.hash = restored_hash;
-                println!("[INFO {} UTC] Restored previous simulation from '{}'.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
-            }
-            return Ok(universe_integrator);
-        } else {
-            return Err(format!("File does not exist"));
-        }
-    }
 }
 
 impl Integrator for WHFast {
+
+    fn get_n_historic_snapshots(&self) -> usize {
+        self.n_historic_snapshots
+    }
+
+    fn get_n_particles(&self) -> usize {
+        self.universe.n_particles
+    }
+
+    fn get_current_time(&self) -> f64 {
+        self.current_time
+    }
+
+    fn set_snapshot_periods(&mut self, historic_snapshot_period: f64, recovery_snapshot_period: f64) {
+        if historic_snapshot_period > 0. && self.historic_snapshot_period != historic_snapshot_period {
+            println!("[INFO {} UTC] The historic snapshot period changed from {} to {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.historic_snapshot_period, historic_snapshot_period);
+            self.historic_snapshot_period = historic_snapshot_period;
+        } else {
+            println!("[INFO {} UTC] A historic snapshot will be saved every {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.historic_snapshot_period);
+        }
+        
+        if recovery_snapshot_period > 0. && self.recovery_snapshot_period != recovery_snapshot_period {
+            println!("[INFO {} UTC] The recovery snapshot period changed from {} to {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.recovery_snapshot_period, recovery_snapshot_period);
+            self.recovery_snapshot_period = recovery_snapshot_period;
+        } else {
+            println!("[INFO {} UTC] A recovery snapshot will be saved every {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.recovery_snapshot_period);
+        }
+    }
+
+    fn initialize_physical_values(&mut self) {
+        if self.current_time != 0. {
+            panic!("Physical values cannot be initialized on a resumed simulation");
+        }
+        self.universe.calculate_norm_spin(); // Needed for evolution
+        self.universe.calculate_particles_evolving_quantities(self.current_time); // Make sure we start with the good initial values
+    }
 
     fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>, silent_mode: bool) -> Result<bool, String> {
         // Output
@@ -293,13 +275,13 @@ impl Integrator for WHFast {
 
         // Return
         if self.current_time+self.time_step > self.universe.time_limit {
-            Err("reached maximum time limit.".to_string())
+            Err("Reached maximum time limit.".to_string())
         } else {
             Ok(first_snapshot_trigger || recovery_snapshot_time_trigger)
         }
     }
 
-    fn prepare_for_recovery_snapshot(&mut self, universe_history_writer: &mut BufWriter<File>) {
+    fn write_recovery_snapshot(&mut self, snapshot_path: &Path, universe_history_writer: &mut BufWriter<File>) {
         self.last_recovery_snapshot_time = self.current_time;
         universe_history_writer.flush().unwrap();
         // Compute hash for this universe at this moment of time
@@ -307,6 +289,7 @@ impl Integrator for WHFast {
         let mut s = DefaultHasher::new();
         self.hash(&mut s);
         self.hash = s.finish();
+        write_recovery_snapshot(&snapshot_path, &self);
     }
 
 }
