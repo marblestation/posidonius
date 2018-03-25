@@ -146,9 +146,9 @@ impl Integrator for LeapFrog {
         self.inertial_to_heliocentric_posvel();
         // Calculate non-gravity accelerations.
         let evolution = true;
-        let dspin_dt = true;
+        let dangular_momentum_dt_per_moment_of_inertia = true;
         let accelerations = false;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
 
 
         // A 'DKD'-like integrator will do the first 'D' part.
@@ -160,9 +160,9 @@ impl Integrator for LeapFrog {
 
         // Calculate non-gravity accelerations.
         let evolution = true;
-        let dspin_dt = true;
+        let dangular_momentum_dt_per_moment_of_inertia = true;
         let accelerations = true;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
 
 
         // A 'DKD'-like integrator will do the 'KD' part.
@@ -201,13 +201,13 @@ impl LeapFrog {
             particle.inertial_position.z += self.half_time_step * particle.inertial_velocity.z;
 
             if particle.moment_of_inertia_ratio != 1. {
-                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x;
-                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y;
-                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z;
+                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.x;
+                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
+                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             } else {
-                particle.spin.x = particle.spin.x + self.half_time_step * particle.dspin_dt.x;
-                particle.spin.y = particle.spin.y + self.half_time_step * particle.dspin_dt.y;
-                particle.spin.z = particle.spin.z + self.half_time_step * particle.dspin_dt.z;
+                particle.spin.x = particle.spin.x + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.x;
+                particle.spin.y = particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
+                particle.spin.z = particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             }
             if particle.wind_factor != 0. {
                 // TODO: Verify wind factor
@@ -230,13 +230,13 @@ impl LeapFrog {
             particle.inertial_position.z += self.half_time_step * particle.inertial_velocity.z;
 
             if particle.moment_of_inertia_ratio != 1. {
-                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dspin_dt.x;
-                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dspin_dt.y;
-                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dspin_dt.z;
+                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.x;
+                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
+                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             } else {
-                particle.spin.x = particle.spin.x + self.half_time_step * particle.dspin_dt.x;
-                particle.spin.y = particle.spin.y + self.half_time_step * particle.dspin_dt.y;
-                particle.spin.z = particle.spin.z + self.half_time_step * particle.dspin_dt.z;
+                particle.spin.x = particle.spin.x + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.x;
+                particle.spin.y = particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
+                particle.spin.z = particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             }
             if particle.wind_factor != 0. {
                 // TODO: Verify wind factor

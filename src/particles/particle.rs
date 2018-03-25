@@ -43,11 +43,13 @@ pub struct Particle {
     pub orthogonal_component_of_the_force_induced_by_planet_rotation: f64,
     pub denergy_dt: f64,
     pub radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass: f64, // needed to compute denergy_dt
-    pub torque_due_to_tides: Axes, // Force
-    pub torque_induced_by_rotational_flattening: Axes, // Force
+    pub dangular_momentum_dt_due_to_tides: Axes, // Force
+    pub dangular_momentum_dt_induced_by_rotational_flattening: Axes, // Force
+    pub dangular_momentum_dt: Axes, // Force
     pub spin: Axes,
-    pub dspin_dt: Axes,
+    pub dangular_momentum_dt_per_moment_of_inertia: Axes,
     pub moment_of_inertia_ratio: f64, // Spin related
+    pub moment_of_inertia: f64, // Spin related
     //
     pub wind_k_factor: f64,
     pub wind_rotation_saturation: f64,

@@ -235,33 +235,33 @@ impl Integrator for WHFast {
         if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
             // - First part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
             let evolution = true;
-            let dspin_dt = true;
+            let dangular_momentum_dt_per_moment_of_inertia = true;
             let accelerations = false;
-            self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+            self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms); // changes inertial accelerations
             self.save_current_spin();
             self.spin_step(half_time_step);
             //..................................................................
             let evolution = false; // Only evolve once per step (evolving more than once for a given current time will lead to a wrong computation of the moment of inertia)
-            let dspin_dt = false;
+            let dangular_momentum_dt_per_moment_of_inertia = false;
             let accelerations = true; 
-            self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+            self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms); // changes inertial accelerations
             self.interaction_step(half_time_step); // changes alternative velocities using inertial accelerations
             self.current_time += self.half_time_step;
             //..................................................................
             // - Second part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
             let evolution = false; // Only evolve once per step (evolving more than once for a given current time will lead to a wrong computation of the moment of inertia)
-            let dspin_dt = true;
+            let dangular_momentum_dt_per_moment_of_inertia = true;
             let accelerations = false; 
-            self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+            self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms); // changes inertial accelerations
             self.restore_last_spin();
             self.spin_step(time_step);
             //..................................................................
             self.interaction_step(half_time_step); // changes alternative velocities using inertial accelerations
         } else {
             let evolution = true;
-            let dspin_dt = false;
+            let dangular_momentum_dt_per_moment_of_inertia = false;
             let accelerations = true; 
-            self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+            self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms); // changes inertial accelerations
             self.interaction_step(time_step); // changes alternative velocities using inertial accelerations
             self.current_time += self.half_time_step;
         }
@@ -336,13 +336,13 @@ impl WHFast {
     fn spin_step(&mut self, _dt: f64) {
         for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
             if particle.moment_of_inertia_ratio != 1. {
-                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + _dt * particle.dspin_dt.x;
-                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + _dt * particle.dspin_dt.y;
-                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + _dt * particle.dspin_dt.z;
+                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.x;
+                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.y;
+                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             } else {
-                particle.spin.x = particle.spin.x + _dt * particle.dspin_dt.x;
-                particle.spin.y = particle.spin.y + _dt * particle.dspin_dt.y;
-                particle.spin.z = particle.spin.z + _dt * particle.dspin_dt.z;
+                particle.spin.x = particle.spin.x + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.x;
+                particle.spin.y = particle.spin.y + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.y;
+                particle.spin.z = particle.spin.z + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             }
             if particle.wind_factor != 0. {
                 // TODO: Verify wind factor

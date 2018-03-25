@@ -99,6 +99,11 @@ if __name__ == "__main__":
     #star2_evolution_type = posidonius.NonEvolving()
     universe.add_particle(star2_mass, star2_radius, star2_dissipation_factor, star2_dissipation_factor_scale, star2_radius_of_gyration_2, star2_love_number, star2_fluid_love_number, star2_position, star2_velocity, star2_spin, star2_evolution_type)
 
-    universe.write(filename, whfast_alternative_coordinates="DemocraticHeliocentric")
+    #whfast_alternative_coordinates="DemocraticHeliocentric"
+    #whfast_alternative_coordinates="WHDS"
+    #whfast_alternative_coordinates="Jacobi"
+    #universe.write(filename, integrator="WHFast", whfast_alternative_coordinates=whfast_alternative_coordinates)
+    universe.write(filename, integrator="IAS15")
+    #universe.write(filename, integrator="LeapFrog")
 
 

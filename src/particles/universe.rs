@@ -166,13 +166,13 @@ impl Universe {
         //}
     }
 
-    pub fn calculate_additional_effects(&mut self, current_time: f64, evolution: bool, dspin_dt: bool, accelerations: bool, ignored_gravity_terms: IgnoreGravityTerms) {
+    pub fn calculate_additional_effects(&mut self, current_time: f64, evolution: bool, dangular_momentum_dt_per_moment_of_inertia: bool, accelerations: bool, ignored_gravity_terms: IgnoreGravityTerms) {
         if (evolution && self.evolving_particles_exist) || 
-            ((dspin_dt || accelerations) && self.consider_rotational_flattening) {
+            ((dangular_momentum_dt_per_moment_of_inertia || accelerations) && self.consider_rotational_flattening) {
             self.calculate_norm_spin(); // Needed for rotational flattening (torque and accelerations) and evolution
         }
 
-        if (dspin_dt && (self.consider_tides || self.consider_rotational_flattening)) ||
+        if (dangular_momentum_dt_per_moment_of_inertia && (self.consider_tides || self.consider_rotational_flattening)) ||
             (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None)) {
             self.calculate_distance_and_velocities(); // Needed for tides, rotational flattening, general relativity and evolution
         }
@@ -181,19 +181,19 @@ impl Universe {
             self.calculate_particles_evolving_quantities(current_time);
         }
 
-        if dspin_dt && self.wind_effects_exist {
+        if dangular_momentum_dt_per_moment_of_inertia && self.wind_effects_exist {
             self.calculate_wind_factor();
         }
 
-        if (dspin_dt && (self.consider_tides || self.consider_rotational_flattening)) ||
+        if (dangular_momentum_dt_per_moment_of_inertia && (self.consider_tides || self.consider_rotational_flattening)) ||
             (accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None)) {
 
             self.calculate_orthogonal_components(); // Needed for torques and additional accelerations
 
-            if dspin_dt && (self.consider_tides || self.consider_rotational_flattening) {
+            if dangular_momentum_dt_per_moment_of_inertia && (self.consider_tides || self.consider_rotational_flattening) {
                 // Not needed for additional accelerations
-                self.calculate_torques(); // Needed for dspin_dt
-                self.calculate_dspin_dt();
+                self.calculate_torques(); // Needed for dangular_momentum_dt_per_moment_of_inertia
+                self.calculate_dangular_momentum_dt_per_moment_of_inertia();
             }
 
             if accelerations && (self.consider_tides || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None) {
@@ -303,7 +303,7 @@ impl Universe {
     // TIDES
     fn calculate_torque_due_to_tides(&mut self, central_body:bool) {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
-            let mut torque = Axes{x: 0., y: 0., z:0.};
+            let mut dangular_momentum_dt = Axes{x: 0., y: 0., z:0.};
             let mut reference_spin = star.spin.clone();
             let mut orthogonal_component_of_the_tidal_force: f64;
             let mut reference_rscalspin: f64;
@@ -323,61 +323,65 @@ impl Universe {
 
                 //// Torque calculation (star)
                 // - Equation 8-9 from Bolmont et al. 2015
-                let n_tid_x: f64 = orthogonal_component_of_the_tidal_force * (distance * reference_spin.x - reference_rscalspin*particle.position.x/distance - 1.0/distance
+                let torque_due_to_tides_x: f64 = orthogonal_component_of_the_tidal_force 
+                                * (distance * reference_spin.x - reference_rscalspin*particle.position.x/distance - 1.0/distance
                                 * (particle.position.y*particle.velocity.z - particle.position.z*particle.velocity.y) );
 
-                let n_tid_y :f64 = orthogonal_component_of_the_tidal_force * (distance * reference_spin.y - reference_rscalspin*particle.position.y/distance - 1.0/distance
+                let torque_due_to_tides_y :f64 = orthogonal_component_of_the_tidal_force 
+                                * (distance * reference_spin.y - reference_rscalspin*particle.position.y/distance - 1.0/distance
                                 * (particle.position.z*particle.velocity.x - particle.position.x*particle.velocity.z) );
 
-                let n_tid_z: f64 = orthogonal_component_of_the_tidal_force * (distance * reference_spin.z - reference_rscalspin*particle.position.z/distance - 1.0/distance
+                let torque_due_to_tidez_z: f64 = orthogonal_component_of_the_tidal_force 
+                                * (distance * reference_spin.z - reference_rscalspin*particle.position.z/distance - 1.0/distance
                                 * (particle.position.x*particle.velocity.y - particle.position.y*particle.velocity.x) );
 
+                let factor = - star.mass / (star.mass + particle.mass);
                 if central_body {
                     // Integration of the spin (total torque tides):
-                    //let factor = star.mass_g / (star.mass_g + particle.mass_g);
-                    ////let factor = star.mass / (star.mass + particle.mass);
-                    let factor = K2 / (star.mass_g + particle.mass_g); // Simplification because later on we will devide by star.mass_g [search SIMPLIFICATION]
-                    //let factor = 1. / (star.mass + particle.mass);
-                    torque.x += factor * n_tid_x;
-                    torque.y += factor * n_tid_y;
-                    torque.z += factor * n_tid_z;
+                    dangular_momentum_dt.x += factor * torque_due_to_tides_x;
+                    dangular_momentum_dt.y += factor * torque_due_to_tides_y;
+                    dangular_momentum_dt.z += factor * torque_due_to_tidez_z;
                 } else {
-                    particle.torque_due_to_tides.x = n_tid_x;
-                    particle.torque_due_to_tides.y = n_tid_y;
-                    particle.torque_due_to_tides.z = n_tid_z;
+                    particle.dangular_momentum_dt_due_to_tides.x = factor * torque_due_to_tides_x;
+                    particle.dangular_momentum_dt_due_to_tides.y = factor * torque_due_to_tides_y;
+                    particle.dangular_momentum_dt_due_to_tides.z = factor * torque_due_to_tidez_z;
                 }
 
             }
 
             if central_body {
                 // - Equation 25 from Bolmont et al. 2015
-                star.torque_due_to_tides.x = torque.x;
-                star.torque_due_to_tides.y = torque.y;
-                star.torque_due_to_tides.z = torque.z;
+                star.dangular_momentum_dt_due_to_tides.x = dangular_momentum_dt.x;
+                star.dangular_momentum_dt_due_to_tides.y = dangular_momentum_dt.y;
+                star.dangular_momentum_dt_due_to_tides.z = dangular_momentum_dt.z;
             }
         }
 
     }
 
 
-    fn calculate_dspin_dt(&mut self) {
+    fn calculate_dangular_momentum_dt_per_moment_of_inertia(&mut self) {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             // - Equation 25 from Bolmont et al. 2015
-            let factor = - 1. / (star.radius_of_gyration_2 * star.radius.powi(2)); // Simplification, we dont divide by star.mass_g because we did not mutliplied before (terms cancel out) [search SIMPLIFICATION]
-            star.dspin_dt.x = factor * (star.torque_due_to_tides.x + star.torque_induced_by_rotational_flattening.x);
-            star.dspin_dt.y = factor * (star.torque_due_to_tides.y + star.torque_induced_by_rotational_flattening.y);
-            star.dspin_dt.z = factor * (star.torque_due_to_tides.z + star.torque_induced_by_rotational_flattening.z);
+            star.dangular_momentum_dt.x = star.dangular_momentum_dt_due_to_tides.x + star.dangular_momentum_dt_induced_by_rotational_flattening.x;
+            star.dangular_momentum_dt.y = star.dangular_momentum_dt_due_to_tides.y + star.dangular_momentum_dt_induced_by_rotational_flattening.y;
+            star.dangular_momentum_dt.z = star.dangular_momentum_dt_due_to_tides.z + star.dangular_momentum_dt_induced_by_rotational_flattening.z;
+            // 
+            let factor = 1. / (star.moment_of_inertia);
+            star.dangular_momentum_dt_per_moment_of_inertia.x = factor * star.dangular_momentum_dt.x;
+            star.dangular_momentum_dt_per_moment_of_inertia.y = factor * star.dangular_momentum_dt.y;
+            star.dangular_momentum_dt_per_moment_of_inertia.z = factor * star.dangular_momentum_dt.z;
 
             for particle in particles.iter_mut() {
-                //let factor1 = star.mass_g / (star.mass_g + particle.mass_g);
-                //let factor2 = - K2 / (particle.mass_g * particle.radius_of_gyration_2 * particle.radius.powi(2));
-                //let factor = factor1 * factor2;
-                let factor = - K2 * star.mass_g / (particle.mass_g * (particle.mass_g + star.mass_g) 
-                                * particle.radius_of_gyration_2 * particle.radius.powi(2));
                 // - Equation 25 from Bolmont et al. 2015
-                particle.dspin_dt.x = factor * (particle.torque_due_to_tides.x + particle.torque_induced_by_rotational_flattening.x);
-                particle.dspin_dt.y = factor * (particle.torque_due_to_tides.y + particle.torque_induced_by_rotational_flattening.y);
-                particle.dspin_dt.z = factor * (particle.torque_due_to_tides.z + particle.torque_induced_by_rotational_flattening.z);
+                particle.dangular_momentum_dt.x = particle.dangular_momentum_dt_due_to_tides.x + particle.dangular_momentum_dt_induced_by_rotational_flattening.x;
+                particle.dangular_momentum_dt.y = particle.dangular_momentum_dt_due_to_tides.y + particle.dangular_momentum_dt_induced_by_rotational_flattening.y;
+                particle.dangular_momentum_dt.z = particle.dangular_momentum_dt_due_to_tides.z + particle.dangular_momentum_dt_induced_by_rotational_flattening.z;
+                //
+                let factor = 1. / (particle.moment_of_inertia);
+                particle.dangular_momentum_dt_per_moment_of_inertia.x = factor * particle.dangular_momentum_dt.x;
+                particle.dangular_momentum_dt_per_moment_of_inertia.y = factor * particle.dangular_momentum_dt.y;
+                particle.dangular_momentum_dt_per_moment_of_inertia.z = factor * particle.dangular_momentum_dt.z;
             }
         }
     }
@@ -460,7 +464,7 @@ impl Universe {
     }
 
     pub fn calculate_denergy_dt(&mut self) {
-        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+        if let Some((_, particles)) = self.particles[..self.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {
                 // - Equation 32 from Bolmont et al. 2015
                 //// Instantaneous energy loss dE/dt due to tides
@@ -473,8 +477,7 @@ impl Universe {
                             * ((particle.spin.y*particle.position.z - particle.spin.z*particle.position.y - particle.velocity.x) * particle.velocity.x
                             + (particle.spin.z*particle.position.x - particle.spin.x*particle.position.z - particle.velocity.y) * particle.velocity.y
                             + (particle.spin.x*particle.position.y - particle.spin.y*particle.position.x - particle.velocity.z) * particle.velocity.z))
-                            + star.mass_g/(star.mass_g + particle.mass_g) 
-                            * (particle.torque_due_to_tides.x*particle.spin.x + particle.torque_due_to_tides.y*particle.spin.y + particle.torque_due_to_tides.z*particle.spin.z);
+                            - (particle.dangular_momentum_dt_due_to_tides.x*particle.spin.x + particle.dangular_momentum_dt_due_to_tides.y*particle.spin.y + particle.dangular_momentum_dt_due_to_tides.z*particle.spin.z);
             }
         }
     }
@@ -651,7 +654,7 @@ impl Universe {
 
     fn calculate_torque_induced_by_rotational_flattening(&mut self, central_body:bool) {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
-            let mut torque = Axes{x: 0., y: 0., z:0.};
+            let mut dangular_momentum_dt = Axes{x: 0., y: 0., z:0.};
             let mut reference_spin = star.spin.clone();
             let mut orthogonal_component_of_the_force_induced_by_rotation: f64;
 
@@ -665,32 +668,32 @@ impl Universe {
                 
                 //// Torque calculation due to rotational flattening
                 // - Equation 17-18 from Bolmont et al. 2015
-                let n_rot_x: f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.y * reference_spin.z - particle.position.z * reference_spin.y);
-                let n_rot_y :f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.z * reference_spin.x - particle.position.x * reference_spin.z);
-                let n_rot_z: f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.x * reference_spin.y - particle.position.y * reference_spin.x);
+                let torque_induced_by_rotational_flattening_x: f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.y * reference_spin.z - particle.position.z * reference_spin.y);
+                let torque_induced_by_rotational_flattening_y :f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.z * reference_spin.x - particle.position.x * reference_spin.z);
+                let torque_induced_by_rotational_flattening_z: f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.x * reference_spin.y - particle.position.y * reference_spin.x);
 
+                let factor = - star.mass / (star.mass + particle.mass);
                 // - Equation 25 from Bolmont et al. 2015
                 if central_body {
                     // Integration of the spin (total torque rot):
                     //let factor = star.mass_g / (star.mass_g + particle.mass_g);
                     ////let factor = star.mass / (star.mass + particle.mass);
-                    let factor = K2 / (star.mass_g + particle.mass_g); // Simplification because later on we will divide by star.mass_g [search SIMPLIFICATION]
                     //let factor = 1. / (star.mass + particle.mass);
-                    torque.x += factor * n_rot_x;
-                    torque.y += factor * n_rot_y;
-                    torque.z += factor * n_rot_z;
+                    dangular_momentum_dt.x += factor * torque_induced_by_rotational_flattening_x;
+                    dangular_momentum_dt.y += factor * torque_induced_by_rotational_flattening_y;
+                    dangular_momentum_dt.z += factor * torque_induced_by_rotational_flattening_z;
                 } else {
-                    particle.torque_induced_by_rotational_flattening.x = n_rot_x;
-                    particle.torque_induced_by_rotational_flattening.y = n_rot_y;
-                    particle.torque_induced_by_rotational_flattening.z = n_rot_z;
+                    particle.dangular_momentum_dt_induced_by_rotational_flattening.x = factor * torque_induced_by_rotational_flattening_x;
+                    particle.dangular_momentum_dt_induced_by_rotational_flattening.y = factor * torque_induced_by_rotational_flattening_y;
+                    particle.dangular_momentum_dt_induced_by_rotational_flattening.z = factor * torque_induced_by_rotational_flattening_z;
                 }
             }
 
             if central_body {
                 // - Equation 25 from Bolmont et al. 2015
-                star.torque_induced_by_rotational_flattening.x = torque.x;
-                star.torque_induced_by_rotational_flattening.y = torque.y;
-                star.torque_induced_by_rotational_flattening.z = torque.z;
+                star.dangular_momentum_dt_induced_by_rotational_flattening.x = dangular_momentum_dt.x;
+                star.dangular_momentum_dt_induced_by_rotational_flattening.y = dangular_momentum_dt.y;
+                star.dangular_momentum_dt_induced_by_rotational_flattening.z = dangular_momentum_dt.z;
             }
         }
     }
@@ -878,7 +881,7 @@ impl Universe {
         for particle in self.particles[..self.n_particles].iter_mut() {
             if particle.wind_k_factor != 0. {
                 let threshold = (particle.norm_spin_vector_2).sqrt();
-                let factor = - K2 / (particle.mass_g * particle.radius_of_gyration_2 * particle.radius.powi(2));
+                let factor = - 1. / (particle.moment_of_inertia);
                 if threshold >= particle.wind_rotation_saturation {
                     // Friendly reminder that m(1) is in solar mass * K2
                     //tmp2 = hdt * K_wind * wsat_wind*wsat_wind * sqrt(Rsth*K2/(Rsun*m(1)))
@@ -909,6 +912,7 @@ impl Universe {
                 }
                 particle.radius = new_radius;
                 particle.radius_of_gyration_2 = new_radius_of_gyration_2;
+                particle.moment_of_inertia = particle.mass * particle.radius_of_gyration_2 * particle.radius.powi(2);
             } else {
                 particle.moment_of_inertia_ratio = 1.;
             }

@@ -144,6 +144,8 @@ if __name__ == "__main__":
     whfast_alternative_coordinates="DemocraticHeliocentric"
     #whfast_alternative_coordinates="WHDS"
     #whfast_alternative_coordinates="Jacobi"
-    universe.write(filename, whfast_alternative_coordinates=whfast_alternative_coordinates)
+    universe.write(filename, integrator="WHFast", whfast_alternative_coordinates=whfast_alternative_coordinates)
+    #universe.write(filename, integrator="IAS15")
+    #universe.write(filename, integrator="LeapFrog")
 
 

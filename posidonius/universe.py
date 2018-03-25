@@ -85,8 +85,9 @@ class Universe(object):
 
         particle['id'] = self._data['n_particles']
         particle['acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['torque_due_to_tides'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['torque_induced_by_rotational_flattening'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['dangular_momentum_dt_due_to_tides'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['dangular_momentum_dt_induced_by_rotational_flattening'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['dangular_momentum_dt'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['lag_angle'] = 0.0
         particle['mass_g'] = particle['mass'] * K2
         if self._data['n_particles'] == 0:
@@ -116,7 +117,8 @@ class Universe(object):
             self._data['wind_effects_exist'] = True;
 
         particle['moment_of_inertia_ratio'] = 1.0
-        particle['dspin_dt'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['moment_of_inertia'] = particle['mass'] * particle['radius_of_gyration_2'] * particle['radius']*particle['radius']
+        particle['dangular_momentum_dt_per_moment_of_inertia'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['wind_factor'] = 0.
         particle['distance'] = 0.0
         particle['acceleration_induced_by_rotational_flattering'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
@@ -374,13 +376,13 @@ class Universe(object):
         return data
 
     def write(self, filename, integrator="WHFast", whfast_alternative_coordinates="DemocraticHeliocentric"):
-        if integrator == "WHFast":
+        if integrator.lower() == "whfast":
             universe_integrator = WHFast(whfast_alternative_coordinates, self._time_step, self._recovery_snapshot_period, self._historic_snapshot_period, self)
             universe_integrator.write(filename)
-        elif integrator == "Ias15":
+        elif integrator.lower() == "ias15":
             universe_integrator = Ias15(self._time_step, self._recovery_snapshot_period, self._historic_snapshot_period, self)
             universe_integrator.write(filename)
-        elif integrator == "LeapFrog":
+        elif integrator.lower() == "leapfrog":
             universe_integrator = LeapFrog(self._time_step, self._recovery_snapshot_period, self._historic_snapshot_period, self)
             universe_integrator.write(filename)
         else:

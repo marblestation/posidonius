@@ -42,12 +42,25 @@ pub struct Ias15 {
     er: Vec<Vec<f64>>, // Previous g
     at: Vec<f64>, // Temporary buffer for acceleration
     x0: Vec<f64>, // Temporary buffer for position (used for initial values at h=0)
-    v0: Vec<f64>, // Temporary buffer for velcoity (used for initial values at h=0)
+    v0: Vec<f64>, // Temporary buffer for velocity (used for initial values at h=0)
     a0: Vec<f64>, // Temporary buffer for acceleration (used for initial values at h=0)
-    r0: Vec<f64>, // Temporary buffer for acceleration (used for initial values at h=0)
+    radius0: Vec<f64>, // Temporary buffer for radius (used for initial values at h=0)
+    radius_of_gyration_2_0: Vec<f64>, // Temporary buffer for radius of gyration**2 (used for initial values at h=0)
+    // spin coeff
+    sb: Vec<Vec<f64>>, // Coefficient b: acceleration dimension
+    sbr: Vec<Vec<f64>>, // Previous b
+    sg: Vec<Vec<f64>>, // Coefficient g (it can also be expressed in terms of b)
+    se: Vec<Vec<f64>>,
+    ser: Vec<Vec<f64>>, // Previous g
+    dangular_momentum_dtt: Vec<f64>, // Temporary buffer for dangular_momentum_dt
+    spin0: Vec<f64>, // Temporary buffer for spin0 (used for initial values at h=0)
+    dangular_momentum_dt0: Vec<f64>, // Temporary buffer for dangular_momentum_dt (used for initial values at h=0)
+    angular_momentum0: Vec<f64>, // Temporary buffer for angular_momentum (used for initial values at h=0)
+    moment_of_inertia0: Vec<f64>, // Temporary buffer for moment of inertia (used for initial values at h=0)
     // Compensated summation coefficients
-    csx : Vec<f64>,
-    csv : Vec<f64>,
+    csx : Vec<f64>, // position
+    csv : Vec<f64>, // velocity
+    css : Vec<f64>, // spin
     s: [f64; 9], // Summation coefficients
 }
 
@@ -86,9 +99,21 @@ impl Ias15 {
                     x0  : vec![0.; 3*n_particles],
                     v0  : vec![0.; 3*n_particles],
                     a0  : vec![0.; 3*n_particles],
-                    r0  : vec![0.; n_particles],
+                    radius0  : vec![0.; n_particles],
+                    radius_of_gyration_2_0  : vec![0.; n_particles],
+                    sb :   (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    sg  :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    se  :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    sbr :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    ser :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
+                    dangular_momentum_dtt  : vec![0.; 3*n_particles],
+                    spin0  : vec![0.; 3*n_particles],
+                    dangular_momentum_dt0  : vec![0.; 3*n_particles],
+                    angular_momentum0  : vec![0.; 3*n_particles],
+                    moment_of_inertia0  : vec![0.; n_particles],
                     csx : vec![0.; 3*n_particles],
                     csv : vec![0.; 3*n_particles],
+                    css : vec![0.; 3*n_particles],
                     s   : [0.; 9],
                     };
         // Initialize physical values
@@ -142,15 +167,15 @@ impl Integrator for Ias15 {
     fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>, silent_mode: bool) -> Result<bool, String> {
         // Output
         let first_snapshot_trigger = self.last_historic_snapshot_time < 0.;
-        let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
-        let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
+        let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time - self.time_step;
+        let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time - self.time_step;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
             self.inertial_to_heliocentric_posvel();
             if self.universe.consider_tides {
                 self.universe.calculate_denergy_dt();
             }
             write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
-            self.last_historic_snapshot_time = self.n_historic_snapshots as f64*self.historic_snapshot_period; // Instead of self.current_time to avoid small deviations
+            self.last_historic_snapshot_time = self.current_time;
             self.n_historic_snapshots += 1;
             let current_time_years = self.current_time/365.25;
             if ! silent_mode {
@@ -166,9 +191,9 @@ impl Integrator for Ias15 {
         self.inertial_to_heliocentric_posvel();
         // Calculate non-gravity accelerations.
         let evolution = true;
-        let dspin_dt = true;
+        let dangular_momentum_dt_per_moment_of_inertia = true;
         let accelerations = true;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
 
         self.integrator();
         self.current_iteration += 1;
@@ -255,7 +280,20 @@ impl Ias15 {
                 self.a0[3*k]   = particle.inertial_acceleration.x;
                 self.a0[3*k+1] = particle.inertial_acceleration.y;  
                 self.a0[3*k+2] = particle.inertial_acceleration.z;
-                self.r0[k]   = particle.radius; // Required to correctly compute the momen of inertia if a step is repeated after evolution was applied
+                self.radius0[k]   = particle.radius; // Required to correctly compute the momen of inertia if a step is repeated after evolution was applied
+                self.radius_of_gyration_2_0[k]   = particle.radius_of_gyration_2;
+                self.moment_of_inertia0[k]   = particle.moment_of_inertia;
+                if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                    self.spin0[3*k]   = particle.spin.x;
+                    self.spin0[3*k+1] = particle.spin.y;
+                    self.spin0[3*k+2] = particle.spin.z;
+                    self.dangular_momentum_dt0[3*k]   = particle.dangular_momentum_dt.x;
+                    self.dangular_momentum_dt0[3*k+1] = particle.dangular_momentum_dt.y;
+                    self.dangular_momentum_dt0[3*k+2] = particle.dangular_momentum_dt.z;
+                    self.angular_momentum0[3*k] = particle.moment_of_inertia*particle.spin.x;
+                    self.angular_momentum0[3*k+1] = particle.moment_of_inertia*particle.spin.y;
+                    self.angular_momentum0[3*k+2] = particle.moment_of_inertia*particle.spin.z;
+                }
             }
 
             // Find g values from b values predicted at the last call (Eqs. 7 of Everhart)
@@ -267,6 +305,16 @@ impl Ias15 {
                 self.g[4][k] = self.b[6][k]*d[19] + self.b[5][k]*d[14] + self.b[4][k];
                 self.g[5][k] = self.b[6][k]*d[20] + self.b[5][k];
                 self.g[6][k] = self.b[6][k];
+
+                if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                    self.sg[0][k] = self.sb[6][k]*d[15] + self.sb[5][k]*d[10] + self.sb[4][k]*d[6] + self.sb[3][k]*d[3]  + self.sb[2][k]*d[1]  + self.sb[1][k]*d[0]  + self.sb[0][k];
+                    self.sg[1][k] = self.sb[6][k]*d[16] + self.sb[5][k]*d[11] + self.sb[4][k]*d[7] + self.sb[3][k]*d[4]  + self.sb[2][k]*d[2]  + self.sb[1][k];
+                    self.sg[2][k] = self.sb[6][k]*d[17] + self.sb[5][k]*d[12] + self.sb[4][k]*d[8] + self.sb[3][k]*d[5]  + self.sb[2][k];
+                    self.sg[3][k] = self.sb[6][k]*d[18] + self.sb[5][k]*d[13] + self.sb[4][k]*d[9] + self.sb[3][k];
+                    self.sg[4][k] = self.sb[6][k]*d[19] + self.sb[5][k]*d[14] + self.sb[4][k];
+                    self.sg[5][k] = self.sb[6][k]*d[20] + self.sb[5][k];
+                    self.sg[6][k] = self.sb[6][k];
+                }
             }
             //println!("\n{}\n", self.g[0][1]);
 
@@ -358,16 +406,33 @@ impl Ias15 {
                             let k2 = 3*i+2;
 
                             // Equation 6 in paper 2015MNRAS.446.1424R
-                            let vk0 =  self.csv[k0] + self.s[7]*self.b[6][k0] + self.s[6]*self.b[5][k0] + self.s[5]*self.b[4][k0] + self.s[4]*self.b[3][k0] + self.s[3]*self.b[2][k0] + self.s[2]*self.b[1][k0] + self.s[1]*self.b[0][k0] + self.s[0]*self.a0[k0];
+                            let vk0 =  -self.csv[k0] + self.s[7]*self.b[6][k0] + self.s[6]*self.b[5][k0] + self.s[5]*self.b[4][k0] + self.s[4]*self.b[3][k0] + self.s[3]*self.b[2][k0] + self.s[2]*self.b[1][k0] + self.s[1]*self.b[0][k0] + self.s[0]*self.a0[k0];
                             particle.inertial_velocity.x = vk0 + self.v0[k0];
-                            let vk1 =  self.csv[k1] + self.s[7]*self.b[6][k1] + self.s[6]*self.b[5][k1] + self.s[5]*self.b[4][k1] + self.s[4]*self.b[3][k1] + self.s[3]*self.b[2][k1] + self.s[2]*self.b[1][k1] + self.s[1]*self.b[0][k1] + self.s[0]*self.a0[k1];
+                            let vk1 =  -self.csv[k1] + self.s[7]*self.b[6][k1] + self.s[6]*self.b[5][k1] + self.s[5]*self.b[4][k1] + self.s[4]*self.b[3][k1] + self.s[3]*self.b[2][k1] + self.s[2]*self.b[1][k1] + self.s[1]*self.b[0][k1] + self.s[0]*self.a0[k1];
                             particle.inertial_velocity.y = vk1 + self.v0[k1];
-                            let vk2 =  self.csv[k2] + self.s[7]*self.b[6][k2] + self.s[6]*self.b[5][k2] + self.s[5]*self.b[4][k2] + self.s[4]*self.b[3][k2] + self.s[3]*self.b[2][k2] + self.s[2]*self.b[1][k2] + self.s[1]*self.b[0][k2] + self.s[0]*self.a0[k2];
+                            let vk2 =  -self.csv[k2] + self.s[7]*self.b[6][k2] + self.s[6]*self.b[5][k2] + self.s[5]*self.b[4][k2] + self.s[4]*self.b[3][k2] + self.s[3]*self.b[2][k2] + self.s[2]*self.b[1][k2] + self.s[1]*self.b[0][k2] + self.s[0]*self.a0[k2];
                             particle.inertial_velocity.z = vk2 + self.v0[k2];
+                        }
+                        
+                        if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                            // Spin integration
+                            // Predict velocities at interval n using self.b values
+                            for (i, particle) in self.universe.particles[..self.universe.n_particles].iter_mut().enumerate() {
+                                let k0 = 3*i+0;
+                                let k1 = 3*i+1;
+                                let k2 = 3*i+2;
+
+                                // Equation 6 in paper 2015MNRAS.446.1424R
+                                let angular_momentum_k0 =  -self.css[k0] + self.s[7]*self.sb[6][k0] + self.s[6]*self.sb[5][k0] + self.s[5]*self.sb[4][k0] + self.s[4]*self.sb[3][k0] + self.s[3]*self.sb[2][k0] + self.s[2]*self.sb[1][k0] + self.s[1]*self.sb[0][k0] + self.s[0]*self.dangular_momentum_dt0[k0];
+                                particle.spin.x = (angular_momentum_k0 + self.angular_momentum0[k0])/particle.moment_of_inertia;
+                                let angular_momentum_k1 =  -self.css[k1] + self.s[7]*self.sb[6][k1] + self.s[6]*self.sb[5][k1] + self.s[5]*self.sb[4][k1] + self.s[4]*self.sb[3][k1] + self.s[3]*self.sb[2][k1] + self.s[2]*self.sb[1][k1] + self.s[1]*self.sb[0][k1] + self.s[0]*self.dangular_momentum_dt0[k1];
+                                particle.spin.y = (angular_momentum_k1 + self.angular_momentum0[k1])/particle.moment_of_inertia;
+                                let angular_momentum_k2 =  -self.css[k2] + self.s[7]*self.sb[6][k2] + self.s[6]*self.sb[5][k2] + self.s[5]*self.sb[4][k2] + self.s[4]*self.sb[3][k2] + self.s[3]*self.sb[2][k2] + self.s[2]*self.sb[1][k2] + self.s[1]*self.sb[0][k2] + self.s[0]*self.dangular_momentum_dt0[k2];
+                                particle.spin.z = (angular_momentum_k2 + self.angular_momentum0[k2])/particle.moment_of_inertia;
+                            }
                         }
                     }
                     //println!("\n{:?}\n",self.universe.particles[1].inertial_velocity);
-
 
                     // Calculate accelerations.
                     let ignore_gravity_terms = IgnoreGravityTerms::None;
@@ -376,15 +441,22 @@ impl Ias15 {
                     self.inertial_to_heliocentric_posvel();
                     // Calculate non-gravity accelerations.
                     let evolution = true;
-                    let dspin_dt = true;
+                    let dangular_momentum_dt_per_moment_of_inertia = true;
                     let accelerations = true;
-                    self.universe.calculate_additional_effects(self.current_time, evolution, dspin_dt, accelerations, ignored_gravity_terms);
+                    self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
                     //println!("{:?}", self.universe.particles[1].inertial_acceleration);
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.inertial_acceleration.x;
                         self.at[3*k+1] = particle.inertial_acceleration.y;  
                         self.at[3*k+2] = particle.inertial_acceleration.z;
+
+                        if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                            // angular_momentum_dt = dmoment_of_inertia_spin_dt
+                            self.dangular_momentum_dtt[3*k]   = particle.dangular_momentum_dt.x;
+                            self.dangular_momentum_dtt[3*k+1] = particle.dangular_momentum_dt.y;
+                            self.dangular_momentum_dtt[3*k+2] = particle.dangular_momentum_dt.z;
+                        }
                     }
 
                     // Update G values using Eqs. 4 of Everhart, and update B values using Eqs. 5
@@ -395,6 +467,11 @@ impl Ias15 {
                                     self.g[0][k]  = (self.at[k] - self.a0[k]) / r[0];
                                     self.b[0][k] += self.g[0][k] - tmp;
                                     //println!("{}", self.b[0][k]);
+                                    if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                        let stmp = self.sg[0][k];
+                                        self.sg[0][k]  = (self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k]) / r[0];
+                                        self.sb[0][k] += self.sg[0][k] - stmp;
+                                    }
                                 }
                             },
                         2 => {
@@ -406,6 +483,14 @@ impl Ias15 {
                                     self.b[0][k] += tmp * c[0];
                                     self.b[1][k] += tmp;
                                     //println!("{}", self.b[1][k]);
+                                    if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                        let mut stmp = self.sg[1][k];
+                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        self.sg[1][k] = (sgk/r[1] - self.sg[0][k])/r[2];
+                                        stmp = self.sg[1][k] - stmp;
+                                        self.sb[0][k] += stmp * c[0];
+                                        self.sb[1][k] += stmp;
+                                    }
                                 }
                             },
                         3 => {
@@ -418,6 +503,15 @@ impl Ias15 {
                                     self.b[1][k] += tmp * c[2];
                                     self.b[2][k] += tmp;
                                     //println!("{}", self.b[2][k]);
+                                    if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                        let mut stmp = self.sg[2][k];
+                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        self.sg[2][k] = ((sgk/r[3] - self.sg[0][k])/r[4] - self.sg[1][k])/r[5];
+                                        stmp = self.sg[2][k] - stmp;
+                                        self.sb[0][k] += stmp * c[1];
+                                        self.sb[1][k] += stmp * c[2];
+                                        self.sb[2][k] += stmp;
+                                    }
                                 }
                             },
                         4 => {
@@ -431,6 +525,16 @@ impl Ias15 {
                                     self.b[2][k] += tmp * c[5];
                                     self.b[3][k] += tmp;
                                     //println!("{}", self.b[3][k]);
+                                    if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                        let mut stmp = self.sg[3][k];
+                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        self.sg[3][k] = (((sgk/r[6] - self.sg[0][k])/r[7] - self.sg[1][k])/r[8] - self.sg[2][k])/r[9];
+                                        stmp = self.sg[3][k] - stmp;
+                                        self.sb[0][k] += stmp * c[3];
+                                        self.sb[1][k] += stmp * c[4];
+                                        self.sb[2][k] += stmp * c[5];
+                                        self.sb[3][k] += stmp;
+                                    }
                                 }
                             },
                         5 => {
@@ -445,6 +549,17 @@ impl Ias15 {
                                     self.b[3][k] += tmp * c[9];
                                     self.b[4][k] += tmp;
                                     //println!("{}", self.b[4][k]);
+                                    if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                        let mut stmp = self.sg[4][k];
+                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        self.sg[4][k] = ((((sgk/r[10] - self.sg[0][k])/r[11] - self.sg[1][k])/r[12] - self.sg[2][k])/r[13] - self.sg[3][k])/r[14];
+                                        stmp = self.sg[4][k] - stmp;
+                                        self.sb[0][k] += stmp * c[6];
+                                        self.sb[1][k] += stmp * c[7];
+                                        self.sb[2][k] += stmp * c[8];
+                                        self.sb[3][k] += stmp * c[9];
+                                        self.sb[4][k] += stmp;
+                                    }
                                 }
                             },
                         6 => {
@@ -460,11 +575,25 @@ impl Ias15 {
                                     self.b[4][k] += tmp * c[14];
                                     self.b[5][k] += tmp;
                                     //println!("{}", self.b[5][k]);
+                                    if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                        let mut stmp = self.sg[5][k];
+                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        self.sg[5][k] = (((((sgk/r[15] - self.sg[0][k])/r[16] - self.sg[1][k])/r[17] - self.sg[2][k])/r[18] - self.sg[3][k])/r[19] - self.sg[4][k])/r[20];
+                                        stmp = self.sg[5][k] - stmp;
+                                        self.sb[0][k] += stmp * c[10];
+                                        self.sb[1][k] += stmp * c[11];
+                                        self.sb[2][k] += stmp * c[12];
+                                        self.sb[3][k] += stmp * c[13];
+                                        self.sb[4][k] += stmp * c[14];
+                                        self.sb[5][k] += stmp;
+                                    }
                                 }
                             },
                         7 => {
                                 let mut maxak: f64 = 0.0;
                                 let mut maxb6ktmp: f64 = 0.0;
+                                let mut max_dangular_momentum_dtk: f64 = 0.0;
+                                let mut maxb6kstmp: f64 = 0.0;
                                 for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[6][k];
                                     let gk = self.at[k] - self.a0[k];
@@ -478,9 +607,24 @@ impl Ias15 {
                                     self.b[5][k] += tmp * c[20];
                                     self.b[6][k] += tmp;
                                     //println!("{}", self.b[6][k]);
+                                    let mut stmp = 0.;
+                                    if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                        stmp = self.sg[6][k];
+                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        self.sg[6][k] = ((((((sgk/r[21] - self.sg[0][k])/r[22] - self.sg[1][k])/r[23] - self.sg[2][k])/r[24] - self.sg[3][k])/r[25] - self.sg[4][k])/r[26] - self.sg[5][k])/r[27];
+                                        stmp = self.sg[6][k] - stmp;	
+                                        self.sb[0][k] += stmp * c[15];
+                                        self.sb[1][k] += stmp * c[16];
+                                        self.sb[2][k] += stmp * c[17];
+                                        self.sb[3][k] += stmp * c[18];
+                                        self.sb[4][k] += stmp * c[19];
+                                        self.sb[5][k] += stmp * c[20];
+                                        self.sb[6][k] += stmp;
+                                    }
                                     
                                     // Monitor change in self.b[6][k] relative to self.at[k]. The predictor corrector scheme is converged if it is close to 0.
                                     if INTEGRATOR_EPSILON_GLOBAL {
+                                        // global error estimate (equation 9)
                                         let ak  = self.at[k].abs();
                                         if ak.is_normal() && ak>maxak {
                                             maxak = ak;
@@ -490,17 +634,40 @@ impl Ias15 {
                                             maxb6ktmp = b6ktmp;
                                         }
                                         //println!("{} {}", maxak, maxb6ktmp);
+                                        if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                            let dangular_momentum_dttk  = self.dangular_momentum_dtt[k].abs();
+                                            if dangular_momentum_dttk.is_normal() && dangular_momentum_dttk>max_dangular_momentum_dtk {
+                                                max_dangular_momentum_dtk = dangular_momentum_dttk;
+                                            }
+                                            let b6kstmp = stmp.abs();  // change of b6ktmp coefficient
+                                            if b6kstmp.is_normal() && b6kstmp>maxb6kstmp {
+                                                maxb6kstmp = b6kstmp;
+                                            }
+                                        }
                                     } else {
+                                        // local error estimate (equation 9)
+                                        let mut predictor_corrector_error_a = 0.;
+                                        let mut predictor_corrector_error_s = 0.;
                                         let ak  = self.at[k];
                                         let b6ktmp = tmp; 
                                         let errork = (b6ktmp/ak).abs();
                                         if errork.is_normal() && errork>predictor_corrector_error {
-                                            predictor_corrector_error = errork;
+                                            predictor_corrector_error_a = errork;
                                         }
+                                        //
+                                        if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                            let dangular_momentum_dttk  = self.dangular_momentum_dtt[k];
+                                            let b6kstmp = stmp; 
+                                            let errorks = (b6kstmp/dangular_momentum_dttk).abs();
+                                            if errorks.is_normal() && errorks>predictor_corrector_error {
+                                                predictor_corrector_error_s = errorks;
+                                            }
+                                        }
+                                        predictor_corrector_error = self.max(predictor_corrector_error_a, predictor_corrector_error_s);
                                     }
                                 } 
                                 if INTEGRATOR_EPSILON_GLOBAL {
-                                    predictor_corrector_error = maxb6ktmp/maxak;
+                                    predictor_corrector_error = self.max(maxb6ktmp, maxb6kstmp)/self.max(maxak, max_dangular_momentum_dtk);
                                 }
                             },
                         _ => { println!("[WARNING {} UTC] This should not happen because the loop stops at 7!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap()); }
@@ -530,6 +697,8 @@ impl Ias15 {
                 if INTEGRATOR_EPSILON_GLOBAL {
                     let mut maxak: f64 = 0.0;
                     let mut maxb6k: f64 = 0.0;
+                    let mut max_dangular_momentum_dtk: f64 = 0.0;
+                    let mut maxb6ks: f64 = 0.0;
                     // Looping over all particles and all 3 components of the acceleration. 
                     for (i, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         let v2 = particle.inertial_velocity.x*particle.inertial_velocity.x
@@ -539,10 +708,26 @@ impl Ias15 {
                                     +particle.inertial_position.y*particle.inertial_position.y
                                     +particle.inertial_position.z*particle.inertial_position.z;
 
-                        // Skip slowly varying accelerations
-                        if (v2*self.time_step*self.time_step/x2).abs() < 1e-16 {
-                            continue;
+                        if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                            let spin2 = particle.spin.x*particle.spin.x
+                                        +particle.spin.y*particle.spin.y
+                                        +particle.spin.z*particle.spin.z;
+                            let dangular_momentum_dt2 = particle.dangular_momentum_dt.x*particle.dangular_momentum_dt.x
+                                        +particle.dangular_momentum_dt.y*particle.dangular_momentum_dt.y
+                                        +particle.dangular_momentum_dt.z*particle.dangular_momentum_dt.z;
+                            
+                            // Skip slowly varying accelerations and angular momentums (spin)
+                            if (v2*self.time_step*self.time_step/x2).abs() < 1e-16
+                                && (dangular_momentum_dt2*self.time_step*self.time_step/spin2).abs() < 1e-16 {
+                                continue;
+                            }
+                        } else {
+                            // Skip slowly varying accelerations
+                            if (v2*self.time_step*self.time_step/x2).abs() < 1e-16 {
+                                continue;
+                            }
                         }
+
 
                         for k in 3*i..3*(i+1) {
                             let ak  = self.at[k].abs();
@@ -553,17 +738,40 @@ impl Ias15 {
                             if b6k.is_normal() && b6k>maxb6k {
                                 maxb6k = b6k;
                             }
+                            //
+                            if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                                let dangular_momentum_dttk  = self.dangular_momentum_dtt[k].abs();
+                                if dangular_momentum_dttk.is_normal() && dangular_momentum_dttk>maxak {
+                                    max_dangular_momentum_dtk = dangular_momentum_dttk;
+                                }
+                                let b6ks = self.sb[6][k].abs(); 
+                                if b6ks.is_normal() && b6ks>maxb6ks {
+                                    maxb6ks = b6ks;
+                                }
+                            }
                         }
                     }
-                    integrator_error = maxb6k/maxak;
+                    integrator_error = self.max(maxb6k, maxb6ks)/self.max(maxak, max_dangular_momentum_dtk);
                 } else {
                     for k in 0..3*self.n_particles {
+                        let mut integrator_error_a = 0.;
+                        let mut integrator_error_s = 0.;
                         let ak  = self.at[k];
                         let b6k = self.b[6][k]; 
                         let errork = (b6k/ak).abs();
                         if errork.is_normal() && errork>integrator_error {
-                            integrator_error = errork;
+                            integrator_error_a = errork;
                         }
+                        //
+                        if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                            let dangular_momentum_dttk  = self.dangular_momentum_dtt[k];
+                            let b6ks = self.sb[6][k]; 
+                            let errorks = (b6ks/dangular_momentum_dttk).abs();
+                            if errorks.is_normal() && errorks>integrator_error {
+                                integrator_error_s = errorks;
+                            }
+                        }
+                        integrator_error = self.max(integrator_error_a, integrator_error_s);
                     }
                 }
                 //println!("** {}", integrator_error);
@@ -608,7 +816,19 @@ impl Ias15 {
                         particle.inertial_acceleration.z = self.a0[3*k+2];
 
                         // Required to correctly compute the momen of inertia if a step is repeated after evolution was applied
-                        particle.radius = self.r0[k];	// Set inital radius
+                        particle.radius = self.radius0[k];	// Set inital radius
+                        particle.radius_of_gyration_2 = self.radius_of_gyration_2_0[k];	// Set inital radius of gyration**2
+                        particle.moment_of_inertia = self.moment_of_inertia0[k];	// Set inital radius of gyration**2
+
+                        if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                            particle.spin.x = self.spin0[3*k+0];	// Set inital spin
+                            particle.spin.y = self.spin0[3*k+1];
+                            particle.spin.z = self.spin0[3*k+2];
+
+                            particle.dangular_momentum_dt.x = self.dangular_momentum_dt0[3*k+0];	// Set inital dangular_momentum_dt
+                            particle.dangular_momentum_dt.y = self.dangular_momentum_dt0[3*k+1];
+                            particle.dangular_momentum_dt.z = self.dangular_momentum_dt0[3*k+2];
+                        }
                     }
                     self.time_step = dt_new;
                     if self.time_step_last_success != 0. {		// Do not predict next self.e/self.b values if this is the first time step.
@@ -626,7 +846,7 @@ impl Ias15 {
                     }
                 }
                 self.time_step = dt_new;
-                //println!("New timestep {}", self.time_step);
+                //println!("Current time {} - New timestep {}", self.current_time, self.time_step);
             }
             ////////////////////////////////////////////////////////////////////
             //// END: Find new timestep
@@ -640,20 +860,31 @@ impl Ias15 {
             let dt_done2 = dt_done * dt_done;
             for k in 0..3*self.n_particles {
                 {
-                    let a = self.x0[k];
+                    let x = self.x0[k];
                     self.csx[k]  +=  (self.b[6][k]/72. + self.b[5][k]/56. + self.b[4][k]/42. 
                                     + self.b[3][k]/30. + self.b[2][k]/20. + self.b[1][k]/12. + self.b[0][k]/6. + self.a0[k]/2.) 
                                     * dt_done2 + self.v0[k] * dt_done;
-                    self.x0[k]    = a + self.csx[k];
-                    self.csx[k]  += a - self.x0[k]; 
+                    self.x0[k]    = x + self.csx[k];
+                    self.csx[k]  += x - self.x0[k]; 
                 }
                 {
-                    let a = self.v0[k]; 
+                    let v = self.v0[k]; 
                     self.csv[k]  += (self.b[6][k]/8. + self.b[5][k]/7. + self.b[4][k]/6. 
                                     + self.b[3][k]/5. + self.b[2][k]/4. + self.b[1][k]/3. + self.b[0][k]/2. + self.a0[k])
                                     * dt_done;
-                    self.v0[k]    = a + self.csv[k];
-                    self.csv[k]  += a - self.v0[k];
+                    self.v0[k]    = v + self.csv[k];
+                    self.csv[k]  += v - self.v0[k];
+
+                    if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                        // spin
+                        let angular_momentum = self.angular_momentum0[k]; 
+                        self.css[k]  += (self.sb[6][k]/8. + self.sb[5][k]/7. + self.sb[4][k]/6. 
+                                        + self.sb[3][k]/5. + self.sb[2][k]/4. + self.sb[1][k]/3. + self.sb[0][k]/2. + self.dangular_momentum_dt0[k])
+                                        * dt_done;
+                        let angular_momentum_k = angular_momentum + self.css[k];
+                        self.spin0[k] = angular_momentum_k / self.universe.particles[k/3].moment_of_inertia; // we need the spin, so we transform the angular momentum
+                        self.css[k]  += angular_momentum - angular_momentum_k;
+                    }
                 }
                 //println!("{} {} {} {}", self.x0[k], self.v0[k], self.csx[k], self.csv[k]);
             }
@@ -672,27 +903,39 @@ impl Ias15 {
                 particle.inertial_velocity.z = self.v0[3*k+2];
                 //println!("{:?} {:?}", particle.inertial_position, particle.inertial_velocity);
 
-                if particle.moment_of_inertia_ratio != 1. {
-                    particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.time_step * particle.dspin_dt.x;
-                    particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.time_step * particle.dspin_dt.y;
-                    particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.time_step * particle.dspin_dt.z;
-                } else {
-                    particle.spin.x = particle.spin.x + self.time_step * particle.dspin_dt.x;
-                    particle.spin.y = particle.spin.y + self.time_step * particle.dspin_dt.y;
-                    particle.spin.z = particle.spin.z + self.time_step * particle.dspin_dt.z;
+                if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                    // Spin
+                    particle.spin.x = self.spin0[3*k+0];
+                    particle.spin.y = self.spin0[3*k+1];
+                    particle.spin.z = self.spin0[3*k+2];
+                } else if self.universe.evolving_particles_exist {
+                    // If there are evolving particles and no tides or rotational flattening is
+                    // considered, the spin can still vary due to radius changes
+                    let denominator = particle.radius_of_gyration_2 * particle.radius.powi(2); // new
+                    if denominator != 0. {
+                        let numerator = self.radius_of_gyration_2_0[k] * self.radius0[k].powi(2); // old
+                        let moment_of_inertia_ratio = numerator / denominator; // compute because particle.moment_of_inertia_ratio corresponds to last substep
+                        particle.spin.x = moment_of_inertia_ratio * particle.spin.x;
+                        particle.spin.y = moment_of_inertia_ratio * particle.spin.y;
+                        particle.spin.z = moment_of_inertia_ratio * particle.spin.z;
+                    }
                 }
+
                 if particle.wind_factor != 0. {
                     // TODO: Verify wind factor
-                    particle.spin.x += self.time_step * particle.wind_factor * particle.spin.x;
-                    particle.spin.y += self.time_step * particle.wind_factor * particle.spin.y;
-                    particle.spin.z += self.time_step * particle.wind_factor * particle.spin.z;
+                    particle.spin.x += dt_done * particle.wind_factor * particle.spin.x;
+                    particle.spin.y += dt_done * particle.wind_factor * particle.spin.y;
+                    particle.spin.z += dt_done * particle.wind_factor * particle.spin.z;
                 }
+
             }
 
             //self.copybuffers(&mut self.e, &mut self.er);		
             //self.copybuffers(&mut self.b, &mut self.br);		
             self.er = self.e.clone();
             self.br = self.b.clone();
+            self.ser = self.se.clone();
+            self.sbr = self.sb.clone();
             let ratio = self.time_step/dt_done;
             //self.predict_next_step(&mut self.e, &mut self.b, self.er, self.br, ratio);
             self.predict_next_step(ratio);
@@ -723,6 +966,22 @@ impl Ias15 {
                 self.b[4][k] = 0.;
                 self.b[5][k] = 0.;
                 self.b[6][k] = 0.;
+                if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                    self.se[0][k] = 0.;
+                    self.se[1][k] = 0.;
+                    self.se[2][k] = 0.;
+                    self.se[3][k] = 0.;
+                    self.se[4][k] = 0.;
+                    self.se[5][k] = 0.;
+                    self.se[6][k] = 0.;
+                    self.sb[0][k] = 0.;
+                    self.sb[1][k] = 0.;
+                    self.sb[2][k] = 0.;
+                    self.sb[3][k] = 0.;
+                    self.sb[4][k] = 0.;
+                    self.sb[5][k] = 0.;
+                    self.sb[6][k] = 0.;
+                }
             }
         } else {
             // Predict new B values to use at the start of the next sequence. The predicted
@@ -762,6 +1021,34 @@ impl Ias15 {
                 self.b[4][k] = self.e[4][k] + be4;
                 self.b[5][k] = self.e[5][k] + be5;
                 self.b[6][k] = self.e[6][k] + be6;
+
+                if self.universe.consider_tides || self.universe.consider_rotational_flattening {
+                    // Spin
+                    let sbe0 = self.sbr[0][k] - self.ser[0][k];
+                    let sbe1 = self.sbr[1][k] - self.ser[1][k];
+                    let sbe2 = self.sbr[2][k] - self.ser[2][k];
+                    let sbe3 = self.sbr[3][k] - self.ser[3][k];
+                    let sbe4 = self.sbr[4][k] - self.ser[4][k];
+                    let sbe5 = self.sbr[5][k] - self.ser[5][k];
+                    let sbe6 = self.sbr[6][k] - self.ser[6][k];
+
+                    // Estimate B values for the next sequence (Eqs. 13 of Everhart).
+                    self.se[0][k] = q1*(self.sbr[6][k]* 7.0 + self.sbr[5][k]* 6.0 + self.sbr[4][k]* 5.0 + self.sbr[3][k]* 4.0 + self.sbr[2][k]* 3.0 + self.sbr[1][k]*2.0 + self.sbr[0][k]);
+                    self.se[1][k] = q2*(self.sbr[6][k]*21.0 + self.sbr[5][k]*15.0 + self.sbr[4][k]*10.0 + self.sbr[3][k]* 6.0 + self.sbr[2][k]* 3.0 + self.sbr[1][k]);
+                    self.se[2][k] = q3*(self.sbr[6][k]*35.0 + self.sbr[5][k]*20.0 + self.sbr[4][k]*10.0 + self.sbr[3][k]* 4.0 + self.sbr[2][k]);
+                    self.se[3][k] = q4*(self.sbr[6][k]*35.0 + self.sbr[5][k]*15.0 + self.sbr[4][k]* 5.0 + self.sbr[3][k]);
+                    self.se[4][k] = q5*(self.sbr[6][k]*21.0 + self.sbr[5][k]* 6.0 + self.sbr[4][k]);
+                    self.se[5][k] = q6*(self.sbr[6][k]* 7.0 + self.sbr[5][k]);
+                    self.se[6][k] = q7* self.sbr[6][k];
+                    
+                    self.sb[0][k] = self.se[0][k] + sbe0;
+                    self.sb[1][k] = self.se[1][k] + sbe1;
+                    self.sb[2][k] = self.se[2][k] + sbe2;
+                    self.sb[3][k] = self.se[3][k] + sbe3;
+                    self.sb[4][k] = self.se[4][k] + sbe4;
+                    self.sb[5][k] = self.se[5][k] + sbe5;
+                    self.sb[6][k] = self.se[6][k] + sbe6;
+                }
             }
         }
     }
@@ -793,6 +1080,14 @@ impl Ias15 {
             x += (a/x6-x)/7.;
         }
         x
+    }
+
+    fn max(&self, a: f64, b: f64) -> f64 {
+        if a > b {
+            a
+        } else {
+            b
+        }
     }
 
 }
