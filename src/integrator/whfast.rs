@@ -5,6 +5,7 @@ use super::Integrator;
 use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES, G};
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
+use super::super::particles::ConsiderGeneralRelativity;
 use super::super::particles::Axes;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
@@ -231,8 +232,14 @@ impl Integrator for WHFast {
         self.iterate_position_and_velocity_with_whfasthelio_part1(); // updates alternative pos/vel by half-step
         self.universe.gravity_calculate_acceleration(ignore_gravity_terms); // computes gravitational inertial accelerations
         self.inertial_to_heliocentric_posvel(); // required to compute additional effects
+        let mut consider_dangular_momentum_dt_from_general_relativity = false;
+        if let ConsiderGeneralRelativity::Kidder1995 = self.universe.consider_general_relativity {
+            consider_dangular_momentum_dt_from_general_relativity = true;
+        }
+        let integrate_spin = self.universe.consider_tides || self.universe.consider_rotational_flattening
+                            || self.universe.evolving_particles_exist || consider_dangular_momentum_dt_from_general_relativity;
         // A 'DKD'-like integrator will do the 'KD' part:
-        if self.universe.evolving_particles_exist || self.universe.consider_tides || self.universe.consider_rotational_flattening {
+        if integrate_spin {
             // - First part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method
             let evolution = true;
             let dangular_momentum_dt_per_moment_of_inertia = true;
