@@ -196,6 +196,10 @@ impl Integrator for Ias15 {
         let accelerations = true;
         self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
         //println!("*Additional effects at current time: {}", self.current_time);
+        //println!("*dangular_momentum_dt star: {:?}", self.universe.particles[0].dangular_momentum_dt);
+        //println!("*dangular_momentum_dt planet: {:?}", self.universe.particles[1].dangular_momentum_dt);
+        //println!("*GR acceleration star: {:?}", self.universe.particles[0].general_relativity_acceleration);
+        //println!("*GR acceleration planet: {:?}", self.universe.particles[1].general_relativity_acceleration);
 
         self.integrator();
         self.current_iteration += 1;
@@ -431,6 +435,10 @@ impl Ias15 {
                                 let k1 = 3*i+1;
                                 let k2 = 3*i+2;
 
+                                if particle.moment_of_inertia == 0. {
+                                    panic!("Moment of inertia for particle {} is zero!", i);
+                                }
+
                                 // Equation 6 in paper 2015MNRAS.446.1424R
                                 let angular_momentum_k0 =  -self.css[k0] + self.s[7]*self.sb[6][k0] + self.s[6]*self.sb[5][k0] + self.s[5]*self.sb[4][k0] + self.s[4]*self.sb[3][k0] + self.s[3]*self.sb[2][k0] + self.s[2]*self.sb[1][k0] + self.s[1]*self.sb[0][k0] + self.s[0]*self.dangular_momentum_dt0[k0];
                                 particle.spin.x = (angular_momentum_k0 + self.angular_momentum0[k0])/particle.moment_of_inertia;
@@ -454,7 +462,11 @@ impl Ias15 {
                     let accelerations = true;
                     self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
                     //println!("Additional effects at current time: {}", self.current_time);
-                    //println!("{:?}", self.universe.particles[1].inertial_acceleration);
+                    ////println!("{:?}", self.universe.particles[1].inertial_acceleration);
+                    //println!("dangular_momentum_dt star: {:?}", self.universe.particles[0].dangular_momentum_dt);
+                    //println!("dangular_momentum_dt planet: {:?}", self.universe.particles[1].dangular_momentum_dt);
+                    //println!("GR acceleration star: {:?}", self.universe.particles[0].general_relativity_acceleration);
+                    //println!("GR acceleration planet: {:?}", self.universe.particles[1].general_relativity_acceleration);
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.inertial_acceleration.x;
@@ -896,7 +908,11 @@ impl Ias15 {
                                         + self.sb[3][k]/5. + self.sb[2][k]/4. + self.sb[1][k]/3. + self.sb[0][k]/2. + self.dangular_momentum_dt0[k])
                                         * dt_done;
                         let angular_momentum_k = angular_momentum + self.css[k];
-                        self.spin0[k] = angular_momentum_k / self.universe.particles[k/3].moment_of_inertia; // we need the spin, so we transform the angular momentum
+                        let moment_of_inertia_k = self.universe.particles[k/3].moment_of_inertia;
+                        if moment_of_inertia_k == 0. {
+                            panic!("Moment of inertia for particle {} is zero!", k/3);
+                        }
+                        self.spin0[k] = angular_momentum_k / moment_of_inertia_k; // we need the spin, so we transform the angular momentum
                         self.css[k]  += angular_momentum - angular_momentum_k;
                     }
                 }
