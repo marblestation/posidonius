@@ -2,7 +2,7 @@ use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
 use super::Integrator;
-use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR};
+use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR, MAX_PARTICLES};
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::particles::ConsiderGeneralRelativity;
@@ -36,32 +36,32 @@ pub struct Ias15 {
     n_particles: usize,
     integrator_iterations_max_exceeded : i32,  // Count how many times the iteration did not converge
     time_step_last_success: f64,			// Last accepted timestep (corresponding to br and er)
-    b: Vec<Vec<f64>>, // Coefficient b: acceleration dimension
-    br: Vec<Vec<f64>>, // Previous b
-    g: Vec<Vec<f64>>, // Coefficient g (it can also be expressed in terms of b)
-    e: Vec<Vec<f64>>,
-    er: Vec<Vec<f64>>, // Previous g
-    at: Vec<f64>, // Temporary buffer for acceleration
-    x0: Vec<f64>, // Temporary buffer for position (used for initial values at h=0)
-    v0: Vec<f64>, // Temporary buffer for velocity (used for initial values at h=0)
-    a0: Vec<f64>, // Temporary buffer for acceleration (used for initial values at h=0)
-    radius0: Vec<f64>, // Temporary buffer for radius (used for initial values at h=0)
-    radius_of_gyration_2_0: Vec<f64>, // Temporary buffer for radius of gyration**2 (used for initial values at h=0)
+    b: [[f64; 3*MAX_PARTICLES]; 7], // Coefficient b: acceleration dimension
+    br: [[f64; 3*MAX_PARTICLES]; 7], // Previous b
+    g: [[f64; 3*MAX_PARTICLES]; 7], // Coefficient g (it can also be expressed in terms of b)
+    e: [[f64; 3*MAX_PARTICLES]; 7],
+    er: [[f64; 3*MAX_PARTICLES]; 7], // Previous g
+    at: [f64; 3*MAX_PARTICLES], // Temporary buffer for acceleration
+    x0: [f64; 3*MAX_PARTICLES], // Temporary buffer for position (used for initial values at h=0)
+    v0: [f64; 3*MAX_PARTICLES], // Temporary buffer for velocity (used for initial values at h=0)
+    a0: [f64; 3*MAX_PARTICLES], // Temporary buffer for acceleration (used for initial values at h=0)
+    radius0: [f64; MAX_PARTICLES], // Temporary buffer for radius (used for initial values at h=0)
+    radius_of_gyration_2_0: [f64; MAX_PARTICLES], // Temporary buffer for radius of gyration**2 (used for initial values at h=0)
     // spin coeff
-    sb: Vec<Vec<f64>>, // Coefficient b: acceleration dimension
-    sbr: Vec<Vec<f64>>, // Previous b
-    sg: Vec<Vec<f64>>, // Coefficient g (it can also be expressed in terms of b)
-    se: Vec<Vec<f64>>,
-    ser: Vec<Vec<f64>>, // Previous g
-    dangular_momentum_dtt: Vec<f64>, // Temporary buffer for dangular_momentum_dt
-    spin0: Vec<f64>, // Temporary buffer for spin0 (used for initial values at h=0)
-    dangular_momentum_dt0: Vec<f64>, // Temporary buffer for dangular_momentum_dt (used for initial values at h=0)
-    angular_momentum0: Vec<f64>, // Temporary buffer for angular_momentum (used for initial values at h=0)
-    moment_of_inertia0: Vec<f64>, // Temporary buffer for moment of inertia (used for initial values at h=0)
+    sb: [[f64; 3*MAX_PARTICLES]; 7], // Coefficient b: acceleration dimension
+    sbr: [[f64; 3*MAX_PARTICLES]; 7], // Previous b
+    sg: [[f64; 3*MAX_PARTICLES]; 7], // Coefficient g (it can also be expressed in terms of b)
+    se: [[f64; 3*MAX_PARTICLES]; 7],
+    ser: [[f64; 3*MAX_PARTICLES]; 7], // Previous g
+    dangular_momentum_dtt: [f64; 3*MAX_PARTICLES], // Temporary buffer for dangular_momentum_dt
+    spin0: [f64; 3*MAX_PARTICLES], // Temporary buffer for spin0 (used for initial values at h=0)
+    dangular_momentum_dt0: [f64; 3*MAX_PARTICLES], // Temporary buffer for dangular_momentum_dt (used for initial values at h=0)
+    angular_momentum0: [f64; 3*MAX_PARTICLES], // Temporary buffer for angular_momentum (used for initial values at h=0)
+    moment_of_inertia0: [f64; MAX_PARTICLES], // Temporary buffer for moment of inertia (used for initial values at h=0)
     // Compensated summation coefficients
-    csx : Vec<f64>, // position
-    csv : Vec<f64>, // velocity
-    css : Vec<f64>, // spin
+    csx : [f64; 3*MAX_PARTICLES], // position
+    csv : [f64; 3*MAX_PARTICLES], // velocity
+    css : [f64; 3*MAX_PARTICLES], // spin
     s: [f64; 9], // Summation coefficients
 }
 
@@ -91,30 +91,30 @@ impl Ias15 {
                     n_particles:n_particles,
                     integrator_iterations_max_exceeded:0,
                     time_step_last_success:0.,
-                    b :   (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    g  :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    e  :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    br :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    er :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    at  : vec![0.; 3*n_particles],
-                    x0  : vec![0.; 3*n_particles],
-                    v0  : vec![0.; 3*n_particles],
-                    a0  : vec![0.; 3*n_particles],
-                    radius0  : vec![0.; n_particles],
-                    radius_of_gyration_2_0  : vec![0.; n_particles],
-                    sb :   (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    sg  :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    se  :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    sbr :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    ser :  (0..7).map(|_| vec![0.; 3*n_particles]).collect(),
-                    dangular_momentum_dtt  : vec![0.; 3*n_particles],
-                    spin0  : vec![0.; 3*n_particles],
-                    dangular_momentum_dt0  : vec![0.; 3*n_particles],
-                    angular_momentum0  : vec![0.; 3*n_particles],
-                    moment_of_inertia0  : vec![0.; n_particles],
-                    csx : vec![0.; 3*n_particles],
-                    csv : vec![0.; 3*n_particles],
-                    css : vec![0.; 3*n_particles],
+                    b :   [[0.; 3*MAX_PARTICLES]; 7],
+                    g  :  [[0.; 3*MAX_PARTICLES]; 7],
+                    e  :  [[0.; 3*MAX_PARTICLES]; 7],
+                    br :  [[0.; 3*MAX_PARTICLES]; 7],
+                    er :  [[0.; 3*MAX_PARTICLES]; 7],
+                    at  : [0.; 3*MAX_PARTICLES],
+                    x0  : [0.; 3*MAX_PARTICLES],
+                    v0  : [0.; 3*MAX_PARTICLES],
+                    a0  : [0.; 3*MAX_PARTICLES],
+                    radius0  : [0.; MAX_PARTICLES],
+                    radius_of_gyration_2_0  : [0.; MAX_PARTICLES],
+                    sb :   [[0.; 3*MAX_PARTICLES]; 7],
+                    sg  :  [[0.; 3*MAX_PARTICLES]; 7],
+                    se  :  [[0.; 3*MAX_PARTICLES]; 7],
+                    sbr :  [[0.; 3*MAX_PARTICLES]; 7],
+                    ser :  [[0.; 3*MAX_PARTICLES]; 7],
+                    dangular_momentum_dtt  : [0.; 3*MAX_PARTICLES],
+                    spin0  : [0.; 3*MAX_PARTICLES],
+                    dangular_momentum_dt0  : [0.; 3*MAX_PARTICLES],
+                    angular_momentum0  : [0.; 3*MAX_PARTICLES],
+                    moment_of_inertia0  : [0.; MAX_PARTICLES],
+                    csx : [0.; 3*MAX_PARTICLES],
+                    csv : [0.; 3*MAX_PARTICLES],
+                    css : [0.; 3*MAX_PARTICLES],
                     s   : [0.; 9],
                     };
         // Initialize physical values
