@@ -48,7 +48,10 @@ if __name__ == "__main__":
     ################################################################################
     ## Planets
     ################################################################################
-    total_planets_angular_momentum = 0.
+    total_planets_angular_momentum_x = 0.
+    total_planets_angular_momentum_y = 0.
+    total_planets_angular_momentum_z = 0.
+    total_planets_angular_momentum   = 0.
     total_planets_orbital_angular_momentum = 0.
     planets_computed_data = {}
     for key in planets_keys:
@@ -172,8 +175,17 @@ if __name__ == "__main__":
 
         ################################################################################
         ## Sum over all the planets values:
-        planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']*posidonius.constants.M_SUN) * np.power(planet_data['radius']*posidonius.constants.AU, 2) * (planet_norm_spin/posidonius.constants.DAY)
-        total_planets_angular_momentum += planet_angular_momentum # If more than one planet is present, all of them should be added
+        planet_angular_momentum_x = planet_data['radius_of_gyration_2'][0] * (planet_data['mass'][0]) * np.power(planet_data['radius'][0], 2) * planet_data['spin_x']
+        planet_angular_momentum_y = planet_data['radius_of_gyration_2'][0] * (planet_data['mass'][0]) * np.power(planet_data['radius'][0], 2) * planet_data['spin_y']
+        planet_angular_momentum_z = planet_data['radius_of_gyration_2'][0] * (planet_data['mass'][0]) * np.power(planet_data['radius'][0], 2) * planet_data['spin_z']
+        planet_angular_momentum = planet_data['radius_of_gyration_2'][0] * (planet_data['mass'][0]) * np.power(planet_data['radius'][0], 2) * (planet_norm_spin)
+        #planet_angular_momentum = planet_data['radius_of_gyration_2'] * (planet_data['mass']) * np.power(planet_data['radius'], 2) * (planet_norm_spin)
+        total_planets_angular_momentum_x += planet_angular_momentum_x # If more than one planet is present, all of them should be added
+        total_planets_angular_momentum_y += planet_angular_momentum_y # If more than one planet is present, all of them should be added
+        total_planets_angular_momentum_z += planet_angular_momentum_z # If more than one planet is present, all of them should be added
+        #total_planets_angular_momentum += planet_angular_momentum # If more than one planet is present, all of them should be added
+        # If more than one planet is present, all of them should be added
+        total_planets_angular_momentum = np.sqrt(np.power(total_planets_angular_momentum_x, 2) + np.power(total_planets_angular_momentum_y, 2) + np.power(total_planets_angular_momentum_z, 2))
         ################################################################################
 
         ################################################################################
@@ -187,10 +199,9 @@ if __name__ == "__main__":
     cross_products = []
     r_terms = []
     v_terms = []
-    star_mass_msun = star_data['mass'][0]*posidonius.constants.M_SUN
-    accumulative_mass = star_mass_msun
+    accumulative_mass = star_mass
     for key in planets_keys:
-        planet_mass_msun = planets_data[key]['mass'][0]*posidonius.constants.M_SUN
+        planet_mass_msun = planets_data[key]['mass'][0]
         numerator = accumulative_mass * planet_mass_msun
         accumulative_mass += planet_mass_msun
         factor_a = numerator / accumulative_mass
@@ -210,18 +221,32 @@ if __name__ == "__main__":
     lorb = np.zeros((len(star_data), 3))
     for (a, rxv) in zip(factors_a, cross_products):
         lorb += a*rxv
-    total_planets_orbital_angular_momentum = np.sqrt(np.sum(np.power(lorb, 2), axis=1)) * ((posidonius.constants.AU*posidonius.constants.AU)/posidonius.constants.DAY) # kg.m^2.s-1
+    total_planets_orbital_angular_momentum_x = lorb[:,0]  # Msun.AU^2.DAY-1
+    total_planets_orbital_angular_momentum_y = lorb[:,1]  # Msun.AU^2.DAY-1
+    total_planets_orbital_angular_momentum_z = lorb[:,2]  # Msun.AU^2.DAY-1
+    total_planets_orbital_angular_momentum = np.sqrt(np.sum(np.power(lorb, 2), axis=1))  # Msun.AU^2.DAY-1
     ### [end] compute total planets orbital angular momentum for one star and N planets
     ################################################################################
 
 
     # \Delta L / L
-    star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass*posidonius.constants.M_SUN) * np.power(star_data['radius']*posidonius.constants.AU, 2) * (star_norm_spin/posidonius.constants.DAY)
-    initial_total_angular_momentum = total_planets_orbital_angular_momentum[0] + total_planets_angular_momentum[0] + star_angular_momentum[0]
-    conservation_of_angular_momentum = np.abs(((total_planets_orbital_angular_momentum + total_planets_angular_momentum + star_angular_momentum) - initial_total_angular_momentum) / initial_total_angular_momentum)
+    star_angular_momentum_x = star_data['radius_of_gyration_2'] * (star_mass) * np.power(star_data['radius'], 2) * star_data['spin_x']
+    star_angular_momentum_y = star_data['radius_of_gyration_2'] * (star_mass) * np.power(star_data['radius'], 2) * star_data['spin_y']
+    star_angular_momentum_z = star_data['radius_of_gyration_2'] * (star_mass) * np.power(star_data['radius'], 2) * star_data['spin_z']
+    star_angular_momentum = star_data['radius_of_gyration_2'] * (star_mass) * np.power(star_data['radius'], 2) * (star_norm_spin)
+
+    initial_total_angular_momentum_x = total_planets_orbital_angular_momentum_x[0] + total_planets_angular_momentum_x[0] + star_angular_momentum_x[0]
+    initial_total_angular_momentum_y = total_planets_orbital_angular_momentum_y[0] + total_planets_angular_momentum_y[0] + star_angular_momentum_y[0]
+    initial_total_angular_momentum_z = total_planets_orbital_angular_momentum_z[0] + total_planets_angular_momentum_z[0] + star_angular_momentum_z[0]
+    initial_total_angular_momentum = np.sqrt(np.power(initial_total_angular_momentum_x, 2) + np.power(initial_total_angular_momentum_y, 2) + np.power(initial_total_angular_momentum_z, 2))
+    total_angular_momentum_x = total_planets_orbital_angular_momentum_x + total_planets_angular_momentum_x + star_angular_momentum_x
+    total_angular_momentum_y = total_planets_orbital_angular_momentum_y + total_planets_angular_momentum_y + star_angular_momentum_y
+    total_angular_momentum_z = total_planets_orbital_angular_momentum_z + total_planets_angular_momentum_z + star_angular_momentum_z
+    total_angular_momentum = np.sqrt(np.power(total_angular_momentum_x, 2) + np.power(total_angular_momentum_y, 2) + np.power(total_angular_momentum_z, 2))
+    conservation_of_angular_momentum = np.abs((total_angular_momentum - initial_total_angular_momentum)/initial_total_angular_momentum)
+
     if len(conservation_of_angular_momentum) > 1:
         conservation_of_angular_momentum[0] = conservation_of_angular_momentum[1]
-    #conservation_of_angular_momentum = np.abs(star_data['total_angular_momentum'] - star_data['total_angular_momentum'][0]) / star_data['total_angular_momentum'][0]
 
 
 
