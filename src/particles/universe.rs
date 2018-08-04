@@ -335,7 +335,7 @@ impl Universe {
                                 * (distance * reference_spin.z - reference_rscalspin*particle.position.z/distance - 1.0/distance
                                 * (particle.position.x*particle.velocity.y - particle.position.y*particle.velocity.x) );
 
-                let factor = - star.mass / (star.mass + particle.mass);
+                let factor = -1.0;
                 if central_body {
                     // Integration of the spin (total torque tides):
                     dangular_momentum_dt.x += factor * torque_due_to_tides_x;
@@ -889,7 +889,7 @@ impl Universe {
                 let torque_induced_by_rotational_flattening_y :f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.z * reference_spin.x - particle.position.x * reference_spin.z);
                 let torque_induced_by_rotational_flattening_z: f64 = orthogonal_component_of_the_force_induced_by_rotation * (particle.position.x * reference_spin.y - particle.position.y * reference_spin.x);
 
-                let factor = - star.mass / (star.mass + particle.mass);
+                let factor = -1.0;
                 // - Equation 25 from Bolmont et al. 2015
                 if central_body {
                     // Integration of the spin (total torque rot):
@@ -1314,7 +1314,7 @@ impl Universe {
         let mut s_az = eta * jacobi_star_acceleration.z;
         for ((particle_acceleration, particle), jacobi_particle_acceleration) in particles_accelerations[..self.n_particles-1].iter_mut().rev()
                                                                                     .zip(self.particles[1..self.n_particles].iter().rev())
-                                                                                    .zip((jacobi_particles_accelerations[..self.n_particles-1].iter().rev())) {
+                                                                                    .zip(jacobi_particles_accelerations[..self.n_particles-1].iter().rev()) {
             let ei = 1./eta;
             s_ax = (s_ax - particle.mass*jacobi_particle_acceleration.x) * ei;
             s_ay = (s_ay - particle.mass*jacobi_particle_acceleration.y) * ei;

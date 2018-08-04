@@ -72,7 +72,7 @@ pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: A
         let to = -hx/hy;
         let temp = (1. - ci) * to;
         let tmp2 = to * to;
-        true_longitude = (y*(1.+tmp2*ci)-x*temp).atan2((x*(tmp2+ci)-y*temp));
+        true_longitude = (y*(1.+tmp2*ci)-x*temp).atan2(x*(tmp2+ci)-y*temp);
     } else {
         true_longitude = (y * ci).atan2(x);
     }
@@ -118,7 +118,7 @@ pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: A
             f = TWO_PI - f;
         }
         p = true_longitude - f;
-        p = modulus((p + TWO_PI + TWO_PI), TWO_PI);
+        p = modulus(p + TWO_PI + TWO_PI, TWO_PI);
     }
   
     if l < 0. {

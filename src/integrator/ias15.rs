@@ -740,7 +740,7 @@ impl Ias15 {
                             
                             // Skip slowly varying accelerations and angular momentums (spin)
                             if (v2*self.time_step*self.time_step/x2).abs() < 1e-16
-                                && (dangular_momentum_dt2*self.time_step*self.time_step/spin2).abs() < 1e-16 {
+                                && ((dangular_momentum_dt2/particle.moment_of_inertia.powi(2))*self.time_step*self.time_step/spin2).abs() < 1e-16 {
                                 continue;
                             }
                         } else {
