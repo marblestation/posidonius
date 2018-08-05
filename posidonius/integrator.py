@@ -16,6 +16,7 @@ class Integrator(object):
         self._data['last_historic_snapshot_time'] = -1.0
         self._data['n_historic_snapshots'] = 0
         self._data['hash'] = 0
+        self._data['particle_spin_errors'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0}]*MAX_PARTICLES # For spin integration with the midpoint method
 
     def write(self, filename):
         json.dump(self._data, open(filename, "w"))

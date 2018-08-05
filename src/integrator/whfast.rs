@@ -106,6 +106,7 @@ pub struct WHFast {
     particles_alternative_coordinates: [AlternativeCoordinates; MAX_PARTICLES], // Jacobi, democractic-heliocentric or WHDS
     alternative_coordinates_type: CoordinatesType,
     timestep_warning: usize ,
+    particle_spin_errors: [Axes; MAX_PARTICLES], // A running compensation for lost low-order bits (Kahan 1965; Higham 2002; Hairer et al. 2006) 
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -148,6 +149,7 @@ impl WHFast {
                     particles_alternative_coordinates: particles_alternative_coordinates,
                     alternative_coordinates_type: alternative_coordinates_type,
                     timestep_warning: 0,
+                    particle_spin_errors: [Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
                     };
         // Initialize physical values
         let current_time = 0.;
@@ -246,7 +248,8 @@ impl Integrator for WHFast {
             let accelerations = false;
             self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms); // changes inertial accelerations
             self.save_current_spin();
-            self.spin_step(half_time_step);
+            let update_spin_errors = false;
+            self.spin_step(half_time_step, update_spin_errors);
             //..................................................................
             let evolution = false; // Only evolve once per step (evolving more than once for a given current time will lead to a wrong computation of the moment of inertia)
             let dangular_momentum_dt_per_moment_of_inertia = false;
@@ -261,7 +264,8 @@ impl Integrator for WHFast {
             let accelerations = false; 
             self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms); // changes inertial accelerations
             self.restore_last_spin();
-            self.spin_step(time_step);
+            let update_spin_errors = true;
+            self.spin_step(time_step, update_spin_errors);
             //..................................................................
             self.interaction_step(half_time_step); // changes alternative velocities using inertial accelerations
         } else {
@@ -340,22 +344,40 @@ impl WHFast {
         }
     }
  
-    fn spin_step(&mut self, _dt: f64) {
-        for particle in self.universe.particles[..self.universe.n_particles].iter_mut() {
+    fn spin_step(&mut self, _dt: f64, update_spin_errors: bool) {
+        // Compensated summation to improve the accuracy of additions that involve
+        // one small and one large floating point number (already considered by IAS15)
+        //      As cited by IAS15 paper: Kahan 1965; Higham 2002; Hairer et al. 2006
+        //      https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+        for (particle, spin_error) in self.universe.particles[..self.universe.n_particles].iter_mut().zip(self.particle_spin_errors[..self.universe.n_particles].iter_mut()) {
+            let mut previous_spin = Axes{x: 0., y:0., z:0.};
+            let mut spin_change = Axes{x: 0., y:0., z:0.};
             if particle.moment_of_inertia_ratio != 1. {
-                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.x;
-                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.y;
-                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.z;
+                previous_spin.x = particle.moment_of_inertia_ratio * particle.spin.x;
+                previous_spin.y = particle.moment_of_inertia_ratio * particle.spin.y;
+                previous_spin.z = particle.moment_of_inertia_ratio * particle.spin.z;
             } else {
-                particle.spin.x = particle.spin.x + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.x;
-                particle.spin.y = particle.spin.y + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.y;
-                particle.spin.z = particle.spin.z + _dt * particle.dangular_momentum_dt_per_moment_of_inertia.z;
+                previous_spin.x = particle.spin.x;
+                previous_spin.y = particle.spin.y;
+                previous_spin.z = particle.spin.z;
             }
+            spin_change.x = _dt * particle.dangular_momentum_dt_per_moment_of_inertia.x - spin_error.x;
+            spin_change.y = _dt * particle.dangular_momentum_dt_per_moment_of_inertia.y - spin_error.y;
+            spin_change.z = _dt * particle.dangular_momentum_dt_per_moment_of_inertia.z - spin_error.z;
             if particle.wind_factor != 0. {
                 // TODO: Verify wind factor
-                particle.spin.x += _dt * particle.wind_factor * particle.spin.x;
-                particle.spin.y += _dt * particle.wind_factor * particle.spin.y;
-                particle.spin.z += _dt * particle.wind_factor * particle.spin.z;
+                spin_change.x += _dt * particle.wind_factor * particle.spin.x;
+                spin_change.y += _dt * particle.wind_factor * particle.spin.y;
+                spin_change.z += _dt * particle.wind_factor * particle.spin.z;
+            }
+
+            particle.spin.x += spin_change.x;
+            particle.spin.y += spin_change.y;
+            particle.spin.z += spin_change.z;
+            if update_spin_errors {
+                spin_error.x = (particle.spin.x - previous_spin.x) - spin_change.x;
+                spin_error.y = (particle.spin.y - previous_spin.y) - spin_change.y;
+                spin_error.z = (particle.spin.z - previous_spin.z) - spin_change.z;
             }
         }
     }
