@@ -168,8 +168,8 @@ impl Integrator for Ias15 {
     fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>, silent_mode: bool) -> Result<bool, String> {
         // Output
         let first_snapshot_trigger = self.last_historic_snapshot_time < 0.;
-        let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time - self.time_step;
-        let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time - self.time_step;
+        let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
+        let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
             self.inertial_to_heliocentric_posvel();
             if self.universe.consider_tides {
@@ -195,11 +195,6 @@ impl Integrator for Ias15 {
         let dangular_momentum_dt_per_moment_of_inertia = true;
         let accelerations = true;
         self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
-        //println!("*Additional effects at current time: {}", self.current_time);
-        //println!("*dangular_momentum_dt star: {:?}", self.universe.particles[0].dangular_momentum_dt);
-        //println!("*dangular_momentum_dt planet: {:?}", self.universe.particles[1].dangular_momentum_dt);
-        //println!("*GR acceleration star: {:?}", self.universe.particles[0].general_relativity_acceleration);
-        //println!("*GR acceleration planet: {:?}", self.universe.particles[1].general_relativity_acceleration);
 
         self.integrator();
         self.current_iteration += 1;
@@ -309,6 +304,9 @@ impl Ias15 {
                 }
             }
 
+            let mut csb = [[0.; 3*MAX_PARTICLES]; 7];
+            let mut cssb = [[0.; 3*MAX_PARTICLES]; 7];
+
             // Find g values from b values predicted at the last call (Eqs. 7 of Everhart)
             for k in 0..3*self.n_particles {
                 self.g[0][k] = self.b[6][k]*d[15] + self.b[5][k]*d[10] + self.b[4][k]*d[6] + self.b[3][k]*d[3]  + self.b[2][k]*d[1]  + self.b[1][k]*d[0]  + self.b[0][k];
@@ -329,7 +327,6 @@ impl Ias15 {
                     self.sg[6][k] = self.sb[6][k];
                 }
             }
-            //println!("\n{}\n", self.g[0][1]);
 
             let t_beginning = self.current_time;
             //let mut predictor_corrector_error: f64 = 1e10;
@@ -379,7 +376,6 @@ impl Ias15 {
                     self.s[8] = 7. * self.s[7] * h[n] / 9.;
                     
                     self.current_time = t_beginning + self.s[0];
-                    //println!("Interval {} with substep {} of {} ({}) - current time: {}", n, self.s[0], self.time_step, h[n], self.current_time);
 
                     //// Prepare particles arrays for force calculation
                     // Predict positions at interval n using self.b values
@@ -398,8 +394,6 @@ impl Ias15 {
                         let xk2: f64 = -self.csx[k2] + (self.s[8]*self.b[6][k2] + self.s[7]*self.b[5][k2] + self.s[6]*self.b[4][k2] + self.s[5]*self.b[3][k2] + self.s[4]*self.b[2][k2] + self.s[3]*self.b[1][k2] + self.s[2]*self.b[0][k2] + self.s[1]*self.a0[k2] + self.s[0]*self.v0[k2] );
                         particle.inertial_position.z = xk2 + self.x0[k2];
                     }
-                    //println!("\n{:?}\n",self.universe.particles[1].inertial_position);
-                    //println!("\n{}\t{}\t{}\n", self.x0[3], self.x0[4], self.x0[5]);
                 
                     if INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT {
                         // If necessary, calculate velocity predictors too, from Eqn. 10 of Everhart
@@ -449,7 +443,6 @@ impl Ias15 {
                             }
                         }
                     }
-                    //println!("\n{:?}\n",self.universe.particles[1].inertial_velocity);
 
                     // Calculate accelerations.
                     let ignore_gravity_terms = IgnoreGravityTerms::None;
@@ -461,12 +454,6 @@ impl Ias15 {
                     let dangular_momentum_dt_per_moment_of_inertia = true;
                     let accelerations = true;
                     self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
-                    //println!("Additional effects at current time: {}", self.current_time);
-                    ////println!("{:?}", self.universe.particles[1].inertial_acceleration);
-                    //println!("dangular_momentum_dt star: {:?}", self.universe.particles[0].dangular_momentum_dt);
-                    //println!("dangular_momentum_dt planet: {:?}", self.universe.particles[1].dangular_momentum_dt);
-                    //println!("GR acceleration star: {:?}", self.universe.particles[0].general_relativity_acceleration);
-                    //println!("GR acceleration planet: {:?}", self.universe.particles[1].general_relativity_acceleration);
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.inertial_acceleration.x;
@@ -482,132 +469,231 @@ impl Ias15 {
                     }
 
                     // Update G values using Eqs. 4 of Everhart, and update B values using Eqs. 5
+                    let always_zero = 0.;
                     match n {
                         1 => {
                                 for k in 0..3*self.n_particles {
                                     let tmp = self.g[0][k];
-                                    self.g[0][k]  = (self.at[k] - self.a0[k]) / r[0];
-                                    self.b[0][k] += self.g[0][k] - tmp;
-                                    //println!("{}", self.b[0][k]);
+                                    let (gk, gk_cs) = self.add_cs(self.at[k], always_zero, -self.a0[k]);
+                                    let (gk, _gk_cs) = self.add_cs(gk, gk_cs, always_zero);
+                                    self.g[0][k]  = gk / r[0];
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[0][k], csb[0][k], self.g[0][k] - tmp);
+                                    self.b[0][k] = tmp_b;
+                                    csb[0][k] = tmp_csb;
+
                                     if integrate_spin {
                                         let stmp = self.sg[0][k];
-                                        self.sg[0][k]  = (self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k]) / r[0];
-                                        self.sb[0][k] += self.sg[0][k] - stmp;
+                                        let (sgk, sgk_cs) = self.add_cs(self.dangular_momentum_dtt[k], always_zero, -self.dangular_momentum_dt0[k]);
+                                        let (sgk, _sgk_cs) = self.add_cs(sgk, sgk_cs, always_zero);
+                                        self.sg[0][k]  = sgk / r[0];
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[0][k], cssb[0][k], self.sg[0][k] - stmp);
+                                        self.sb[0][k] = tmp_sb;
+                                        cssb[0][k] = tmp_cssb;
                                     }
                                 }
                             },
                         2 => {
                                 for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[1][k];
-                                    let gk = self.at[k] - self.a0[k];
-                                    self.g[1][k] = (gk/r[1] - self.g[0][k])/r[2];
+                                    let (gk, gk_cs) = self.add_cs(self.at[k], always_zero, -self.a0[k]);
+                                    let (gk, _gk_cs) = self.add_cs(gk, gk_cs, always_zero);
+                                    self.g[1][k]  = (gk/r[1] - self.g[0][k])/r[2];
                                     tmp = self.g[1][k] - tmp;
-                                    self.b[0][k] += tmp * c[0];
-                                    self.b[1][k] += tmp;
-                                    //println!("{}", self.b[1][k]);
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[0][k], csb[0][k], tmp*c[0]);
+                                    self.b[0][k] = tmp_b;
+                                    csb[0][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[1][k], csb[1][k], tmp);
+                                    self.b[1][k] = tmp_b;
+                                    csb[1][k] = tmp_csb;
+
                                     if integrate_spin {
                                         let mut stmp = self.sg[1][k];
-                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
-                                        self.sg[1][k] = (sgk/r[1] - self.sg[0][k])/r[2];
+                                        let (sgk, sgk_cs) = self.add_cs(self.dangular_momentum_dtt[k], always_zero, -self.dangular_momentum_dt0[k]);
+                                        let (sgk, _sgk_cs) = self.add_cs(sgk, sgk_cs, always_zero);
+                                        self.sg[1][k]  = (sgk/r[1] - self.sg[0][k])/r[2];
                                         stmp = self.sg[1][k] - stmp;
-                                        self.sb[0][k] += stmp * c[0];
-                                        self.sb[1][k] += stmp;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[0][k], cssb[0][k], stmp*c[0]);
+                                        self.sb[0][k] = tmp_sb;
+                                        cssb[0][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[1][k], cssb[1][k], stmp);
+                                        self.sb[1][k] = tmp_sb;
+                                        cssb[1][k] = tmp_cssb;
                                     }
                                 }
                             },
                         3 => {
                                 for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[2][k];
-                                    let gk = self.at[k] - self.a0[k];
+                                    let (gk, gk_cs) = self.add_cs(self.at[k], always_zero, -self.a0[k]);
+                                    let (gk, _gk_cs) = self.add_cs(gk, gk_cs, always_zero);
                                     self.g[2][k] = ((gk/r[3] - self.g[0][k])/r[4] - self.g[1][k])/r[5];
                                     tmp = self.g[2][k] - tmp;
-                                    self.b[0][k] += tmp * c[1];
-                                    self.b[1][k] += tmp * c[2];
-                                    self.b[2][k] += tmp;
-                                    //println!("{}", self.b[2][k]);
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[0][k], csb[0][k], tmp*c[1]);
+                                    self.b[0][k] = tmp_b;
+                                    csb[0][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[1][k], csb[1][k], tmp*c[2]);
+                                    self.b[1][k] = tmp_b;
+                                    csb[1][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[2][k], csb[2][k], tmp);
+                                    self.b[2][k] = tmp_b;
+                                    csb[2][k] = tmp_csb;
+
                                     if integrate_spin {
                                         let mut stmp = self.sg[2][k];
-                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        let (sgk, sgk_cs) = self.add_cs(self.dangular_momentum_dtt[k], always_zero, -self.dangular_momentum_dt0[k]);
+                                        let (sgk, _sgk_cs) = self.add_cs(sgk, sgk_cs, always_zero);
                                         self.sg[2][k] = ((sgk/r[3] - self.sg[0][k])/r[4] - self.sg[1][k])/r[5];
                                         stmp = self.sg[2][k] - stmp;
-                                        self.sb[0][k] += stmp * c[1];
-                                        self.sb[1][k] += stmp * c[2];
-                                        self.sb[2][k] += stmp;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[0][k], cssb[0][k], stmp*c[1]);
+                                        self.sb[0][k] = tmp_sb;
+                                        cssb[0][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[1][k], cssb[1][k], stmp*c[2]);
+                                        self.sb[1][k] = tmp_sb;
+                                        cssb[1][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[2][k], cssb[2][k], stmp);
+                                        self.sb[2][k] = tmp_sb;
+                                        cssb[2][k] = tmp_cssb;
                                     }
                                 }
                             },
                         4 => {
                                 for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[3][k];
-                                    let gk = self.at[k] - self.a0[k];
+                                    let (gk, gk_cs) = self.add_cs(self.at[k], always_zero, -self.a0[k]);
+                                    let (gk, _gk_cs) = self.add_cs(gk, gk_cs, always_zero);
                                     self.g[3][k] = (((gk/r[6] - self.g[0][k])/r[7] - self.g[1][k])/r[8] - self.g[2][k])/r[9];
                                     tmp = self.g[3][k] - tmp;
-                                    self.b[0][k] += tmp * c[3];
-                                    self.b[1][k] += tmp * c[4];
-                                    self.b[2][k] += tmp * c[5];
-                                    self.b[3][k] += tmp;
-                                    //println!("{}", self.b[3][k]);
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[0][k], csb[0][k], tmp*c[3]);
+                                    self.b[0][k] = tmp_b;
+                                    csb[0][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[1][k], csb[1][k], tmp*c[4]);
+                                    self.b[1][k] = tmp_b;
+                                    csb[1][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[2][k], csb[2][k], tmp*c[5]);
+                                    self.b[2][k] = tmp_b;
+                                    csb[2][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[3][k], csb[3][k], tmp);
+                                    self.b[3][k] = tmp_b;
+                                    csb[3][k] = tmp_csb;
+
                                     if integrate_spin {
                                         let mut stmp = self.sg[3][k];
-                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        let (sgk, sgk_cs) = self.add_cs(self.dangular_momentum_dtt[k], always_zero, -self.dangular_momentum_dt0[k]);
+                                        let (sgk, _sgk_cs) = self.add_cs(sgk, sgk_cs, always_zero);
                                         self.sg[3][k] = (((sgk/r[6] - self.sg[0][k])/r[7] - self.sg[1][k])/r[8] - self.sg[2][k])/r[9];
                                         stmp = self.sg[3][k] - stmp;
-                                        self.sb[0][k] += stmp * c[3];
-                                        self.sb[1][k] += stmp * c[4];
-                                        self.sb[2][k] += stmp * c[5];
-                                        self.sb[3][k] += stmp;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[0][k], cssb[0][k], stmp*c[3]);
+                                        self.sb[0][k] = tmp_sb;
+                                        cssb[0][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[1][k], cssb[1][k], stmp*c[4]);
+                                        self.sb[1][k] = tmp_sb;
+                                        cssb[1][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[2][k], cssb[2][k], stmp*c[5]);
+                                        self.sb[2][k] = tmp_sb;
+                                        cssb[2][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[3][k], cssb[3][k], stmp);
+                                        self.sb[3][k] = tmp_sb;
+                                        cssb[3][k] = tmp_cssb;
                                     }
                                 }
                             },
                         5 => {
                                 for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[4][k];
-                                    let gk = self.at[k] - self.a0[k];
+                                    let (gk, gk_cs) = self.add_cs(self.at[k], always_zero, -self.a0[k]);
+                                    let (gk, _gk_cs) = self.add_cs(gk, gk_cs, always_zero);
                                     self.g[4][k] = ((((gk/r[10] - self.g[0][k])/r[11] - self.g[1][k])/r[12] - self.g[2][k])/r[13] - self.g[3][k])/r[14];
                                     tmp = self.g[4][k] - tmp;
-                                    self.b[0][k] += tmp * c[6];
-                                    self.b[1][k] += tmp * c[7];
-                                    self.b[2][k] += tmp * c[8];
-                                    self.b[3][k] += tmp * c[9];
-                                    self.b[4][k] += tmp;
-                                    //println!("{}", self.b[4][k]);
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[0][k], csb[0][k], tmp*c[6]);
+                                    self.b[0][k] = tmp_b;
+                                    csb[0][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[1][k], csb[1][k], tmp*c[7]);
+                                    self.b[1][k] = tmp_b;
+                                    csb[1][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[2][k], csb[2][k], tmp*c[8]);
+                                    self.b[2][k] = tmp_b;
+                                    csb[2][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[3][k], csb[3][k], tmp*c[9]);
+                                    self.b[3][k] = tmp_b;
+                                    csb[3][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[4][k], csb[4][k], tmp);
+                                    self.b[4][k] = tmp_b;
+                                    csb[4][k] = tmp_csb;
+
                                     if integrate_spin {
                                         let mut stmp = self.sg[4][k];
-                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        let (sgk, sgk_cs) = self.add_cs(self.dangular_momentum_dtt[k], always_zero, -self.dangular_momentum_dt0[k]);
+                                        let (sgk, _sgk_cs) = self.add_cs(sgk, sgk_cs, always_zero);
                                         self.sg[4][k] = ((((sgk/r[10] - self.sg[0][k])/r[11] - self.sg[1][k])/r[12] - self.sg[2][k])/r[13] - self.sg[3][k])/r[14];
                                         stmp = self.sg[4][k] - stmp;
-                                        self.sb[0][k] += stmp * c[6];
-                                        self.sb[1][k] += stmp * c[7];
-                                        self.sb[2][k] += stmp * c[8];
-                                        self.sb[3][k] += stmp * c[9];
-                                        self.sb[4][k] += stmp;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[0][k], cssb[0][k], stmp*c[6]);
+                                        self.sb[0][k] = tmp_sb;
+                                        cssb[0][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[1][k], cssb[1][k], stmp*c[7]);
+                                        self.sb[1][k] = tmp_sb;
+                                        cssb[1][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[2][k], cssb[2][k], stmp*c[8]);
+                                        self.sb[2][k] = tmp_sb;
+                                        cssb[2][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[3][k], cssb[3][k], stmp*c[9]);
+                                        self.sb[3][k] = tmp_sb;
+                                        cssb[3][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[4][k], cssb[4][k], stmp);
+                                        self.sb[4][k] = tmp_sb;
+                                        cssb[4][k] = tmp_cssb;
                                     }
                                 }
                             },
                         6 => {
                                 for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[5][k];
-                                    let gk = self.at[k] - self.a0[k];
+                                    let (gk, gk_cs) = self.add_cs(self.at[k], always_zero, -self.a0[k]);
+                                    let (gk, _gk_cs) = self.add_cs(gk, gk_cs, always_zero);
                                     self.g[5][k] = (((((gk/r[15] - self.g[0][k])/r[16] - self.g[1][k])/r[17] - self.g[2][k])/r[18] - self.g[3][k])/r[19] - self.g[4][k])/r[20];
                                     tmp = self.g[5][k] - tmp;
-                                    self.b[0][k] += tmp * c[10];
-                                    self.b[1][k] += tmp * c[11];
-                                    self.b[2][k] += tmp * c[12];
-                                    self.b[3][k] += tmp * c[13];
-                                    self.b[4][k] += tmp * c[14];
-                                    self.b[5][k] += tmp;
-                                    //println!("{}", self.b[5][k]);
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[0][k], csb[0][k], tmp*c[10]);
+                                    self.b[0][k] = tmp_b;
+                                    csb[0][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[1][k], csb[1][k], tmp*c[11]);
+                                    self.b[1][k] = tmp_b;
+                                    csb[1][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[2][k], csb[2][k], tmp*c[12]);
+                                    self.b[2][k] = tmp_b;
+                                    csb[2][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[3][k], csb[3][k], tmp*c[13]);
+                                    self.b[3][k] = tmp_b;
+                                    csb[3][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[4][k], csb[4][k], tmp*c[14]);
+                                    self.b[4][k] = tmp_b;
+                                    csb[4][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[5][k], csb[5][k], tmp);
+                                    self.b[5][k] = tmp_b;
+                                    csb[5][k] = tmp_csb;
+
                                     if integrate_spin {
                                         let mut stmp = self.sg[5][k];
-                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        let (sgk, sgk_cs) = self.add_cs(self.dangular_momentum_dtt[k], always_zero, -self.dangular_momentum_dt0[k]);
+                                        let (sgk, _sgk_cs) = self.add_cs(sgk, sgk_cs, always_zero);
                                         self.sg[5][k] = (((((sgk/r[15] - self.sg[0][k])/r[16] - self.sg[1][k])/r[17] - self.sg[2][k])/r[18] - self.sg[3][k])/r[19] - self.sg[4][k])/r[20];
                                         stmp = self.sg[5][k] - stmp;
-                                        self.sb[0][k] += stmp * c[10];
-                                        self.sb[1][k] += stmp * c[11];
-                                        self.sb[2][k] += stmp * c[12];
-                                        self.sb[3][k] += stmp * c[13];
-                                        self.sb[4][k] += stmp * c[14];
-                                        self.sb[5][k] += stmp;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[0][k], cssb[0][k], stmp*c[10]);
+                                        self.sb[0][k] = tmp_sb;
+                                        cssb[0][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[1][k], cssb[1][k], stmp*c[11]);
+                                        self.sb[1][k] = tmp_sb;
+                                        cssb[1][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[2][k], cssb[2][k], stmp*c[12]);
+                                        self.sb[2][k] = tmp_sb;
+                                        cssb[2][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[3][k], cssb[3][k], stmp*c[13]);
+                                        self.sb[3][k] = tmp_sb;
+                                        cssb[3][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[4][k], cssb[4][k], stmp*c[14]);
+                                        self.sb[4][k] = tmp_sb;
+                                        cssb[4][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[5][k], cssb[5][k], stmp);
+                                        self.sb[5][k] = tmp_sb;
+                                        cssb[5][k] = tmp_cssb;
                                     }
                                 }
                             },
@@ -618,30 +704,60 @@ impl Ias15 {
                                 let mut maxb6kstmp: f64 = 0.0;
                                 for k in 0..3*self.n_particles {
                                     let mut tmp = self.g[6][k];
-                                    let gk = self.at[k] - self.a0[k];
+                                    let (gk, gk_cs) = self.add_cs(self.at[k], always_zero, -self.a0[k]);
+                                    let (gk, _gk_cs) = self.add_cs(gk, gk_cs, always_zero);
                                     self.g[6][k] = ((((((gk/r[21] - self.g[0][k])/r[22] - self.g[1][k])/r[23] - self.g[2][k])/r[24] - self.g[3][k])/r[25] - self.g[4][k])/r[26] - self.g[5][k])/r[27];
-                                    tmp = self.g[6][k] - tmp;	
-                                    self.b[0][k] += tmp * c[15];
-                                    self.b[1][k] += tmp * c[16];
-                                    self.b[2][k] += tmp * c[17];
-                                    self.b[3][k] += tmp * c[18];
-                                    self.b[4][k] += tmp * c[19];
-                                    self.b[5][k] += tmp * c[20];
-                                    self.b[6][k] += tmp;
-                                    //println!("{}", self.b[6][k]);
+                                    tmp = self.g[6][k] - tmp;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[0][k], csb[0][k], tmp*c[15]);
+                                    self.b[0][k] = tmp_b;
+                                    csb[0][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[1][k], csb[1][k], tmp*c[16]);
+                                    self.b[1][k] = tmp_b;
+                                    csb[1][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[2][k], csb[2][k], tmp*c[17]);
+                                    self.b[2][k] = tmp_b;
+                                    csb[2][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[3][k], csb[3][k], tmp*c[18]);
+                                    self.b[3][k] = tmp_b;
+                                    csb[3][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[4][k], csb[4][k], tmp*c[19]);
+                                    self.b[4][k] = tmp_b;
+                                    csb[4][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[5][k], csb[5][k], tmp*c[20]);
+                                    self.b[5][k] = tmp_b;
+                                    csb[5][k] = tmp_csb;
+                                    let (tmp_b, tmp_csb) = self.add_cs(self.b[6][k], csb[6][k], tmp);
+                                    self.b[6][k] = tmp_b;
+                                    csb[6][k] = tmp_csb;
+
                                     let mut stmp = 0.;
                                     if integrate_spin {
                                         stmp = self.sg[6][k];
-                                        let sgk = self.dangular_momentum_dtt[k] - self.dangular_momentum_dt0[k];
+                                        let (sgk, sgk_cs) = self.add_cs(self.dangular_momentum_dtt[k], always_zero, -self.dangular_momentum_dt0[k]);
+                                        let (sgk, _sgk_cs) = self.add_cs(sgk, sgk_cs, always_zero);
                                         self.sg[6][k] = ((((((sgk/r[21] - self.sg[0][k])/r[22] - self.sg[1][k])/r[23] - self.sg[2][k])/r[24] - self.sg[3][k])/r[25] - self.sg[4][k])/r[26] - self.sg[5][k])/r[27];
-                                        stmp = self.sg[6][k] - stmp;	
-                                        self.sb[0][k] += stmp * c[15];
-                                        self.sb[1][k] += stmp * c[16];
-                                        self.sb[2][k] += stmp * c[17];
-                                        self.sb[3][k] += stmp * c[18];
-                                        self.sb[4][k] += stmp * c[19];
-                                        self.sb[5][k] += stmp * c[20];
-                                        self.sb[6][k] += stmp;
+                                        stmp = self.sg[6][k] - stmp;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[0][k], cssb[0][k], stmp*c[15]);
+                                        self.sb[0][k] = tmp_sb;
+                                        cssb[0][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[1][k], cssb[1][k], stmp*c[16]);
+                                        self.sb[1][k] = tmp_sb;
+                                        cssb[1][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[2][k], cssb[2][k], stmp*c[17]);
+                                        self.sb[2][k] = tmp_sb;
+                                        cssb[2][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[3][k], cssb[3][k], stmp*c[18]);
+                                        self.sb[3][k] = tmp_sb;
+                                        cssb[3][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[4][k], cssb[4][k], stmp*c[19]);
+                                        self.sb[4][k] = tmp_sb;
+                                        cssb[4][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[5][k], cssb[5][k], stmp*c[20]);
+                                        self.sb[5][k] = tmp_sb;
+                                        cssb[5][k] = tmp_cssb;
+                                        let (tmp_sb, tmp_cssb) = self.add_cs(self.sb[6][k], cssb[6][k], stmp);
+                                        self.sb[6][k] = tmp_sb;
+                                        cssb[6][k] = tmp_cssb;
                                     }
                                     
                                     // Monitor change in self.b[6][k] relative to self.at[k]. The predictor corrector scheme is converged if it is close to 0.
@@ -655,7 +771,6 @@ impl Ias15 {
                                         if b6ktmp.is_normal() && b6ktmp>maxb6ktmp {
                                             maxb6ktmp = b6ktmp;
                                         }
-                                        //println!("{} {}", maxak, maxb6ktmp);
                                         if integrate_spin {
                                             let dangular_momentum_dttk  = self.dangular_momentum_dtt[k].abs();
                                             if dangular_momentum_dttk.is_normal() && dangular_momentum_dttk>max_dangular_momentum_dtk {
@@ -796,15 +911,12 @@ impl Ias15 {
                         integrator_error = self.max(integrator_error_a, integrator_error_s);
                     }
                 }
-                //println!("** {}", integrator_error);
 
                 let mut dt_new: f64;
                 if  integrator_error.is_normal() { 	
                     // if error estimate is available, then increase by more educated guess
                     //dt_new = (INTEGRATOR_EPSILON/integrator_error).powf(1./7.) * dt_done;
                     dt_new = self.sqrt7(INTEGRATOR_EPSILON/integrator_error) * dt_done;
-                    //println!("{} {} {}", INTEGRATOR_EPSILON, self.sqrt7(INTEGRATOR_EPSILON/integrator_error), (INTEGRATOR_EPSILON/integrator_error).powf(1./7.));
-                    //println!("{} {}", dt_new, dt_done);
                 } else {
                 	// In the rare case that the error estimate doesn't give a finite number (e.g. when all forces accidentally cancel up to machine precission).
                     dt_new = dt_done/SAFETY_FACTOR; // by default, increase timestep a little
@@ -855,7 +967,6 @@ impl Ias15 {
                     self.time_step = dt_new;
                     if self.time_step_last_success != 0. {		// Do not predict next self.e/self.b values if this is the first time step.
                         let ratio = self.time_step/self.time_step_last_success;
-                        //self.predict_next_step(&mut self.e, &mut self.b, self.er, self.br, ratio);
                         self.predict_next_step(ratio);
                     }
                     
@@ -868,7 +979,6 @@ impl Ias15 {
                     }
                 }
                 self.time_step = dt_new;
-                //println!("Current time {} - New timestep {}", self.current_time, self.time_step);
             }
             ////////////////////////////////////////////////////////////////////
             //// END: Find new timestep
@@ -886,37 +996,50 @@ impl Ias15 {
             }
             for k in 0..3*self.n_particles {
                 {
-                    let x = self.x0[k];
-                    self.csx[k]  +=  (self.b[6][k]/72. + self.b[5][k]/56. + self.b[4][k]/42. 
-                                    + self.b[3][k]/30. + self.b[2][k]/20. + self.b[1][k]/12. + self.b[0][k]/6. + self.a0[k]/2.) 
-                                    * dt_done2 + self.v0[k] * dt_done;
-                    self.x0[k]    = x + self.csx[k];
-                    self.csx[k]  += x - self.x0[k]; 
+                    let (tmp_x0, tmp_csx) = self.add_cs(self.x0[k], self.csx[k], self.b[6][k]/72.*dt_done2);
+                    let (tmp_x0, tmp_csx) = self.add_cs(tmp_x0, tmp_csx, self.b[5][k]/56.*dt_done2);
+                    let (tmp_x0, tmp_csx) = self.add_cs(tmp_x0, tmp_csx, self.b[4][k]/42.*dt_done2);
+                    let (tmp_x0, tmp_csx) = self.add_cs(tmp_x0, tmp_csx, self.b[3][k]/30.*dt_done2);
+                    let (tmp_x0, tmp_csx) = self.add_cs(tmp_x0, tmp_csx, self.b[2][k]/20.*dt_done2);
+                    let (tmp_x0, tmp_csx) = self.add_cs(tmp_x0, tmp_csx, self.b[1][k]/12.*dt_done2);
+                    let (tmp_x0, tmp_csx) = self.add_cs(tmp_x0, tmp_csx, self.b[0][k]/6.*dt_done2);
+                    let (tmp_x0, tmp_csx) = self.add_cs(tmp_x0, tmp_csx, self.a0[k]/2.*dt_done2);
+                    let (tmp_x0, tmp_csx) = self.add_cs(tmp_x0, tmp_csx, self.v0[k]*dt_done);
+                    self.csx[k] = tmp_csx;
+                    self.x0[k] = tmp_x0;
                 }
                 {
-                    let v = self.v0[k]; 
-                    self.csv[k]  += (self.b[6][k]/8. + self.b[5][k]/7. + self.b[4][k]/6. 
-                                    + self.b[3][k]/5. + self.b[2][k]/4. + self.b[1][k]/3. + self.b[0][k]/2. + self.a0[k])
-                                    * dt_done;
-                    self.v0[k]    = v + self.csv[k];
-                    self.csv[k]  += v - self.v0[k];
+                    let (tmp_v0, tmp_csv) = self.add_cs(self.v0[k], self.csv[k], self.b[6][k]/8.*dt_done);
+                    let (tmp_v0, tmp_csv) = self.add_cs(tmp_v0, tmp_csv, self.b[5][k]/7.*dt_done);
+                    let (tmp_v0, tmp_csv) = self.add_cs(tmp_v0, tmp_csv, self.b[4][k]/6.*dt_done);
+                    let (tmp_v0, tmp_csv) = self.add_cs(tmp_v0, tmp_csv, self.b[3][k]/5.*dt_done);
+                    let (tmp_v0, tmp_csv) = self.add_cs(tmp_v0, tmp_csv, self.b[2][k]/4.*dt_done);
+                    let (tmp_v0, tmp_csv) = self.add_cs(tmp_v0, tmp_csv, self.b[1][k]/3.*dt_done);
+                    let (tmp_v0, tmp_csv) = self.add_cs(tmp_v0, tmp_csv, self.b[0][k]/2.*dt_done);
+                    let (tmp_v0, tmp_csv) = self.add_cs(tmp_v0, tmp_csv, self.a0[k]*dt_done);
+                    self.csv[k] = tmp_csv;
+                    self.v0[k] = tmp_v0;
 
                     if integrate_spin {
                         // spin
-                        let angular_momentum = self.angular_momentum0[k]; 
-                        self.css[k]  += (self.sb[6][k]/8. + self.sb[5][k]/7. + self.sb[4][k]/6. 
-                                        + self.sb[3][k]/5. + self.sb[2][k]/4. + self.sb[1][k]/3. + self.sb[0][k]/2. + self.dangular_momentum_dt0[k])
-                                        * dt_done;
-                        let angular_momentum_k = angular_momentum + self.css[k];
+                        let (tmp_angular_momentum0, tmp_css) = self.add_cs(self.angular_momentum0[k], self.css[k], self.sb[6][k]/8.*dt_done);
+                        let (tmp_angular_momentum0, tmp_css) = self.add_cs(tmp_angular_momentum0, tmp_css, self.sb[5][k]/7.*dt_done);
+                        let (tmp_angular_momentum0, tmp_css) = self.add_cs(tmp_angular_momentum0, tmp_css, self.sb[4][k]/6.*dt_done);
+                        let (tmp_angular_momentum0, tmp_css) = self.add_cs(tmp_angular_momentum0, tmp_css, self.sb[3][k]/5.*dt_done);
+                        let (tmp_angular_momentum0, tmp_css) = self.add_cs(tmp_angular_momentum0, tmp_css, self.sb[2][k]/4.*dt_done);
+                        let (tmp_angular_momentum0, tmp_css) = self.add_cs(tmp_angular_momentum0, tmp_css, self.sb[1][k]/3.*dt_done);
+                        let (tmp_angular_momentum0, tmp_css) = self.add_cs(tmp_angular_momentum0, tmp_css, self.sb[0][k]/2.*dt_done);
+                        let (tmp_angular_momentum0, tmp_css) = self.add_cs(tmp_angular_momentum0, tmp_css, self.dangular_momentum_dt0[k]*dt_done);
+                        self.css[k] = tmp_css;
+                        self.angular_momentum0[k] = tmp_angular_momentum0;
+
                         let moment_of_inertia_k = self.universe.particles[k/3].moment_of_inertia;
                         if moment_of_inertia_k == 0. {
                             panic!("Moment of inertia for particle {} is zero!", k/3);
                         }
-                        self.spin0[k] = angular_momentum_k / moment_of_inertia_k; // we need the spin, so we transform the angular momentum
-                        self.css[k]  += angular_momentum - angular_momentum_k;
+                        self.spin0[k] = self.angular_momentum0[k] / moment_of_inertia_k; // we need the spin, so we transform the angular momentum
                     }
                 }
-                //println!("{} {} {} {}", self.x0[k], self.v0[k], self.csx[k], self.csv[k]);
             }
 
             self.current_time += dt_done;
@@ -931,7 +1054,6 @@ impl Ias15 {
                 particle.inertial_velocity.x = self.v0[3*k+0];	// Set final velocity
                 particle.inertial_velocity.y = self.v0[3*k+1];
                 particle.inertial_velocity.z = self.v0[3*k+2];
-                //println!("{:?} {:?}", particle.inertial_position, particle.inertial_velocity);
 
                 if integrate_spin {
                     // Spin
@@ -956,7 +1078,6 @@ impl Ias15 {
             self.ser = self.se.clone();
             self.sbr = self.sb.clone();
             let ratio = self.time_step/dt_done;
-            //self.predict_next_step(&mut self.e, &mut self.b, self.er, self.br, ratio);
             self.predict_next_step(ratio);
             break; // Success.
 
@@ -965,9 +1086,6 @@ impl Ias15 {
 
 
     fn predict_next_step(&mut self, ratio: f64) {
-    //fn predict_next_step(self, e : &mut [[f64; 3*N_PARTICLES]; 7], b : &mut [[f64; 3*N_PARTICLES]; 7], 
-                            //_e : [[f64; 3*N_PARTICLES]; 7], _b: [[f64; 3*N_PARTICLES]; 7],
-                            //ratio: f64) {
         let mut consider_dangular_momentum_dt_from_general_relativity = false;
         if let ConsiderGeneralRelativity::Kidder1995 = self.universe.consider_general_relativity {
             consider_dangular_momentum_dt_from_general_relativity = true;
@@ -1113,6 +1231,13 @@ impl Ias15 {
         } else {
             b
         }
+    }
+
+    fn add_cs(&self, p: f64, csp: f64, inp: f64) -> (f64, f64) {
+        let y = inp - csp;
+        let new_p = p + y;
+        let new_csp = (new_p - p) - y;
+        (new_p, new_csp)
     }
 
 }

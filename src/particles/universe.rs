@@ -141,7 +141,7 @@ impl Universe {
                 //let r = (dx*dx + dy*dy + dz*dz).sqrt();
                 //let r = (distance_2 + softening).sqrt();
                 let distance = distance_2.sqrt();
-                let prefact = -G/(distance_2*distance) * particle_b_mass;
+                let prefact = -G/(distance*distance*distance) * particle_b_mass;
 
                 particle_a.inertial_acceleration.x += prefact * dx;
                 particle_a.inertial_acceleration.y += prefact * dy;
