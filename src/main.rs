@@ -130,7 +130,7 @@ fn main() {
                     boxed_universe_integrator.write_recovery_snapshot(&universe_integrator_snapshot_path, &mut universe_history_writer);
                 }
             },
-            Err(e) => { println!("[WARNING {} UTC] {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), e); break; }
+            Err(e) => { println!("[WARNING {} UTC] {} '{}'.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), e, first_universe_integrator_snapshot_filename); break; }
         };
     }
 

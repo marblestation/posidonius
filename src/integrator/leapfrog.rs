@@ -171,7 +171,7 @@ impl Integrator for LeapFrog {
 
         // Return
         if self.current_time+self.time_step > self.universe.time_limit {
-            Err("Reached maximum time limit.".to_string())
+            Err("Reached maximum time limit".to_string())
         } else {
             Ok(first_snapshot_trigger || recovery_snapshot_time_trigger)
         }
