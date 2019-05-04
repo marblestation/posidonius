@@ -20,6 +20,7 @@ def read(filename):
     while True:
         try:
             row = f.read(8+8+4+8*(len(fields)-3))
+            #vrow = struct.unpack('> d d i' + ' d'*(len(fields)-3), row)
             vrow = struct.unpack('< d d i' + ' d'*(len(fields)-3), row)
         except:
             break

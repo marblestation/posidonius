@@ -10,6 +10,7 @@ pub enum EvolutionType {
     Leconte2011(f64), // BrownDwarf
     Baraffe1998(f64), // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
     LeconteChabrier2013, // Jupiter
+    LeconteChabrier2013dissip, // Jupiter with dynamical tide
     NonEvolving,
 }
 
@@ -423,6 +424,8 @@ impl Evolver {
             EvolutionType::Leconte2011(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
             EvolutionType::LeconteChabrier2013 => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
             _ => { (current_radius_of_gyration_2, 0) }
+            EvolutionType::LeconteChabrier2013dissip => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
+            _ => { (current_radius_of_gyration_2, 0) }
         };
         self.left_index += left_index;
         return new_radius_of_gyration_2;
@@ -431,6 +434,8 @@ impl Evolver {
     pub fn love_number(&mut self, current_time: f64, current_love_number: f64) -> f64 {
         let (new_love_number, left_index) = match self.evolution_type {
             EvolutionType::LeconteChabrier2013 => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
+            _ => { (current_love_number, 0) }
+            EvolutionType::LeconteChabrier2013dissip => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
             _ => { (current_love_number, 0) }
         };
         self.left_index += left_index;
@@ -456,7 +461,7 @@ impl Evolver {
         // Excentric orbits needs more than one frequency to be described and it will be
         // included in future versions of this code.
         let (new_inverse_tidal_q_factor, left_index) = match self.evolution_type {
-            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) => {
+            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013dissip => {
                 interpolate_b_spline(&self.time[self.idx()..], &self.inverse_tidal_q_factor[self.idx()..], current_time)
             },
             _ => (current_inverse_tidal_q_factor, 0),

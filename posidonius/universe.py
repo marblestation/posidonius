@@ -3,7 +3,7 @@ import datetime
 from axes import Axes
 from integrator import WHFast, Ias15, LeapFrog
 from constants import *
-from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
+from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, LeconteChabrier2013dissip, BolmontMathis2016, GalletBolmont2017
 from tools import calculate_spin, mass_radius_relation, get_center_of_mass_of_pair
 
 class ConsiderGeneralRelativity(object):
@@ -18,7 +18,7 @@ class ConsiderGeneralRelativity(object):
         return self._data
 
 class Universe(object):
-    def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_general_relativity):
+    def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_type_two_migration, consider_rotational_flattening, consider_general_relativity):
         self._time_step = time_step
         self._recovery_snapshot_period = recovery_snapshot_period
         self._historic_snapshot_period = historic_snapshot_period
@@ -26,6 +26,7 @@ class Universe(object):
         self._data['time_limit'] = float(time_limit)
         self._data['initial_time'] = float(initial_time)
         self._data['consider_tides'] = consider_tides
+        self._data['consider_type_two_migration'] = consider_type_two_migration
         self._data['consider_rotational_flattening'] = consider_rotational_flattening
         if consider_general_relativity == True:
             consider_general_relativity = "Kidder1995" # MercuryT
@@ -53,14 +54,16 @@ class Universe(object):
         radius_of_gyration_2 = 0.0
         love_number = 0.0
         fluid_love_number = 0.0
+        type_two_migration_time = 0.0
+        type_two_migration_inner_disk_edge_distance = 0.0
         position = Axes(0., 0., 0.)
         velocity = Axes(0., 0., 0.)
         spin = Axes(0., 0., 0.)
         evolution_type = NonEvolving()
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, type_two_migration_time, type_two_migration_inner_disk_edge_distance, position, velocity, spin, evolution_type)
         self._data['n_particles'] -= 1 # Compensate the addition from the previous add_particle call
 
-    def add_particle(self, mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
+    def add_particle(self, mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, type_two_migration_time, type_two_migration_inner_disk_edge_distance, position, velocity, spin, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
         if self._data['n_particles'] > MAX_PARTICLES:
             raise Exception("Maximum number of particles reached: {}".format(MAX_PARTICLES))
         particle = {}
@@ -71,6 +74,8 @@ class Universe(object):
         particle['radius_of_gyration_2'] = float(radius_of_gyration_2)
         particle['love_number'] = float(love_number)
         particle['fluid_love_number'] = float(fluid_love_number)
+        particle['type_two_migration_time'] = float(type_two_migration_time)
+        particle['type_two_migration_inner_disk_edge_distance'] = float(type_two_migration_inner_disk_edge_distance)
         particle['position'] = position.get()
         particle['velocity'] = velocity.get()
         particle['spin'] = spin.get()
@@ -98,6 +103,7 @@ class Universe(object):
             particle['general_relativity_factor'] =  central_body_mass_g*particle['mass_g'] / np.power(central_body_mass_g + particle['mass_g'], 2)
         particle['norm_velocity_vector'] = 0.0
         particle['tidal_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['type_two_migration_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['scalar_product_of_vector_position_with_stellar_spin'] = 0.0
         particle['scalar_product_of_vector_position_with_planetary_spin'] = 0.0
         particle['radial_component_of_the_force_induced_by_rotation'] = 0.0
@@ -200,11 +206,14 @@ class Universe(object):
         # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 2.006*3.845764e4 # -60+64
 
+        type_two_migration_time = 0.
+        type_two_migration_inner_disk_edge_distance = 0.
+
         radius_factor = 0.845649342247916
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 1.94e-1 # Brown dwarf
 
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, type_two_migration_time, type_two_migration_inner_disk_edge_distance, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
 
 
     def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
@@ -215,7 +224,7 @@ class Universe(object):
         wind_rotation_saturation = 14. * TWO_PI/25.0 # = 1.7592918860102842, wsat in units of the spin of the Sun today
         """
         if type(evolution_type) not in (BolmontMathis2016, Leconte2011, Baraffe2015, GalletBolmont2017, NonEvolving) and not (type(evolution_type) is Baraffe1998 and mass == 1.0):
-            raise Exception("Evolution type should be BolmontMathis2016 LeconteChabrier2013 Baraffe1998 (mass = 0.10) Baraffe2015 GalletBolmont2017 or NonEvolving!")
+            raise Exception("Evolution type should be BolmontMathis2016 Leconte2011 Baraffe1998 (mass = 0.10) Baraffe2015 GalletBolmont2017 or NonEvolving!")
 
         # Typical rotation period: 24 hours
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
@@ -228,11 +237,13 @@ class Universe(object):
         # Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 4.992*3.845764e-2 # -66+64
 
+        type_two_migration_time = 0.
+        type_two_migration_inner_disk_edge_distance = 0.
 
         radius_factor = 1.
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 5.9e-2 # Sun
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, type_two_migration_time, type_two_migration_inner_disk_edge_distance, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
 
 
     def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
@@ -251,10 +262,13 @@ class Universe(object):
         # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 2.006*3.845764e4 # -60+64
 
+        type_two_migration_time = 0.
+        type_two_migration_inner_disk_edge_distance = 0.
+
         radius_factor = 0.845649342247916
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 2.0e-1 # M-dwarf
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, type_two_migration_time, type_two_migration_inner_disk_edge_distance, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
 
 
     def add_jupiter_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
@@ -274,8 +288,11 @@ class Universe(object):
         dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
         #dissipation_factor = 2.006*3.845764e4 // Gas giant
 
+        type_two_migration_time = 0.
+        type_two_migration_inner_disk_edge_distance = 0.
+
         radius_of_gyration_2 = 2.54e-1 # Gas giant
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, type_two_migration_time, type_two_migration_inner_disk_edge_distance, position, velocity, spin, evolution_type)
 
 
     def add_earth_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
@@ -293,8 +310,10 @@ class Universe(object):
         k2pdelta = 2.465278e-3 # Terrestrial planets
         dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
 
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
+        type_two_migration_time = 0.
+        type_two_migration_inner_disk_edge_distance = 0.
 
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, type_two_migration_time, type_two_migration_inner_disk_edge_distance, position, velocity, spin, evolution_type)
 
 
     def populate_inertial_frame(self):
