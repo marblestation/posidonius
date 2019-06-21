@@ -61,3 +61,7 @@ pub const K2 : f64 = G_MERCURY;
 // Solar system
 pub const SUN_DYN_FREQ : f64 = K2/(R_SUN*R_SUN*R_SUN); // Needed for MathisSolarLike
 
+// Boltzmann constant and mass of an hydrogen atom from CODATA 2017
+// Table 3 of Newell et al. 2018 (https://iopscience.iop.org/article/10.1088/1681-7575/aa950a/pdf) 
+pub const BOLTZMANN_CONSTANT : f64 = 1.380649e-23; // J.K-1
+pub const MASS_HYDROGEN_ATOM_SI : f64 = 1.672162841e-27; // kg
