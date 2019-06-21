@@ -668,12 +668,39 @@ impl Universe {
 
                     if sma > particle.type_two_migration_inner_disk_edge_distance {
                         let factor1 = 1. / particle.mass;
-                        let factor = -particle.mass / particle.type_two_migration_time;
+                        // From Alibert et al. 2013 (https://ui.adsabs.harvard.edu/abs/2013A&A...558A.109A)
+                        let factor_migration = -particle.mass / (2.0 * particle.type_two_migration_time);
 
-                        // - Equation 5 from Mandell, Raymond et al. 2007 (https://ui.adsabs.harvard.edu/#abs/2007ApJ...660..823M/abstract)
-                        let total_type_two_migration_force_x = factor * particle.velocity.x;
-                        let total_type_two_migration_force_y = factor * particle.velocity.y;
-                        let total_type_two_migration_force_z = factor * particle.velocity.z;
+                        let eccentricity_damping_timescale = 0.1 * particle.type_two_migration_time;
+                        let factor_damping_eccentricity = -particle.mass * 2.0 / eccentricity_damping_timescale;
+
+                        let inclination_damping_timescale = eccentricity_damping_timescale;
+                        let factor_damping_inclination = -particle.mass * 2.0 /inclination_damping_timescale;
+
+                        // Force responsible for migration: Eq 8 from Alibert et al. 2013
+                        let type_two_migration_force_x = factor_migration * particle.velocity.x;
+                        let type_two_migration_force_y = factor_migration * particle.velocity.y;
+                        let type_two_migration_force_z = factor_migration * particle.velocity.z;
+
+                        // Force responsible for eccentricity damping: Eq 9
+                        let scalar_product_velocity_radius_over_radius_squared = 1.0/(particle.distance * particle.distance)
+                            * (particle.position.x * particle.velocity.x 
+                               + particle.position.y * particle.velocity.y
+                               + particle.position.z * particle.velocity.z);
+                        let type_two_migration_eccentricity_damping_force_x = factor_damping_eccentricity * scalar_product_velocity_radius_over_radius_squared * particle.position.x;
+                        let type_two_migration_eccentricity_damping_force_y = factor_damping_eccentricity * scalar_product_velocity_radius_over_radius_squared * particle.position.y;
+                        let type_two_migration_eccentricity_damping_force_z = factor_damping_eccentricity * scalar_product_velocity_radius_over_radius_squared * particle.position.z;
+
+                        // Force responsible for inclination damping: Eq 10
+                        let type_two_migration_inclination_damping_force_x = 0.0;
+                        let type_two_migration_inclination_damping_force_y = 0.0;
+                        let type_two_migration_inclination_damping_force_z = factor_damping_inclination * particle.velocity.z;
+
+                        // Total
+                        let total_type_two_migration_force_x = type_two_migration_force_x + type_two_migration_eccentricity_damping_force_x + type_two_migration_inclination_damping_force_x;
+                        let total_type_two_migration_force_y = type_two_migration_force_y + type_two_migration_eccentricity_damping_force_y + type_two_migration_inclination_damping_force_y;
+                        let total_type_two_migration_force_z = type_two_migration_force_z + type_two_migration_eccentricity_damping_force_z + type_two_migration_inclination_damping_force_z;
+
 
                         sum_total_type_two_migration_force.x += total_type_two_migration_force_x;
                         sum_total_type_two_migration_force.y += total_type_two_migration_force_y;
