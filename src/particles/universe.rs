@@ -2,6 +2,7 @@ extern crate time;
 use std::collections::HashMap;
 use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_PARTICLES, MAX_DISTANCE_2, DBL_EPSILON_2};
 use super::super::tools::calculate_perihelion_distance_and_eccentricity;
+use super::super::tools::calculate_migration_timescale;
 use super::{Evolver, EvolutionType};
 use super::{Particle};
 use super::{Axes};
@@ -663,6 +664,10 @@ impl Universe {
             for particle in particles.iter_mut() {
                 //if (particle.type_two_migration_time != 0.0) && (particle.distance > particle.type_two_migration_inner_disk_edge_distance) {
                 if particle.type_two_migration_time != 0.0 {
+
+                    let migration_timescale = calculate_migration_timescale(time, planet_distance, planet_semi_major_axis, disk_surface_density_normalization
+                                     , disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime
+                                     , alpha_disk, disk_mean_molecular_weight, planet_mass, star_mass);
 
                     let sma = (particle.mass_g+star.mass_g) * particle.distance / (2.0 * (particle.mass_g+star.mass_g) -  particle.distance * particle.norm_velocity_vector*particle.norm_velocity_vector);
 
