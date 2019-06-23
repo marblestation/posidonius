@@ -16,7 +16,7 @@ pub struct Particle {
     pub love_number: f64,   // Love number of degree 2 (i.e., k2). Dimensionless parameters that measure the rigidity of a planetary body and the 
                             // susceptibility of its shape to change in response to a tidal potential.
     pub fluid_love_number: f64,   // love number for a completely fluid planet (used for rotational flattening effects)
-    pub type_two_migration_time: f64, // type two migration time
+    //pub type_two_migration_time: f64, // type two migration time
     //pub type_two_migration_inner_disk_edge_distance: f64, // type two migration stops at inner disk edge
     pub disk_inner_edge_distance: f64,
     pub disk_outer_edge_distance: f64,

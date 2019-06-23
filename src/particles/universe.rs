@@ -493,46 +493,46 @@ impl Universe {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {
 
-                // Only calculate tides if planet is not in disk
-                if particle.type_two_migration_time == 0.0 {
+                //// Only calculate tides if planet is not in disk
+                //if particle.type_two_migration_time == 0.0 {
 
-                    // (distance to star)^7
-                    let distance_7 = particle.distance.powi(7);
+                // (distance to star)^7
+                let distance_7 = particle.distance.powi(7);
 
-                    //// Tidal force calculation (star) :: Only orthogonal component is needed
-                    if central_body {
-                        // - Third line of Equation 5 from Bolmont et al. 2015
-                        //   This expression has R**10 (instead of R**5 in Eq. 5) 
-                        //   because it uses sigma (i.e., scaled_dissipation_factor) 
-                        //   and not k2$\Delta$t (between k2$\Delta$t and sigma 
-                        //   there is a R**5 factor as shown in Equation 28)
-                        //   - k2 is love number
-                        let star_scaled_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &star.id, star.evolution_type, star.scaled_dissipation_factor);
-                        particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass.powi(2))
-                                                        * (star.radius.powi(10)) 
-                                                        * star_scaled_dissipation_factor / distance_7;
-                    } else {
-                        // - Second line of Equation 5 from Bolmont et al. 2015
-                        //   This expression has R**10 (instead of R**5 in Eq. 5) 
-                        //   because it uses sigma (i.e., scaled_dissipation_factor) 
-                        //   and not k2$\Delta$t (between k2$\Delta$t and sigma 
-                        //   there is a R**5 factor as shown in Equation 28)
-                        //   - k2 is love number
-                        particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (star.mass.powi(2))
-                                                        * (particle.radius.powi(10))
-                                                        * particle.scaled_dissipation_factor / distance_7;
-
-                        // SBC
-                        //println!("> {:e} {:e} {:e} {:e}", star.mass_g, particle.radius.powi(10), particle.scaled_dissipation_factor, distance_7);
-                        //println!("> {:e} {:e} {:e}", particle.position.x, particle.position.y, particle.position.z);
-                    }
+                //// Tidal force calculation (star) :: Only orthogonal component is needed
+                if central_body {
+                    // - Third line of Equation 5 from Bolmont et al. 2015
+                    //   This expression has R**10 (instead of R**5 in Eq. 5) 
+                    //   because it uses sigma (i.e., scaled_dissipation_factor) 
+                    //   and not k2$\Delta$t (between k2$\Delta$t and sigma 
+                    //   there is a R**5 factor as shown in Equation 28)
+                    //   - k2 is love number
+                    let star_scaled_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &star.id, star.evolution_type, star.scaled_dissipation_factor);
+                    particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass.powi(2))
+                                                    * (star.radius.powi(10)) 
+                                                    * star_scaled_dissipation_factor / distance_7;
                 } else {
-                    if central_body {
-                        particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 0.0
-                    } else{
-                        particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 0.0
-                    }
+                    // - Second line of Equation 5 from Bolmont et al. 2015
+                    //   This expression has R**10 (instead of R**5 in Eq. 5) 
+                    //   because it uses sigma (i.e., scaled_dissipation_factor) 
+                    //   and not k2$\Delta$t (between k2$\Delta$t and sigma 
+                    //   there is a R**5 factor as shown in Equation 28)
+                    //   - k2 is love number
+                    particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (star.mass.powi(2))
+                                                    * (particle.radius.powi(10))
+                                                    * particle.scaled_dissipation_factor / distance_7;
+
+                    // SBC
+                    //println!("> {:e} {:e} {:e} {:e}", star.mass_g, particle.radius.powi(10), particle.scaled_dissipation_factor, distance_7);
+                    //println!("> {:e} {:e} {:e}", particle.position.x, particle.position.y, particle.position.z);
                 }
+                //} else {
+                    //if central_body {
+                        //particle.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 0.0
+                    //} else{
+                        //particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 0.0
+                    //}
+                //}
             }
         }
     }
@@ -543,34 +543,34 @@ impl Universe {
 
             for particle in particles.iter_mut() {
 
-                // Only calculate tides if planet is not in disk
-                if particle.type_two_migration_time == 0.0 {
+                //// Only calculate tides if planet is not in disk
+                //if particle.type_two_migration_time == 0.0 {
 
-                    let planet_mass_2 = particle.mass * particle.mass;
-                    // Conservative part of the radial tidal force
-                    let radial_component_of_the_tidal_force_conservative_part = -3.0 * K2 / particle.distance.powi(7)
-                                * (planet_mass_2 * star.radius.powi(5) * star.love_number 
-                                + star_mass_2 * particle.radius.powi(5) * particle.love_number);
+                let planet_mass_2 = particle.mass * particle.mass;
+                // Conservative part of the radial tidal force
+                let radial_component_of_the_tidal_force_conservative_part = -3.0 * K2 / particle.distance.powi(7)
+                            * (planet_mass_2 * star.radius.powi(5) * star.love_number 
+                            + star_mass_2 * particle.radius.powi(5) * particle.love_number);
 
-                    // Dissipative part of the radial tidal force:
-                    let factor1 = -13.5 * particle.radial_velocity / particle.distance.powi(8);
-                    let star_scaled_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &particle.id, star.evolution_type, star.scaled_dissipation_factor);
-                    let term1 = planet_mass_2
-                                * star.radius.powi(10)
-                                * star_scaled_dissipation_factor;
-                    let term2 = star_mass_2
-                                * particle.radius.powi(10)
-                                * particle.scaled_dissipation_factor;
-                    // If we consider the star as a point mass (used for denergy_dt calculation):
-                    particle.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass = factor1 * term2;
-                    let radial_component_of_the_tidal_force_dissipative_part = particle.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor1 * term1;
+                // Dissipative part of the radial tidal force:
+                let factor1 = -13.5 * particle.radial_velocity / particle.distance.powi(8);
+                let star_scaled_dissipation_factor = Universe::planet_dependent_dissipation_factor(&self.star_planet_dependent_dissipation_factors, &particle.id, star.evolution_type, star.scaled_dissipation_factor);
+                let term1 = planet_mass_2
+                            * star.radius.powi(10)
+                            * star_scaled_dissipation_factor;
+                let term2 = star_mass_2
+                            * particle.radius.powi(10)
+                            * particle.scaled_dissipation_factor;
+                // If we consider the star as a point mass (used for denergy_dt calculation):
+                particle.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass = factor1 * term2;
+                let radial_component_of_the_tidal_force_dissipative_part = particle.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor1 * term1;
 
-                    // Sum of the dissipative and conservative part of the radial force
-                    // - First line Equation 5 from Bolmont et al. 2015
-                    particle.radial_component_of_the_tidal_force = radial_component_of_the_tidal_force_conservative_part + radial_component_of_the_tidal_force_dissipative_part;
-                } else {
-                    particle.radial_component_of_the_tidal_force = 0.0
-                }
+                // Sum of the dissipative and conservative part of the radial force
+                // - First line Equation 5 from Bolmont et al. 2015
+                particle.radial_component_of_the_tidal_force = radial_component_of_the_tidal_force_conservative_part + radial_component_of_the_tidal_force_dissipative_part;
+                //} else {
+                    //particle.radial_component_of_the_tidal_force = 0.0
+                //}
             }
         }
     }
@@ -579,24 +579,24 @@ impl Universe {
         if let Some((_, particles)) = self.particles[..self.n_particles].split_first_mut() {
             for particle in particles.iter_mut() {
 
-                // Only calculate tides if planet is not in disk
-                if particle.type_two_migration_time == 0.0 {
+                //// Only calculate tides if planet is not in disk
+                //if particle.type_two_migration_time == 0.0 {
 
-                    // - Equation 32 from Bolmont et al. 2015
-                    //// Instantaneous energy loss dE/dt due to tides
-                    //// in Msun.AU^2.day^(-3)
-                    //radial_tidal_force_for_energy_loss_calculation = factor1 * term2; // Ftidr_diss
-                    let factor2 = particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide / particle.distance;
-                    particle.denergy_dt = -((1.0 / particle.distance * (particle.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor2 * particle.radial_velocity))
-                                * (particle.position.x*particle.velocity.x + particle.position.y*particle.velocity.y + particle.position.z*particle.velocity.z)
-                                + factor2 
-                                * ((particle.spin.y*particle.position.z - particle.spin.z*particle.position.y - particle.velocity.x) * particle.velocity.x
-                                + (particle.spin.z*particle.position.x - particle.spin.x*particle.position.z - particle.velocity.y) * particle.velocity.y
-                                + (particle.spin.x*particle.position.y - particle.spin.y*particle.position.x - particle.velocity.z) * particle.velocity.z))
-                                - (particle.dangular_momentum_dt_due_to_tides.x*particle.spin.x + particle.dangular_momentum_dt_due_to_tides.y*particle.spin.y + particle.dangular_momentum_dt_due_to_tides.z*particle.spin.z);
-                } else {
-                    particle.denergy_dt = 0.0
-                }
+                // - Equation 32 from Bolmont et al. 2015
+                //// Instantaneous energy loss dE/dt due to tides
+                //// in Msun.AU^2.day^(-3)
+                //radial_tidal_force_for_energy_loss_calculation = factor1 * term2; // Ftidr_diss
+                let factor2 = particle.orthogonal_component_of_the_tidal_force_due_to_planetary_tide / particle.distance;
+                particle.denergy_dt = -((1.0 / particle.distance * (particle.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor2 * particle.radial_velocity))
+                            * (particle.position.x*particle.velocity.x + particle.position.y*particle.velocity.y + particle.position.z*particle.velocity.z)
+                            + factor2 
+                            * ((particle.spin.y*particle.position.z - particle.spin.z*particle.position.y - particle.velocity.x) * particle.velocity.x
+                            + (particle.spin.z*particle.position.x - particle.spin.x*particle.position.z - particle.velocity.y) * particle.velocity.y
+                            + (particle.spin.x*particle.position.y - particle.spin.y*particle.position.x - particle.velocity.z) * particle.velocity.z))
+                            - (particle.dangular_momentum_dt_due_to_tides.x*particle.spin.x + particle.dangular_momentum_dt_due_to_tides.y*particle.spin.y + particle.dangular_momentum_dt_due_to_tides.z*particle.spin.z);
+                //} else {
+                    //particle.denergy_dt = 0.0
+                //}
             }
         }
     }
