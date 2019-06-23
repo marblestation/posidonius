@@ -58,7 +58,9 @@ if __name__ == "__main__":
     #star_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
     #star_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
     #star_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, star_fluid_love_number, star_disk_inner_edge_distance, star_disk_outer_edge_distance, star_disk_lifetime, star_alpha_disk, star_disk_surface_density_normalization, star_position, star_velocity, star_spin, star_evolution_type)
+    universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, star_fluid_love_number \
+                          , star_disk_inner_edge_distance, star_disk_outer_edge_distance, star_disk_lifetime, star_alpha_disk, star_disk_surface_density_normalization, star_disk_mean_molecular_weight \
+                          , star_position, star_velocity, star_spin, star_evolution_type)
 
 
     ############################################################################
@@ -79,7 +81,7 @@ if __name__ == "__main__":
     planet_alpha_disk = 1.0e-2
     disk_surface_density_normalization_gcm = 1000. # g.cm^-2
     disk_surface_density_normalization_SI = disk_surface_density_normalization_gcm * 1.0e-3 * 1.0e4 # kg.m^-2
-    planet_disk_surface_density_normalization = disk_surface_density_normalization_SI * (1.0/cst.M_SUN) * np.power(cst.AU, 2) # Msun.AU^-2
+    planet_disk_surface_density_normalization = disk_surface_density_normalization_SI * (1.0/posidonius.constants.M_SUN) * np.power(posidonius.constants.AU, 2) # Msun.AU^-2
     planet_disk_mean_molecular_weight =  2.4
 
     #////////// Specify initial position and velocity for a stable orbit

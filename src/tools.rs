@@ -892,9 +892,9 @@ fn calculate_disk_surface_density(time: f64, planet_distance: f64, disk_surface_
     let initial_disk_surface_density = disk_surface_density_normalization * planet_distance.powi(-1)
         * (-1.0 * planet_distance/disk_outer_edge_distance).exp() * (1.0 - (disk_inner_edge_distance/planet_distance).sqrt()); // Unit of disk_surface_density_normalization
 
-    let disk_surface_density = 0.0;
+    let mut disk_surface_density = 0.0;
     if planet_distance > disk_inner_edge_distance {
-        let disk_surface_density = initial_disk_surface_density * (-time/disk_lifetime).exp();
+        disk_surface_density = initial_disk_surface_density * (-time/disk_lifetime).exp();
     }
     disk_surface_density
 }
@@ -924,6 +924,7 @@ pub fn calculate_migration_timescale(time: f64, planet_distance: f64, planet_sem
                                      , alpha_disk: f64, disk_mean_molecular_weight: f64, planet_mass: f64, star_mass: f64) -> f64 {
     let gas_radial_velocity = calculate_gas_radial_velocity(planet_distance, alpha_disk, star_mass, disk_mean_molecular_weight, planet_semi_major_axis);
     let disk_surface_density = calculate_disk_surface_density(time, planet_distance, disk_surface_density_normalization, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime);
+
     let x = 1.0_f64;
     let a_dot = gas_radial_velocity * x.min(2.0 * disk_surface_density * planet_semi_major_axis.powi(2) / planet_mass);
     let timescale = -planet_semi_major_axis / a_dot;

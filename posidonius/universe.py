@@ -54,8 +54,6 @@ class Universe(object):
         radius_of_gyration_2 = 0.0
         love_number = 0.0
         fluid_love_number = 0.0
-        #type_two_migration_time = 0.0
-        #type_two_migration_inner_disk_edge_distance = 0.0
         disk_inner_edge_distance = 0.0
         disk_outer_edge_distance = 0.0
         disk_lifetime = 0.0
@@ -66,7 +64,6 @@ class Universe(object):
         velocity = Axes(0., 0., 0.)
         spin = Axes(0., 0., 0.)
         evolution_type = NonEvolving()
-        #self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, type_two_migration_time, type_two_migration_inner_disk_edge_distance, position, velocity, spin, evolution_type)
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, position, velocity, spin, evolution_type)
         self._data['n_particles'] -= 1 # Compensate the addition from the previous add_particle call
 
@@ -81,8 +78,6 @@ class Universe(object):
         particle['radius_of_gyration_2'] = float(radius_of_gyration_2)
         particle['love_number'] = float(love_number)
         particle['fluid_love_number'] = float(fluid_love_number)
-        #particle['type_two_migration_time'] = float(type_two_migration_time)
-        #particle['type_two_migration_inner_disk_edge_distance'] = float(type_two_migration_inner_disk_edge_distance)
         particle['disk_inner_edge_distance'] = float(disk_inner_edge_distance)
         particle['disk_outer_edge_distance'] = float(disk_outer_edge_distance)
         particle['disk_lifetime'] = float(disk_lifetime)
