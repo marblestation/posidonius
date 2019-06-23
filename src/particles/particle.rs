@@ -17,7 +17,13 @@ pub struct Particle {
                             // susceptibility of its shape to change in response to a tidal potential.
     pub fluid_love_number: f64,   // love number for a completely fluid planet (used for rotational flattening effects)
     pub type_two_migration_time: f64, // type two migration time
-    pub type_two_migration_inner_disk_edge_distance: f64, // type two migration stops at inner disk edge
+    //pub type_two_migration_inner_disk_edge_distance: f64, // type two migration stops at inner disk edge
+    pub disk_inner_edge_distance: f64,
+    pub disk_outer_edge_distance: f64,
+    pub disk_lifetime: f64,
+    pub alpha_disk: f64,
+    pub disk_surface_density_normalization: f64,
+    pub disk_mean_molecular_weight: f64,
     //
     // In the heliocentric frame the star is at rest with respect to the origin of the coordinate system
     pub position: Axes,
