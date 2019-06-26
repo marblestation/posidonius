@@ -47,3 +47,9 @@ G = G_MERCURY
 K2 = G_MERCURY
 K = np.sqrt(G_MERCURY) # Gaussian constant (in Mercury is 0.01720209895 but it does not follow from the recommended IAU constants)
 
+# Boltzmann constant and mass of an hydrogen atom from CODATA 2017
+# Table 3 of Newell et al. 2018 (https://iopscience.iop.org/article/10.1088/1681-7575/aa950a/pdf)
+BOLTZMANN_CONSTANT_SI = 1.380649e-23 # J.K-1
+MASS_HYDROGEN_ATOM_SI = 1.672162841e-27 # kg
+BOLTZMANN_CONSTANT = BOLTZMANN_CONSTANT_SI/(M_SUN*AU*AU) * DAY*DAY # M_SUN.AU^2.DAY^-2.K-1
+MASS_HYDROGEN_ATOM = MASS_HYDROGEN_ATOM_SI/M_SUN # kg
