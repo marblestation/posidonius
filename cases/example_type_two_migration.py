@@ -41,6 +41,7 @@ if __name__ == "__main__":
     star_alpha_disk = 0.0
     star_disk_surface_density_normalization = 0.0
     star_disk_mean_molecular_weight =  0.0
+    star_migration_timescale = 0.0
     #star_type_two_migration_time = 0. # days
     #star_type_two_migration_inner_disk_edge_distance = 0.0 # AU
     star_position = posidonius.Axes(0., 0., 0.)
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     #star_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
     #star_evolution_type = posidonius.NonEvolving()
     universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, star_fluid_love_number \
-                          , star_disk_inner_edge_distance, star_disk_outer_edge_distance, star_disk_lifetime, star_alpha_disk, star_disk_surface_density_normalization, star_disk_mean_molecular_weight \
+                          , star_disk_inner_edge_distance, star_disk_outer_edge_distance, star_disk_lifetime, star_alpha_disk, star_disk_surface_density_normalization, star_disk_mean_molecular_weight, star_migration_timescale \
                           , star_position, star_velocity, star_spin, star_evolution_type)
 
 
@@ -83,6 +84,7 @@ if __name__ == "__main__":
     disk_surface_density_normalization_SI = disk_surface_density_normalization_gcm * 1.0e-3 * 1.0e4 # kg.m^-2
     planet_disk_surface_density_normalization = disk_surface_density_normalization_SI * (1.0/posidonius.constants.M_SUN) * np.power(posidonius.constants.AU, 2) # Msun.AU^-2
     planet_disk_mean_molecular_weight =  2.4
+    planet_migration_timescale = 0.0
 
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
@@ -117,7 +119,7 @@ if __name__ == "__main__":
 
     planet_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
     #planet_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number, planet_disk_inner_edge_distance, planet_disk_outer_edge_distance, planet_disk_lifetime, planet_alpha_disk, planet_disk_surface_density_normalization, planet_disk_mean_molecular_weight, planet_position, planet_velocity, planet_spin, planet_evolution_type)
+    universe.add_particle(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number, planet_disk_inner_edge_distance, planet_disk_outer_edge_distance, planet_disk_lifetime, planet_alpha_disk, planet_disk_surface_density_normalization, planet_disk_mean_molecular_weight, planet_migration_timescale, planet_position, planet_velocity, planet_spin, planet_evolution_type)
 
     whfast_alternative_coordinates="DemocraticHeliocentric"
     #whfast_alternative_coordinates="WHDS"
