@@ -24,6 +24,7 @@ pub struct Particle {
     pub alpha_disk: f64,
     pub disk_surface_density_normalization: f64,
     pub disk_mean_molecular_weight: f64,
+    pub migration_timescale: f64,
     //
     // In the heliocentric frame the star is at rest with respect to the origin of the coordinate system
     pub position: Axes,

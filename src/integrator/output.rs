@@ -141,10 +141,12 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                             horb_z,
                             horbn,
                             particle.denergy_dt,                // Msun.AU^2.day^-3
+                            particle.migration_timescale,
                         );
             bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
         } else {
             let output = (
+                            0.,
                             0.,
                             0.,
                             0.,

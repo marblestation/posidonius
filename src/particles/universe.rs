@@ -657,6 +657,7 @@ impl Universe {
 
     fn calculate_type_two_migration_acceleration(&mut self, current_time: f64) {
         if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            star.migration_timescale = 0.0;
             let factor2 = 1. / star.mass;
             let mut sum_total_type_two_migration_force = Axes{x:0., y:0., z:0.};
 
@@ -665,7 +666,7 @@ impl Universe {
 
                 let sma = (particle.mass_g+star.mass_g) * particle.distance / (2.0 * (particle.mass_g+star.mass_g) -  particle.distance * particle.norm_velocity_vector*particle.norm_velocity_vector);
 
-                let migration_timescale = calculate_migration_timescale(current_time, particle.distance, sma, particle.disk_surface_density_normalization
+                particle.migration_timescale = calculate_migration_timescale(current_time, particle.distance, sma, particle.disk_surface_density_normalization
                                  , particle.disk_inner_edge_distance, particle.disk_outer_edge_distance, particle.disk_lifetime
                                  , particle.alpha_disk, particle.disk_mean_molecular_weight, particle.mass, star.mass);
                 //println!("current_time (day) = {:e}", current_time);
@@ -677,15 +678,15 @@ impl Universe {
                 //println!("particle.disk_lifetime (day) = {:e}", particle.disk_lifetime);
                 //println!("particle.alpha_disk = {:e}", particle.alpha_disk);
                 //println!("particle.disk_mean_molecular_weight = {:e}", particle.disk_mean_molecular_weight);
-                //println!("migration timescale (day) = {:e}", migration_timescale);
+                //println!("migration timescale (day) = {:e}", particle.migration_timescale);
                 //panic!();
 
 
                 let factor1 = 1. / particle.mass;
                 // From Alibert et al. 2013 (https://ui.adsabs.harvard.edu/abs/2013A&A...558A.109A)
-                let factor_migration = -particle.mass / (2.0 * migration_timescale);
+                let factor_migration = -particle.mass / particle.migration_timescale;
 
-                let eccentricity_damping_timescale = 0.1 * migration_timescale;
+                let eccentricity_damping_timescale = 0.1 * particle.migration_timescale;
                 let factor_damping_eccentricity = -particle.mass * 2.0 / eccentricity_damping_timescale;
 
                 let inclination_damping_timescale = eccentricity_damping_timescale;

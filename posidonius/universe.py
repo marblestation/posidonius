@@ -60,11 +60,12 @@ class Universe(object):
         alpha_disk = 0.0
         disk_surface_density_normalization = 0.0
         disk_mean_molecular_weight =  0.0
+        migration_timescale = 0.0
         position = Axes(0., 0., 0.)
         velocity = Axes(0., 0., 0.)
         spin = Axes(0., 0., 0.)
         evolution_type = NonEvolving()
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, position, velocity, spin, evolution_type)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, migration_timescale, position, velocity, spin, evolution_type)
         self._data['n_particles'] -= 1 # Compensate the addition from the previous add_particle call
 
     def add_particle(self, mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, position, velocity, spin, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
@@ -84,6 +85,7 @@ class Universe(object):
         particle['alpha_disk'] = float(alpha_disk)
         particle['disk_surface_density_normalization'] = float(disk_surface_density_normalization)
         particle['disk_mean_molecular_weight'] = float(disk_mean_molecular_weight)
+        particle['migration_timescale'] = 0.0
         particle['position'] = position.get()
         particle['velocity'] = velocity.get()
         particle['spin'] = spin.get()
