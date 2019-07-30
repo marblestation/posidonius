@@ -1,4 +1,6 @@
 use super::super::tools::{interpolate_b_spline};
+use super::super::{csv};
+use super::super::constants::{R_SUN, M2AU};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum EvolutionType {
@@ -9,7 +11,6 @@ pub enum EvolutionType {
     Baraffe1998(f64), // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
     LeconteChabrier2013, // Jupiter
     NonEvolving,
-
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -42,6 +43,362 @@ impl Clone for Evolver {
 }
 
 impl Evolver {
+    //pub fn new_dummy() -> Evolver {
+        //Evolver{
+            //evolution_type: EvolutionType::NonEvolving,
+            //time: Vec::new(),
+            //radius: Vec::new(),
+            //radius_of_gyration_2: Vec::new(),
+            //love_number: Vec::new(),
+            //inverse_tidal_q_factor: Vec::new(),
+            //left_index: 0,
+        //}
+    //}
+    pub fn new(evolution_type: EvolutionType, initial_time: f64, time_limit: f64) -> Evolver {
+        let mut time: Vec<f64> = Vec::new();
+        let mut radius: Vec<f64> = Vec::new();
+        let mut radius_of_gyration_2: Vec<f64> = Vec::new();
+        let mut love_number: Vec<f64> = Vec::new();
+        let mut inverse_tidal_q_factor: Vec<f64> = Vec::new();
+
+        let filename = match evolution_type {
+            EvolutionType::GalletBolmont2017(mass) => {
+                if mass <= 0.301 && mass >= 0.299 {
+                    String::from("input/Gallet_Bolmont_2017/M_03_Z_0134.dat")
+                } else if mass <= 0.401 && mass >= 0.399 {
+                    String::from("input/Gallet_Bolmont_2017/M_04_Z_0134.dat")
+                } else if mass <= 0.601 && mass >= 0.599 {
+                    String::from("input/Gallet_Bolmont_2017/M_06_Z_0134.dat")
+                } else if mass <= 0.701 && mass >= 0.699 {
+                    String::from("input/Gallet_Bolmont_2017/M_07_Z_0134.dat")
+                } else if mass <= 0.801 && mass >= 0.799 {
+                    String::from("input/Gallet_Bolmont_2017/M_08_Z_0134.dat")
+                } else if mass <= 0.901 && mass >= 0.899 {
+                    String::from("input/Gallet_Bolmont_2017/M_09_Z_0134.dat")
+                } else if mass <= 1.001 && mass >= 0.999 {
+                    String::from("input/Gallet_Bolmont_2017/M_10_Z_0134.dat")
+                } else if mass <= 1.101 && mass >= 1.099 {
+                    String::from("input/Gallet_Bolmont_2017/M_11_Z_0134.dat")
+                } else if mass <= 1.201 && mass >= 1.199 {
+                    String::from("input/Gallet_Bolmont_2017/M_12_Z_0134.dat")
+                } else if mass <= 1.401 && mass >= 1.399 {
+                    String::from("input/Gallet_Bolmont_2017/M_14_Z_0134.dat")
+                } else {
+                    panic!("The evolution type Gallet_Bolmont_2017 does not support a mass of {} Msun!", mass);
+                }
+            },
+            EvolutionType::Baraffe2015(mass) => {
+                if mass <= 0.0101 && mass >= 0.0099 {
+                    String::from("input/Baraffe_2015/0010_Msun.dat")
+                } else if mass <= 0.0151 && mass >= 0.0149 {
+                    String::from("input/Baraffe_2015/0015_Msun.dat")
+                } else if mass <= 0.0201 && mass >= 0.0199 {
+                    String::from("input/Baraffe_2015/0020_Msun.dat")
+                } else if mass <= 0.0301 && mass >= 0.0299 {
+                    String::from("input/Baraffe_2015/0030_Msun.dat")
+                } else if mass <= 0.0401 && mass >= 0.0399 {
+                    String::from("input/Baraffe_2015/0040_Msun.dat")
+                } else if mass <= 0.0501 && mass >= 0.0499 {
+                    String::from("input/Baraffe_2015/0050_Msun.dat")
+                } else if mass <= 0.0601 && mass >= 0.0599 {
+                    String::from("input/Baraffe_2015/0060_Msun.dat")
+                } else if mass <= 0.0701 && mass >= 0.0699 {
+                    String::from("input/Baraffe_2015/0070_Msun.dat")
+                } else if mass <= 0.0721 && mass >= 0.0719 {
+                    String::from("input/Baraffe_2015/0072_Msun.dat")
+                } else if mass <= 0.0751 && mass >= 0.0749 {
+                    String::from("input/Baraffe_2015/0075_Msun.dat")
+                } else if mass <= 0.0801 && mass >= 0.0799 {
+                    String::from("input/Baraffe_2015/0080_Msun.dat")
+                } else if (mass - 0.09).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0090_Msun.dat")
+                } else if (mass - 0.11).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0110_Msun.dat")
+                } else if (mass - 0.13).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0130_Msun.dat")
+                } else if (mass - 0.15).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0150_Msun.dat")
+                } else if (mass - 0.17).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0170_Msun.dat")
+                } else if (mass - 0.20).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0200_Msun.dat")
+                } else if (mass - 0.30).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0300_Msun.dat")
+                } else if (mass - 0.40).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0400_Msun.dat")
+                } else if (mass - 0.50).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0500_Msun.dat")
+                } else if (mass - 0.60).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0600_Msun.dat")
+                } else if (mass - 0.70).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0700_Msun.dat")
+                } else if (mass - 0.80).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0800_Msun.dat")
+                } else if (mass - 0.90).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/0900_Msun.dat")
+                } else if (mass - 1.00).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/1000_Msun.dat")
+                } else if (mass - 1.10).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/1100_Msun.dat")
+                } else if (mass - 1.20).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/1200_Msun.dat")
+                } else if (mass - 1.30).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/1300_Msun.dat")
+                } else if (mass - 1.40).abs() < 1e-7 {
+                    String::from("input/Baraffe_2015/1400_Msun.dat")
+                } else {
+                    panic!("The evolution type Baraffe2015 does not support a mass of {} Msun!", mass);
+                }
+            },
+            EvolutionType::Leconte2011(mass) => {
+                if mass <= 0.0101 && mass >= 0.0099 {
+                    String::from("input/Leconte_2011/mass_10.0000.dat")
+                } else if mass <= 0.0121 && mass >= 0.0119 {
+                    String::from("input/Leconte_2011/mass_12.0000.dat")
+                } else if mass <= 0.0151 && mass >= 0.0149 {
+                    String::from("input/Leconte_2011/mass_15.0000.dat")
+                } else if mass <= 0.0201 && mass >= 0.0199 {
+                    String::from("input/Leconte_2011/mass_20.0000.dat")
+                } else if mass <= 0.0301 && mass >= 0.0299 {
+                    String::from("input/Leconte_2011/mass_30.0000.dat")
+                } else if mass <= 0.0401 && mass >= 0.0399 {
+                    String::from("input/Leconte_2011/mass_40.0000.dat")
+                } else if mass <= 0.0501 && mass >= 0.0499 {
+                    String::from("input/Leconte_2011/mass_50.0000.dat")
+                } else if mass <= 0.0601 && mass >= 0.0599 {
+                    String::from("input/Leconte_2011/mass_60.0000.dat")
+                } else if mass <= 0.0701 && mass >= 0.0699 {
+                    String::from("input/Leconte_2011/mass_70.0000.dat")
+                } else if mass <= 0.0721 && mass >= 0.0719 {
+                    String::from("input/Leconte_2011/mass_72.0000.dat")
+                } else if mass <= 0.0751 && mass >= 0.0749 {
+                    String::from("input/Leconte_2011/mass_75.0000.dat")
+                } else if mass <= 0.0801 && mass >= 0.0799 {
+                    String::from("input/Leconte_2011/mass_80.0000.dat")
+                } else {
+                    panic!("The evolution type Leconte2011 does not support a mass of {} Msun!", mass);
+                }
+            },
+            EvolutionType::Baraffe1998(mass) => {
+                if (mass - 0.10).abs() <= 1.0e-7 {
+                    String::from("input/Baraffe_1998/01Msun.dat")
+                } else if (mass - 1.0).abs() <= 1.0e-7 {
+                    String::from("input/Baraffe_1998/SRad_Spli_M-1_0000.dat")
+                } else {
+                    panic!("The evolution type Baraffe1998 does not support a mass of {} Msun!", mass);
+                }
+            },
+            EvolutionType::BolmontMathis2016(mass) => {
+                if mass <= 0.401 && mass >= 0.399 {
+                    String::from("input/Bolmont_Mathis_2016/L04Z02r.dat")
+                } else if mass <= 0.501 && mass >= 0.499 {
+                    String::from("input/Bolmont_Mathis_2016/L05Z02r.dat")
+                } else if mass <= 0.601 && mass >= 0.599 {
+                    String::from("input/Bolmont_Mathis_2016/L06Z02r.dat")
+                } else if mass <= 0.701 && mass >= 0.699 {
+                    String::from("input/Bolmont_Mathis_2016/L07Z02r.dat")
+                } else if mass <= 0.801 && mass >= 0.799 {
+                    String::from("input/Bolmont_Mathis_2016/L08Z02r.dat")
+                } else if mass <= 0.901 && mass >= 0.899 {
+                    String::from("input/Bolmont_Mathis_2016/L09Z02r.dat")
+                } else if mass <= 1.001 && mass >= 0.999 {
+                    String::from("input/Bolmont_Mathis_2016/L10Z02r.dat")
+                } else if mass <= 1.101 && mass >= 1.099 {
+                    String::from("input/Bolmont_Mathis_2016/L11Z02r.dat")
+                } else if mass <= 1.201 && mass >= 1.199 {
+                    String::from("input/Bolmont_Mathis_2016/L12Z02r.dat")
+                } else if mass <= 1.201 && mass >= 1.499 {
+                    String::from("input/Bolmont_Mathis_2016/L13Z02r.dat")
+                } else if mass <= 1.301 && mass >= 1.299 {
+                    String::from("input/Bolmont_Mathis_2016/L14Z02r.dat")
+                } else if mass <= 1.401 && mass >= 1.399 {
+                    String::from("input/Bolmont_Mathis_2016/L15Z02r.dat")
+                } else {
+                    panic!("The evolution type BolmontMathis2016 does not support a mass of {} Msun!", mass);
+                }
+            },
+            EvolutionType::LeconteChabrier2013 => {
+                String::from("input/Leconte_Chabrier_2013/Jupiter.dat")
+            },
+            EvolutionType::NonEvolving => {
+                String::from("input/empty.dat")
+            }
+        };
+        //println!("Filename {}", filename);
+        
+        let mut rdr = csv::Reader::from_file(&filename).unwrap().has_headers(false).delimiter(b' ').flexible(true);
+        for (i, row) in rdr.records().map(|r| r.unwrap()).enumerate() {
+            let raw_time = row[0].parse::<f64>().unwrap_or(-1.);
+            if i == 0 && raw_time < 0. {
+                // First line, probably column headers
+                continue
+            }
+            let raw_radius = match evolution_type {
+                EvolutionType::Baraffe2015(_) => {
+                    row[2].parse::<f64>().unwrap()
+                },
+                EvolutionType::GalletBolmont2017(_) => {
+                    row[3].parse::<f64>().unwrap()
+                },
+                _ => {
+                    row[1].parse::<f64>().unwrap()
+                }
+            };
+            // All types have time and radius
+            let (current_time, current_radius) = match evolution_type {
+                EvolutionType::Leconte2011(_) => {
+                    (raw_time * 365.25 - initial_time, raw_radius * R_SUN)
+                },
+                EvolutionType::Baraffe1998(mass) => {
+                    if (mass - 0.10).abs() <= 1.0e-7 {
+                        (raw_time * 365.25 - initial_time, raw_radius * R_SUN)
+                    } else if (mass - 1.0).abs() <= 1.0e-7 {
+                        (raw_time * 365.25 - initial_time, raw_radius * M2AU)
+                    } else {
+                        (0., 0.)
+                    }
+                },
+                EvolutionType::Baraffe2015(_) => {
+                    (raw_time * 365.25 - initial_time, raw_radius * R_SUN)
+                },
+                EvolutionType::BolmontMathis2016(_) => {
+                    (raw_time * 365.25 - initial_time, raw_radius * R_SUN)
+                },
+                EvolutionType::GalletBolmont2017(_) => {
+                    (10_f64.powf(raw_time) * 365.25 - initial_time, raw_radius * R_SUN)
+                },
+                EvolutionType::LeconteChabrier2013 => {
+                    (raw_time * 365.25 - initial_time, raw_radius * M2AU)
+                },
+                _ => {
+                    (0., 0.)
+                }
+            };
+            // Fields that only some types have...
+            let current_radius_of_gyration_2 = match evolution_type {
+                EvolutionType::LeconteChabrier2013 => {
+                    let raw_radius_of_gyration_2 = row[3].parse::<f64>().unwrap();
+                    raw_radius_of_gyration_2
+                },
+                EvolutionType::Baraffe2015(_) => {
+                    let raw_radius_of_gyration_2 = row[3].parse::<f64>().unwrap();
+                    raw_radius_of_gyration_2
+                },
+                _ => {
+                    0.
+                }
+            };
+            let current_love_number = match evolution_type {
+                EvolutionType::LeconteChabrier2013 => {
+                    let raw_love_number = row[2].parse::<f64>().unwrap();
+                    raw_love_number
+                },
+                _ => {
+                    0.
+                }
+            };
+            let current_inverse_tidal_q_factor = match evolution_type {
+                EvolutionType::BolmontMathis2016(_) => {
+                    let raw_inverse_tidal_q_factor = row[2].parse::<f64>().unwrap();
+                    raw_inverse_tidal_q_factor
+                },
+                EvolutionType::GalletBolmont2017(_) => {
+                    let raw_inverse_tidal_q_factor = row[10].parse::<f64>().unwrap();
+                    1./10_f64.powf(raw_inverse_tidal_q_factor)
+                },
+                _ => {
+                    0.
+                }
+            };
+
+            // Only save values needed for the evolution model to save memory
+            // and computation time when cloning
+            match evolution_type {
+                EvolutionType::GalletBolmont2017(_) => {
+                    time.push(current_time);
+                    radius.push(current_radius);
+                    radius_of_gyration_2.push(current_radius_of_gyration_2);
+                    inverse_tidal_q_factor.push(current_inverse_tidal_q_factor);
+                },
+                EvolutionType::Baraffe2015(_) => {
+                    time.push(current_time);
+                    radius.push(current_radius);
+                    radius_of_gyration_2.push(current_radius_of_gyration_2);
+                },
+                EvolutionType::Leconte2011(_) => {
+                    time.push(current_time);
+                    radius.push(current_radius);
+                    radius_of_gyration_2.push(current_radius_of_gyration_2);
+                },
+                EvolutionType::Baraffe1998(_) => {
+                    time.push(current_time);
+                    radius.push(current_radius);
+                },
+                EvolutionType::BolmontMathis2016(_) => {
+                    time.push(current_time);
+                    radius.push(current_radius);
+                    inverse_tidal_q_factor.push(current_inverse_tidal_q_factor);
+                },
+                EvolutionType::LeconteChabrier2013 => {
+                    time.push(current_time);
+                    radius.push(current_radius);
+                    radius_of_gyration_2.push(current_radius_of_gyration_2);
+                    love_number.push(current_love_number);
+                },
+                EvolutionType::NonEvolving => {
+                }
+            };
+        }
+
+        if time.len() > 0 && time[0] > 0. {
+            panic!("Your initial time ({} days) is smaller than the minimum allowed age of the star ({} days)", initial_time, time[0]+initial_time);
+        }
+        if time.len() > 0 && time[time.len()-1] < time_limit {
+            panic!("Your time limit ({} days) is greater than the maximum allowed age of the star ({} days)", time_limit, time[time.len()-1]);
+        }
+
+        // Leconte2011 have a separate file for radius of gyration with a different time sampling
+        // that should be homogenized:
+        let radius_of_gyration_2 = match evolution_type {
+            EvolutionType::Leconte2011(_) => {
+                // Read separate file
+                let mut tmp_time: Vec<f64> = Vec::new();
+                let mut tmp_radius_of_gyration_2: Vec<f64> = Vec::new();
+                let mut rdr = csv::Reader::from_file("input/Leconte_2011/rg2BD.dat").unwrap().has_headers(false).delimiter(b' ').flexible(true);
+                for row in rdr.records().map(|r| r.unwrap()) {
+                    let raw_time = row[0].parse::<f64>().unwrap();
+                    let raw_radius_of_gyration_2 = row[2].parse::<f64>().unwrap();
+                    let current_time = raw_time * 365.25 - initial_time;
+                    let current_radius_of_gyration_2 = raw_radius_of_gyration_2;
+                    tmp_time.push(current_time);
+                    tmp_radius_of_gyration_2.push(current_radius_of_gyration_2);
+                    //println!("Raw Rg2 {} {}", current_time, raw_radius_of_gyration_2);
+                }
+
+                // Interpolate to match the same time sampling shared by other parameters (e.g., radius)
+                let mut resampled_radius_of_gyration_2: Vec<f64> = Vec::new();
+                for current_time in time.iter() {
+                    let (current_radius_of_gyration_2, _) = interpolate_b_spline(&tmp_time, &tmp_radius_of_gyration_2, *current_time);
+                    resampled_radius_of_gyration_2.push(current_radius_of_gyration_2);
+                    //println!("Rg2 {} {}", current_time, current_radius_of_gyration_2);
+                }
+                resampled_radius_of_gyration_2
+            },
+            _ => {
+                radius_of_gyration_2
+            }
+        };
+
+        Evolver { evolution_type:evolution_type, 
+                time:time,
+                radius:radius,
+                radius_of_gyration_2:radius_of_gyration_2,
+                love_number:love_number,
+                inverse_tidal_q_factor:inverse_tidal_q_factor,
+                left_index:0,
+        }
+    }
+
     // OPTIMIZATION: Skip first N elements which belong to the past
     fn idx(&self) -> usize {
         if self.left_index > 0 {

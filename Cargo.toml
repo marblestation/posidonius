@@ -2,23 +2,35 @@
 name = "posidonius"
 version = "0.0.1"
 authors = ["Sergi Blanco-Cuaresma <marblestation@users.noreply.github.com>"]
+homepage = "https://www.blancocuaresma.com/s/"
+repository = "https://github.com/marblestation/posidonius/"
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+edition = "2018"
 
+[[bin]]
+path = "src/main.rs"
+name = "posidonius"
+
+[lib]
+path = "src/lib.rs"
+name = "posidonius"
 
 [profile.dev]
 opt-level = 0
 debug = true
 
-
 [profile.release]
 opt-level = 3
 debug = false
 
-
 [dependencies]
-time = "*"
-serde = "*"
-serde_json = "*"
-serde_derive = "*"
-bincode = "*"
-csv = "*"
-clap = "*"
+time = "0.1.*"
+serde = "1.0.*"
+serde_json = "1.0.*"
+serde_derive = "1.0.*"
+bincode = "0.9.*"
+csv = "0.15.*"
+clap = "2.29.*"
+assert_approx_eq = "1.1.*"
+

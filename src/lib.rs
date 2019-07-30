@@ -10,6 +10,7 @@ pub mod constants;
 
 mod particles;
 pub use self::particles::Universe;
+pub use self::particles::ConsiderGeneralRelativity;
 pub use self::particles::Particle;
 pub use self::particles::Axes;
 pub use self::particles::Evolver;

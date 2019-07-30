@@ -3,7 +3,6 @@ extern crate time;
 #[macro_use]
 extern crate clap;
 use clap::{Arg, App, SubCommand, AppSettings};
-use posidonius::Integrator;
 use std::path::Path;
 
 fn main() {
@@ -94,7 +93,7 @@ fn main() {
     let first_universe_integrator_snapshot_path = Path::new(&first_universe_integrator_snapshot_filename);
     
     // Start/Resume from snapshot
-    let mut boxed_universe_integrator : Box<Integrator> = match posidonius::output::restore_snapshot(&first_universe_integrator_snapshot_path) {
+    let mut boxed_universe_integrator : Box<posidonius::Integrator> = match posidonius::output::restore_snapshot(&first_universe_integrator_snapshot_path) {
         Ok(restored_case) => { restored_case },
         Err(_) => { 
             if resume {

@@ -41,6 +41,91 @@ pub enum ConsiderGeneralRelativity {
 }
 
 impl Universe {
+    pub fn new(initial_time: f64, time_limit: f64, mut particles: Vec<Particle>, consider_tides: bool, consider_rotational_flattening: bool, consider_general_relativity: ConsiderGeneralRelativity) -> Universe {
+
+        let mut evolving_particles_exist = false;
+        let mut wind_effects_exist = false;
+        for particle in particles.iter(){
+            if particle.wind_k_factor != 0. {
+                wind_effects_exist = true;
+            }
+            match particle.evolution_type {
+                EvolutionType::NonEvolving => {},
+                _ => {
+                    evolving_particles_exist = true;
+                },
+            }
+            if wind_effects_exist && evolving_particles_exist {
+                break;
+            }
+        }
+
+        if consider_general_relativity != ConsiderGeneralRelativity::None {
+            let star_index = 0; // index
+            let local_copy_star_mass_g = particles[star_index].mass_g;
+            for particle in particles[1..].iter_mut() {
+                particle.general_relativity_factor =  local_copy_star_mass_g*particle.mass_g / (local_copy_star_mass_g + particle.mass_g).powi(2)
+            }
+        }
+
+        // Populate inertial positions/velocities from heliocentric positions
+        let (center_of_mass_position, center_of_mass_velocity) = calculate_center_of_mass(&particles);
+        for particle in particles.iter_mut() {
+            particle.inertial_position.x = particle.position.x - center_of_mass_position.x;
+            particle.inertial_position.y = particle.position.y - center_of_mass_position.y;
+            particle.inertial_position.z = particle.position.z - center_of_mass_position.z;
+            particle.inertial_velocity.x = particle.velocity.x - center_of_mass_velocity.x;
+            particle.inertial_velocity.y = particle.velocity.y - center_of_mass_velocity.y;
+            particle.inertial_velocity.z = particle.velocity.z - center_of_mass_velocity.z;
+        }
+
+
+        // OPTIMIZATION: Transform vector to array
+        // - Arrays are stored in the stack which is faster than the heap (where vectors are allocated)
+        // - The array should have a fixed size, thus it should always be equal or greater to the vector passed
+        // - The array elements to be considered will be limited by the n_particles value
+        let n_particles = particles.len();
+        if n_particles > MAX_PARTICLES {
+            panic!("Only {} bodies are allowed, you need to increase the MAX_PARTICLE constant.", MAX_PARTICLES);
+        }
+        let mut transformed_particles = [Particle::new_dummy(); MAX_PARTICLES];
+        let mut particles_evolvers : Vec<Evolver> = Vec::with_capacity(n_particles);
+        for i in 0..n_particles {
+            transformed_particles[i] = particles[i];
+            transformed_particles[i].id = i;
+            particles_evolvers.push(Evolver::new(transformed_particles[i].evolution_type, initial_time, time_limit));
+        }
+        for _i in n_particles..MAX_PARTICLES {
+            // For dummy particles
+            particles_evolvers.push(Evolver::new(EvolutionType::NonEvolving, initial_time, time_limit));
+        }
+
+
+        let temporary_copied_particle_positions = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
+        let temporary_copied_particle_velocities = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
+        let temporary_copied_particles_masses = [0.; MAX_PARTICLES];
+        let temporary_copied_particles_radiuses = [0.; MAX_PARTICLES];
+
+        let universe = Universe {
+                    initial_time: initial_time,
+                    time_limit: time_limit,
+                    particles: transformed_particles,
+                    particles_evolvers: particles_evolvers,
+                    n_particles: n_particles,
+                    evolving_particles_exist: evolving_particles_exist,
+                    wind_effects_exist: wind_effects_exist,
+                    consider_tides: consider_tides,
+                    consider_rotational_flattening: consider_rotational_flattening,
+                    consider_general_relativity: consider_general_relativity,
+                    star_planet_dependent_dissipation_factors:HashMap::new(),
+                    temporary_copied_particle_positions: temporary_copied_particle_positions,
+                    temporary_copied_particle_velocities: temporary_copied_particle_velocities,
+                    temporary_copied_particles_masses: temporary_copied_particles_masses,
+                    temporary_copied_particles_radiuses: temporary_copied_particles_radiuses,
+                    };
+        universe
+    }
+
     pub fn gravity_calculate_acceleration(&mut self, ignore_terms: IgnoreGravityTerms) {
         //let softening = 1e-12;
         // TODO: Try this pattern for gravity calculation
@@ -1038,7 +1123,7 @@ impl Universe {
                         //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);
                     }
                 }
-                panic!("Please, contact Posidonius authors before using BolmontMathis2016/GalletBolmont2017 evolutionary models. They may not be ready yet for scientific explotation.")
+                //panic!("Please, contact Posidonius authors before using BolmontMathis2016/GalletBolmont2017 evolutionary models. They may not be ready yet for scientific explotation.")
             },
             _ => {},
         }
@@ -1584,4 +1669,48 @@ impl Universe {
     //--------------------------------------------------------------------------
     ////////////////////////////////////////////////////////////////////////////
 
+}
+
+fn get_center_of_mass_of_pair(center_of_mass_position: &mut Axes, center_of_mass_velocity: &mut Axes, center_of_mass_acceleration: &mut Axes, center_of_mass_mass: f64, particle: &Particle) -> f64 {
+    center_of_mass_position.x      = center_of_mass_position.x*center_of_mass_mass + particle.position.x*particle.mass;
+    center_of_mass_position.y      = center_of_mass_position.y*center_of_mass_mass + particle.position.y*particle.mass;
+    center_of_mass_position.z      = center_of_mass_position.z*center_of_mass_mass + particle.position.z*particle.mass;
+    center_of_mass_velocity.x      = center_of_mass_velocity.x*center_of_mass_mass + particle.velocity.x*particle.mass;
+    center_of_mass_velocity.y      = center_of_mass_velocity.y*center_of_mass_mass + particle.velocity.y*particle.mass;
+    center_of_mass_velocity.z      = center_of_mass_velocity.z*center_of_mass_mass + particle.velocity.z*particle.mass;
+    center_of_mass_acceleration.x  = center_of_mass_acceleration.x*center_of_mass_mass + particle.acceleration.x*particle.mass;
+    center_of_mass_acceleration.y  = center_of_mass_acceleration.y*center_of_mass_mass + particle.acceleration.y*particle.mass;
+    center_of_mass_acceleration.z  = center_of_mass_acceleration.z*center_of_mass_mass + particle.acceleration.z*particle.mass;
+    
+    let new_center_of_mass_mass = center_of_mass_mass + particle.mass;
+    if new_center_of_mass_mass > 0. {
+        center_of_mass_position.x     /= new_center_of_mass_mass;
+        center_of_mass_position.y     /= new_center_of_mass_mass;
+        center_of_mass_position.z     /= new_center_of_mass_mass;
+        center_of_mass_velocity.x     /= new_center_of_mass_mass;
+        center_of_mass_velocity.y     /= new_center_of_mass_mass;
+        center_of_mass_velocity.z     /= new_center_of_mass_mass;
+        center_of_mass_acceleration.x /= new_center_of_mass_mass;
+        center_of_mass_acceleration.y /= new_center_of_mass_mass;
+        center_of_mass_acceleration.z /= new_center_of_mass_mass;
+    }
+    new_center_of_mass_mass
+}
+
+pub fn calculate_center_of_mass(particles: &Vec<Particle>) -> (Axes, Axes) {
+    // Compute center of mass
+    let mut center_of_mass_position = Axes{x:0., y:0., z:0.};
+    let mut center_of_mass_velocity = Axes{x:0., y:0., z:0.};
+    let mut center_of_mass_acceleration = Axes{x:0., y:0., z:0.};
+    let mut center_of_mass_mass = 0.;
+
+    for particle in particles.iter() {
+        center_of_mass_mass = get_center_of_mass_of_pair(&mut center_of_mass_position, 
+                                                                &mut center_of_mass_velocity, 
+                                                                &mut center_of_mass_acceleration,
+                                                                center_of_mass_mass,
+                                                                &particle);
+    }
+
+    (center_of_mass_position, center_of_mass_velocity)
 }

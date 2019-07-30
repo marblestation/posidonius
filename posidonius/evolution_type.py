@@ -101,63 +101,63 @@ class Baraffe2015(EvolutionType):
     def get_evolver(self, initial_time):
         mass = self._data[self.__class__.__name__]
         if mass <= 0.0101 and mass >= 0.0099:
-            filename = "input/Baraffe_2015/0010_Msun.tsv"
+            filename = "input/Baraffe_2015/0010_Msun.dat"
         elif mass <= 0.0151 and mass >= 0.0149:
-            filename = "input/Baraffe_2015/0015_Msun.tsv"
+            filename = "input/Baraffe_2015/0015_Msun.dat"
         elif mass <= 0.0201 and mass >= 0.0199:
-            filename = "input/Baraffe_2015/0020_Msun.tsv"
+            filename = "input/Baraffe_2015/0020_Msun.dat"
         elif mass <= 0.0301 and mass >= 0.0299:
-            filename = "input/Baraffe_2015/0030_Msun.tsv"
+            filename = "input/Baraffe_2015/0030_Msun.dat"
         elif mass <= 0.0401 and mass >= 0.0399:
-            filename = "input/Baraffe_2015/0040_Msun.tsv"
+            filename = "input/Baraffe_2015/0040_Msun.dat"
         elif mass <= 0.0501 and mass >= 0.0499:
-            filename = "input/Baraffe_2015/0050_Msun.tsv"
+            filename = "input/Baraffe_2015/0050_Msun.dat"
         elif mass <= 0.0601 and mass >= 0.0599:
-            filename = "input/Baraffe_2015/0060_Msun.tsv"
+            filename = "input/Baraffe_2015/0060_Msun.dat"
         elif mass <= 0.0701 and mass >= 0.0699:
-            filename = "input/Baraffe_2015/0070_Msun.tsv"
+            filename = "input/Baraffe_2015/0070_Msun.dat"
         elif mass <= 0.0721 and mass >= 0.0719:
-            filename = "input/Baraffe_2015/0072_Msun.tsv"
+            filename = "input/Baraffe_2015/0072_Msun.dat"
         elif mass <= 0.0751 and mass >= 0.0749:
-            filename = "input/Baraffe_2015/0075_Msun.tsv"
+            filename = "input/Baraffe_2015/0075_Msun.dat"
         elif mass <= 0.0801 and mass >= 0.0799:
-            filename = "input/Baraffe_2015/0080_Msun.tsv"
+            filename = "input/Baraffe_2015/0080_Msun.dat"
         elif np.abs(mass - 0.09) < 1e-7:
-            filename = "input/Baraffe_2015/0090_Msun.tsv"
+            filename = "input/Baraffe_2015/0090_Msun.dat"
         elif np.abs(mass - 0.11) < 1e-7:
-            filename = "input/Baraffe_2015/0110_Msun.tsv"
+            filename = "input/Baraffe_2015/0110_Msun.dat"
         elif np.abs(mass - 0.13) < 1e-7:
-            filename = "input/Baraffe_2015/0130_Msun.tsv"
+            filename = "input/Baraffe_2015/0130_Msun.dat"
         elif np.abs(mass - 0.15) < 1e-7:
-            filename = "input/Baraffe_2015/0150_Msun.tsv"
+            filename = "input/Baraffe_2015/0150_Msun.dat"
         elif np.abs(mass - 0.17) < 1e-7:
-            filename = "input/Baraffe_2015/0170_Msun.tsv"
+            filename = "input/Baraffe_2015/0170_Msun.dat"
         elif np.abs(mass - 0.20) < 1e-7:
-            filename = "input/Baraffe_2015/0200_Msun.tsv"
+            filename = "input/Baraffe_2015/0200_Msun.dat"
         elif np.abs(mass - 0.30) < 1e-7:
-            filename = "input/Baraffe_2015/0300_Msun.tsv"
+            filename = "input/Baraffe_2015/0300_Msun.dat"
         elif np.abs(mass - 0.40) < 1e-7:
-            filename = "input/Baraffe_2015/0400_Msun.tsv"
+            filename = "input/Baraffe_2015/0400_Msun.dat"
         elif np.abs(mass - 0.50) < 1e-7:
-            filename = "input/Baraffe_2015/0500_Msun.tsv"
+            filename = "input/Baraffe_2015/0500_Msun.dat"
         elif np.abs(mass - 0.60) < 1e-7:
-            filename = "input/Baraffe_2015/0600_Msun.tsv"
+            filename = "input/Baraffe_2015/0600_Msun.dat"
         elif np.abs(mass - 0.70) < 1e-7:
-            filename = "input/Baraffe_2015/0700_Msun.tsv"
+            filename = "input/Baraffe_2015/0700_Msun.dat"
         elif np.abs(mass - 0.80) < 1e-7:
-            filename = "input/Baraffe_2015/0800_Msun.tsv"
+            filename = "input/Baraffe_2015/0800_Msun.dat"
         elif np.abs(mass - 0.90) < 1e-7:
-            filename = "input/Baraffe_2015/0900_Msun.tsv"
+            filename = "input/Baraffe_2015/0900_Msun.dat"
         elif np.abs(mass - 1.00) < 1e-7:
-            filename = "input/Baraffe_2015/1000_Msun.tsv"
+            filename = "input/Baraffe_2015/1000_Msun.dat"
         elif np.abs(mass - 1.10) < 1e-7:
-            filename = "input/Baraffe_2015/1100_Msun.tsv"
+            filename = "input/Baraffe_2015/1100_Msun.dat"
         elif np.abs(mass - 1.20) < 1e-7:
-            filename = "input/Baraffe_2015/1200_Msun.tsv"
+            filename = "input/Baraffe_2015/1200_Msun.dat"
         elif np.abs(mass - 1.30) < 1e-7:
-            filename = "input/Baraffe_2015/1300_Msun.tsv"
+            filename = "input/Baraffe_2015/1300_Msun.dat"
         elif np.abs(mass - 1.40) < 1e-7:
-            filename = "input/Baraffe_2015/1400_Msun.tsv"
+            filename = "input/Baraffe_2015/1400_Msun.dat"
         else:
             raise Exception("The evolution type Baraffe2015 does not support a mass of {} Msun!".format(mass))
         data = np.loadtxt(BASE_DIR+filename, skiprows=1)

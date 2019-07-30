@@ -41,7 +41,7 @@ pub fn write_recovery_snapshot<I: Serialize>(snapshot_path: &Path, universe_inte
     let mut writer = BufWriter::new(File::create(&snapshot_path).unwrap());
 
     if snapshot_path.extension().unwrap() == "json" {
-        let json_encoded = serde_json::to_string(&universe_integrator).unwrap();
+        let json_encoded = serde_json::to_string_pretty(&universe_integrator).unwrap();
         writer.write(json_encoded.as_bytes()).unwrap();
     } else {
         // Binary

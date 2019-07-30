@@ -1,0 +1,6 @@
+pytest>=4.6.4
+pytest-cov>=2.7.1
+coveralls>=1.8.1
+ipython>=5.8.0
+pudb>=2019.1
+pytest-pudb>=0.7.0

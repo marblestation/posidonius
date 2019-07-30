@@ -847,4 +847,36 @@ pub fn calculate_spin(angular_frequency: f64, inclination: f64, obliquity: f64) 
     spin
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn calculate_keplerian_orbital_elements() {
+        //---- Star (central body)
+        let star_mass: f64 = 0.08; // Solar masses
+        let planet_mass: f64 = 1.0 * M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
+
+        ////////// Specify initial position and velocity for a stable orbit
+        ////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
+        let a: f64 = 0.018;                             // semi-major axis (in AU)
+        let e: f64 = 0.1;                               // eccentricity
+        let i: f64 = 5. * DEG2RAD;                      // inclination (degrees)
+        let mut p: f64 = 0.;                            // argument of pericentre (degrees)
+        let n: f64 = 0. * DEG2RAD;                      // longitude of the ascending node (degrees)
+        let l: f64 = 0. * DEG2RAD;                      // mean anomaly (degrees)
+        p = (p + n) * DEG2RAD;                          // Convert to longitude of perihelion !!
+        let q = a * (1.0 - e);                          // perihelion distance
+        let gm: f64 = G*(planet_mass+star_mass);
+        let (x, y, z, vx, vy, vz) = calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
+
+        assert_eq!(x, 0.0162);
+        assert_eq!(y, 0.000000000000006571920583533768);
+        assert_eq!(z, 0.0000000000000005749685486518799);
+        assert_eq!(vx, -0.000000000000014818017716591765);
+        assert_eq!(vy, 0.03987438104619194);
+        assert_eq!(vz, 0.003488556306654768);
+    }
+}
+
 

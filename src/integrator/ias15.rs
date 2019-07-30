@@ -11,6 +11,7 @@ use time;
 use std::path::Path;
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use std::any::Any;
 
 ///https://arxiv.org/abs/1409.4779
 ///IAS15: A fast, adaptive, high-order integrator for gravitational dynamics, accurate to machine
@@ -77,7 +78,7 @@ impl Hash for Ias15 {
 impl Ias15 {
     pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> Ias15 {
         let n_particles = universe.n_particles;
-        let mut universe_integrator = Ias15 {
+        let universe_integrator = Ias15 {
                     time_step:time_step,
                     recovery_snapshot_period:recovery_snapshot_period,
                     historic_snapshot_period:historic_snapshot_period,
@@ -117,16 +118,16 @@ impl Ias15 {
                     css : [0.; 3*MAX_PARTICLES],
                     s   : [0.; 9],
                     };
-        // Initialize physical values
-        let current_time = 0.;
-        universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
-        universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
         universe_integrator
     }
 
 }
 
 impl Integrator for Ias15 {
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 
     fn get_n_historic_snapshots(&self) -> usize {
         self.n_historic_snapshots

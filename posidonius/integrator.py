@@ -19,7 +19,7 @@ class Integrator(object):
         self._data['particle_spin_errors'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0}]*MAX_PARTICLES # For spin integration with the midpoint method
 
     def write(self, filename):
-        json.dump(self._data, open(filename, "w"))
+        json.dump(self._data, open(filename, "w"), indent=2, sort_keys=True)
 
 class CoordinatesType(object):
     def __init__(self, variant):

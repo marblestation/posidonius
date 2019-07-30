@@ -9,6 +9,7 @@ use time;
 use std::path::Path;
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use std::any::Any;
 
 /// LeapFrog is a second order symplectic integrator
 /// http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:astro-ph/9710043
@@ -60,7 +61,7 @@ impl Hash for LeapFrog {
 
 impl LeapFrog {
     pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe) -> LeapFrog {
-        let mut universe_integrator = LeapFrog {
+        let universe_integrator = LeapFrog {
                     time_step:time_step,
                     half_time_step:0.5*time_step,
                     recovery_snapshot_period:recovery_snapshot_period,
@@ -73,16 +74,16 @@ impl LeapFrog {
                     current_time:0.,
                     current_iteration:0,
                     };
-        // Initialize physical values
-        let current_time = 0.;
-        universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
-        universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
         universe_integrator
     }
 
 }
 
 impl Integrator for LeapFrog {
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 
     fn get_n_historic_snapshots(&self) -> usize {
         self.n_historic_snapshots

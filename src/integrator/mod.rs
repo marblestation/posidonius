@@ -1,18 +1,20 @@
 mod leapfrog;
 mod ias15;
-mod whfast;
+pub mod whfast;
 pub mod output;
 
 pub use self::leapfrog::*;
 pub use self::ias15::*;
-pub use self::whfast::*;
+pub use self::whfast::WHFast;
 
 use std::io::{BufWriter};
 use std::fs::File;
 use std::path::Path;
+use std::any::Any;
 
 
 pub trait Integrator {
+    fn as_any(&self) -> &dyn Any;
     fn get_n_historic_snapshots(&self) -> usize;
     fn get_n_particles(&self) -> usize;
     fn get_current_time(&self) -> f64;

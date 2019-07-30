@@ -145,5 +145,11 @@ fortran/mercury
 # will have compiled files and executables
 rust/target
 
+# Virtualenv
+python/
+
+# Temporary test data files
+posidonius/tests/data/tmp/
+
 # Data
 input/

@@ -12,6 +12,7 @@ use time;
 use std::path::Path;
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use std::any::Any;
 
 /// Source: Rein & Tamayo, 2015
 /// WHFast is a complete reimplementation of the Wisdom-Holman integrator[1],
@@ -132,7 +133,7 @@ impl WHFast {
 
     pub fn new(time_step: f64, recovery_snapshot_period: f64, historic_snapshot_period: f64, universe: Universe, alternative_coordinates_type: CoordinatesType) -> WHFast {
         let particles_alternative_coordinates = [AlternativeCoordinates{mass: 0., mass_g: 0., position: Axes{x: 0., y:0., z:0.}, velocity: Axes{x: 0., y:0., z:0.}, acceleration: Axes{x: 0., y:0., z:0.}}; MAX_PARTICLES];
-        let mut universe_integrator = WHFast {
+        let universe_integrator = WHFast {
                     time_step:time_step,
                     half_time_step:0.5*time_step,
                     recovery_snapshot_period:recovery_snapshot_period,
@@ -151,16 +152,16 @@ impl WHFast {
                     timestep_warning: 0,
                     particle_spin_errors: [Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
                     };
-        // Initialize physical values
-        let current_time = 0.;
-        universe_integrator.universe.calculate_norm_spin(); // Needed for evolution
-        universe_integrator.universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
         universe_integrator
     }
 
 }
 
 impl Integrator for WHFast {
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 
     fn get_n_historic_snapshots(&self) -> usize {
         self.n_historic_snapshots
@@ -1008,5 +1009,6 @@ impl WHFast {
             star.velocity.z = 0.;
         }
     }
+
 
 }

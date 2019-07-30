@@ -1,0 +1,3 @@
+[run]
+source = posidonius
+omit = posidonius/tests*

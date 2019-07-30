@@ -1,14 +1,38 @@
 import os
 import glob
 import shutil
-from setuptools import setup
+from subprocess import Popen, PIPE
+
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    from distutils.core import setup, find_packages
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except (IOError, ImportError):
+    long_description = read('README.md')
+
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
+def get_git_version(default="v0.0.1"):
+    try:
+        p = Popen(['git', 'describe', '--tags'], stdout=PIPE, stderr=PIPE)
+        p.stderr.close()
+        line = p.stdout.readlines()[0]
+        line = line.strip()
+        return line
+    except:
+        return default
+
 setup(
     name = "posidonius",
-    version = "0.0.1",
+    version = get_git_version(default="v0.0.1"),
     author = "Sergi Blanco-Cuaresma",
     author_email = "marblestation@users.noreply.github.com",
     description = ("Case generator for Posidonius."),
@@ -17,7 +41,7 @@ setup(
     url = "http://www.blancocuaresma.com/s/",
     packages=['posidonius', 'posidonius.analysis' ],
     data_files=[(basedir, [filename for filename in glob.iglob('{}/*.*'.format(basedir))]) for basedir in glob.iglob("input/*")],
-    long_description=read('README.md'),
+    long_description=long_description,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Rust",
@@ -27,11 +51,7 @@ setup(
         "Topic :: Scientific/Engineering :: Astronomy",
         "License :: OSI Approved :: GNU Affero General Public License v3",
     ],
-    install_requires=[
-        'numpy',
-        'pandas',
-        'matplotlib',
-    ],
+    install_requires=required,
 )
 
 for dirname in ["build/", "dist/", "posidonius.egg-info/"]:

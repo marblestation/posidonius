@@ -14,14 +14,13 @@ The N-Body code is written in Rust ([Blanco-Cuaresma et al. 2017](http://adsabs.
 First, install the N-body simulator by running from the current directory:
 
 ```bash
-cargo build --release
-cargo install --force
+cargo install --path . --force
 ```
 
 The executable will be copied into `$HOME/.cargo/bin/`. Then, install the python package to create cases by running:
 
 ```bash
-wget http://obswww.unige.ch/~sblancoc/data/posidonius/input.tar.gz
+curl -O https://www.cfa.harvard.edu/~sblancoc/posidonius/input.tar.gz
 tar -zxvf input.tar.gz && rm -f input.tar.gz
 python setup.py install --user
 ```
@@ -104,3 +103,28 @@ python scripts/explore_single_resonance.py target/case7_history.bin 1 2 3 2
 python scripts/explore_single_resonance.py target/example_history.bin 1 2 3 2
 ```
 
+
+## Testing
+
+This section is intended only for developers. Prepare a python environment:
+
+```
+virtualenv python
+source python/bin/activate
+pip install -r requirements.txt
+pip install -r dev-requirements.txt
+```
+
+Run the python tests:
+
+```
+py.test
+```
+
+Run the rust tests:
+
+```
+cargo tests
+```
+
+If necessary, there is a script `scripts/clean_json.py` that makes all the `case.json` test output look alike so that they can be more easily compared.

@@ -83,7 +83,7 @@ class Universe(object):
         if type(evolution_type) != NonEvolving:
             self._data['evolving_particles_exist'] = True;
 
-        particle['id'] = self._data['n_particles']
+        particle['id'] = 0
         particle['acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['dangular_momentum_dt_due_to_tides'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['dangular_momentum_dt_induced_by_rotational_flattening'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
@@ -123,7 +123,7 @@ class Universe(object):
         particle['distance'] = 0.0
         particle['acceleration_induced_by_rotational_flattering'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['norm_velocity_vector_2'] = 0.0
-        particle['norm_spin_vector_2'] = 0.0
+        particle['norm_spin_vector_2'] = particle['spin']['x']**2 + particle['spin']['y']**2 + particle['spin']['z']**2
         particle['denergy_dt'] = 0.
         particle['radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass'] = 0.
 
@@ -214,8 +214,8 @@ class Universe(object):
         wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
         wind_rotation_saturation = 14. * TWO_PI/25.0 # = 1.7592918860102842, wsat in units of the spin of the Sun today
         """
-        if type(evolution_type) not in (BolmontMathis2016, Leconte2011, Baraffe2015, GalletBolmont2017):
-            raise Exception("Evolution type should be BolmontMathis2016 LeconteChabrier2013 Baraffe2015 or GalletBolmont2017!")
+        if type(evolution_type) not in (BolmontMathis2016, Leconte2011, Baraffe2015, GalletBolmont2017, NonEvolving) and not (type(evolution_type) is Baraffe1998 and mass == 1.0):
+            raise Exception("Evolution type should be BolmontMathis2016 LeconteChabrier2013 Baraffe1998 (mass = 0.10) Baraffe2015 GalletBolmont2017 or NonEvolving!")
 
         # Typical rotation period: 24 hours
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
@@ -236,8 +236,8 @@ class Universe(object):
 
 
     def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
-        if type(evolution_type) not in (Baraffe1998, NonEvolving) or mass != 0.10:
-            raise Exception("Evolution type should be Baraffe1998 (mass = 0.10) or NonEvolving!")
+        if type(evolution_type) not in (Baraffe2015, NonEvolving) and not (type(evolution_type) is Baraffe1998 and mass == 0.10):
+            raise Exception("Evolution type should be Baraffe2015 Baraffe1998 (mass = 0.10) or NonEvolving!")
 
         # Typical rotation period: 70 hours
         angular_frequency = TWO_PI/(rotation_period/24.) # days^-1
@@ -295,42 +295,6 @@ class Universe(object):
 
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
 
-    def add_terrestrial(self, mass, radius_factor, dissipation_factor_scale, position, velocity, spin, evolution_type):
-        if type(evolution_type) not in (NonEvolving,):
-            raise Exception("Evolution type should be NonEvolving!")
-
-        # Typical rotation period: 24 hours
-        love_number = 0.299 # Earth
-        fluid_love_number = 0.9532 # Earth
-
-        radius = radius_factor * R_EARTH
-        radius_of_gyration_2 = 3.308e-1 # Earth type planet
-        k2pdelta = 2.465278e-3 # Terrestrial planets
-        dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
-
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
-
-
-    def add_gas_giant(self, mass, radius_factor, dissipation_factor_scale, position, velocity, spin, evolution_type):
-        if type(evolution_type) not in (NonEvolving):
-            raise Exception("Evolution type should be NonEvolving!")
-
-        # Typical rotation period: 9.8 hours
-        love_number = 0.380 # Gas giant
-        fluid_love_number = love_number
-
-        radius = radius_factor * R_EARTH
-
-        # TODO: What k2pdelta/dissipation_factor is the recommended?
-        #k2pdelta = 8.101852e-9 # Gas giant
-        k2pdelta = 2.893519e-7 # Gas giant for Jupiter: 2-3d-2 s, here in day (Leconte)
-        dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
-        #dissipation_factor = 2.006*3.845764e4 // Gas giant
-
-        radius_of_gyration_2 = 2.54e-1 # Gas giant
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type)
-
-
 
 
     def populate_inertial_frame(self):
@@ -357,9 +321,13 @@ class Universe(object):
 
 
 
+    def assign_id(self):
+        for i, particle in enumerate(self._data['particles']):
+            particle['id'] = i
 
     def get(self):
         self.populate_inertial_frame()
+        self.assign_id()
 
         # Add dummy particles to fill the vector
         n_dummy_particles = MAX_PARTICLES - self._data['n_particles']
