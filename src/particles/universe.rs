@@ -119,6 +119,7 @@ impl Universe {
                     consider_tides: consider_tides,
                     consider_rotational_flattening: consider_rotational_flattening,
                     consider_general_relativity: consider_general_relativity,
+                    consider_type_two_migration: false,
                     star_planet_dependent_dissipation_factors:HashMap::new(),
                     temporary_copied_particle_positions: temporary_copied_particle_positions,
                     temporary_copied_particle_velocities: temporary_copied_particle_velocities,

@@ -118,7 +118,7 @@ pip install -r dev-requirements.txt
 Run the python tests:
 
 ```
-py.test
+pytest
 ```
 
 Run the rust tests:

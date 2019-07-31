@@ -29,7 +29,7 @@ class EvolutionType(object):
             print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration and love number.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "LeconteChabrier2013dissip":
             print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration, love number and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
-            print("[WARNING {} UTC] This prescription (similar to BolmontMathis2016) theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] LeconteChabrier2013dissip prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
 
     def get(self):
         if type(self._data) == str:

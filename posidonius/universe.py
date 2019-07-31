@@ -222,12 +222,13 @@ class Universe(object):
         alpha_disk = 0.0
         disk_surface_density_normalization = 0.0
         disk_mean_molecular_weight =  0.0
+        migration_timescale = 0.0
 
         radius_factor = 0.845649342247916
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 1.94e-1 # Brown dwarf
 
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, migration_timescale, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
 
 
     def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
@@ -257,11 +258,12 @@ class Universe(object):
         alpha_disk = 0.0
         disk_surface_density_normalization = 0.0
         disk_mean_molecular_weight =  0.0
+        migration_timescale = 0.0
 
         radius_factor = 1.
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 5.9e-2 # Sun
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, migration_timescale, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
 
 
     def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
@@ -286,11 +288,12 @@ class Universe(object):
         alpha_disk = 0.0
         disk_surface_density_normalization = 0.0
         disk_mean_molecular_weight =  0.0
+        migration_timescale = 0.0
 
         radius_factor = 0.845649342247916
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 2.0e-1 # M-dwarf
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, migration_timescale, position, velocity, spin, evolution_type, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
 
 
     def add_jupiter_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
@@ -316,9 +319,10 @@ class Universe(object):
         alpha_disk = 0.0
         disk_surface_density_normalization = 0.0
         disk_mean_molecular_weight =  0.0
+        migration_timescale = 0.0
 
         radius_of_gyration_2 = 2.54e-1 # Gas giant
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, position, velocity, spin, evolution_type)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, migration_timescale, position, velocity, spin, evolution_type)
 
 
     def add_earth_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
@@ -342,8 +346,9 @@ class Universe(object):
         alpha_disk = 0.0
         disk_surface_density_normalization = 0.0
         disk_mean_molecular_weight =  0.0
+        migration_timescale = 0.0
 
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, position, velocity, spin, evolution_type)
+        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, disk_inner_edge_distance, disk_outer_edge_distance, disk_lifetime, alpha_disk, disk_surface_density_normalization, disk_mean_molecular_weight, migration_timescale, position, velocity, spin, evolution_type)
 
 
     def populate_inertial_frame(self):
