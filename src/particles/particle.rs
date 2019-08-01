@@ -1,23 +1,8 @@
 use super::super::constants::{K2};
 use super::{EvolutionType};
 use super::{Axes};
+use super::{Disk};
 use time;
-
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
-pub struct DiskProperties {
-    pub inner_edge_distance: f64,
-    pub outer_edge_distance: f64,
-    pub lifetime: f64,
-    pub alpha: f64,
-    pub surface_density_normalization: f64,
-    pub mean_molecular_weight: f64,
-}
-
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
-pub enum Disk {
-    Properties(DiskProperties),
-    None,
-}
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Particle {

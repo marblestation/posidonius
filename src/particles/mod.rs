@@ -2,10 +2,11 @@ mod particle;
 mod universe;
 mod evolver;
 mod axes;
+mod disk;
 
 pub use self::particle::Particle;
-pub use self::particle::Disk;
-pub use self::particle::DiskProperties;
+pub use self::disk::Disk;
+pub use self::disk::DiskProperties;
 pub use self::universe::Universe;
 pub use self::universe::IgnoreGravityTerms;
 pub use self::universe::ConsiderGeneralRelativity;
