@@ -9,7 +9,7 @@ pub fn basic_configuration(star: &posidonius::Particle) -> Vec<posidonius::Parti
 
     let planet2_mass_factor: f64 = 0.00095; // Earth masses
     let planet2_mass: f64 = planet2_mass_factor * posidonius::constants::M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
-    let planet2_evolution_type = posidonius::EvolutionType::LeconteChabrier2013;
+    let planet2_evolution_type = posidonius::EvolutionType::LeconteChabrier2013(false); // Jupiter without dissipation of dynamical tides
     let planet2_semimajor_axis = 0.18;
     let planet2 = jupiter_like(&star, planet2_mass, planet2_evolution_type, planet2_semimajor_axis);
 
@@ -96,7 +96,7 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
 
 pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolution_type: posidonius::EvolutionType, semimajor_axis: f64) -> posidonius::Particle {
     match planet_evolution_type {
-        posidonius::EvolutionType::LeconteChabrier2013 => { },
+        posidonius::EvolutionType::LeconteChabrier2013(_) => { },
         posidonius::EvolutionType::NonEvolving => { },
         _ => { panic!("Evolution type should be LeconteChabrier2013 or non evolving to create a gaseous/jupiter-like planet!"); }
     }

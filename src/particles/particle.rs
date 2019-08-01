@@ -104,10 +104,10 @@ impl Particle {
             EvolutionType::Baraffe2015(_) => println!("[WARNING {} UTC]  ", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap()),
             EvolutionType::Leconte2011(_) => println!("[WARNING {} UTC] Bodies with Leconte2011 evolution will ignore initial radius and radius of gyration.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap()),
             EvolutionType::Baraffe1998(_) => println!("[WARNING {} UTC] Bodies with Baraffe1998 evolution will ignore initial radius. ", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap()),
-            EvolutionType::LeconteChabrier2013 => println!("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration and love number.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap()),
-            EvolutionType::LeconteChabrier2013dissip => {
+            EvolutionType::LeconteChabrier2013(false) => println!("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration and love number.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap()),
+            EvolutionType::LeconteChabrier2013(true) => {
                 println!("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration, love number and dissipation factor.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap());
-                println!("[WARNING {} UTC] LeconteChabrier2013dissip prescription theoretically only works for circular orbits and non inclined orbits, use carefully.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap());
+                println!("[WARNING {} UTC] LeconteChabrier2013(true) prescription theoretically only works for circular orbits and non inclined orbits, use carefully.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap());
             },
             EvolutionType::NonEvolving => {},
         }

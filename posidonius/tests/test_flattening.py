@@ -40,7 +40,8 @@ class Flattening(TestBase):
         star_evolution_type = posidonius.Leconte2011(star_mass) # BrownDwarf (mass = 0.01 .. 0.08)
         #star_evolution_type = posidonius.BolmontMathis2016(star_mass) # SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
         #star_evolution_type = posidonius.GalletBolmont2017(star_mass) # SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
-        #star_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
+        #star_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
+        #star_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
         #star_evolution_type = posidonius.NonEvolving()
         universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_evolution_type)
         common.basic_configuration(universe)
@@ -83,7 +84,8 @@ class Flattening(TestBase):
         star_evolution_type = posidonius.Leconte2011(star_mass) # BrownDwarf (mass = 0.01 .. 0.08)
         #star_evolution_type = posidonius.BolmontMathis2016(star_mass) # SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
         #star_evolution_type = posidonius.GalletBolmont2017(star_mass) # SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
-        #star_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
+        #star_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
+        #star_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
         #star_evolution_type = posidonius.NonEvolving()
         universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_evolution_type)
         common.basic_configuration(universe)

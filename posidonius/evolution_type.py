@@ -4,11 +4,13 @@ import numpy as np
 from constants import *
 
 class EvolutionType(object):
-    def __init__(self, variant, mass=None):
+    def __init__(self, variant, mass=None, dissipation_of_dynamical_tides=False):
         self._data = {}
         if variant in ("BolmontMathis2016", "Baraffe2015", "Leconte2011", "Baraffe1998", "GalletBolmont2017"):
             self._data[variant] = float(mass)
-        elif variant in ("LeconteChabrier2013", "LeconteChabrier2013dissip", "NonEvolving"):
+        elif variant in ("LeconteChabrier2013", ):
+            self._data[variant] = bool(dissipation_of_dynamical_tides)
+        elif variant in ("NonEvolving", ):
             self._data = variant
         else:
             raise Exception("Unknown variant '{}'".format(variant))
@@ -26,10 +28,11 @@ class EvolutionType(object):
         elif variant == "Baraffe1998":
             print("[WARNING {} UTC] Bodies with Baraffe1998 evolution will ignore initial radius.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "LeconteChabrier2013":
-            print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration and love number.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
-        elif variant == "LeconteChabrier2013dissip":
-            print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration, love number and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
-            print("[WARNING {} UTC] LeconteChabrier2013dissip prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            if dissipation_of_dynamical_tides:
+                print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration, love number and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] LeconteChabrier2013(true) prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            else:
+                print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration and love number.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
 
     def get(self):
         if type(self._data) == str:
@@ -214,8 +217,9 @@ class LeconteChabrier2013(EvolutionType):
     """
     Jupiter type
     """
-    def __init__(self):
-        super(LeconteChabrier2013, self).__init__("LeconteChabrier2013")
+    def __init__(self, dissipation_of_dynamical_tides):
+        super(LeconteChabrier2013, self).__init__("LeconteChabrier2013", dissipation_of_dynamical_tides=dissipation_of_dynamical_tides)
+        self.dissipation_of_dynamical_tides = dissipation_of_dynamical_tides
 
     def get_evolver(self, initial_time):
         filename = "input/Leconte_Chabrier_2013/Jupiter.dat"
@@ -224,6 +228,10 @@ class LeconteChabrier2013(EvolutionType):
         radius = data[:,1] * M2AU
         love_number = data[:,2]
         radius_of_gyration_2 = data[:,3]
+        if self.dissipation_of_dynamical_tides:
+            inverse_tidal_q_factor = data[:,5]
+        else:
+            inverse_tidal_q_factor = []
 
         evolver = {}
         evolver['left_index'] = 0
@@ -231,33 +239,10 @@ class LeconteChabrier2013(EvolutionType):
         evolver['love_number'] = love_number.tolist()
         evolver['radius'] = radius.tolist()
         evolver['time'] = time.tolist()
-        evolver['inverse_tidal_q_factor'] = []
-        evolver['radius_of_gyration_2'] = radius_of_gyration_2.tolist()
-        return evolver
-
-class LeconteChabrier2013dissip(EvolutionType):
-    """
-    Jupiter type
-    """
-    def __init__(self):
-        super(LeconteChabrier2013dissip, self).__init__("LeconteChabrier2013dissip")
-
-    def get_evolver(self, initial_time):
-        filename = "input/Leconte_Chabrier_2013/Jupiter_dissip.dat"
-        data = np.loadtxt(BASE_DIR+filename)
-        time = data[:,0] * 365.25 - initial_time
-        radius = data[:,1] * M2AU
-        love_number = data[:,2]
-        radius_of_gyration_2 = data[:,3]
-        inverse_tidal_q_factor = data[:,5]
-
-        evolver = {}
-        evolver['left_index'] = 0
-        evolver['evolution_type'] = self.get()
-        evolver['love_number'] = love_number.tolist()
-        evolver['radius'] = radius.tolist()
-        evolver['time'] = time.tolist()
-        evolver['inverse_tidal_q_factor'] = inverse_tidal_q_factor.tolist()
+        if self.dissipation_of_dynamical_tides:
+            evolver['inverse_tidal_q_factor'] = inverse_tidal_q_factor.tolist()
+        else:
+            evolver['inverse_tidal_q_factor'] = inverse_tidal_q_factor
         evolver['radius_of_gyration_2'] = radius_of_gyration_2.tolist()
         return evolver
 

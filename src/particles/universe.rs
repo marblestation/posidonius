@@ -352,7 +352,7 @@ impl Universe {
     fn calculate_orthogonal_components(&mut self) {
         let central_body = true;
 
-        self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if BolmontMathis2016/GalletBolmont2017/LeconteChabrier2013dissip
+        self.calculate_planet_dependent_dissipation_factors(); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if BolmontMathis2016/GalletBolmont2017/LeconteChabrier2013(true)
         self.calculate_scalar_product_of_vector_position_with_spin(); // Needed by tides and rotational flattening
         
         if self.consider_tides {
@@ -1238,7 +1238,7 @@ impl Universe {
     fn calculate_planet_dependent_dissipation_factors(&mut self) {
         let star_index = 0; // index
         match self.particles[star_index].evolution_type {
-            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013dissip => {
+            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
                 if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
                     let star_norm_spin_vector = star.norm_spin_vector_2.sqrt();
                     for particle in particles.iter() {
@@ -1271,7 +1271,7 @@ impl Universe {
                         //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);
                     }
                 }
-                //panic!("Please, contact Posidonius authors before using BolmontMathis2016/GalletBolmont2017/LeconteChabrier2013dissip evolutionary models. They may not be ready yet for scientific explotation.")
+                //panic!("Please, contact Posidonius authors before using BolmontMathis2016/GalletBolmont2017/LeconteChabrier2013(true) evolutionary models. They may not be ready yet for scientific explotation.")
             },
             _ => {},
         }
@@ -1280,7 +1280,7 @@ impl Universe {
 
     pub fn planet_dependent_dissipation_factor(star_planet_dependent_dissipation_factors: &HashMap<usize, f64>,  id: &usize, evolution_type: EvolutionType, scaled_dissipation_factor: f64) -> f64 {
         match evolution_type {
-            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013dissip => {
+            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
                 match star_planet_dependent_dissipation_factors.get(id) {
                     Some(&value) => value,
                     _ => scaled_dissipation_factor // This should not happen
@@ -1369,7 +1369,7 @@ impl Universe {
             // Lag angle
             ////////////////////////////////////////////////////////////////////
             particle.lag_angle = match evolver.evolution_type {
-                EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013dissip => {
+                EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
                         let inverse_tidal_q_factor = evolver.inverse_tidal_q_factor(current_time, 0.);
                         let epsilon_squared = particle.norm_spin_vector_2/SUN_DYN_FREQ;
                         // Normal formula = 3.d0*epsilon_squared*Q_str_inv/(4.d0*k2s)

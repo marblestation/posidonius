@@ -71,13 +71,13 @@ pub fn solar_like_with_disk(star_mass: f64, star_evolution_type: posidonius::Evo
     let star_spin = posidonius::Axes{x:0., y:0., z:star_angular_frequency };
     // Disk
     let surface_density_normalization_gcm = 1000.; // g.cm^-2
-    let surface_density_normalization_SI = surface_density_normalization_gcm * 1.0e-3 * 1.0e4; // kg.m^-2
+    let surface_density_normalization_si = surface_density_normalization_gcm * 1.0e-3 * 1.0e4; // kg.m^-2
     let star_disk = posidonius::Disk::Properties(posidonius::DiskProperties {
         inner_edge_distance: 0.01,  // AU
         outer_edge_distance: 100.0, // AU
         lifetime: 1.0e5 * 365.25e0, // days
         alpha: 1.0e-2,
-        surface_density_normalization: surface_density_normalization_SI * (1.0/posidonius::constants::M_SUN) * posidonius::constants::AU.powi(2), // Msun.AU^-2
+        surface_density_normalization: surface_density_normalization_si * (1.0/posidonius::constants::M_SUN) * posidonius::constants::AU.powi(2), // Msun.AU^-2
         mean_molecular_weight: 2.4,
     });
 

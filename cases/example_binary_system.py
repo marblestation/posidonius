@@ -46,8 +46,8 @@ if __name__ == "__main__":
     star1_evolution_type = posidonius.Baraffe2015(star1_mass) # mass = 0.01 .. 1.40
     #star1_evolution_type = posidonius.Leconte2011(star1_mass) # mass = 0.01 .. 0.08
     #star1_evolution_type = posidonius.Baraffe1998(star1_mass) # Sun (mass = 1.0) or M-Dwarf (mass = 0.1)
-    #star1_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
-    #star1_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
+    #star1_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
+    #star1_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
     #star1_evolution_type = posidonius.NonEvolving()
     star1_disk = posidonius.NoDisk()
     universe.add_particle(star1_mass, star1_radius, star1_dissipation_factor, star1_dissipation_factor_scale, star1_radius_of_gyration_2, star1_love_number, star1_fluid_love_number, star1_position, star1_velocity, star1_spin, star1_evolution_type, star1_disk)
@@ -102,8 +102,8 @@ if __name__ == "__main__":
     star2_evolution_type = posidonius.Baraffe2015(star2_mass) # mass = 0.01 .. 1.40
     #star2_evolution_type = posidonius.Leconte2011(star2_mass) # mass = 0.01 .. 0.08
     #star2_evolution_type = posidonius.Baraffe1998(star2_mass) # Sun (mass = 1.0) or M-Dwarf (mass = 0.1)
-    #star2_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
-    #star2_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
+    #star2_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
+    #star2_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
     #star2_evolution_type = posidonius.NonEvolving()
     star2_disk = posidonius.NoDisk()
     universe.add_particle(star2_mass, star2_radius, star2_dissipation_factor, star2_dissipation_factor_scale, star2_radius_of_gyration_2, star2_love_number, star2_fluid_love_number, star2_position, star2_velocity, star2_spin, star2_evolution_type, star2_disk)

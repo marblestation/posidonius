@@ -48,8 +48,8 @@ if __name__ == "__main__":
     #star_evolution_type = posidonius.Baraffe2015(star_mass) # mass = 0.01 .. 1.40
     #star_evolution_type = posidonius.Leconte2011(star_mass) # mass = 0.01 .. 0.08
     #star_evolution_type = posidonius.Baraffe1998(star_mass) # Sun (mass = 1.0) or M-Dwarf (mass = 0.1)
-    #star_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
-    #star_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
+    #star_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
+    #star_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
     #star_evolution_type = posidonius.NonEvolving()
 
     disk_surface_density_normalization_gcm = 1000. # g.cm^-2
@@ -109,7 +109,8 @@ if __name__ == "__main__":
     planet_inclination = planet_keplerian_orbital_elements[3]
     planet_spin = posidonius.calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity)
 
-    planet_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
+    #planet_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
+    planet_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
     #planet_evolution_type = posidonius.NonEvolving()
     planet_disk = posidonius.NoDisk()
     universe.add_particle(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number, planet_position, planet_velocity, planet_spin, planet_evolution_type, planet_disk)

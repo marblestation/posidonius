@@ -9,8 +9,7 @@ pub enum EvolutionType {
     Baraffe2015(f64), // NEW
     Leconte2011(f64), // BrownDwarf
     Baraffe1998(f64), // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
-    LeconteChabrier2013, // Jupiter
-    LeconteChabrier2013dissip, // Jupiter with dynamical tide
+    LeconteChabrier2013(bool), // Jupiter with/without dissipation of dynamical tides
     NonEvolving,
 }
 
@@ -218,11 +217,8 @@ impl Evolver {
                     panic!("The evolution type BolmontMathis2016 does not support a mass of {} Msun!", mass);
                 }
             },
-            EvolutionType::LeconteChabrier2013 => {
+            EvolutionType::LeconteChabrier2013(_) => {
                 String::from("input/Leconte_Chabrier_2013/Jupiter.dat")
-            },
-            EvolutionType::LeconteChabrier2013dissip => {
-                String::from("input/Leconte_Chabrier_2013/Jupiter_dissip.dat")
             },
             EvolutionType::NonEvolving => {
                 String::from("input/empty.dat")
@@ -271,10 +267,7 @@ impl Evolver {
                 EvolutionType::GalletBolmont2017(_) => {
                     (10_f64.powf(raw_time) * 365.25 - initial_time, raw_radius * R_SUN)
                 },
-                EvolutionType::LeconteChabrier2013 => {
-                    (raw_time * 365.25 - initial_time, raw_radius * M2AU)
-                },
-                EvolutionType::LeconteChabrier2013dissip => {
+                EvolutionType::LeconteChabrier2013(_) => {
                     (raw_time * 365.25 - initial_time, raw_radius * M2AU)
                 },
                 _ => {
@@ -283,11 +276,7 @@ impl Evolver {
             };
             // Fields that only some types have...
             let current_radius_of_gyration_2 = match evolution_type {
-                EvolutionType::LeconteChabrier2013 => {
-                    let raw_radius_of_gyration_2 = row[3].parse::<f64>().unwrap();
-                    raw_radius_of_gyration_2
-                },
-                EvolutionType::LeconteChabrier2013dissip => {
+                EvolutionType::LeconteChabrier2013(_) => {
                     let raw_radius_of_gyration_2 = row[3].parse::<f64>().unwrap();
                     raw_radius_of_gyration_2
                 },
@@ -300,11 +289,7 @@ impl Evolver {
                 }
             };
             let current_love_number = match evolution_type {
-                EvolutionType::LeconteChabrier2013 => {
-                    let raw_love_number = row[2].parse::<f64>().unwrap();
-                    raw_love_number
-                },
-                EvolutionType::LeconteChabrier2013dissip => {
+                EvolutionType::LeconteChabrier2013(_) => {
                     let raw_love_number = row[2].parse::<f64>().unwrap();
                     raw_love_number
                 },
@@ -321,7 +306,7 @@ impl Evolver {
                     let raw_inverse_tidal_q_factor = row[10].parse::<f64>().unwrap();
                     1./10_f64.powf(raw_inverse_tidal_q_factor)
                 },
-                EvolutionType::LeconteChabrier2013dissip => {
+                EvolutionType::LeconteChabrier2013(true) => {
                     let raw_inverse_tidal_q_factor = row[5].parse::<f64>().unwrap();
                     raw_inverse_tidal_q_factor
                 },
@@ -358,18 +343,14 @@ impl Evolver {
                     radius.push(current_radius);
                     inverse_tidal_q_factor.push(current_inverse_tidal_q_factor);
                 },
-                EvolutionType::LeconteChabrier2013 => {
+                EvolutionType::LeconteChabrier2013(dissipation_of_dynamical_tides) => {
                     time.push(current_time);
                     radius.push(current_radius);
                     radius_of_gyration_2.push(current_radius_of_gyration_2);
                     love_number.push(current_love_number);
-                },
-                EvolutionType::LeconteChabrier2013dissip => {
-                    time.push(current_time);
-                    radius.push(current_radius);
-                    radius_of_gyration_2.push(current_radius_of_gyration_2);
-                    love_number.push(current_love_number);
-                    inverse_tidal_q_factor.push(current_inverse_tidal_q_factor);
+                    if dissipation_of_dynamical_tides {
+                        inverse_tidal_q_factor.push(current_inverse_tidal_q_factor);
+                    }
                 },
                 EvolutionType::NonEvolving => {
                 }
@@ -447,8 +428,7 @@ impl Evolver {
         let (new_radius_of_gyration_2, left_index) = match self.evolution_type {
             EvolutionType::Baraffe2015(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
             EvolutionType::Leconte2011(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
-            EvolutionType::LeconteChabrier2013 => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
-            EvolutionType::LeconteChabrier2013dissip => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
+            EvolutionType::LeconteChabrier2013(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
             _ => { (current_radius_of_gyration_2, 0) }
         };
         self.left_index += left_index;
@@ -457,8 +437,7 @@ impl Evolver {
 
     pub fn love_number(&mut self, current_time: f64, current_love_number: f64) -> f64 {
         let (new_love_number, left_index) = match self.evolution_type {
-            EvolutionType::LeconteChabrier2013 => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
-            EvolutionType::LeconteChabrier2013dissip => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
+            EvolutionType::LeconteChabrier2013(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
             _ => { (current_love_number, 0) }
         };
         self.left_index += left_index;
@@ -484,7 +463,7 @@ impl Evolver {
         // Excentric orbits needs more than one frequency to be described and it will be
         // included in future versions of this code.
         let (new_inverse_tidal_q_factor, left_index) = match self.evolution_type {
-            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013dissip => {
+            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
                 interpolate_b_spline(&self.time[self.idx()..], &self.inverse_tidal_q_factor[self.idx()..], current_time)
             },
             _ => (current_inverse_tidal_q_factor, 0),

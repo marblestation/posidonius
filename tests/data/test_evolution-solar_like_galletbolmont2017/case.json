@@ -582,7 +582,9 @@
         "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
-        "evolution_type": "LeconteChabrier2013", 
+        "evolution_type": {
+          "LeconteChabrier2013": false
+        }, 
         "factor_for_the_force_induced_by_planet_rotation": 0.0, 
         "factor_for_the_force_induced_by_star_rotation": 0.0, 
         "fluid_love_number": 0.38, 
@@ -3482,7 +3484,9 @@
         "time": []
       }, 
       {
-        "evolution_type": "LeconteChabrier2013", 
+        "evolution_type": {
+          "LeconteChabrier2013": false
+        }, 
         "inverse_tidal_q_factor": [], 
         "left_index": 0, 
         "love_number": [

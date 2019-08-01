@@ -80,8 +80,8 @@ if __name__ == "__main__":
     #star_evolution_type = posidonius.Baraffe2015(star_mass) # mass = 0.01 .. 1.40
     star_evolution_type = posidonius.Leconte2011(star_mass) # mass = 0.01 .. 0.08
     #star_evolution_type = posidonius.Baraffe1998(star_mass) # Sun (mass = 1.0) or M-Dwarf (mass = 0.1)
-    #star_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
-    #star_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
+    #star_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
+    #star_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
     #star_evolution_type = posidonius.NonEvolving()
 
     #star_disk = posidonius.NoDisk()

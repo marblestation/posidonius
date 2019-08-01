@@ -56,7 +56,7 @@ def basic_configuration(universe):
     planet2_rotation_period = 24. # hours
     planet2_spin = _spin(planet2_obliquity, planet2_rotation_period, star_mass, planet2_mass, planet2_position, planet2_velocity)
 
-    planet2_evolution_type = posidonius.LeconteChabrier2013()
+    planet2_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
     universe.add_jupiter_like(planet2_mass, planet2_dissipation_factor_scale, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)
 
     ############################################################################
