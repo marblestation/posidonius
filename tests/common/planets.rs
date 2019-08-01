@@ -82,13 +82,15 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
     let planet_keplerian_orbital_elements = posidonius::tools::calculate_keplerian_orbital_elements(posidonius::constants::G*star.mass*planet_mass, planet_position, planet_velocity);
     let planet_inclination = planet_keplerian_orbital_elements.3;
     let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity);
+    // Disk
+    let planet_disk = posidonius::Disk::None;
 
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;
     let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
                                             planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
                                             planet_position, planet_velocity, planet_acceleration, planet_spin, 
-                                            planet_evolution_type, planet_wind_k_factor, planet_wind_rotation_saturation);
+                                            planet_evolution_type, planet_disk, planet_wind_k_factor, planet_wind_rotation_saturation);
     planet
 }
 
@@ -149,12 +151,14 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
     let planet_keplerian_orbital_elements = posidonius::tools::calculate_keplerian_orbital_elements(posidonius::constants::G*star.mass*planet_mass, planet_position, planet_velocity);
     let planet_inclination = planet_keplerian_orbital_elements.3;
     let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity);
+    // Disk
+    let planet_disk = posidonius::Disk::None;
 
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;
     let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
                                             planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
                                             planet_position, planet_velocity, planet_acceleration, planet_spin, 
-                                            planet_evolution_type, planet_wind_k_factor, planet_wind_rotation_saturation);
+                                            planet_evolution_type, planet_disk, planet_wind_k_factor, planet_wind_rotation_saturation);
     planet
 }

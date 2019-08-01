@@ -4,7 +4,7 @@ use super::super::constants::{K2, G, R_SUN, SUN_DYN_FREQ, SPEED_OF_LIGHT_2, MAX_
 use super::super::tools::calculate_perihelion_distance_and_eccentricity;
 use super::super::tools::calculate_migration_timescale;
 use super::{Evolver, EvolutionType};
-use super::{Particle};
+use super::{Particle, Disk};
 use super::{Axes};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -17,9 +17,10 @@ pub struct Universe {
     pub evolving_particles_exist: bool,
     pub wind_effects_exist: bool,
     pub consider_tides: bool,
-    pub consider_type_two_migration: bool,
+    pub consider_disk_interaction: bool,
     pub consider_rotational_flattening: bool,
     pub consider_general_relativity: ConsiderGeneralRelativity,
+    disk_center_particle_position: usize,
     star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
     temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
     temporary_copied_particle_velocities: [Axes; MAX_PARTICLES], // For optimization purposes (TODO: Delete and adapt python package)
@@ -43,7 +44,7 @@ pub enum ConsiderGeneralRelativity {
 }
 
 impl Universe {
-    pub fn new(initial_time: f64, time_limit: f64, mut particles: Vec<Particle>, consider_tides: bool, consider_rotational_flattening: bool, consider_general_relativity: ConsiderGeneralRelativity) -> Universe {
+    pub fn new(initial_time: f64, time_limit: f64, mut particles: Vec<Particle>, consider_tides: bool, consider_rotational_flattening: bool, consider_disk_interaction: bool, consider_general_relativity: ConsiderGeneralRelativity) -> Universe {
 
         let mut evolving_particles_exist = false;
         let mut wind_effects_exist = false;
@@ -59,6 +60,22 @@ impl Universe {
             }
             if wind_effects_exist && evolving_particles_exist {
                 break;
+            }
+        }
+
+        // Find the position of the particle that has the disk if any
+        let mut disk_center_particle_position = MAX_PARTICLES+1;
+        if consider_disk_interaction {
+            for (i, particle) in particles.iter().enumerate() {
+                if let Disk::Properties( disk ) = particle.disk {
+                    if disk.inner_edge_distance != 0. || disk.outer_edge_distance != 0. {
+                        if disk_center_particle_position == MAX_PARTICLES+1 {
+                            disk_center_particle_position = i;
+                        } else {
+                            panic!("Only one body with a disk is allowed!");
+                        }
+                    }
+                }
             }
         }
 
@@ -119,7 +136,8 @@ impl Universe {
                     consider_tides: consider_tides,
                     consider_rotational_flattening: consider_rotational_flattening,
                     consider_general_relativity: consider_general_relativity,
-                    consider_type_two_migration: false,
+                    consider_disk_interaction: consider_disk_interaction,
+                    disk_center_particle_position: disk_center_particle_position,
                     star_planet_dependent_dissipation_factors:HashMap::new(),
                     temporary_copied_particle_positions: temporary_copied_particle_positions,
                     temporary_copied_particle_velocities: temporary_copied_particle_velocities,
@@ -261,7 +279,7 @@ impl Universe {
         }
 
         if (dangular_momentum_dt_per_moment_of_inertia && (self.consider_tides || self.consider_rotational_flattening)) ||
-            (accelerations && (self.consider_tides  || self.consider_type_two_migration || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None)) {
+            (accelerations && (self.consider_tides  || self.consider_disk_interaction || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None)) {
             self.calculate_distance_and_velocities(); // Needed for tides, rotational flattening, general relativity and evolution
         }
 
@@ -274,7 +292,7 @@ impl Universe {
         }
 
         if (dangular_momentum_dt_per_moment_of_inertia && (self.consider_tides || self.consider_rotational_flattening)) ||
-            (accelerations && (self.consider_tides || self.consider_type_two_migration || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None)) {
+            (accelerations && (self.consider_tides || self.consider_disk_interaction || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None)) {
 
             self.calculate_orthogonal_components(); // Needed for torques and additional accelerations
 
@@ -284,13 +302,13 @@ impl Universe {
                 self.calculate_dangular_momentum_dt_per_moment_of_inertia();
             }
 
-            if accelerations && (self.consider_tides || self.consider_type_two_migration || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None) {
+            if accelerations && (self.consider_tides || self.consider_disk_interaction || self.consider_rotational_flattening || self.consider_general_relativity != ConsiderGeneralRelativity::None) {
                 if self.consider_tides {
                     self.calculate_radial_component_of_the_tidal_force();  // Needed for calculate_tidal_acceleration
                     self.calculate_tidal_acceleration();
                 }
 
-                if self.consider_type_two_migration {
+                if self.consider_disk_interaction {
                     self.calculate_type_two_migration_acceleration(current_time);
                 }
 
@@ -359,7 +377,7 @@ impl Universe {
                     particle.inertial_acceleration.z += particle.tidal_acceleration.z;
                 }
 
-                if self.consider_type_two_migration {
+                if self.consider_disk_interaction {
                     particle.inertial_acceleration.x += particle.type_two_migration_acceleration.x;
                     particle.inertial_acceleration.y += particle.type_two_migration_acceleration.y;
                     particle.inertial_acceleration.z += particle.type_two_migration_acceleration.z;
@@ -383,7 +401,7 @@ impl Universe {
                 star.inertial_acceleration.z += star.tidal_acceleration.z;
             }
 
-            if self.consider_type_two_migration {
+            if self.consider_disk_interaction {
                 star.inertial_acceleration.x += star.type_two_migration_acceleration.x;
                 star.inertial_acceleration.y += star.type_two_migration_acceleration.y;
                 star.inertial_acceleration.z += star.type_two_migration_acceleration.z;
@@ -657,81 +675,105 @@ impl Universe {
     }
 
     fn calculate_type_two_migration_acceleration(&mut self, current_time: f64) {
-        if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
-            star.migration_timescale = 0.0;
-            let factor2 = 1. / star.mass;
-            let mut sum_total_type_two_migration_force = Axes{x:0., y:0., z:0.};
+        {
+            let (particles_left, particles_right) = self.particles[..self.n_particles].split_at_mut(self.disk_center_particle_position);
+            if let Some((disk_center_particle, particles_right)) = particles_right.split_first_mut() {
+                if let Disk::Properties( disk ) = disk_center_particle.disk {
+                    let factor2 = 1. / disk_center_particle.mass;
+                    let mut sum_total_type_two_migration_force = Axes{x:0., y:0., z:0.};
+
+                    for particle in particles_left.iter_mut().chain(particles_right.iter_mut()) {
+                        //// Compute norm of the velocity and distance between the body in the
+                        //// center of the disk and the current body
+                        let norm_velocity_vector;
+                        let distance;
+                        if self.disk_center_particle_position != 0 {
+                            // Norm of the velocity
+                            let norm_velocity_vector_2 = (particle.velocity.x.powi(2) - disk_center_particle.velocity.x.powi(2)) 
+                                                        + (particle.velocity.y.powi(2) - disk_center_particle.velocity.y.powi(2))
+                                                        + (particle.velocity.z.powi(2) - disk_center_particle.velocity.z.powi(2));
+                            norm_velocity_vector = norm_velocity_vector_2.sqrt();
+
+                            // (distance to star)^2
+                            let distance_2 = (particle.position.x.powi(2) - disk_center_particle.position.x.powi(2)) 
+                                                + (particle.position.y.powi(2) - disk_center_particle.position.y.powi(2))
+                                                + (particle.position.z.powi(2) - disk_center_particle.position.z.powi(2));
+                            distance = distance_2.sqrt();
+                        } else {
+                            norm_velocity_vector = particle.norm_velocity_vector;
+                            distance = particle.norm_velocity_vector;
+                        }
+
+                        // Semi-major axis
+                        let sma = (particle.mass_g+disk_center_particle.mass_g) * distance / (2.0 * (particle.mass_g+disk_center_particle.mass_g) -  distance * norm_velocity_vector*norm_velocity_vector);
+
+                        particle.migration_timescale = calculate_migration_timescale(current_time, distance, sma, disk.surface_density_normalization
+                                         , disk.inner_edge_distance, disk.outer_edge_distance, disk.lifetime
+                                         , disk.alpha, disk.mean_molecular_weight, particle.mass, disk_center_particle.mass);
+                        //println!("current_time (day) = {:e}", current_time);
+                        //println!("distance (AU) = {:e}", distance);
+                        //println!("sma (AU) = {:e}", sma);
+                        //println!("disk.surface_density_normalization (Msun/AU^2) = {:e}", disk.surface_density_normalization);
+                        //println!("disk.inner_edge_distance (AU) = {:e}", disk.inner_edge_distance);
+                        //println!("disk.outer_edge_distance (AU) = {:e}", disk.outer_edge_distance);
+                        //println!("disk.lifetime (day) = {:e}", disk.lifetime);
+                        //println!("particle.alpha_disk = {:e}", particle.alpha_disk);
+                        //println!("disk.mean_molecular_weight = {:e}", disk.mean_molecular_weight);
+                        //println!("migration timescale (day) = {:e}", particle.migration_timescale);
+                        //panic!();
 
 
-            for particle in particles.iter_mut() {
+                        let factor1 = 1. / particle.mass;
+                        // From Alibert et al. 2013 (https://ui.adsabs.harvard.edu/abs/2013A&A...558A.109A)
+                        let factor_migration = -particle.mass / particle.migration_timescale;
 
-                let sma = (particle.mass_g+star.mass_g) * particle.distance / (2.0 * (particle.mass_g+star.mass_g) -  particle.distance * particle.norm_velocity_vector*particle.norm_velocity_vector);
+                        let eccentricity_damping_timescale = 0.1 * particle.migration_timescale;
+                        let factor_damping_eccentricity = -particle.mass * 2.0 / eccentricity_damping_timescale;
 
-                particle.migration_timescale = calculate_migration_timescale(current_time, particle.distance, sma, particle.disk_surface_density_normalization
-                                 , particle.disk_inner_edge_distance, particle.disk_outer_edge_distance, particle.disk_lifetime
-                                 , particle.alpha_disk, particle.disk_mean_molecular_weight, particle.mass, star.mass);
-                //println!("current_time (day) = {:e}", current_time);
-                //println!("particle.distance (AU) = {:e}", particle.distance);
-                //println!("sma (AU) = {:e}", sma);
-                //println!("particle.disk_surface_density_normalization (Msun/AU^2) = {:e}", particle.disk_surface_density_normalization);
-                //println!("particle.disk_inner_edge_distance (AU) = {:e}", particle.disk_inner_edge_distance);
-                //println!("particle.disk_outer_edge_distance (AU) = {:e}", particle.disk_outer_edge_distance);
-                //println!("particle.disk_lifetime (day) = {:e}", particle.disk_lifetime);
-                //println!("particle.alpha_disk = {:e}", particle.alpha_disk);
-                //println!("particle.disk_mean_molecular_weight = {:e}", particle.disk_mean_molecular_weight);
-                //println!("migration timescale (day) = {:e}", particle.migration_timescale);
-                //panic!();
+                        let inclination_damping_timescale = eccentricity_damping_timescale;
+                        let factor_damping_inclination = -particle.mass * 2.0 /inclination_damping_timescale;
 
+                        // Force responsible for migration: Eq 8 from Alibert et al. 2013
+                        let type_two_migration_force_x = factor_migration * particle.velocity.x;
+                        let type_two_migration_force_y = factor_migration * particle.velocity.y;
+                        let type_two_migration_force_z = factor_migration * particle.velocity.z;
 
-                let factor1 = 1. / particle.mass;
-                // From Alibert et al. 2013 (https://ui.adsabs.harvard.edu/abs/2013A&A...558A.109A)
-                let factor_migration = -particle.mass / particle.migration_timescale;
+                        // Force responsible for eccentricity damping: Eq 9
+                        let scalar_product_velocity_radius_over_radius_squared = 1.0/(distance * distance)
+                            * (particle.position.x * particle.velocity.x 
+                               + particle.position.y * particle.velocity.y
+                               + particle.position.z * particle.velocity.z);
+                        let type_two_migration_eccentricity_damping_force_x = factor_damping_eccentricity * scalar_product_velocity_radius_over_radius_squared * particle.position.x;
+                        let type_two_migration_eccentricity_damping_force_y = factor_damping_eccentricity * scalar_product_velocity_radius_over_radius_squared * particle.position.y;
+                        let type_two_migration_eccentricity_damping_force_z = factor_damping_eccentricity * scalar_product_velocity_radius_over_radius_squared * particle.position.z;
 
-                let eccentricity_damping_timescale = 0.1 * particle.migration_timescale;
-                let factor_damping_eccentricity = -particle.mass * 2.0 / eccentricity_damping_timescale;
+                        // Force responsible for inclination damping: Eq 10
+                        let type_two_migration_inclination_damping_force_x = 0.0;
+                        let type_two_migration_inclination_damping_force_y = 0.0;
+                        let type_two_migration_inclination_damping_force_z = factor_damping_inclination * particle.velocity.z;
 
-                let inclination_damping_timescale = eccentricity_damping_timescale;
-                let factor_damping_inclination = -particle.mass * 2.0 /inclination_damping_timescale;
-
-                // Force responsible for migration: Eq 8 from Alibert et al. 2013
-                let type_two_migration_force_x = factor_migration * particle.velocity.x;
-                let type_two_migration_force_y = factor_migration * particle.velocity.y;
-                let type_two_migration_force_z = factor_migration * particle.velocity.z;
-
-                // Force responsible for eccentricity damping: Eq 9
-                let scalar_product_velocity_radius_over_radius_squared = 1.0/(particle.distance * particle.distance)
-                    * (particle.position.x * particle.velocity.x 
-                       + particle.position.y * particle.velocity.y
-                       + particle.position.z * particle.velocity.z);
-                let type_two_migration_eccentricity_damping_force_x = factor_damping_eccentricity * scalar_product_velocity_radius_over_radius_squared * particle.position.x;
-                let type_two_migration_eccentricity_damping_force_y = factor_damping_eccentricity * scalar_product_velocity_radius_over_radius_squared * particle.position.y;
-                let type_two_migration_eccentricity_damping_force_z = factor_damping_eccentricity * scalar_product_velocity_radius_over_radius_squared * particle.position.z;
-
-                // Force responsible for inclination damping: Eq 10
-                let type_two_migration_inclination_damping_force_x = 0.0;
-                let type_two_migration_inclination_damping_force_y = 0.0;
-                let type_two_migration_inclination_damping_force_z = factor_damping_inclination * particle.velocity.z;
-
-                // Total
-                let total_type_two_migration_force_x = type_two_migration_force_x + type_two_migration_eccentricity_damping_force_x + type_two_migration_inclination_damping_force_x;
-                let total_type_two_migration_force_y = type_two_migration_force_y + type_two_migration_eccentricity_damping_force_y + type_two_migration_inclination_damping_force_y;
-                let total_type_two_migration_force_z = type_two_migration_force_z + type_two_migration_eccentricity_damping_force_z + type_two_migration_inclination_damping_force_z;
+                        // Total
+                        let total_type_two_migration_force_x = type_two_migration_force_x + type_two_migration_eccentricity_damping_force_x + type_two_migration_inclination_damping_force_x;
+                        let total_type_two_migration_force_y = type_two_migration_force_y + type_two_migration_eccentricity_damping_force_y + type_two_migration_inclination_damping_force_y;
+                        let total_type_two_migration_force_z = type_two_migration_force_z + type_two_migration_eccentricity_damping_force_z + type_two_migration_inclination_damping_force_z;
 
 
-                sum_total_type_two_migration_force.x += total_type_two_migration_force_x;
-                sum_total_type_two_migration_force.y += total_type_two_migration_force_y;
-                sum_total_type_two_migration_force.z += total_type_two_migration_force_z;
+                        sum_total_type_two_migration_force.x += total_type_two_migration_force_x;
+                        sum_total_type_two_migration_force.y += total_type_two_migration_force_y;
+                        sum_total_type_two_migration_force.z += total_type_two_migration_force_z;
 
-                // - As in Equation 19 from Bolmont et al. 2015 (first term) 
-                particle.type_two_migration_acceleration.x = factor1 * total_type_two_migration_force_x; 
-                particle.type_two_migration_acceleration.y = factor1 * total_type_two_migration_force_y;
-                particle.type_two_migration_acceleration.z = factor1 * total_type_two_migration_force_z;
+                        // - As in Equation 19 from Bolmont et al. 2015 (first term) 
+                        particle.type_two_migration_acceleration.x = factor1 * total_type_two_migration_force_x; 
+                        particle.type_two_migration_acceleration.y = factor1 * total_type_two_migration_force_y;
+                        particle.type_two_migration_acceleration.z = factor1 * total_type_two_migration_force_z;
+                    }
+                
+                    // Instead of the previous code, keep star type_two_migration acceleration separated:
+                    disk_center_particle.type_two_migration_acceleration.x = -1.0 * factor2 * sum_total_type_two_migration_force.x;
+                    disk_center_particle.type_two_migration_acceleration.y = -1.0 * factor2 * sum_total_type_two_migration_force.y;
+                    disk_center_particle.type_two_migration_acceleration.z = -1.0 * factor2 * sum_total_type_two_migration_force.z;
+                }
             }
-        
-            // Instead of the previous code, keep star type_two_migration acceleration separated:
-            star.type_two_migration_acceleration.x = -1.0 * factor2 * sum_total_type_two_migration_force.x;
-            star.type_two_migration_acceleration.y = -1.0 * factor2 * sum_total_type_two_migration_force.y;
-            star.type_two_migration_acceleration.z = -1.0 * factor2 * sum_total_type_two_migration_force.z;
         }
     }
     

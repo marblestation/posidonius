@@ -15,6 +15,8 @@ pub use self::particles::Particle;
 pub use self::particles::Axes;
 pub use self::particles::Evolver;
 pub use self::particles::EvolutionType;
+pub use self::particles::Disk;
+pub use self::particles::DiskProperties;
 
 mod integrator;
 pub use self::integrator::*;

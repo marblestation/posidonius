@@ -27,6 +27,8 @@ pub fn solar_like(star_mass: f64, star_evolution_type: posidonius::EvolutionType
     let star_rotation_period: f64 = 8.; // hours
     let star_angular_frequency = posidonius::constants::TWO_PI/(star_rotation_period/24.); // days^-1
     let star_spin = posidonius::Axes{x:0., y:0., z:star_angular_frequency };
+    // Disk
+    let star_disk = posidonius::Disk::None;
 
     // Wind parametrisation (Bouvier 1997):
     //      wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
@@ -36,7 +38,58 @@ pub fn solar_like(star_mass: f64, star_evolution_type: posidonius::EvolutionType
     let star = posidonius::Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
                                             star_position, star_velocity, star_acceleration, star_spin,
-                                            star_evolution_type, star_wind_k_factor, star_wind_rotation_saturation);
+                                            star_evolution_type, star_disk, star_wind_k_factor, star_wind_rotation_saturation);
+    star
+}
+
+pub fn solar_like_with_disk(star_mass: f64, star_evolution_type: posidonius::EvolutionType) -> posidonius::Particle {
+    match star_evolution_type {
+        posidonius::EvolutionType::BolmontMathis2016(_) => { },
+        posidonius::EvolutionType::GalletBolmont2017(_) => { },
+        posidonius::EvolutionType::Baraffe1998(_) => { },
+        posidonius::EvolutionType::Baraffe2015(_) => { },
+        posidonius::EvolutionType::NonEvolving => { },
+        _ => { panic!("Evolution type should be Baraffe1998, Baraffe2015, BolmontMathis2016, GalletBolmont2017 or non evolving to create a solar like body!"); }
+    }
+    let radius_factor: f64 = 1.0;
+    let star_radius: f64 = radius_factor * posidonius::constants::R_SUN;
+    let star_love_number: f64 = 0.03;  // Sun
+    let star_fluid_love_number: f64 = star_love_number;
+    // Disipation factor (sigma)
+    let star_dissipation_factor_scale: f64 = 1.;
+    // Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
+    let star_dissipation_factor: f64 = 4.992*3.845764e-2; // -66+64
+    // Radius of gyration
+    let star_radius_of_gyration_2: f64 = 5.9e-2; // Sun
+    // To calculate tidal forces, it is needed to have the central body/star at [0,0,0] and without velocity or acceleration (heliocentric)
+    let star_position = posidonius::Axes{x:0., y:0., z:0.};
+    let star_velocity = posidonius::Axes{x:0., y:0., z:0.};
+    let star_acceleration = posidonius::Axes{x:0., y:0., z:0.};
+    // Initialization of stellar spin
+    let star_rotation_period: f64 = 8.; // hours
+    let star_angular_frequency = posidonius::constants::TWO_PI/(star_rotation_period/24.); // days^-1
+    let star_spin = posidonius::Axes{x:0., y:0., z:star_angular_frequency };
+    // Disk
+    let surface_density_normalization_gcm = 1000.; // g.cm^-2
+    let surface_density_normalization_SI = surface_density_normalization_gcm * 1.0e-3 * 1.0e4; // kg.m^-2
+    let star_disk = posidonius::Disk::Properties(posidonius::DiskProperties {
+        inner_edge_distance: 0.01,  // AU
+        outer_edge_distance: 100.0, // AU
+        lifetime: 1.0e5 * 365.25e0, // days
+        alpha: 1.0e-2,
+        surface_density_normalization: surface_density_normalization_SI * (1.0/posidonius::constants::M_SUN) * posidonius::constants::AU.powi(2), // Msun.AU^-2
+        mean_molecular_weight: 2.4,
+    });
+
+    // Wind parametrisation (Bouvier 1997):
+    //      wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
+    //      wind_rotation_saturation = 14. * TWO_PI/25.0 # = 1.7592918860102842, wsat in units of the spin of the Sun today
+    let star_wind_k_factor = 4.0e-18;
+    let star_wind_rotation_saturation = 1.7592918860102842;
+    let star = posidonius::Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
+                                            star_love_number, star_fluid_love_number,
+                                            star_position, star_velocity, star_acceleration, star_spin,
+                                            star_evolution_type, star_disk, star_wind_k_factor, star_wind_rotation_saturation);
     star
 }
 
@@ -117,6 +170,8 @@ pub fn brown_dwarf(star_mass: f64, star_evolution_type: posidonius::EvolutionTyp
     // Initialization of stellar spin
     let star_angular_frequency = posidonius::constants::TWO_PI/(star_rotation_period/24.); // days^-1
     let star_spin = posidonius::Axes{x:0., y:0., z:star_angular_frequency };
+    // Disk
+    let star_disk = posidonius::Disk::None;
 
     let star_wind_k_factor = 0.;
     let star_wind_rotation_saturation = 0.;
@@ -124,7 +179,7 @@ pub fn brown_dwarf(star_mass: f64, star_evolution_type: posidonius::EvolutionTyp
     let star = posidonius::Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
                                             star_position, star_velocity, star_acceleration, star_spin,
-                                            star_evolution_type, star_wind_k_factor, star_wind_rotation_saturation);
+                                            star_evolution_type, star_disk, star_wind_k_factor, star_wind_rotation_saturation);
     star
 }
 
@@ -154,13 +209,15 @@ pub fn m_dwarf(star_mass: f64, star_evolution_type: posidonius::EvolutionType) -
     let star_rotation_period: f64 = 70.0; // hours
     let star_angular_frequency = posidonius::constants::TWO_PI/(star_rotation_period/24.); // days^-1
     let star_spin = posidonius::Axes{x:0., y:0., z:star_angular_frequency };
+    // Disk
+    let star_disk = posidonius::Disk::None;
 
     let star_wind_k_factor = 0.;
     let star_wind_rotation_saturation = 0.;
     let star = posidonius::Particle::new(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, 
                                             star_love_number, star_fluid_love_number,
                                             star_position, star_velocity, star_acceleration, star_spin,
-                                            star_evolution_type, star_wind_k_factor, star_wind_rotation_saturation);
+                                            star_evolution_type, star_disk, star_wind_k_factor, star_wind_rotation_saturation);
     star
 }
 

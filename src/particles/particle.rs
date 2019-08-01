@@ -4,6 +4,22 @@ use super::{Axes};
 use time;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+pub struct DiskProperties {
+    pub inner_edge_distance: f64,
+    pub outer_edge_distance: f64,
+    pub lifetime: f64,
+    pub alpha: f64,
+    pub surface_density_normalization: f64,
+    pub mean_molecular_weight: f64,
+}
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+pub enum Disk {
+    Properties(DiskProperties),
+    None,
+}
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Particle {
     pub id: usize, // Unique internal identifier
     pub mass: f64,
@@ -18,12 +34,7 @@ pub struct Particle {
     pub fluid_love_number: f64,   // love number for a completely fluid planet (used for rotational flattening effects)
     //pub type_two_migration_time: f64, // type two migration time
     //pub type_two_migration_inner_disk_edge_distance: f64, // type two migration stops at inner disk edge
-    pub disk_inner_edge_distance: f64,
-    pub disk_outer_edge_distance: f64,
-    pub disk_lifetime: f64,
-    pub alpha_disk: f64,
-    pub disk_surface_density_normalization: f64,
-    pub disk_mean_molecular_weight: f64,
+    pub disk: Disk,
     pub migration_timescale: f64,
     //
     // In the heliocentric frame the star is at rest with respect to the origin of the coordinate system
@@ -82,7 +93,7 @@ pub struct Particle {
 }
 
 impl Particle {
-    pub fn new(mass: f64, radius: f64, dissipation_factor: f64, dissipation_factor_scale: f64, radius_of_gyration_2: f64, love_number: f64, fluid_love_number: f64, position: Axes, velocity: Axes, acceleration: Axes, spin: Axes, evolution_type: EvolutionType, wind_k_factor: f64, wind_rotation_saturation: f64) -> Particle {
+    pub fn new(mass: f64, radius: f64, dissipation_factor: f64, dissipation_factor_scale: f64, radius_of_gyration_2: f64, love_number: f64, fluid_love_number: f64, position: Axes, velocity: Axes, acceleration: Axes, spin: Axes, evolution_type: EvolutionType, disk: Disk, wind_k_factor: f64, wind_rotation_saturation: f64) -> Particle {
         let inertial_position = Axes{x: 0., y: 0., z: 0.};
         let inertial_velocity = Axes{x: 0., y: 0., z: 0.};
         let inertial_acceleration = Axes{x: 0., y: 0., z: 0.};
@@ -150,12 +161,7 @@ impl Particle {
                     general_relativity_acceleration:general_relativity_acceleration,
                     evolution_type:evolution_type,
                     lag_angle:0., // It will be initialized the first time evolve is called
-                    disk_inner_edge_distance: 0.,
-                    disk_outer_edge_distance: 0.,
-                    disk_lifetime: 0.,
-                    alpha_disk: 0.,
-                    disk_surface_density_normalization: 0.,
-                    disk_mean_molecular_weight: 0.,
+                    disk: disk,
                     migration_timescale: 0.,
                     type_two_migration_acceleration: Axes{x: 0., y: 0., z: 0.},
         }
@@ -174,6 +180,7 @@ impl Particle {
         let acceleration = Axes{x: 0., y: 0., z: 0.};
         let spin = Axes{x: 0., y: 0., z: 0.};
         let evolution_type = EvolutionType::NonEvolving;
+        let disk = Disk::None;
         let tidal_acceleration = Axes{x: 0., y: 0., z: 0.};
         let acceleration_induced_by_rotational_flattering = Axes{x: 0., y: 0., z: 0.};
         let general_relativity_acceleration = Axes{x: 0., y: 0., z: 0.};
@@ -220,13 +227,8 @@ impl Particle {
                     general_relativity_factor: 0.,
                     general_relativity_acceleration:general_relativity_acceleration,
                     evolution_type:evolution_type,
+                    disk: disk,
                     lag_angle:0., // It will be initialized the first time evolve is called
-                    disk_inner_edge_distance: 0.,
-                    disk_outer_edge_distance: 0.,
-                    disk_lifetime: 0.,
-                    alpha_disk: 0.,
-                    disk_surface_density_normalization: 0.,
-                    disk_mean_molecular_weight: 0.,
                     migration_timescale: 0.,
                     type_two_migration_acceleration: Axes{x: 0., y: 0., z: 0.},
         }

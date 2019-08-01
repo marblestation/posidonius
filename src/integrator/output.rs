@@ -119,10 +119,10 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
             let (semimajor_axis, perihelion_distance, eccentricity, inclination, longitude_of_perihelion, longitude_of_ascending_node, mean_anomaly, orbital_period) = calculate_keplerian_orbital_elements(universe.particles[star_id].mass_g+particle.mass_g, particle.position, particle.velocity);
             // Control once in a while (when historic point is written) that the
             // time step is small enough to correctly integrate an orbit
-            //if orbital_period <= time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO {
-                //println!("\n");
-                //panic!("[PANIC {} UTC] Time step is too small! Particle {} has an orbital period around particle {} of {:0.3} days which is less than the recommended limit ({:0.3} days) based on the current time step ({:0.3} days).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), particle.id, star_id, orbital_period, time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO, time_step);
-            //}
+            if orbital_period <= time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO {
+                println!("\n");
+                panic!("[PANIC {} UTC] Time step is too small! Particle {} has an orbital period around particle {} of {:0.3} days which is less than the recommended limit ({:0.3} days) based on the current time step ({:0.3} days).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), particle.id, star_id, orbital_period, time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO, time_step);
+            }
             // Calculation of orbital angular momentum (without mass and in AU^2/day)
             let horb_x = particle.position.y * particle.velocity.z - particle.position.z * particle.velocity.y;
             let horb_y = particle.position.z * particle.velocity.x - particle.position.x * particle.velocity.z;

@@ -4,6 +4,8 @@ mod evolver;
 mod axes;
 
 pub use self::particle::Particle;
+pub use self::particle::Disk;
+pub use self::particle::DiskProperties;
 pub use self::universe::Universe;
 pub use self::universe::IgnoreGravityTerms;
 pub use self::universe::ConsiderGeneralRelativity;

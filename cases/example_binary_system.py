@@ -18,10 +18,10 @@ if __name__ == "__main__":
     historic_snapshot_period = 100.*365.25 # days
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_tides = True
-    consider_type_two_migration = False
     consider_rotational_flattening = True
+    consider_disk_interaction = False
     consider_general_relativity = "Newhall1983"
-    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_type_two_migration, consider_rotational_flattening, consider_general_relativity)
+    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
 
     star1_mass = 1.0 # Solar masses
     star1_radius_factor = 1.0
@@ -49,7 +49,8 @@ if __name__ == "__main__":
     #star1_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
     #star1_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
     #star1_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(star1_mass, star1_radius, star1_dissipation_factor, star1_dissipation_factor_scale, star1_radius_of_gyration_2, star1_love_number, star1_fluid_love_number, star1_type_two_migration_time, star1_type_two_migration_inner_disk_edge_distance, star1_position, star1_velocity, star1_spin, star1_evolution_type)
+    star1_disk = posidonius.NoDisk()
+    universe.add_particle(star1_mass, star1_radius, star1_dissipation_factor, star1_dissipation_factor_scale, star1_radius_of_gyration_2, star1_love_number, star1_fluid_love_number, star1_position, star1_velocity, star1_spin, star1_evolution_type, star1_disk)
 
 
     ############################################################################
@@ -104,7 +105,8 @@ if __name__ == "__main__":
     #star2_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
     #star2_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
     #star2_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(star2_mass, star2_radius, star2_dissipation_factor, star2_dissipation_factor_scale, star2_radius_of_gyration_2, star2_love_number, star2_fluid_love_number, star2_type_two_migration_time, star2_type_two_migration_inner_disk_edge_distance, star2_position, star2_velocity, star2_spin, star2_evolution_type)
+    star2_disk = posidonius.NoDisk()
+    universe.add_particle(star2_mass, star2_radius, star2_dissipation_factor, star2_dissipation_factor_scale, star2_radius_of_gyration_2, star2_love_number, star2_fluid_love_number, star2_position, star2_velocity, star2_spin, star2_evolution_type, star2_disk)
 
     #whfast_alternative_coordinates="DemocraticHeliocentric"
     #whfast_alternative_coordinates="WHDS"

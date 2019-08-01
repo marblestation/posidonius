@@ -308,10 +308,11 @@
   "time_step": 0.08, 
   "timestep_warning": 0, 
   "universe": {
+    "consider_disk_interaction": false, 
     "consider_general_relativity": "Kidder1995", 
     "consider_rotational_flattening": true, 
     "consider_tides": true, 
-    "consider_type_two_migration": false, 
+    "disk_center_particle_position": 11, 
     "evolving_particles_exist": true, 
     "initial_time": 913125000.0, 
     "n_particles": 4, 
@@ -327,7 +328,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -349,11 +349,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -446,7 +442,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -468,11 +463,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -565,7 +556,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -587,11 +577,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "LeconteChabrier2013", 
@@ -684,7 +670,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -706,11 +691,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -803,7 +784,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -825,11 +805,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -922,7 +898,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -944,11 +919,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -1041,7 +1012,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -1063,11 +1033,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -1160,7 +1126,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -1182,11 +1147,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -1279,7 +1240,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -1301,11 +1261,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -1398,7 +1354,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "alpha_disk": 0.0, 
         "dangular_momentum_dt": {
           "x": 0.0, 
           "y": 0.0, 
@@ -1420,11 +1375,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk_inner_edge_distance": 0.0, 
-        "disk_lifetime": 0.0, 
-        "disk_mean_molecular_weight": 0.0, 
-        "disk_outer_edge_distance": 0.0, 
-        "disk_surface_density_normalization": 0.0, 
+        "disk": "None", 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 

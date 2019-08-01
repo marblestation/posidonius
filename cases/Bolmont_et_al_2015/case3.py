@@ -41,13 +41,13 @@ if __name__ == "__main__":
     historic_snapshot_period = 100.*365.25 # days
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_tides = True
-    consider_type_two_migration = False
     consider_rotational_flattening = False
+    consider_disk_interaction = False
     consider_general_relativity = False
     #consider_general_relativity = "Kidder1995" # Assumes one central massive body
     #consider_general_relativity = "Anderson1975" # Assumes one central massive body
     #consider_general_relativity = "Newhall1983" # Considers all bodies
-    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_type_two_migration, consider_rotational_flattening, consider_general_relativity)
+    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
 
     star_mass = 0.08 # Solar masses
     star_radius_factor = 0.845649342247916
@@ -81,7 +81,8 @@ if __name__ == "__main__":
     #star_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
     #star_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
     star_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, fluid_love_number, star_type_two_migration_time, star_type_two_migration_inner_disk_edge_distance, star_position, star_velocity, star_spin, star_evolution_type)
+    star_disk = posidonius.NoDisk()
+    universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, fluid_love_number, star_position, star_velocity, star_spin, star_evolution_type, star_disk)
 
     ############################################################################
     planet_mass_factor = 1.0
@@ -146,7 +147,8 @@ if __name__ == "__main__":
     planet_spin = calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity, planet_position, planet_velocity)
 
     planet_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number, planet_type_two_migration_time, planet_type_two_migration_inner_disk_edge_distance, planet_position, planet_velocity, planet_spin, planet_evolution_type)
+    planet_disk = posidonius.NoDisk()
+    universe.add_particle(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number, planet_position, planet_velocity, planet_spin, planet_evolution_type, planet_disk)
 
     whfast_alternative_coordinates="DemocraticHeliocentric"
     #whfast_alternative_coordinates="WHDS"

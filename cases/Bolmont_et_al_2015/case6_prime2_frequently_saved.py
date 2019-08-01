@@ -19,13 +19,13 @@ if __name__ == "__main__":
     historic_snapshot_period = 0.2*365.25 # days
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_tides = False
-    consider_type_two_migration = False
     consider_rotational_flattening = True
+    consider_disk_interaction = False
     consider_general_relativity = False
     #consider_general_relativity = "Kidder1995" # Assumes one central massive body
     #consider_general_relativity = "Anderson1975" # Assumes one central massive body
     #consider_general_relativity = "Newhall1983" # Considers all bodies
-    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_type_two_migration, consider_rotational_flattening, consider_general_relativity)
+    universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
 
     star_mass = 0.08 # Solar masses
     star_radius_factor = 0.845649342247916
@@ -58,7 +58,8 @@ if __name__ == "__main__":
     #star_evolution_type = posidonius.LeconteChabrier2013() # Jupiter
     #star_evolution_type = posidonius.LeconteChabrier2013dissip() # Jupiter with dynamical tide dissipation as in BolmontMathis2016 and GalletBolmont2017
     star_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, fluid_love_number, star_type_two_migration_time, star_type_two_migration_inner_disk_edge_distance, star_position, star_velocity, star_spin, star_evolution_type)
+    star_disk = posidonius.NoDisk()
+    universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, fluid_love_number, star_position, star_velocity, star_spin, star_evolution_type, star_disk)
 
     ############################################################################
     planet1_mass_factor = 1.0
@@ -125,7 +126,8 @@ if __name__ == "__main__":
     planet1_spin = posidonius.calculate_spin(planet1_angular_frequency, planet1_inclination, planet1_obliquity)
 
     planet1_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(planet1_mass, planet1_radius, planet1_dissipation_factor, planet1_dissipation_factor_scale, planet1_radius_of_gyration_2, planet1_love_number, planet1_fluid_love_number, planet1_type_two_migration_time, planet1_type_two_migration_inner_disk_edge_distance, planet1_position, planet1_velocity, planet1_spin, planet1_evolution_type)
+    planet1_disk = posidonius.NoDisk()
+    universe.add_particle(planet1_mass, planet1_radius, planet1_dissipation_factor, planet1_dissipation_factor_scale, planet1_radius_of_gyration_2, planet1_love_number, planet1_fluid_love_number, planet1_position, planet1_velocity, planet1_spin, planet1_evolution_type, planet1_disk)
 
     ############################################################################
     planet2_mass_factor = 1.0
@@ -192,7 +194,8 @@ if __name__ == "__main__":
     planet2_spin = posidonius.calculate_spin(planet2_angular_frequency, planet2_inclination, planet2_obliquity)
 
     planet2_evolution_type = posidonius.NonEvolving()
-    universe.add_particle(planet2_mass, planet2_radius, planet2_dissipation_factor, planet2_dissipation_factor_scale, planet2_radius_of_gyration_2, planet2_love_number, planet2_fluid_love_number, planet2_type_two_migration_time, planet2_type_two_migration_inner_disk_edge_distance, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)
+    planet2_disk = posidonius.NoDisk()
+    universe.add_particle(planet2_mass, planet2_radius, planet2_dissipation_factor, planet2_dissipation_factor_scale, planet2_radius_of_gyration_2, planet2_love_number, planet2_fluid_love_number, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type, planet2_disk)
 
     whfast_alternative_coordinates="DemocraticHeliocentric"
     #whfast_alternative_coordinates="WHDS"

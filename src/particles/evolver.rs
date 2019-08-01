@@ -448,7 +448,6 @@ impl Evolver {
             EvolutionType::Baraffe2015(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
             EvolutionType::Leconte2011(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
             EvolutionType::LeconteChabrier2013 => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
-            _ => { (current_radius_of_gyration_2, 0) }
             EvolutionType::LeconteChabrier2013dissip => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
             _ => { (current_radius_of_gyration_2, 0) }
         };
@@ -459,7 +458,6 @@ impl Evolver {
     pub fn love_number(&mut self, current_time: f64, current_love_number: f64) -> f64 {
         let (new_love_number, left_index) = match self.evolution_type {
             EvolutionType::LeconteChabrier2013 => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
-            _ => { (current_love_number, 0) }
             EvolutionType::LeconteChabrier2013dissip => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
             _ => { (current_love_number, 0) }
         };

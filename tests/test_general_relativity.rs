@@ -11,6 +11,7 @@ fn kidder1995_case() -> posidonius::WHFast {
     let (time_step, time_limit, initial_time, historic_snapshot_period, recovery_snapshot_period) = common::simulation_properties();
     let consider_tides = true;
     let consider_rotational_flattening = true;
+    let consider_disk_interaction = false;
     let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Kidder1995; // Mercury-T
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Anderson1975; // REBOUNDx GR
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Newhall1983; // REBOUNDx GR full
@@ -29,7 +30,7 @@ fn kidder1995_case() -> posidonius::WHFast {
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));
     let universe = posidonius::Universe::new(initial_time, time_limit, particles,
-                                             consider_tides, consider_rotational_flattening, consider_general_relativity);
+                                             consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity);
 
     let alternative_coordinates_type = posidonius::whfast::CoordinatesType::Jacobi;
     //let alternative_coordinates_type = posidonius::whfast::CoordinatesType::DemocraticHeliocentric;
@@ -68,6 +69,7 @@ fn anderson1975_case() -> posidonius::WHFast {
     let (time_step, time_limit, initial_time, historic_snapshot_period, recovery_snapshot_period) = common::simulation_properties();
     let consider_tides = true;
     let consider_rotational_flattening = true;
+    let consider_disk_interaction = false;
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Kidder1995; // Mercury-T
     let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Anderson1975; // REBOUNDx GR
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Newhall1983; // REBOUNDx GR full
@@ -86,7 +88,7 @@ fn anderson1975_case() -> posidonius::WHFast {
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));
     let universe = posidonius::Universe::new(initial_time, time_limit, particles,
-                                             consider_tides, consider_rotational_flattening, consider_general_relativity);
+                                             consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity);
 
     let alternative_coordinates_type = posidonius::whfast::CoordinatesType::Jacobi;
     //let alternative_coordinates_type = posidonius::whfast::CoordinatesType::DemocraticHeliocentric;
@@ -125,6 +127,7 @@ fn newhall1983_case() -> posidonius::WHFast {
     let (time_step, time_limit, initial_time, historic_snapshot_period, recovery_snapshot_period) = common::simulation_properties();
     let consider_tides = true;
     let consider_rotational_flattening = true;
+    let consider_disk_interaction = false;
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Kidder1995; // Mercury-T
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Anderson1975; // REBOUNDx GR
     let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Newhall1983; // REBOUNDx GR full
@@ -143,7 +146,7 @@ fn newhall1983_case() -> posidonius::WHFast {
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));
     let universe = posidonius::Universe::new(initial_time, time_limit, particles,
-                                             consider_tides, consider_rotational_flattening, consider_general_relativity);
+                                             consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity);
 
     let alternative_coordinates_type = posidonius::whfast::CoordinatesType::Jacobi;
     //let alternative_coordinates_type = posidonius::whfast::CoordinatesType::DemocraticHeliocentric;
@@ -182,6 +185,7 @@ fn none_case() -> posidonius::WHFast {
     let (time_step, time_limit, initial_time, historic_snapshot_period, recovery_snapshot_period) = common::simulation_properties();
     let consider_tides = true;
     let consider_rotational_flattening = true;
+    let consider_disk_interaction = false;
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Kidder1995; // Mercury-T
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Anderson1975; // REBOUNDx GR
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Newhall1983; // REBOUNDx GR full
@@ -200,7 +204,7 @@ fn none_case() -> posidonius::WHFast {
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));
     let universe = posidonius::Universe::new(initial_time, time_limit, particles,
-                                             consider_tides, consider_rotational_flattening, consider_general_relativity);
+                                             consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity);
 
     let alternative_coordinates_type = posidonius::whfast::CoordinatesType::Jacobi;
     //let alternative_coordinates_type = posidonius::whfast::CoordinatesType::DemocraticHeliocentric;
