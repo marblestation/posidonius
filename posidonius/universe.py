@@ -40,6 +40,7 @@ class Universe(object):
         self._data['evolving_particles_exist'] = False
         self._data['wind_effects_exist'] = False
         self._data['star_planet_dependent_dissipation_factors'] = {}
+        self._data['host_particle_index'] = 0 # Most massive particle (important for tidal effects and integration except for IAS15)
         self._data['disk_host_particle_index'] = MAX_PARTICLES+1
         self._data['temporary_copied_particles_radiuses'] = []
         self._data['temporary_copied_particles_masses'] = []
@@ -101,12 +102,7 @@ class Universe(object):
         particle['dangular_momentum_dt'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['lag_angle'] = 0.0
         particle['mass_g'] = particle['mass'] * K2
-        if self._data['n_particles'] == 0:
-            # Central body
-            particle['general_relativity_factor'] = 0.0
-        else:
-            central_body_mass_g = self._data['particles'][0]['mass_g']
-            particle['general_relativity_factor'] =  central_body_mass_g*particle['mass_g'] / np.power(central_body_mass_g + particle['mass_g'], 2)
+        particle['general_relativity_factor'] = 0.0
         particle['norm_velocity_vector'] = 0.0
         particle['tidal_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['disk_interaction_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
@@ -366,9 +362,19 @@ class Universe(object):
         for i, particle in enumerate(self._data['particles']):
             particle['id'] = i
 
+    def compute_general_relativity_factor(self):
+        central_body_mass_g = self._data['particles'][0]['mass_g']
+        for i, particle in enumerate(self._data['particles']):
+            if self._data['consider_general_relativity'] == "None" or i == 0:
+                # Disabled GR or Enabled GR and central body
+                particle['general_relativity_factor'] = 0.0
+            else:
+                particle['general_relativity_factor'] =  central_body_mass_g*particle['mass_g'] / np.power(central_body_mass_g + particle['mass_g'], 2)
+
     def get(self):
         self.populate_inertial_frame()
         self.assign_id()
+        self.compute_general_relativity_factor()
 
         # Add dummy particles to fill the vector
         n_dummy_particles = MAX_PARTICLES - self._data['n_particles']

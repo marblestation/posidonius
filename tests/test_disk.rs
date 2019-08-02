@@ -1,4 +1,8 @@
 extern crate posidonius;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 
 mod common;
 use std::path::Path;
@@ -81,7 +85,7 @@ fn disabled_disk_case() -> posidonius::WHFast {
     //let star_evolution_type = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
     //let star_evolution_type = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
     //let star_evolution_type = posidonius::EvolutionType::NonEvolving;
-    let star = common::stars::solar_like_with_disk(star_mass, star_evolution_type);
+    let star = common::stars::solar_like(star_mass, star_evolution_type);
 
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));

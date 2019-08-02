@@ -1387,64 +1387,11 @@
       0.0
     ]
   ], 
-  "half_time_step": 0.04, 
   "hash": 0, 
   "historic_snapshot_period": 36525.0, 
   "integrator_iterations_max_exceeded": 0, 
   "last_historic_snapshot_time": -1.0, 
   "last_recovery_snapshot_time": -1.0, 
-  "last_spin": [
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }
-  ], 
   "moment_of_inertia0": [
     0.0, 
     0.0, 
@@ -1459,58 +1406,6 @@
   ], 
   "n_historic_snapshots": 0, 
   "n_particles": 4, 
-  "particle_spin_errors": [
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }
-  ], 
   "radius0": [
     0.0, 
     0.0, 
@@ -2718,6 +2613,7 @@
     "consider_tides": true, 
     "disk_host_particle_index": 11, 
     "evolving_particles_exist": true, 
+    "host_particle_index": 0, 
     "initial_time": 913125000.0, 
     "n_particles": 4, 
     "particles": [

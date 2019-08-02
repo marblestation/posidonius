@@ -1,4 +1,8 @@
 extern crate posidonius;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 
 mod common;
 use std::path::Path;
@@ -246,10 +250,10 @@ fn solar_like_non_evolving_case() -> posidonius::WHFast {
     let consider_tides = true;
     let consider_rotational_flattening = true;
     let consider_disk_interaction = false;
-    //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Kidder1995; // Mercury-T
+    let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Kidder1995; // Mercury-T
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Anderson1975; // REBOUNDx GR
     //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::Newhall1983; // REBOUNDx GR full
-    let consider_general_relativity = posidonius::ConsiderGeneralRelativity::None;
+    //let consider_general_relativity = posidonius::ConsiderGeneralRelativity::None;
 
     let star_mass: f64 = 1.0; // Solar masses
     //let star_evolution_type = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)

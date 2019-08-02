@@ -6,111 +6,7 @@
   "historic_snapshot_period": 36525.0, 
   "last_historic_snapshot_time": -1.0, 
   "last_recovery_snapshot_time": -1.0, 
-  "last_spin": [
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }
-  ], 
   "n_historic_snapshots": 0, 
-  "particle_spin_errors": [
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }, 
-    {
-      "x": 0.0, 
-      "y": 0.0, 
-      "z": 0.0
-    }
-  ], 
   "recovery_snapshot_period": 365250.0, 
   "time_step": 0.08, 
   "universe": {
@@ -120,6 +16,7 @@
     "consider_tides": true, 
     "disk_host_particle_index": 11, 
     "evolving_particles_exist": true, 
+    "host_particle_index": 0, 
     "initial_time": 913125000.0, 
     "n_particles": 4, 
     "particles": [

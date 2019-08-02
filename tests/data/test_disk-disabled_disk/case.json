@@ -314,6 +314,7 @@
     "consider_tides": true, 
     "disk_host_particle_index": 11, 
     "evolving_particles_exist": true, 
+    "host_particle_index": 0, 
     "initial_time": 913125000.0, 
     "n_particles": 4, 
     "particles": [
@@ -349,16 +350,7 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk": {
-          "Host": {
-            "alpha": 0.01, 
-            "inner_edge_distance": 0.01, 
-            "lifetime": 36525000.0, 
-            "mean_molecular_weight": 2.4, 
-            "outer_edge_distance": 100.0, 
-            "surface_density_normalization": 0.00011292523422128327
-          }
-        }, 
+        "disk": "None", 
         "disk_interaction_acceleration": {
           "x": 0.0, 
           "y": 0.0, 

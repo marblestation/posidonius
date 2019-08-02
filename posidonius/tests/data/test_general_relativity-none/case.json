@@ -314,6 +314,7 @@
     "consider_tides": true, 
     "disk_host_particle_index": 11, 
     "evolving_particles_exist": true, 
+    "host_particle_index": 0, 
     "initial_time": 913125000.0, 
     "n_particles": 4, 
     "particles": [
@@ -484,7 +485,7 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 3.754080106598837e-05, 
+        "general_relativity_factor": 0.0, 
         "id": 1, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -602,7 +603,7 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 3.566643641214743e-08, 
+        "general_relativity_factor": 0.0, 
         "id": 2, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -718,7 +719,7 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 3.566643641214743e-08, 
+        "general_relativity_factor": 0.0, 
         "id": 3, 
         "inertial_acceleration": {
           "x": 0.0, 

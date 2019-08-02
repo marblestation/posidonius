@@ -22,7 +22,7 @@ class Disk(TestBase):
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
         consider_tides = True
-        consider_disk_interaction = False
+        consider_disk_interaction = True
         consider_rotational_flattening = True
         #consider_general_relativity = False
         consider_general_relativity = "Kidder1995" # Assumes one central massive body

@@ -314,6 +314,7 @@
     "consider_tides": false, 
     "disk_host_particle_index": 11, 
     "evolving_particles_exist": true, 
+    "host_particle_index": 0, 
     "initial_time": 913125000.0, 
     "n_particles": 4, 
     "particles": [

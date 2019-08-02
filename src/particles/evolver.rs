@@ -321,7 +321,6 @@ impl Evolver {
                 EvolutionType::GalletBolmont2017(_) => {
                     time.push(current_time);
                     radius.push(current_radius);
-                    radius_of_gyration_2.push(current_radius_of_gyration_2);
                     inverse_tidal_q_factor.push(current_inverse_tidal_q_factor);
                 },
                 EvolutionType::Baraffe2015(_) => {
@@ -332,7 +331,8 @@ impl Evolver {
                 EvolutionType::Leconte2011(_) => {
                     time.push(current_time);
                     radius.push(current_radius);
-                    radius_of_gyration_2.push(current_radius_of_gyration_2);
+                    // Read radius of gyration from an auxiliary file later on
+                    //radius_of_gyration_2.push(current_radius_of_gyration_2);
                 },
                 EvolutionType::Baraffe1998(_) => {
                     time.push(current_time);

@@ -1,29 +1,38 @@
 extern crate assert_approx_eq;
-extern crate serde;
-extern crate serde_derive;
-extern crate serde_json;
+use time;
 use std::fs;
 use std::fs::File;
 use std::io::{Write, BufWriter};
 use std::io::{Read};
 use std::path::Path;
 use self::assert_approx_eq::assert_approx_eq;
-use serde::ser::Serialize;
 use posidonius::Integrator;
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+struct ParticleProperties {
+    pub inertial_position: posidonius::Axes,
+    pub inertial_velocity: posidonius::Axes,
+    pub inertial_acceleration: posidonius::Axes,
+}
 
 pub fn store_positions_unless_files_exist(universe: &posidonius::Universe, dirname: &String) {
     let _ = fs::create_dir(&dirname);
     for (i, particle) in universe.particles[..universe.n_particles].iter().enumerate() {
-        let expected_position_filename = format!("{0}/position_{1}.json", dirname, i);
-        if ! Path::new(&expected_position_filename).exists() {
-            let json_encoded = serde_json::to_string(&particle.position).unwrap();
-            let mut writer = BufWriter::new(File::create(&expected_position_filename).unwrap());
+        let assert_properties = ParticleProperties {
+            inertial_position: particle.inertial_position,
+            inertial_velocity: particle.inertial_velocity,
+            inertial_acceleration: particle.inertial_acceleration,
+        };
+        let expected_particle_filename = format!("{0}/particle_{1}.json", dirname, i);
+        if ! Path::new(&expected_particle_filename).exists() {
+            let json_encoded = serde_json::to_string_pretty(&assert_properties).unwrap();
+            let mut writer = BufWriter::new(File::create(&expected_particle_filename).unwrap());
             writer.write(json_encoded.as_bytes()).unwrap();
         }
     }
 }
 
-pub fn store_unless_files_exist<I: Serialize>(universe_integrator: &I, dirname: &String) {
+pub fn store_unless_files_exist<I: serde::ser::Serialize>(universe_integrator: &I, dirname: &String) {
     let _ = fs::create_dir(&dirname);
     let snapshot_filename = format!("{0}/case.json", dirname);
     let snapshot_path = Path::new(&snapshot_filename);
@@ -34,19 +43,28 @@ pub fn store_unless_files_exist<I: Serialize>(universe_integrator: &I, dirname: 
 
 
 pub fn assert_stored_positions(universe: &posidonius::Universe, dirname: &String) {
-    let precision = 1.0e-13;
+    let precision = 1.0e-15;
     for (i, particle) in universe.particles[..universe.n_particles].iter().enumerate() {
-        let expected_position_filename = format!("{0}/position_{1}.json", dirname, i);
-        let expected_position_path = Path::new(&expected_position_filename);
+        let expected_particle_filename = format!("{0}/particle_{1}.json", dirname, i);
+        let expected_particle_path = Path::new(&expected_particle_filename);
         // Open the path in read-only mode, returns `io::Result<File>`
-        let mut expected_position_file = File::open(&expected_position_path).unwrap();
+        let mut expected_particle_file = File::open(&expected_particle_path).unwrap();
         //// Deserialize using `json::decode`
-        let mut expected_position_json = String::new();
-        let _ = expected_position_file.read_to_string(&mut expected_position_json).unwrap();
-        let expected_position: posidonius::Axes = serde_json::from_str(&expected_position_json).unwrap();
-        assert_approx_eq!(particle.position.x, expected_position.x, precision);
-        assert_approx_eq!(particle.position.y, expected_position.y, precision);
-        assert_approx_eq!(particle.position.z, expected_position.z, precision);
+        let mut expected_particle_json = String::new();
+        let _ = expected_particle_file.read_to_string(&mut expected_particle_json).unwrap();
+        let expected_particle: ParticleProperties = serde_json::from_str(&expected_particle_json).unwrap();
+        println!("[ASSERT {} UTC] Particle {} - Position.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+        assert_approx_eq!(particle.inertial_position.x, expected_particle.inertial_position.x, precision);
+        assert_approx_eq!(particle.inertial_position.y, expected_particle.inertial_position.y, precision);
+        assert_approx_eq!(particle.inertial_position.z, expected_particle.inertial_position.z, precision);
+        println!("[ASSERT {} UTC] Particle {} - Velocity.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+        assert_approx_eq!(particle.inertial_velocity.x, expected_particle.inertial_velocity.x, precision);
+        assert_approx_eq!(particle.inertial_velocity.y, expected_particle.inertial_velocity.y, precision);
+        assert_approx_eq!(particle.inertial_velocity.z, expected_particle.inertial_velocity.z, precision);
+        println!("[ASSERT {} UTC] Particle {} - Acceleration.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+        assert_approx_eq!(particle.inertial_acceleration.x, expected_particle.inertial_acceleration.x, precision);
+        assert_approx_eq!(particle.inertial_acceleration.y, expected_particle.inertial_acceleration.y, precision);
+        assert_approx_eq!(particle.inertial_acceleration.z, expected_particle.inertial_acceleration.z, precision);
     }
 }
 
@@ -109,12 +127,21 @@ pub fn iterate_universe_from_python_generated_json(dirname: &String) -> posidoni
 }
 
 pub fn assert(universe: &posidonius::Universe, parallel_universe: &posidonius::Universe) {
-    let precision = 1.0e-13;
-
-    for (particle, parallel_particle) in universe.particles[..universe.n_particles].iter()
-                                                                .zip(parallel_universe.particles[..parallel_universe.n_particles].iter()) {
-        assert_approx_eq!(particle.position.x, parallel_particle.position.x, precision);
-        assert_approx_eq!(particle.position.y, parallel_particle.position.y, precision);
-        assert_approx_eq!(particle.position.z, parallel_particle.position.z, precision);
+    for (i, (particle, parallel_particle)) in universe.particles[..universe.n_particles].iter()
+                                                                .zip(parallel_universe.particles[..parallel_universe.n_particles].iter()).enumerate() {
+        let precision = 1.0e-8;
+        println!("[ASSERT {} UTC] Particle {} - Position.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+        assert_approx_eq!(particle.inertial_position.x, parallel_particle.inertial_position.x, precision);
+        assert_approx_eq!(particle.inertial_position.y, parallel_particle.inertial_position.y, precision);
+        assert_approx_eq!(particle.inertial_position.z, parallel_particle.inertial_position.z, precision);
+        println!("[ASSERT {} UTC] Particle {} - Velocity.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+        assert_approx_eq!(particle.inertial_velocity.x, parallel_particle.inertial_velocity.x, precision);
+        assert_approx_eq!(particle.inertial_velocity.y, parallel_particle.inertial_velocity.y, precision);
+        assert_approx_eq!(particle.inertial_velocity.z, parallel_particle.inertial_velocity.z, precision);
+        let precision = 1.0e-7;
+        println!("[ASSERT {} UTC] Particle {} - Acceleration.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+        assert_approx_eq!(particle.inertial_acceleration.x, parallel_particle.inertial_acceleration.x, precision);
+        assert_approx_eq!(particle.inertial_acceleration.y, parallel_particle.inertial_acceleration.y, precision);
+        assert_approx_eq!(particle.inertial_acceleration.z, parallel_particle.inertial_acceleration.z, precision);
     }
 }
