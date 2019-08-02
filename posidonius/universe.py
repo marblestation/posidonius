@@ -1,7 +1,7 @@
 import os
 import datetime
 from axes import Axes
-from disk_type import Disk, NoDisk
+from disk_type import DiskHost, NoDisk, DiskInteraction
 from integrator import WHFast, Ias15, LeapFrog
 from constants import *
 from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
@@ -40,7 +40,7 @@ class Universe(object):
         self._data['evolving_particles_exist'] = False
         self._data['wind_effects_exist'] = False
         self._data['star_planet_dependent_dissipation_factors'] = {}
-        self._data['disk_center_particle_position'] = MAX_PARTICLES+1
+        self._data['disk_host_particle_index'] = MAX_PARTICLES+1
         self._data['temporary_copied_particles_radiuses'] = []
         self._data['temporary_copied_particles_masses'] = []
         self._data['temporary_copied_particle_velocities'] = []
@@ -77,9 +77,9 @@ class Universe(object):
         particle['fluid_love_number'] = float(fluid_love_number)
         particle['disk'] = disk.get()
         particle['migration_timescale'] = 0.0
-        if type(disk) == Disk and (disk._data['Properties']['inner_edge_distance'] != 0 or disk._data['Properties']['outer_edge_distance'] != 0):
-            if self._data['disk_center_particle_position'] == MAX_PARTICLES+1:
-                self._data['disk_center_particle_position'] = self._data['n_particles']
+        if type(disk) == DiskHost and (disk._data['Host']['inner_edge_distance'] != 0 or disk._data['Host']['outer_edge_distance'] != 0):
+            if self._data['disk_host_particle_index'] == MAX_PARTICLES+1:
+                self._data['disk_host_particle_index'] = self._data['n_particles']
             else:
                 raise Exception("Only one body with a disk is allowed!")
         particle['position'] = position.get()
@@ -109,7 +109,7 @@ class Universe(object):
             particle['general_relativity_factor'] =  central_body_mass_g*particle['mass_g'] / np.power(central_body_mass_g + particle['mass_g'], 2)
         particle['norm_velocity_vector'] = 0.0
         particle['tidal_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['type_two_migration_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['disk_interaction_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['scalar_product_of_vector_position_with_stellar_spin'] = 0.0
         particle['scalar_product_of_vector_position_with_planetary_spin'] = 0.0
         particle['radial_component_of_the_force_induced_by_rotation'] = 0.0
@@ -247,7 +247,7 @@ class Universe(object):
             'surface_density_normalization': disk_surface_density_normalization_SI * (1.0/M_SUN) * AU**2, # Msun.AU^-2
             'mean_molecular_weight': 2.4,
         }
-        disk = Disk(disk_properties)
+        disk = DiskHost(disk_properties)
         self._add_solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, disk, wind_k_factor, wind_rotation_saturation)
 
     def _add_solar_like_with_disk(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, disk, wind_k_factor, wind_rotation_saturation):
@@ -312,7 +312,7 @@ class Universe(object):
         dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
         #dissipation_factor = 2.006*3.845764e4 // Gas giant
 
-        disk = NoDisk()
+        disk = DiskInteraction(True)
 
         radius_of_gyration_2 = 2.54e-1 # Gas giant
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, disk)
@@ -333,7 +333,7 @@ class Universe(object):
         k2pdelta = 2.465278e-3 # Terrestrial planets
         dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
 
-        disk = NoDisk()
+        disk = DiskInteraction(True)
 
         self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, disk)
 

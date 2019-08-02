@@ -83,7 +83,7 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
     let planet_inclination = planet_keplerian_orbital_elements.3;
     let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity);
     // Disk
-    let planet_disk = posidonius::Disk::None;
+    let planet_disk = posidonius::Disk::Interaction(true);
 
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;
@@ -152,7 +152,7 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
     let planet_inclination = planet_keplerian_orbital_elements.3;
     let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity);
     // Disk
-    let planet_disk = posidonius::Disk::None;
+    let planet_disk = posidonius::Disk::Interaction(true);
 
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;

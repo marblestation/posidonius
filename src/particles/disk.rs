@@ -1,4 +1,4 @@
-use super::super::constants::{BOLTZMANN_CONSTANT, MASS_HYDROGEN_ATOM, G};
+use super::super::constants::{BOLTZMANN_CONSTANT, MASS_HYDROGEN_ATOM};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DiskProperties {
@@ -12,57 +12,57 @@ pub struct DiskProperties {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Disk {
-    Properties(DiskProperties),
+    Host(DiskProperties),
+    Interaction(bool),
     None,
 }
 
 impl DiskProperties {
-    pub fn calculate_migration_timescale(&self, time: f64, planet_distance: f64, planet_semi_major_axis: f64, planet_mass: f64, star_mass: f64) -> f64 {
-        let gas_radial_velocity = self.calculate_gas_radial_velocity(planet_distance, star_mass, planet_semi_major_axis);
-        let disk_surface_density = self.calculate_disk_surface_density(time, planet_distance);
+    pub fn calculate_migration_timescale(&self, time: f64, host_particle_mass: f64, host_particle_mass_g: f64, particle_mass: f64, distance: f64, semi_major_axis: f64) -> f64 {
+        let gas_radial_velocity = self.calculate_gas_radial_velocity(host_particle_mass, host_particle_mass_g, distance, semi_major_axis);
+        let disk_surface_density = self.calculate_disk_surface_density(time, distance);
 
         let x = 1.0_f64;
-        let a_dot = gas_radial_velocity * x.min(2.0 * disk_surface_density * planet_semi_major_axis.powi(2) / planet_mass);
-        let timescale = -planet_semi_major_axis / a_dot;
+        let a_dot = gas_radial_velocity * x.min(2.0 * disk_surface_density * semi_major_axis.powi(2) / particle_mass);
+        let timescale = -semi_major_axis / a_dot;
         timescale
     }
 
-    fn calculate_temperature_disk(&self, planet_distance: f64, star_mass: f64) -> f64 {
-        // planet_distance in AU, star_mass in M_SUN
+    fn calculate_temperature_disk(&self, host_particle_mass: f64, distance: f64) -> f64 {
+        // distance in AU, host_particle_mass in M_SUN
         let t_ref = 280.0; //K
-        let tdisk = t_ref * planet_distance.powf(-0.5) * star_mass; // K
+        let tdisk = t_ref * distance.powf(-0.5) * host_particle_mass; // K
         tdisk
     }
 
 
-    fn calculate_disk_surface_density(&self, time: f64, planet_distance: f64) -> f64{
-        let initial_disk_surface_density = self.surface_density_normalization * planet_distance.powi(-1)
-            * (-1.0 * planet_distance/self.outer_edge_distance).exp() * (1.0 - (self.inner_edge_distance/planet_distance).sqrt()); // Unit of surface_density_normalization
+    fn calculate_disk_surface_density(&self, time: f64, distance: f64) -> f64{
+        let initial_disk_surface_density = self.surface_density_normalization * distance.powi(-1)
+            * (-1.0 * distance/self.outer_edge_distance).exp() * (1.0 - (self.inner_edge_distance/distance).sqrt()); // Unit of surface_density_normalization
 
         let mut disk_surface_density = 0.0;
-        if planet_distance > self.inner_edge_distance {
+        if distance > self.inner_edge_distance {
             disk_surface_density = initial_disk_surface_density * (-time/self.lifetime).exp();
         }
         disk_surface_density
     }
 
-    fn calculate_keplerian_velocity(&self, planet_distance: f64, star_mass_g: f64) -> f64 {
-        let keplerian_frequency = (star_mass_g / (planet_distance).powi(3)).sqrt(); // days^-1
+    fn calculate_keplerian_velocity(&self, host_particle_mass_g: f64, distance: f64) -> f64 {
+        let keplerian_frequency = (host_particle_mass_g / (distance).powi(3)).sqrt(); // days^-1
         keplerian_frequency
     }
 
-    fn calculate_disk_viscosity(&self, planet_distance: f64, star_mass: f64) -> f64{
-        let star_mass_g = G * star_mass;
-        let keplerian_frequency = self.calculate_keplerian_velocity(planet_distance, star_mass_g);
-        let disk_temperature = self.calculate_temperature_disk(planet_distance, star_mass);
+    fn calculate_disk_viscosity(&self, host_particle_mass: f64, host_particle_mass_g: f64, distance: f64) -> f64{
+        let keplerian_frequency = self.calculate_keplerian_velocity(host_particle_mass_g, distance);
+        let disk_temperature = self.calculate_temperature_disk(host_particle_mass, distance);
         let speed_of_sound_squared = BOLTZMANN_CONSTANT * disk_temperature / (self.mean_molecular_weight * MASS_HYDROGEN_ATOM);
         let viscosity = self.alpha * speed_of_sound_squared / keplerian_frequency; // AU^2.days^-1
         viscosity
     }
 
-    fn calculate_gas_radial_velocity(&self, planet_distance: f64, star_mass: f64, planet_semi_major_axis: f64) -> f64{
-        let viscosity = self.calculate_disk_viscosity(planet_distance, star_mass);
-        let gas_radial_velocity = -3.0 * viscosity / (2.0 * planet_semi_major_axis); // AU.days^-1
+    fn calculate_gas_radial_velocity(&self, host_particle_mass: f64, host_particle_mass_g: f64, distance: f64, semi_major_axis: f64) -> f64{
+        let viscosity = self.calculate_disk_viscosity(host_particle_mass, host_particle_mass_g, distance);
+        let gas_radial_velocity = -3.0 * viscosity / (2.0 * semi_major_axis); // AU.days^-1
         gas_radial_velocity
     }
 

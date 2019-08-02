@@ -17,8 +17,7 @@ pub struct Particle {
     pub love_number: f64,   // Love number of degree 2 (i.e., k2). Dimensionless parameters that measure the rigidity of a planetary body and the 
                             // susceptibility of its shape to change in response to a tidal potential.
     pub fluid_love_number: f64,   // love number for a completely fluid planet (used for rotational flattening effects)
-    //pub type_two_migration_time: f64, // type two migration time
-    //pub type_two_migration_inner_disk_edge_distance: f64, // type two migration stops at inner disk edge
+    // Disk
     pub disk: Disk,
     pub migration_timescale: f64,
     //
@@ -66,7 +65,7 @@ pub struct Particle {
     //
     pub tidal_acceleration: Axes,
     // Type II migration
-    pub type_two_migration_acceleration: Axes,
+    pub disk_interaction_acceleration: Axes,
     // Rotational flattening
     pub acceleration_induced_by_rotational_flattering: Axes,
     // General Relativity
@@ -148,7 +147,7 @@ impl Particle {
                     lag_angle:0., // It will be initialized the first time evolve is called
                     disk: disk,
                     migration_timescale: 0.,
-                    type_two_migration_acceleration: Axes{x: 0., y: 0., z: 0.},
+                    disk_interaction_acceleration: Axes{x: 0., y: 0., z: 0.},
         }
     }
 
@@ -215,7 +214,7 @@ impl Particle {
                     disk: disk,
                     lag_angle:0., // It will be initialized the first time evolve is called
                     migration_timescale: 0.,
-                    type_two_migration_acceleration: Axes{x: 0., y: 0., z: 0.},
+                    disk_interaction_acceleration: Axes{x: 0., y: 0., z: 0.},
         }
     }
 }

@@ -62,7 +62,7 @@ if __name__ == "__main__":
         'surface_density_normalization': disk_surface_density_normalization_SI * (1.0/posidonius.constants.M_SUN) * posidonius.constants.AU**2, # Msun.AU^-2
         'mean_molecular_weight': 2.4,
     }
-    star_disk = posidonius.Disk(star_disk_properties)
+    star_disk = posidonius.DiskHost(star_disk_properties)
     universe.add_particle(star_mass, star_radius, star_dissipation_factor, star_dissipation_factor_scale, star_radius_of_gyration_2, star_love_number, star_fluid_love_number \
                           , star_position, star_velocity, star_spin, star_evolution_type, star_disk)
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     #planet_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
     planet_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
     #planet_evolution_type = posidonius.NonEvolving()
-    planet_disk = posidonius.NoDisk()
+    planet_disk = posidonius.DiskInteraction(True)
     universe.add_particle(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number, planet_position, planet_velocity, planet_spin, planet_evolution_type, planet_disk)
 
     whfast_alternative_coordinates="DemocraticHeliocentric"

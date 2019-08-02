@@ -1,9 +1,11 @@
 
 class DiskType(object):
-    def __init__(self, variant, properties=None):
+    def __init__(self, variant, properties=None, enabled=False):
         self._data = {}
-        if variant in ("Properties"):
+        if variant in ("Host"):
             self._data[variant] = properties
+        elif variant in ("Interaction", ):
+            self._data[variant] = enabled
         elif variant in ("None",):
             self._data = variant
         else:
@@ -19,7 +21,11 @@ class NoDisk(DiskType):
     def __init__(self):
         super(NoDisk, self).__init__("None", properties=None)
 
-class Disk(DiskType):
+class DiskInteraction(DiskType):
+    def __init__(self, enabled):
+        super(DiskInteraction, self).__init__("Interaction", enabled=enabled)
+
+class DiskHost(DiskType):
     def __init__(self, input_properties):
         properties = {
             'inner_edge_distance': 0.0,
@@ -33,5 +39,5 @@ class Disk(DiskType):
         for key, value in input_properties.iteritems():
             if key in properties:
                 properties[key] = value
-        super(Disk, self).__init__("Properties", properties)
+        super(DiskHost, self).__init__("Host", properties)
 

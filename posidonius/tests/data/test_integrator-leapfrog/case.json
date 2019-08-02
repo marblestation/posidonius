@@ -118,7 +118,7 @@
     "consider_general_relativity": "Kidder1995", 
     "consider_rotational_flattening": true, 
     "consider_tides": true, 
-    "disk_center_particle_position": 11, 
+    "disk_host_particle_index": 11, 
     "evolving_particles_exist": true, 
     "initial_time": 913125000.0, 
     "n_particles": 4, 
@@ -156,6 +156,11 @@
         }, 
         "denergy_dt": 0.0, 
         "disk": "None", 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": {
@@ -224,11 +229,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "type_two_migration_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "velocity": {
           "x": 0.0, 
           "y": 0.0, 
@@ -271,7 +271,14 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk": "None", 
+        "disk": {
+          "Interaction": true
+        }, 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -338,11 +345,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "type_two_migration_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "velocity": {
           "x": -1.4818017716591765e-14, 
           "y": 0.03987438104619194, 
@@ -385,7 +387,14 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk": "None", 
+        "disk": {
+          "Interaction": true
+        }, 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": {
@@ -454,11 +463,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "type_two_migration_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "velocity": {
           "x": -4.685780763119357e-15, 
           "y": 0.012609149970061736, 
@@ -501,7 +505,14 @@
           "z": 0.0
         }, 
         "denergy_dt": 0.0, 
-        "disk": "None", 
+        "disk": {
+          "Interaction": true
+        }, 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -568,11 +579,6 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "type_two_migration_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "velocity": {
           "x": -1.4817739827659081e-15, 
           "y": 0.003987363326403901, 
@@ -616,6 +622,11 @@
         }, 
         "denergy_dt": 0.0, 
         "disk": "None", 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -678,11 +689,6 @@
           "z": 0.0
         }, 
         "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "type_two_migration_acceleration": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -730,6 +736,11 @@
         }, 
         "denergy_dt": 0.0, 
         "disk": "None", 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -792,11 +803,6 @@
           "z": 0.0
         }, 
         "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "type_two_migration_acceleration": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -844,6 +850,11 @@
         }, 
         "denergy_dt": 0.0, 
         "disk": "None", 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -906,11 +917,6 @@
           "z": 0.0
         }, 
         "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "type_two_migration_acceleration": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -958,6 +964,11 @@
         }, 
         "denergy_dt": 0.0, 
         "disk": "None", 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -1020,11 +1031,6 @@
           "z": 0.0
         }, 
         "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "type_two_migration_acceleration": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -1072,6 +1078,11 @@
         }, 
         "denergy_dt": 0.0, 
         "disk": "None", 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -1134,11 +1145,6 @@
           "z": 0.0
         }, 
         "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "type_two_migration_acceleration": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -1186,6 +1192,11 @@
         }, 
         "denergy_dt": 0.0, 
         "disk": "None", 
+        "disk_interaction_acceleration": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "dissipation_factor_scale": 1.0, 
         "distance": 0.0, 
         "evolution_type": "NonEvolving", 
@@ -1248,11 +1259,6 @@
           "z": 0.0
         }, 
         "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "type_two_migration_acceleration": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
