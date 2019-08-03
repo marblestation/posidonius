@@ -5,6 +5,7 @@ extern crate serde_json;
 extern crate bincode;
 extern crate csv;
 extern crate time;
+extern crate math;
 
 pub mod constants;
 

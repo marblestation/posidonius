@@ -19,8 +19,9 @@ pub struct Universe {
     pub consider_disk_interaction: bool,
     pub consider_rotational_flattening: bool,
     pub consider_general_relativity: ConsiderGeneralRelativity,
-    host_particle_index: usize,
-    disk_host_particle_index: usize,
+    host_particle_index: usize, // Most massive particle
+    tidal_host_particle_index: usize, // Particle that is the main one for tidal effects
+    disk_host_particle_index: usize, // Particle with disk
     star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
     temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
     temporary_copied_particle_velocities: [Axes; MAX_PARTICLES], // For optimization purposes (TODO: Delete and adapt python package)
@@ -63,8 +64,12 @@ impl Universe {
             }
         }
 
-        // Most massive particle (important for tidal effects and integration except for IAS15)
+        // Most massive particle
         let host_particle_index = 0;
+        
+        // Particle that is the main one for tidal effects
+        let tidal_host_particle_index = 0;
+
 
         // Find the position of the particle that has the disk if any
         let mut disk_host_particle_index = MAX_PARTICLES+1;
@@ -141,6 +146,7 @@ impl Universe {
                     consider_general_relativity: consider_general_relativity,
                     consider_disk_interaction: consider_disk_interaction,
                     host_particle_index: host_particle_index,
+                    tidal_host_particle_index: tidal_host_particle_index,
                     disk_host_particle_index: disk_host_particle_index,
                     star_planet_dependent_dissipation_factors:HashMap::new(),
                     temporary_copied_particle_positions: temporary_copied_particle_positions,
@@ -677,7 +683,7 @@ impl Universe {
                         //// center of the disk and the current body
                         let norm_velocity_vector;
                         let distance;
-                        if self.disk_host_particle_index != self.host_particle_index {
+                        if self.disk_host_particle_index != self.tidal_host_particle_index {
                             // Norm of the velocity
                             let norm_velocity_vector_2 = (particle.velocity.x.powi(2) - disk_host_particle.velocity.x.powi(2)) 
                                                         + (particle.velocity.y.powi(2) - disk_host_particle.velocity.y.powi(2))

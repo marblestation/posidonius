@@ -32,8 +32,6 @@ if __name__ == "__main__":
     star1_radius_of_gyration_2 = 5.9e-2 # Sun
     star1_love_number = 0.03
     star1_fluid_love_number = star1_love_number
-    star1_type_two_migration_time = 0.
-    star1_type_two_migration_inner_disk_edge_distance = 0.
     star1_position = posidonius.Axes(0., 0., 0.)
     star1_velocity = posidonius.Axes(0., 0., 0.)
 
@@ -76,8 +74,6 @@ if __name__ == "__main__":
     q = a * (1.0 - e);                     # perihelion distance
     gm = posidonius.constants.G*(star2_mass+star1_mass);
     x, y, z, vx, vy, vz = posidonius.calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
-    star2_type_two_migration_time = 0.
-    star2_type_two_migration_inner_disk_edge_distance = 0.
     star2_position = posidonius.Axes(x, y, z)
     star2_velocity = posidonius.Axes(vx, vy, vz)
 

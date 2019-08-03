@@ -22017,6 +22017,7 @@
       0.0, 
       0.0
     ], 
+    "tidal_host_particle_index": 0, 
     "time_limit": 0.08, 
     "wind_effects_exist": false
   }

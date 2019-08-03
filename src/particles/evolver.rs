@@ -247,7 +247,7 @@ impl Evolver {
             // All types have time and radius
             let (current_time, current_radius) = match evolution_type {
                 EvolutionType::Leconte2011(_) => {
-                    (raw_time * 365.25 - initial_time, raw_radius * R_SUN)
+                    (raw_time, raw_radius * R_SUN)
                 },
                 EvolutionType::Baraffe1998(mass) => {
                     if (mass - 0.10).abs() <= 1.0e-7 {
@@ -356,6 +356,71 @@ impl Evolver {
                 }
             };
         }
+        
+        // Leconte2011 have a separate file for radius of gyration with a different time sampling:
+        if let EvolutionType::Leconte2011(mass) = evolution_type {
+            // Read separate file
+            let mut aux_time: Vec<f64> = Vec::new();
+            let mut aux_radius_of_gyration_2: Vec<f64> = Vec::new();
+            // The column to read from the auxiliary file depends on the mass
+            let aux_column = {
+                if mass <= 0.0101 && mass >= 0.0099 {
+                    1
+                } else if mass <= 0.0121 && mass >= 0.0119 {
+                    2
+                } else if mass <= 0.0151 && mass >= 0.0149 {
+                    3
+                } else if mass <= 0.0201 && mass >= 0.0199 {
+                    4
+                } else if mass <= 0.0301 && mass >= 0.0299 {
+                    5
+                } else if mass <= 0.0401 && mass >= 0.0399 {
+                    6
+                } else if mass <= 0.0501 && mass >= 0.0499 {
+                    7
+                } else if mass <= 0.0601 && mass >= 0.0599 {
+                    8
+                } else if mass <= 0.0701 && mass >= 0.0699 {
+                    9
+                } else if mass <= 0.0721 && mass >= 0.0719 {
+                    10
+                } else if mass <= 0.0751 && mass >= 0.0749 {
+                    11
+                } else if mass <= 0.0801 && mass >= 0.0799 {
+                    12
+                } else {
+                    panic!("The evolution type Leconte2011 does not support a mass of {} Msun!", mass);
+                }
+            };
+            let mut rdr = csv::Reader::from_file("input/Leconte_2011/rg2BD.dat").unwrap().has_headers(false).delimiter(b' ').flexible(true);
+            for row in rdr.records().map(|r| r.unwrap()) {
+                let raw_time = row[0].parse::<f64>().unwrap();
+                let raw_radius_of_gyration_2 = row[aux_column].parse::<f64>().unwrap();
+                aux_time.push(raw_time);
+                aux_radius_of_gyration_2.push(raw_radius_of_gyration_2);
+            }
+            // The time range from the main file and the auxiliary do not match
+            // the main one is bigger, so we restrain to the smallest one (the aux one)
+            if let Some(lower_limit) = time.iter().position(|&x| x >= *aux_time.first().unwrap()) {
+                time.drain(0..lower_limit);
+                radius.drain(0..lower_limit);
+            }
+            if let Some(upper_limit) = time.iter().position(|&x| x > *aux_time.last().unwrap()) {
+                time.drain(upper_limit..);
+                radius.drain(upper_limit..);
+            }
+            
+            // Interpolate the radius of gyration to match the same time sampling shared by other parameters (e.g., radius)
+            let precision = 7;
+            for current_time in time.iter() {
+                let (current_radius_of_gyration_2, _) = interpolate_b_spline(&aux_time, &aux_radius_of_gyration_2, *current_time);
+                radius_of_gyration_2.push(math::round::half_up(current_radius_of_gyration_2, precision));
+                //println!("Rg2 {} {}", current_time, current_radius_of_gyration_2);
+            }
+
+            // Convert time to be homogenous with the rest of models
+            time = time.iter().map(|&t| t * 365.25 - initial_time).collect()
+        };
 
         if time.len() > 0 && time[0] > 0. {
             panic!("Your initial time ({} days) is smaller than the minimum allowed age of the star ({} days)", initial_time, time[0]+initial_time);
@@ -363,38 +428,6 @@ impl Evolver {
         if time.len() > 0 && time[time.len()-1] < time_limit {
             panic!("Your time limit ({} days) is greater than the maximum allowed age of the star ({} days)", time_limit, time[time.len()-1]);
         }
-
-        // Leconte2011 have a separate file for radius of gyration with a different time sampling
-        // that should be homogenized:
-        let radius_of_gyration_2 = match evolution_type {
-            EvolutionType::Leconte2011(_) => {
-                // Read separate file
-                let mut tmp_time: Vec<f64> = Vec::new();
-                let mut tmp_radius_of_gyration_2: Vec<f64> = Vec::new();
-                let mut rdr = csv::Reader::from_file("input/Leconte_2011/rg2BD.dat").unwrap().has_headers(false).delimiter(b' ').flexible(true);
-                for row in rdr.records().map(|r| r.unwrap()) {
-                    let raw_time = row[0].parse::<f64>().unwrap();
-                    let raw_radius_of_gyration_2 = row[2].parse::<f64>().unwrap();
-                    let current_time = raw_time * 365.25 - initial_time;
-                    let current_radius_of_gyration_2 = raw_radius_of_gyration_2;
-                    tmp_time.push(current_time);
-                    tmp_radius_of_gyration_2.push(current_radius_of_gyration_2);
-                    //println!("Raw Rg2 {} {}", current_time, raw_radius_of_gyration_2);
-                }
-
-                // Interpolate to match the same time sampling shared by other parameters (e.g., radius)
-                let mut resampled_radius_of_gyration_2: Vec<f64> = Vec::new();
-                for current_time in time.iter() {
-                    let (current_radius_of_gyration_2, _) = interpolate_b_spline(&tmp_time, &tmp_radius_of_gyration_2, *current_time);
-                    resampled_radius_of_gyration_2.push(current_radius_of_gyration_2);
-                    //println!("Rg2 {} {}", current_time, current_radius_of_gyration_2);
-                }
-                resampled_radius_of_gyration_2
-            },
-            _ => {
-                radius_of_gyration_2
-            }
-        };
 
         Evolver { evolution_type:evolution_type, 
                 time:time,

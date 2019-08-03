@@ -40,7 +40,8 @@ class Universe(object):
         self._data['evolving_particles_exist'] = False
         self._data['wind_effects_exist'] = False
         self._data['star_planet_dependent_dissipation_factors'] = {}
-        self._data['host_particle_index'] = 0 # Most massive particle (important for tidal effects and integration except for IAS15)
+        self._data['host_particle_index'] = 0 # Most massive particle
+        self._data['tidal_host_particle_index'] = 0 # Particle that is the main one for tidal effects
         self._data['disk_host_particle_index'] = MAX_PARTICLES+1
         self._data['temporary_copied_particles_radiuses'] = []
         self._data['temporary_copied_particles_masses'] = []

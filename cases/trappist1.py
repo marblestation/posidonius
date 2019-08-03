@@ -36,8 +36,6 @@ if __name__ == "__main__":
     star_radius_of_gyration_2 = 2.00e-1 # Brown dwarf
     star_love_number = 0.307
     fluid_love_number = star_love_number
-    star_type_two_migration_time = 0. # days
-    star_type_two_migration_inner_disk_edge_distance = 0.0 # AU
     star_position = posidonius.Axes(0., 0., 0.)
     star_velocity = posidonius.Axes(0., 0., 0.)
 
@@ -81,8 +79,6 @@ if __name__ == "__main__":
         planet_radius_of_gyration_2 = 0.3308
         planet_love_number = 0.299
         planet_fluid_love_number = 0.9532
-        planet_type_two_migration_time = 0. # days
-        planet_type_two_migration_inner_disk_edge_distance = 0.0 # AU
 
         #////////// Specify initial position and velocity for a stable orbit
         #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code

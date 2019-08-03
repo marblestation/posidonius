@@ -48,44 +48,66 @@ class Leconte2011(EvolutionType):
         mass = self._data[self.__class__.__name__]
         if mass <= 0.0101 and mass >= 0.0099:
             filename = "input/Leconte_2011/mass_10.0000.dat"
+            aux_column = 1
         elif mass <= 0.0121 and mass >= 0.0119:
             filename = "input/Leconte_2011/mass_12.0000.dat"
+            aux_column = 2
         elif mass <= 0.0151 and mass >= 0.0149:
             filename = "input/Leconte_2011/mass_15.0000.dat"
+            aux_column = 3
         elif mass <= 0.0201 and mass >= 0.0199:
             filename = "input/Leconte_2011/mass_20.0000.dat"
+            aux_column = 4
         elif mass <= 0.0301 and mass >= 0.0299:
             filename = "input/Leconte_2011/mass_30.0000.dat"
+            aux_column = 5
         elif mass <= 0.0401 and mass >= 0.0399:
             filename = "input/Leconte_2011/mass_40.0000.dat"
+            aux_column = 6
         elif mass <= 0.0501 and mass >= 0.0499:
             filename = "input/Leconte_2011/mass_50.0000.dat"
+            aux_column = 7
         elif mass <= 0.0601 and mass >= 0.0599:
             filename = "input/Leconte_2011/mass_60.0000.dat"
+            aux_column = 8
         elif mass <= 0.0701 and mass >= 0.0699:
             filename = "input/Leconte_2011/mass_70.0000.dat"
+            aux_column = 9
         elif mass <= 0.0721 and mass >= 0.0719:
             filename = "input/Leconte_2011/mass_72.0000.dat"
+            aux_column = 10
         elif mass <= 0.0751 and mass >= 0.0749:
             filename = "input/Leconte_2011/mass_75.0000.dat"
+            aux_column = 11
         elif mass <= 0.0801 and mass >= 0.0799:
             filename = "input/Leconte_2011/mass_80.0000.dat"
+            aux_column = 12
         else:
             raise Exception("The evolution type Leconte2011 does not support a mass of {} Msun!".format(mass))
         aux_filename = "input/Leconte_2011/rg2BD.dat"
         data = np.loadtxt(BASE_DIR+filename)
-        time = data[:,0] * 365.25 - initial_time
+        time = data[:,0]
         radius = data[:,1] * R_SUN
         aux_data = np.loadtxt(BASE_DIR+aux_filename)
         # Leconte2011 has a separate file for radius of gyration with a different time sampling
         # that should be homogenized:
-        aux_time = aux_data[:, 0] * 365.25 - initial_time
-        aux_radius_of_gyration_2 = aux_data[:, 2]
+        aux_time = aux_data[:, 0]
+        aux_radius_of_gyration_2 = aux_data[:, aux_column]
+
+        # Auxiliary data has a smaller time range than the main data, thus
+        # we constraint the data to the smallest range:
+        lower_limit = np.where(time >= aux_time[0])[0][0]
+        upper_limit = np.where(time > aux_time[-1])[0][0]
+        time = time[lower_limit:upper_limit]
+        radius = radius[lower_limit:upper_limit]
         resampled_radius_of_gyration_2 = []
         for current_time in time:
             current_radius_of_gyration_2, ignore = interpolate_b_spline(aux_time, aux_radius_of_gyration_2, current_time)
             resampled_radius_of_gyration_2.append(current_radius_of_gyration_2)
+        precision = 7
+        resampled_radius_of_gyration_2 = np.around(resampled_radius_of_gyration_2, precision).tolist()
 
+        time = time * 365.25 - initial_time
         evolver = {}
         evolver['left_index'] = 0
         evolver['evolution_type'] = self.get()
