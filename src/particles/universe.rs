@@ -685,15 +685,15 @@ impl Universe {
                         let distance;
                         if self.disk_host_particle_index != self.tidal_host_particle_index {
                             // Norm of the velocity
-                            let norm_velocity_vector_2 = (particle.velocity.x.powi(2) - disk_host_particle.velocity.x.powi(2)) 
-                                                        + (particle.velocity.y.powi(2) - disk_host_particle.velocity.y.powi(2))
-                                                        + (particle.velocity.z.powi(2) - disk_host_particle.velocity.z.powi(2));
+                            let norm_velocity_vector_2 = (particle.velocity.x - disk_host_particle.velocity.x).powi(2) 
+                                                        + (particle.velocity.y - disk_host_particle.velocity.y).powi(2)
+                                                        + (particle.velocity.z - disk_host_particle.velocity.z).powi(2);
                             norm_velocity_vector = norm_velocity_vector_2.sqrt();
 
                             // (distance to star)^2
-                            let distance_2 = (particle.position.x.powi(2) - disk_host_particle.position.x.powi(2)) 
-                                                + (particle.position.y.powi(2) - disk_host_particle.position.y.powi(2))
-                                                + (particle.position.z.powi(2) - disk_host_particle.position.z.powi(2));
+                            let distance_2 = (particle.position.x - disk_host_particle.position.x).powi(2) 
+                                                + (particle.position.y - disk_host_particle.position.y).powi(2)
+                                                + (particle.position.z - disk_host_particle.position.z).powi(2);
                             distance = distance_2.sqrt();
                         } else {
                             norm_velocity_vector = particle.norm_velocity_vector;
