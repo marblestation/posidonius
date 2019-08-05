@@ -717,7 +717,7 @@ impl Universe {
                         // Semi-major axis
                         let sma = (particle.mass_g+disk_host_particle.mass_g) * distance / (2.0 * (particle.mass_g+disk_host_particle.mass_g) -  distance * norm_velocity_vector*norm_velocity_vector);
 
-                        particle.migration_timescale = disk.calculate_migration_timescale(current_time, disk_host_particle.mass, disk_host_particle.mass_g, disk_host_particle.mass, distance, sma);
+                        particle.migration_timescale = disk.calculate_migration_timescale(current_time, disk_host_particle.mass, disk_host_particle.mass_g, particle.mass, distance, sma);
 
                         let factor1 = 1. / particle.mass;
                         // From Alibert et al. 2013 (https://ui.adsabs.harvard.edu/abs/2013A&A...558A.109A)
