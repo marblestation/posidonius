@@ -118,6 +118,7 @@ class Universe(object):
         particle['orthogonal_component_of_the_tidal_force_due_to_stellar_tide'] = 0.0
         particle['orthogonal_component_of_the_tidal_force_due_to_planetary_tide'] = 0.0
         particle['general_relativity_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
+        particle['dangular_momentum_dt_due_to_general_relativity'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
         particle['radial_velocity'] = 0.0
         particle['wind_k_factor'] = wind_k_factor
         particle['wind_rotation_saturation'] = wind_rotation_saturation

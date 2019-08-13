@@ -71,6 +71,7 @@ pub struct Particle {
     // General Relativity
     pub general_relativity_factor: f64,
     pub general_relativity_acceleration: Axes,
+    pub dangular_momentum_dt_due_to_general_relativity: Axes, // Force
     // Evolution
     pub evolution_type: EvolutionType,
     pub lag_angle: f64, // MathisSolarLike
@@ -89,6 +90,7 @@ impl Particle {
         let moment_of_inertia = mass * radius_of_gyration_2 * radius*radius;
         let acceleration_induced_by_rotational_flattering = Axes{x: 0., y: 0., z: 0.};
         let general_relativity_acceleration = Axes{x: 0., y: 0., z: 0.};
+        let dangular_momentum_dt_due_to_general_relativity = Axes{x: 0., y: 0., z: 0.};
         let norm_spin_vector_2 = (spin.x.powi(2)) + (spin.y.powi(2)) + (spin.z.powi(2));
         let id = 0; // To be set by the universe
         match evolution_type {
@@ -143,6 +145,7 @@ impl Particle {
                     acceleration_induced_by_rotational_flattering:acceleration_induced_by_rotational_flattering,
                     general_relativity_factor: 0., // To be setup by universe
                     general_relativity_acceleration:general_relativity_acceleration,
+                    dangular_momentum_dt_due_to_general_relativity:dangular_momentum_dt_due_to_general_relativity,
                     evolution_type:evolution_type,
                     lag_angle:0., // It will be initialized the first time evolve is called
                     disk: disk,
@@ -168,6 +171,7 @@ impl Particle {
         let tidal_acceleration = Axes{x: 0., y: 0., z: 0.};
         let acceleration_induced_by_rotational_flattering = Axes{x: 0., y: 0., z: 0.};
         let general_relativity_acceleration = Axes{x: 0., y: 0., z: 0.};
+        let dangular_momentum_dt_due_to_general_relativity = Axes{x: 0., y: 0., z: 0.};
         let inertial_position = Axes{x: 0., y: 0., z: 0.};
         let inertial_velocity = Axes{x: 0., y: 0., z: 0.};
         let inertial_acceleration = Axes{x: 0., y: 0., z: 0.};
@@ -210,6 +214,7 @@ impl Particle {
                     acceleration_induced_by_rotational_flattering:acceleration_induced_by_rotational_flattering,
                     general_relativity_factor: 0.,
                     general_relativity_acceleration:general_relativity_acceleration,
+                    dangular_momentum_dt_due_to_general_relativity:dangular_momentum_dt_due_to_general_relativity,
                     evolution_type:evolution_type,
                     disk: disk,
                     lag_angle:0., // It will be initialized the first time evolve is called
