@@ -1,7 +1,7 @@
 use super::super::constants::{K2};
 use super::{Axes};
-use super::{Tides, RotationalFlattening, GeneralRelativity, Disk, Wind, EvolutionType};
-use super::{TidesEffect, RotationalFlatteningEffect, GeneralRelativityEffect, DiskEffect, WindEffect};
+use super::super::{Tides, RotationalFlattening, GeneralRelativity, Disk, Wind, EvolutionType};
+use super::super::{TidesEffect, RotationalFlatteningEffect, GeneralRelativityEffect, DiskEffect, WindEffect};
 use time;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]

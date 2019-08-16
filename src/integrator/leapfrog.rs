@@ -4,7 +4,7 @@ use std::fs::File;
 use super::Integrator;
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
-use super::super::particles::WindEffect;
+use super::super::effects::WindEffect;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
 use std::path::Path;

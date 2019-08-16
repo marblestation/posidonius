@@ -1,12 +1,13 @@
 extern crate time;
 use std::collections::HashMap;
 use super::super::constants::{G, MAX_PARTICLES, MAX_DISTANCE_2};
-use super::{Evolver, EvolutionType};
+use super::super::{Evolver, EvolutionType};
 use super::{Particle};
 use super::{Axes};
-use super::{tides, flattening, general_relativity, evolver, wind, disk, common};
-use super::{TidesEffect, RotationalFlatteningEffect, DiskEffect, WindEffect};
-use super::{GeneralRelativityImplementation, GeneralRelativityEffect};
+use super::{common};
+use super::super::effects::{tides, rotational_flattening, general_relativity, evolution, wind, disk};
+use super::super::{TidesEffect, RotationalFlatteningEffect, DiskEffect, WindEffect};
+use super::super::{GeneralRelativityImplementation, GeneralRelativityEffect};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct HostIndices {
@@ -280,7 +281,7 @@ impl Universe {
     pub fn calculate_particles_evolving_quantities(&mut self, current_time: f64) {
         if self.consider_effects.evolution {
             let (mut particles, _) = self.particles.split_at_mut(self.n_particles);
-            evolver::calculate_particles_evolving_quantities(current_time, &mut particles, &mut self.particles_evolvers);
+            evolution::calculate_particles_evolving_quantities(current_time, &mut particles, &mut self.particles_evolvers);
         }
     }
 
@@ -343,8 +344,8 @@ impl Universe {
                     tides::initialize(&mut host_particle, &mut particles_left, &mut particles_right);
                 }
                 if initialize_rotational_flattening && self.hosts.most_massive.rotational_flattening {
-                    flattening::copy_heliocentric_coordinates(&mut host_particle, &mut particles_left, &mut particles_right);
-                    flattening::initialize(&mut host_particle, &mut particles_left, &mut particles_right);
+                    rotational_flattening::copy_heliocentric_coordinates(&mut host_particle, &mut particles_left, &mut particles_right);
+                    rotational_flattening::initialize(&mut host_particle, &mut particles_left, &mut particles_right);
                 }
                 if initialize_general_relativity && self.hosts.most_massive.general_relativity {
                     general_relativity::copy_heliocentric_coordinates(&mut host_particle, &mut particles_left, &mut particles_right);
@@ -367,8 +368,8 @@ impl Universe {
                 if initialize_rotational_flattening && !self.hosts.most_massive.rotational_flattening {
                     let (mut particles_left, particles_right) = particles.split_at_mut(self.hosts.index.rotational_flattening);
                     if let Some((mut rotational_flattening_host_particle, mut particles_right)) = particles_right.split_first_mut() {
-                        flattening::inertial_to_heliocentric_coordinates(&mut rotational_flattening_host_particle, &mut particles_left, &mut particles_right);
-                        flattening::initialize(&mut rotational_flattening_host_particle, &mut particles_left, &mut particles_right);
+                        rotational_flattening::inertial_to_heliocentric_coordinates(&mut rotational_flattening_host_particle, &mut particles_left, &mut particles_right);
+                        rotational_flattening::initialize(&mut rotational_flattening_host_particle, &mut particles_left, &mut particles_right);
                     }
                 }
                 if initialize_general_relativity && !self.hosts.most_massive.general_relativity {
@@ -399,7 +400,7 @@ impl Universe {
         }
        
         if evolution && self.consider_effects.evolution {
-            evolver::calculate_particles_evolving_quantities(current_time, &mut particles, &mut self.particles_evolvers);
+            evolution::calculate_particles_evolving_quantities(current_time, &mut particles, &mut self.particles_evolvers);
         }
 
         let (mut particles, _) = self.particles.split_at_mut(self.n_particles);
@@ -424,7 +425,7 @@ impl Universe {
                         }
 
                         if self.consider_effects.rotational_flattening {
-                            flattening::calculate_orthogonal_component_of_the_force_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
+                            rotational_flattening::calculate_orthogonal_component_of_the_force_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
                         }
                     }
 
@@ -440,8 +441,8 @@ impl Universe {
                             }
 
                             if self.consider_effects.rotational_flattening {
-                                flattening::calculate_torque_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right, central_body);
-                                flattening::calculate_torque_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right, !central_body);
+                                rotational_flattening::calculate_torque_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right, central_body);
+                                rotational_flattening::calculate_torque_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right, !central_body);
                             }
                         }
                     }
@@ -453,8 +454,8 @@ impl Universe {
                         }
 
                         if self.consider_effects.rotational_flattening {
-                            flattening::calculate_radial_component_of_the_force_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
-                            flattening::calculate_acceleration_induced_by_rotational_flattering(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
+                            rotational_flattening::calculate_radial_component_of_the_force_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
+                            rotational_flattening::calculate_acceleration_induced_by_rotational_flattering(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
                         }
 
 

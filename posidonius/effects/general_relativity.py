@@ -1,4 +1,4 @@
-from ..axes import Axes
+from posidonius.particles.axes import Axes
 
 class GeneralRelativity(object):
     def __init__(self, variant, implementation=None):

@@ -1,7 +1,7 @@
 import datetime
 import numpy as np
-from constants import *
-from axes import Axes
+from posidonius.constants import *
+from posidonius.particles.axes import Axes
 
 def get_center_of_mass_of_pair(center_of_mass_position, center_of_mass_velocity, center_of_mass_mass, particle):
     center_of_mass_position.set_x(center_of_mass_position.x()*center_of_mass_mass + particle['heliocentric_position']['x']*particle['mass'])

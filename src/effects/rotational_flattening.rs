@@ -1,5 +1,5 @@
-use super::{Particle};
-use super::{Axes};
+use super::super::{Particle};
+use super::super::{Axes};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RotationalFlatteningParticleInputParameters {

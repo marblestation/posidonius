@@ -1,7 +1,7 @@
 import datetime
-from tools import interpolate_b_spline
 import numpy as np
-from constants import *
+from posidonius.tools import interpolate_b_spline
+from posidonius.constants import *
 
 class EvolutionType(object):
     def __init__(self, variant, mass=None, dissipation_of_dynamical_tides=False):

@@ -1,4 +1,4 @@
-from ..axes import Axes
+from posidonius.particles.axes import Axes
 
 class Disk(object):
     def __init__(self, variant, properties=None):

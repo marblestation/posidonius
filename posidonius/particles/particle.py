@@ -1,7 +1,6 @@
 from axes import Axes
-import effects
-from evolution_type import NonEvolving
-from constants import K2
+import posidonius.effects as effects
+from posidonius.constants import K2
 
 class Particle(object):
     def __init__(self, mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type):
@@ -73,5 +72,5 @@ class DummyParticle(Particle):
         general_relativity = effects.general_relativity.Disabled()
         wind = effects.wind.Disabled()
         disk = effects.disk.Disabled()
-        evolution_type = NonEvolving()
+        evolution_type = effects.evolution.NonEvolving()
         super(DummyParticle, self).__init__(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type)

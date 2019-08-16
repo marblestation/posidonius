@@ -1,5 +1,5 @@
 use super::super::constants::{R_SUN};
-use super::{Particle};
+use super::super::{Particle};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct WindParticleInputParameters {

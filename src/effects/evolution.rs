@@ -1,4 +1,4 @@
-use super::{Particle};
+use super::super::{Particle};
 use super::super::constants::{SUN_DYN_FREQ};
 use super::super::tools::{interpolate_b_spline};
 use super::super::{csv};

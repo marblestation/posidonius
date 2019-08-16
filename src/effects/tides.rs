@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use super::super::tools;
 use super::super::constants::{K2};
-use super::{Particle};
-use super::{Axes};
+use super::super::{Particle};
+use super::super::{Axes};
 use super::{EvolutionType};
 
 

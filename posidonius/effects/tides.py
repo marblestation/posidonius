@@ -1,4 +1,4 @@
-from ..axes import Axes
+from posidonius.particles.axes import Axes
 
 class Tides(object):
     def __init__(self, variant, input_parameters=None):

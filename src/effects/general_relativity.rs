@@ -1,8 +1,8 @@
 use std::iter;
 use super::super::constants::{G, SPEED_OF_LIGHT_2, MAX_PARTICLES, DBL_EPSILON_2};
-use super::{Particle};
-use super::{Axes};
-use super::universe::{IgnoreGravityTerms};
+use super::super::{Particle};
+use super::super::{Axes};
+use super::super::particles::universe::{IgnoreGravityTerms};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct GeneralRelativityParticleInternalParameters {

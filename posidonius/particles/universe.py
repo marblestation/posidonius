@@ -1,12 +1,12 @@
 import os
 import datetime
 from axes import Axes
-from integrator import WHFast, Ias15, LeapFrog
-from constants import *
-from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
-from tools import calculate_spin, mass_radius_relation, get_center_of_mass_of_pair
-import effects
-from particle import Particle, DummyParticle
+from posidonius.integrator import WHFast, Ias15, LeapFrog
+from posidonius.constants import *
+from posidonius.effects.evolution import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
+from posidonius.tools import calculate_spin, mass_radius_relation, get_center_of_mass_of_pair
+import posidonius.effects as effects
+from posidonius.particles.particle import Particle, DummyParticle
 
 class ConsiderEffects(object):
     def __init__(self, input_properties):
