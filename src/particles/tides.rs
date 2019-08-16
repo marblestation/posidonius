@@ -206,7 +206,6 @@ pub fn calculate_planet_dependent_dissipation_factors(tidal_host_particle: &mut 
 
                 let planet_dependent_dissipation_factor = tidal_host_particle.tides.parameters.input.dissipation_factor_scale * 2.0 * K2
                     * tidal_host_particle.tides.parameters.internal.lag_angle * inverse_of_half_the_excitation_frequency / (3.0*tidal_host_particle.radius.powi(5));
-                println!(">> {:e}", tidal_host_particle.tides.parameters.input.dissipation_factor_scale);
 
                 star_planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
                 //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);

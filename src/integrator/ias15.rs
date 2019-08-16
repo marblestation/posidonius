@@ -174,7 +174,7 @@ impl Integrator for Ias15 {
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
             self.universe.inertial_to_heliocentric();
-            if self.universe.consider_tides {
+            if self.universe.consider_effects.tides {
                 self.universe.calculate_denergy_dt();
             }
             write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
@@ -271,11 +271,11 @@ impl Ias15 {
         let d : [f64; 21] = [0.0562625605369221464656522, 0.0031654757181708292499905, 0.2365032522738145114532321, 0.0001780977692217433881125, 0.0457929855060279188954539, 0.5891279693869841488271399, 0.0000100202365223291272096, 0.0084318571535257015445000, 0.2535340690545692665214616, 1.1362815957175395318285885, 0.0000005637641639318207610, 0.0015297840025004658189490, 0.0978342365324440053653648, 0.8752546646840910912297246, 1.8704917729329500633517991, 0.0000000317188154017613665, 0.0002762930909826476593130, 0.0360285539837364596003871, 0.5767330002770787313544596, 2.2485887607691597933926895, 2.7558127197720458314421588];
 
         let mut consider_dangular_momentum_dt_from_general_relativity = false;
-        if self.universe.consider_general_relativity && self.universe.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995 {
+        if self.universe.consider_effects.general_relativity && self.universe.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995 {
             consider_dangular_momentum_dt_from_general_relativity = true;
         }
-        let integrate_spin = self.universe.consider_tides || self.universe.consider_rotational_flattening
-                            || self.universe.evolving_particles_exist || consider_dangular_momentum_dt_from_general_relativity;
+        let integrate_spin = self.universe.consider_effects.tides || self.universe.consider_effects.rotational_flattening
+                            || self.universe.consider_effects.evolution || consider_dangular_momentum_dt_from_general_relativity;
 
         loop {
 
@@ -992,7 +992,7 @@ impl Ias15 {
             // (Eqs. 11, 12 of Everhart)
             ////////////////////////////////////////////////////////////////////
             let dt_done2 = dt_done * dt_done;
-            if self.universe.evolving_particles_exist {
+            if self.universe.consider_effects.evolution {
                 // We need the moment of inertia at the final time to convert the angular momentum
                 self.universe.calculate_particles_evolving_quantities(self.current_time+dt_done);
             }
@@ -1089,11 +1089,11 @@ impl Ias15 {
 
     fn predict_next_step(&mut self, ratio: f64) {
         let mut consider_dangular_momentum_dt_from_general_relativity = false;
-        if self.universe.consider_general_relativity && self.universe.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995 {
+        if self.universe.consider_effects.general_relativity && self.universe.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995 {
             consider_dangular_momentum_dt_from_general_relativity = true;
         }
-        let integrate_spin = self.universe.consider_tides || self.universe.consider_rotational_flattening
-                            || self.universe.evolving_particles_exist || consider_dangular_momentum_dt_from_general_relativity;
+        let integrate_spin = self.universe.consider_effects.tides || self.universe.consider_effects.rotational_flattening
+                            || self.universe.consider_effects.evolution || consider_dangular_momentum_dt_from_general_relativity;
         if ratio > 20. {
             // Do not predict if stepsize increase is very large.
             for k in 0..3*self.n_particles {

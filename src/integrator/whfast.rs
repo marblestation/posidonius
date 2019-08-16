@@ -208,7 +208,7 @@ impl Integrator for WHFast {
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
             self.universe.inertial_to_heliocentric();
-            if self.universe.consider_tides {
+            if self.universe.consider_effects.tides {
                 self.universe.calculate_denergy_dt();
             }
             write_historic_snapshot(universe_history_writer, &self.universe, self.current_time, self.time_step);
@@ -238,11 +238,11 @@ impl Integrator for WHFast {
         self.universe.gravity_calculate_acceleration(ignore_gravity_terms); // computes gravitational inertial accelerations
         self.universe.inertial_to_heliocentric(); // required to compute additional effects
         let mut consider_dangular_momentum_dt_from_general_relativity = false;
-        if self.universe.consider_general_relativity && self.universe.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995 {
+        if self.universe.consider_effects.general_relativity && self.universe.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995 {
             consider_dangular_momentum_dt_from_general_relativity = true;
         }
-        let integrate_spin = self.universe.consider_tides || self.universe.consider_rotational_flattening
-                            || self.universe.evolving_particles_exist || consider_dangular_momentum_dt_from_general_relativity;
+        let integrate_spin = self.universe.consider_effects.tides || self.universe.consider_effects.rotational_flattening
+                            || self.universe.consider_effects.evolution || consider_dangular_momentum_dt_from_general_relativity;
         // A 'DKD'-like integrator will do the 'KD' part:
         if integrate_spin {
             // - First part of the midpoint method: https://en.wikipedia.org/wiki/Midpoint_method

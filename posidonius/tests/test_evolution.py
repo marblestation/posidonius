@@ -21,14 +21,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 1.0 # Solar masses
         star_rotation_period = 8. # hours
@@ -66,14 +70,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 1.0 # Solar masses
         star_rotation_period = 8. # hours
@@ -111,14 +119,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 1.0 # Solar masses
         star_rotation_period = 8. # hours
@@ -156,14 +168,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 1.0 # Solar masses
         star_rotation_period = 8. # hours
@@ -201,14 +217,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 1.0 # Solar masses
         star_rotation_period = 8. # hours
@@ -247,14 +267,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 0.08 # Solar masses
         star_dissipation_factor_scale = 1.0
@@ -291,14 +315,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 0.08 # Solar masses
         star_dissipation_factor_scale = 1.0
@@ -335,14 +363,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 0.10 # Solar masses
         star_rotation_period = 70. # hours
@@ -381,14 +413,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 0.11 # Solar masses
         star_rotation_period = 70. # hours
@@ -426,14 +462,18 @@ class Evolution(TestBase):
         expected_json_filename, json_filename = common.setup(self.current_dirname, self.current_filename, current_function_name)
 
         initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period = common.simulation_properties()
-        consider_tides = True
-        consider_disk_interaction = False
-        consider_rotational_flattening = True
-        consider_general_relativity = True
+        consider_effects = posidonius.ConsiderEffects({
+            "tides": True,
+            "rotational_flattening": True,
+            "general_relativity": True,
+            "disk": True,
+            "wind": True,
+            "evolution": True,
+        })
         general_relativity_implementation = "Kidder1995" # Assumes one central massive body
         #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
         #general_relativity_implementation = "Newhall1983" # Considers all bodies
-        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
+        universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects)
 
         star_mass = 0.08 # Solar masses
         star_rotation_period = 70. # hours

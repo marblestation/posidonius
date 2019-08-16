@@ -8,17 +8,35 @@ from tools import calculate_spin, mass_radius_relation, get_center_of_mass_of_pa
 import effects
 from particle import Particle, DummyParticle
 
+class ConsiderEffects(object):
+    def __init__(self, input_properties):
+        self._data = {
+            "tides": False,
+            "rotational_flattening": False,
+            "general_relativity": False,
+            "disk": False,
+            "wind": False,
+            "evolution": False,
+        }
+        # Update default values, ignore non-recognised keys
+        for key, value in input_properties.iteritems():
+            if key in self._data:
+                self._data[key] = value
+
+    def get(self):
+        if type(self._data) == str:
+            return self._data
+        else:
+            return self._data.copy()
+
+
 class Universe(object):
-    def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity):
+    def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_effects):
         self._time_step = time_step
         self._recovery_snapshot_period = recovery_snapshot_period
         self._historic_snapshot_period = historic_snapshot_period
         self._data = {
-            "consider_disk_interaction": consider_disk_interaction,
-            "consider_general_relativity": consider_general_relativity,
-            "consider_rotational_flattening": consider_rotational_flattening,
-            "consider_tides": consider_tides,
-            "evolving_particles_exist": False,
+            "consider_effects": consider_effects.get(),
             "general_relativity_implementation": "None",
             "hosts": {
                 "index": {
@@ -45,7 +63,6 @@ class Universe(object):
             "temporary_copied_particles_masses": [],
             "temporary_copied_particles_radiuses": [],
             "time_limit": float(time_limit),
-            "wind_effects_exist": False,
         }
 
 
@@ -81,12 +98,6 @@ class Universe(object):
                 self._data['hosts']['index']['disk'] = self._data['n_particles']
             else:
                 raise Exception("Only one body with a disk is allowed!")
-
-        if particle.evolution_type() != NonEvolving:
-            self._data['evolving_particles_exist'] = True;
-
-        if effects.wind.Interaction in particle.effects():
-            self._data['wind_effects_exist'] = True;
 
         evolver = particle.get_evolver(self._data['initial_time'])
         if len(evolver['time']) > 0 and evolver['time'][0] > 0.:
@@ -378,23 +389,52 @@ class Universe(object):
         if self._data['hosts']['index']['general_relativity'] != MAX_PARTICLES+1 and self._data['hosts']['index']['general_relativity'] != self._data['hosts']['index']['most_massive']:
                 raise Exception("The most massive body should be the central body for general relativity effects!")
 
+    def disable_unnecessary_effects(self):
+        if self._data["consider_effects"]["tides"] and self._data['hosts']['index']['tides'] == MAX_PARTICLES+1:
+            print("[INFO {} UTC] Disabled tides because no central host was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            self._data["consider_effects"]["tides"] = False
+        if self._data["consider_effects"]["rotational_flattening"] and self._data['hosts']['index']['rotational_flattening'] == MAX_PARTICLES+1:
+            print("[INFO {} UTC] Disabled rotational flattening because no central host was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            self._data["consider_effects"]["rotational_flattening"] = False
+        if self._data["consider_effects"]["general_relativity"] and self._data['hosts']['index']['general_relativity'] == MAX_PARTICLES+1:
+            print("[INFO {} UTC] Disabled general relativity because no central host was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            self._data["consider_effects"]["general_relativity"] = False
+        if self._data["consider_effects"]["disk"] and self._data['hosts']['index']['disk'] == MAX_PARTICLES+1:
+            print("[INFO {} UTC] Disabled disk because no central host was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            self._data["consider_effects"]["disk"] = False
+        found_evolving_body = False
+        found_wind = False
+        for particle in self._data['particles']:
+            if particle["evolution_type"] != "NonEvolving":
+                found_evolving_body = True
+            if particle["wind"]["effect"] != "None":
+                found_wind = True
+        if self._data["consider_effects"]["wind"] and not found_wind:
+            print("[INFO {} UTC] Disabled wind because no wind was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            self._data["consider_effects"]["wind"] = False
+        if self._data["consider_effects"]["evolution"] and not found_evolving_body:
+            print("[INFO {} UTC] Disabled evolution because no evolving body was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            self._data["consider_effects"]["evolution"] = False
+
+
+    def update_hosts(self):
         self._data["hosts"]["most_massive"] = {
             "all": False,
-            "tides": self._data["consider_tides"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['tides'],
-            "rotational_flattening": self._data["consider_rotational_flattening"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['rotational_flattening'],
-            "general_relativity": self._data["consider_general_relativity"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['general_relativity'],
-            "disk": self._data["consider_disk_interaction"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['disk'],
+            "tides": self._data["consider_effects"]["tides"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['tides'],
+            "rotational_flattening": self._data["consider_effects"]["rotational_flattening"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['rotational_flattening'],
+            "general_relativity": self._data["consider_effects"]["general_relativity"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['general_relativity'],
+            "disk": self._data["consider_effects"]["disk"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['disk'],
         }
-        self._data["hosts"]["most_massive"]["all"] = ((self._data["consider_tides"] and self._data["hosts"]["most_massive"]["tides"]) or not self._data["consider_tides"]) \
-            and ((self._data["consider_rotational_flattening"] and self._data["hosts"]["most_massive"]["rotational_flattening"]) or not self._data["consider_rotational_flattening"]) \
-            and ((self._data["consider_general_relativity"] and self._data["hosts"]["most_massive"]["general_relativity"]) or not self._data["consider_general_relativity"]) \
-            and ((self._data["consider_disk_interaction"] and self._data["hosts"]["most_massive"]["disk"]) or not self._data["consider_disk_interaction"])
+        self._data["hosts"]["most_massive"]["all"] = ((self._data["consider_effects"]["tides"] and self._data["hosts"]["most_massive"]["tides"]) or not self._data["consider_effects"]["tides"]) \
+            and ((self._data["consider_effects"]["rotational_flattening"] and self._data["hosts"]["most_massive"]["rotational_flattening"]) or not self._data["consider_effects"]["rotational_flattening"]) \
+            and ((self._data["consider_effects"]["general_relativity"] and self._data["hosts"]["most_massive"]["general_relativity"]) or not self._data["consider_effects"]["general_relativity"]) \
+            and ((self._data["consider_effects"]["disk"] and self._data["hosts"]["most_massive"]["disk"]) or not self._data["consider_effects"]["disk"])
 
     def compute_general_relativity_factor(self):
         most_massive_particle_index = self._data['hosts']['index']['most_massive']
         central_body_mass_g = self._data['particles'][most_massive_particle_index]['mass_g']
         for i, particle in enumerate(self._data['particles']):
-            if not self._data['consider_general_relativity'] \
+            if not self._data["consider_effects"]["general_relativity"] \
                     or "CentralBody" in particle['general_relativity']['effect'] \
                     or particle['general_relativity']['effect'] == "None" \
                     or particle['mass'] == 0:
@@ -404,9 +444,11 @@ class Universe(object):
                 particle['general_relativity']['parameters']['internal']['factor'] = central_body_mass_g*particle['mass_g'] / np.power(central_body_mass_g + particle['mass_g'], 2)
 
     def get(self):
+        self.disable_unnecessary_effects()
         self.populate_inertial_frame()
         self.assign_id()
         self.find_most_massive_particle()
+        self.update_hosts()
         self.compute_general_relativity_factor()
 
         # Add dummy particles to fill the vector
@@ -417,17 +459,17 @@ class Universe(object):
         data = self._data.copy()
 
         # Reset indices according to enabled effects
-        if data['consider_rotational_flattening'] and not data['consider_tides']:
+        if data["consider_effects"]["rotational_flattening"] and not data["consider_effects"]["tides"]:
             # In practice, rotational_flattening will use tidal_host_particle_index
             # make sure it is the correct index, even if tides are disabled
             data['hosts']['index']['tides'] = data['hosts']['index']['rotational_flattening']
-        elif not data['consider_tides']:
+        elif not data["consider_effects"]["tides"]:
             data['hosts']['index']['tides'] = MAX_PARTICLES+1
-        if not data['consider_rotational_flattening']:
+        if not data["consider_effects"]["rotational_flattening"]:
             data['hosts']['index']['rotational_flattening'] = MAX_PARTICLES+1
-        if not data['consider_general_relativity']:
+        if not data["consider_effects"]["general_relativity"]:
             data['hosts']['index']['general_relativity'] = MAX_PARTICLES+1
-        if not data['consider_disk_interaction']:
+        if not data["consider_effects"]["disk"]:
             data['hosts']['index']['disk'] = MAX_PARTICLES+1
 
         # Forget the dummy particles

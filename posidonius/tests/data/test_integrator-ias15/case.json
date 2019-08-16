@@ -2607,11 +2607,14 @@
   "time_step": 0.08, 
   "time_step_last_success": 0.0, 
   "universe": {
-    "consider_disk_interaction": false, 
-    "consider_general_relativity": true, 
-    "consider_rotational_flattening": true, 
-    "consider_tides": true, 
-    "evolving_particles_exist": true, 
+    "consider_effects": {
+      "disk": false, 
+      "evolution": true, 
+      "general_relativity": true, 
+      "rotational_flattening": true, 
+      "tides": true, 
+      "wind": false
+    }, 
     "general_relativity_implementation": "Kidder1995", 
     "hosts": {
       "index": {
@@ -35951,8 +35954,7 @@
       0.0, 
       0.0
     ], 
-    "time_limit": 0.08, 
-    "wind_effects_exist": false
+    "time_limit": 0.08
   }, 
   "v0": [
     0.0, 
