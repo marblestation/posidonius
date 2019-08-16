@@ -309,42 +309,32 @@
   "timestep_warning": 0, 
   "universe": {
     "consider_disk_interaction": false, 
-    "consider_general_relativity": "None", 
+    "consider_general_relativity": false, 
     "consider_rotational_flattening": true, 
     "consider_tides": true, 
-    "disk_host_particle_index": 11, 
     "evolving_particles_exist": true, 
-    "host_particle_index": 0, 
+    "general_relativity_implementation": "Kidder1995", 
+    "hosts": {
+      "index": {
+        "disk": 11, 
+        "general_relativity": 11, 
+        "most_massive": 0, 
+        "rotational_flattening": 0, 
+        "tides": 0
+      }, 
+      "most_massive": {
+        "all": true, 
+        "disk": false, 
+        "general_relativity": false, 
+        "rotational_flattening": true, 
+        "tides": true
+      }
+    }, 
     "initial_time": 913125000.0, 
     "n_particles": 4, 
     "particles": [
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -354,27 +344,91 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
-        "disk": "None", 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "disk": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": {
           "Leconte2011": 0.08
         }, 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.307, 
-        "general_relativity_acceleration": {
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": {
+            "CentralBody": "Kidder1995"
+          }, 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "id": 0, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -391,81 +445,125 @@
           "y": -1.497564215621809e-06, 
           "z": -1.3101989176900067e-07
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.307, 
         "mass": 0.08, 
         "mass_g": 2.3594212261070945e-05, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 2.4003000289132427e-07, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 4.6407282734918125, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 0.003932664580378116, 
         "radius_of_gyration_2": 0.194, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 77146.02583999999, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "CentralBody", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.307
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": -0.0, 
           "z": 2.1542349624615724
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "CentralBody", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 77146.02583999999, 
+              "dissipation_factor_scale": 1.0, 
+              "love_number": 0.307
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 77146.02583999999
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }, 
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -475,27 +573,87 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
         "disk": {
-          "Interaction": true
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": "NonEvolving", 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.9532, 
-        "general_relativity_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
+          "x": 0.0162, 
+          "y": 6.571920583533768e-15, 
+          "z": 5.749685486518799e-16
+        }, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": -1.4818017716591765e-14, 
+          "y": 0.03987438104619194, 
+          "z": 0.003488556306654768
+        }, 
         "id": 1, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -512,81 +670,125 @@
           "y": 0.03987288348197632, 
           "z": 0.003488425286762999
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.299, 
         "mass": 3.0034895963231186e-06, 
         "mass_g": 8.858121382445743e-10, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 1.8435654123498543e-15, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 39.47841760435743, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 0.0162, 
-          "y": 6.571920583533768e-15, 
-          "z": 5.749685486518799e-16
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 4.307581066392812e-05, 
         "radius_of_gyration_2": 0.3308, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 3268306963540669.0, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.9532
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": -1.780225990290513, 
           "z": 6.025712657259023
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 3268306963540669.0, 
+              "dissipation_factor_scale": 1.0, 
+              "love_number": 0.299
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 3268306963540669.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": -1.4818017716591765e-14, 
-          "y": 0.03987438104619194, 
-          "z": 0.003488556306654768
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }, 
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -596,29 +798,89 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
         "disk": {
-          "Interaction": true
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": {
           "LeconteChabrier2013": false
         }, 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.38, 
-        "general_relativity_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
+          "x": 0.162, 
+          "y": 6.57192058353377e-14, 
+          "z": 5.7496854865188e-15
+        }, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": -4.685780763119357e-15, 
+          "y": 0.012609149970061736, 
+          "z": 0.001103157679078646
+        }, 
         "id": 2, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -635,81 +897,125 @@
           "y": 0.012607652405846114, 
           "z": 0.001103026659186877
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.38, 
         "mass": 2.8533151165069627e-09, 
         "mass_g": 8.415215313323456e-13, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 1.5651943584527615e-16, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 39.47841760435743, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 0.162, 
-          "y": 6.57192058353377e-14, 
-          "z": 5.7496854865188e-15
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 0.00046472111985749006, 
         "radius_of_gyration_2": 0.254, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 2624753.50617771, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.38
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": -1.780225990290513, 
           "z": 6.025712657259023
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 2624753.50617771, 
+              "dissipation_factor_scale": 1.0, 
+              "love_number": 0.38
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 2624753.50617771
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": -4.685780763119357e-15, 
-          "y": 0.012609149970061736, 
-          "z": 0.001103157679078646
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }, 
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -719,27 +1025,87 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
         "disk": {
-          "Interaction": true
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": "NonEvolving", 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.38, 
-        "general_relativity_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
+          "x": 1.62, 
+          "y": 6.571920583533769e-13, 
+          "z": 5.7496854865188e-14
+        }, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": -1.4817739827659081e-15, 
+          "y": 0.003987363326403901, 
+          "z": 0.00034884908841936
+        }, 
         "id": 3, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -756,81 +1122,125 @@
           "y": 0.003985865762188279, 
           "z": 0.00034871806852759097
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.38, 
         "mass": 2.8533151165069627e-09, 
         "mass_g": 8.415215313323456e-13, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 1.5651943584527615e-16, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 39.47841760435744, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 1.62, 
-          "y": 6.571920583533769e-13, 
-          "z": 5.7496854865188e-14
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 0.00046472111985749006, 
         "radius_of_gyration_2": 0.254, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 2624753.50617771, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.38
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": -1.7802259902905053, 
           "z": 6.025712657259025
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "OrbitingBody", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 2624753.50617771, 
+              "dissipation_factor_scale": 1.0, 
+              "love_number": 0.38
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 2624753.50617771
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": -1.4817739827659081e-15, 
-          "y": 0.003987363326403901, 
-          "z": 0.00034884908841936
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }, 
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -840,25 +1250,87 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
-        "disk": "None", 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "disk": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": "NonEvolving", 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.0, 
-        "general_relativity_acceleration": {
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "id": 0, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -875,81 +1347,125 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.0, 
         "mass": 0.0, 
         "mass_g": 0.0, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 0.0, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 0.0, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 0.0, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.0
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 0.0, 
+              "dissipation_factor_scale": 0.0, 
+              "love_number": 0.0
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }, 
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -959,25 +1475,87 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
-        "disk": "None", 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "disk": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": "NonEvolving", 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.0, 
-        "general_relativity_acceleration": {
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "id": 0, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -994,81 +1572,125 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.0, 
         "mass": 0.0, 
         "mass_g": 0.0, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 0.0, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 0.0, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 0.0, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.0
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 0.0, 
+              "dissipation_factor_scale": 0.0, 
+              "love_number": 0.0
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }, 
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -1078,25 +1700,87 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
-        "disk": "None", 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "disk": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": "NonEvolving", 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.0, 
-        "general_relativity_acceleration": {
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "id": 0, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -1113,81 +1797,125 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.0, 
         "mass": 0.0, 
         "mass_g": 0.0, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 0.0, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 0.0, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 0.0, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.0
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 0.0, 
+              "dissipation_factor_scale": 0.0, 
+              "love_number": 0.0
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }, 
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -1197,25 +1925,87 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
-        "disk": "None", 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "disk": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": "NonEvolving", 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.0, 
-        "general_relativity_acceleration": {
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "id": 0, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -1232,81 +2022,125 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.0, 
         "mass": 0.0, 
         "mass_g": 0.0, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 0.0, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 0.0, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 0.0, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.0
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 0.0, 
+              "dissipation_factor_scale": 0.0, 
+              "love_number": 0.0
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }, 
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -1316,25 +2150,87 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
-        "disk": "None", 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "disk": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": "NonEvolving", 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.0, 
-        "general_relativity_acceleration": {
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "id": 0, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -1351,81 +2247,125 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.0, 
         "mass": 0.0, 
         "mass_g": 0.0, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 0.0, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 0.0, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 0.0, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.0
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 0.0, 
+              "dissipation_factor_scale": 0.0, 
+              "love_number": 0.0
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }, 
       {
-        "acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "acceleration_induced_by_rotational_flattering": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
         "dangular_momentum_dt": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_general_relativity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_due_to_tides": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "dangular_momentum_dt_induced_by_rotational_flattening": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
@@ -1435,25 +2375,87 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "denergy_dt": 0.0, 
-        "disk": "None", 
-        "disk_interaction_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "disk": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "migration_timescale": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "dissipation_factor_scale": 1.0, 
-        "distance": 0.0, 
         "evolution_type": "NonEvolving", 
-        "factor_for_the_force_induced_by_planet_rotation": 0.0, 
-        "factor_for_the_force_induced_by_star_rotation": 0.0, 
-        "fluid_love_number": 0.0, 
-        "general_relativity_acceleration": {
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "internal": {
+              "distance": 0.0, 
+              "factor": 0.0, 
+              "norm_velocity_vector": 0.0, 
+              "norm_velocity_vector_2": 0.0, 
+              "radial_velocity": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
+        "heliocentric_distance": 0.0, 
+        "heliocentric_norm_velocity_vector": 0.0, 
+        "heliocentric_norm_velocity_vector_2": 0.0, 
+        "heliocentric_position": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "general_relativity_factor": 0.0, 
+        "heliocentric_radial_velocity": 0.0, 
+        "heliocentric_velocity": {
+          "x": 0.0, 
+          "y": 0.0, 
+          "z": 0.0
+        }, 
         "id": 0, 
         "inertial_acceleration": {
           "x": 0.0, 
@@ -1470,53 +2472,122 @@
           "y": 0.0, 
           "z": 0.0
         }, 
-        "lag_angle": 0.0, 
-        "love_number": 0.0, 
         "mass": 0.0, 
         "mass_g": 0.0, 
-        "migration_timescale": 0.0, 
         "moment_of_inertia": 0.0, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 0.0, 
-        "norm_velocity_vector": 0.0, 
-        "norm_velocity_vector_2": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
-        "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
-        "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
-        "position": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "radial_component_of_the_force_induced_by_rotation": 0.0, 
-        "radial_component_of_the_tidal_force": 0.0, 
-        "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
-        "radial_velocity": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
-        "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
-        "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
-        "scaled_dissipation_factor": 0.0, 
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "fluid_love_number": 0.0
+            }, 
+            "internal": {
+              "distance": 0.0, 
+              "factor_for_the_force_induced_by_planet_rotation": 0.0, 
+              "factor_for_the_force_induced_by_star_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0, 
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0, 
+              "radial_component_of_the_force_induced_by_rotation": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
+        }, 
         "spin": {
           "x": 0.0, 
           "y": 0.0, 
           "z": 0.0
         }, 
-        "tidal_acceleration": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }, 
+            "velocity": {
+              "x": 0.0, 
+              "y": 0.0, 
+              "z": 0.0
+            }
+          }, 
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "dissipation_factor": 0.0, 
+              "dissipation_factor_scale": 0.0, 
+              "love_number": 0.0
+            }, 
+            "internal": {
+              "denergy_dt": 0.0, 
+              "distance": 0.0, 
+              "lag_angle": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0, 
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0, 
+              "radial_component_of_the_tidal_force": 0.0, 
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0, 
+              "radial_velocity": 0.0, 
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0, 
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0, 
+              "scaled_dissipation_factor": 0.0
+            }, 
+            "output": {
+              "acceleration": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }, 
+              "dangular_momentum_dt": {
+                "x": 0.0, 
+                "y": 0.0, 
+                "z": 0.0
+              }
+            }
+          }
         }, 
-        "velocity": {
-          "x": 0.0, 
-          "y": 0.0, 
-          "z": 0.0
-        }, 
-        "wind_factor": 0.0, 
-        "wind_k_factor": 0.0, 
-        "wind_rotation_saturation": 0.0, 
-        "wind_rotation_saturation_2": 0.0
+        "wind": {
+          "effect": "None", 
+          "parameters": {
+            "input": {
+              "k_factor": 0.0, 
+              "rotation_saturation": 0.0
+            }, 
+            "internal": {
+              "rotation_saturation_2": 0.0
+            }, 
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
       }
     ], 
     "particles_evolvers": [
@@ -32557,58 +33628,6 @@
         "z": 0.0
       }
     ], 
-    "temporary_copied_particle_velocities": [
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }, 
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }, 
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }, 
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }, 
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }, 
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }, 
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }, 
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }, 
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }, 
-      {
-        "x": 0.0, 
-        "y": 0.0, 
-        "z": 0.0
-      }
-    ], 
     "temporary_copied_particles_masses": [
       0.0, 
       0.0, 
@@ -32633,7 +33652,6 @@
       0.0, 
       0.0
     ], 
-    "tidal_host_particle_index": 0, 
     "time_limit": 0.08, 
     "wind_effects_exist": false
   }

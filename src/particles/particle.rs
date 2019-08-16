@@ -42,7 +42,7 @@ pub struct Particle {
 }
 
 impl Particle {
-    pub fn new(mass: f64, radius: f64, radius_of_gyration_2: f64, heliocentric_position: Axes, heliocentric_velocity: Axes, spin: Axes, tides: Tides, rotational_flattening: RotationalFlattening, general_relativity: GeneralRelativity, wind: Wind, disk: Disk, evolution_type: EvolutionType) -> Particle {
+    pub fn new(mass: f64, radius: f64, radius_of_gyration_2: f64, position: Axes, velocity: Axes, spin: Axes, tides: Tides, rotational_flattening: RotationalFlattening, general_relativity: GeneralRelativity, wind: Wind, disk: Disk, evolution_type: EvolutionType) -> Particle {
         evolution_warnings(evolution_type);
         Particle { 
             id: 0, // Unique internal identifier, to be set by the universe
@@ -52,8 +52,8 @@ impl Particle {
             inertial_position: Axes{x: 0., y: 0., z: 0.}, // To be re-computed by the universe
             inertial_velocity: Axes{x: 0., y: 0., z: 0.}, // To be re-computed by the universe
             inertial_acceleration: Axes{x: 0., y: 0., z: 0.},
-            heliocentric_position: heliocentric_position,
-            heliocentric_velocity: heliocentric_velocity,
+            heliocentric_position: position,
+            heliocentric_velocity: velocity,
             heliocentric_distance: 0.,
             heliocentric_radial_velocity: 0.,
             heliocentric_norm_velocity_vector: 0.,

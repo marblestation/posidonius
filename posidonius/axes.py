@@ -16,10 +16,11 @@ class Axes(object):
         return self._data['z']
 
     def set_x(self, x):
-        self._data['x'] = x
+        self._data['x'] = float(x)
 
     def set_y(self, y):
-        self._data['y'] = y
+        self._data['y'] = float(y)
 
     def set_z(self, z):
-        self._data['z'] = z
+        self._data['z'] = float(z)
+

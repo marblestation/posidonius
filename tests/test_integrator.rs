@@ -52,16 +52,16 @@ fn whfast_jacobi_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn whfast_jacobi_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "whfast_jacobi");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = whfast_jacobi_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn whfast_jacobi_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "whfast_jacobi");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = whfast_jacobi_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -110,16 +110,16 @@ fn whfast_democraticheliocentric_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn whfast_democraticheliocentric_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "whfast_democraticheliocentric");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = whfast_democraticheliocentric_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn whfast_democraticheliocentric_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "whfast_democraticheliocentric");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = whfast_democraticheliocentric_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -168,16 +168,16 @@ fn whfast_whds_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn whfast_whds_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "whfast_whds");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = whfast_whds_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn whfast_whds_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "whfast_whds");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = whfast_whds_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -226,16 +226,16 @@ fn leapfrog_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn leapfrog_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "leapfrog");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = leapfrog_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn leapfrog_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "leapfrog");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = leapfrog_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -284,15 +284,15 @@ fn ias15_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn ias15_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "ias15");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = ias15_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn ias15_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "ias15");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = ias15_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////

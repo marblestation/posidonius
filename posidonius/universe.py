@@ -1,157 +1,107 @@
 import os
 import datetime
 from axes import Axes
-from disk_type import DiskHost, NoDisk, DiskInteraction
 from integrator import WHFast, Ias15, LeapFrog
 from constants import *
 from evolution_type import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
 from tools import calculate_spin, mass_radius_relation, get_center_of_mass_of_pair
-
-class ConsiderGeneralRelativity(object):
-    def __init__(self, variant):
-        self._data = {}
-        if variant in ("Kidder1995", "Anderson1975", "Newhall1983", "None"):
-            self._data = variant
-        else:
-            raise Exception("Unknown variant '{}'".format(variant))
-
-    def get(self):
-        return self._data
+import effects
+from particle import Particle, DummyParticle
 
 class Universe(object):
     def __init__(self, initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity):
         self._time_step = time_step
         self._recovery_snapshot_period = recovery_snapshot_period
         self._historic_snapshot_period = historic_snapshot_period
-        self._data = {}
-        self._data['time_limit'] = float(time_limit)
-        self._data['initial_time'] = float(initial_time)
-        self._data['consider_tides'] = consider_tides
-        self._data['consider_rotational_flattening'] = consider_rotational_flattening
-        self._data['consider_disk_interaction'] = consider_disk_interaction
-        if consider_general_relativity == True:
-            consider_general_relativity = "Kidder1995" # MercuryT
-        elif consider_general_relativity == False:
-            consider_general_relativity = "None"
-        self._data['consider_general_relativity'] = ConsiderGeneralRelativity(consider_general_relativity).get()
-        self._data['particles'] = []
-        self._data['particles_evolvers'] = []
-        self._data['n_particles'] = 0
-        self._data['evolving_particles_exist'] = False
-        self._data['wind_effects_exist'] = False
-        self._data['star_planet_dependent_dissipation_factors'] = {}
-        self._data['host_particle_index'] = 0 # Most massive particle
-        self._data['tidal_host_particle_index'] = 0 # Particle that is the main one for tidal effects
-        self._data['disk_host_particle_index'] = MAX_PARTICLES+1
-        self._data['temporary_copied_particles_radiuses'] = []
-        self._data['temporary_copied_particles_masses'] = []
-        self._data['temporary_copied_particle_velocities'] = []
-        self._data['temporary_copied_particle_positions'] = []
-
+        self._data = {
+            "consider_disk_interaction": consider_disk_interaction,
+            "consider_general_relativity": consider_general_relativity,
+            "consider_rotational_flattening": consider_rotational_flattening,
+            "consider_tides": consider_tides,
+            "evolving_particles_exist": False,
+            "general_relativity_implementation": "None",
+            "hosts": {
+                "index": {
+                    "most_massive": MAX_PARTICLES+1,
+                    "tides": MAX_PARTICLES+1,
+                    "rotational_flattening": MAX_PARTICLES+1,
+                    "general_relativity": MAX_PARTICLES+1,
+                    "disk": MAX_PARTICLES+1,
+                },
+                "most_massive": {
+                    "all": False,
+                    "tides": False,
+                    "rotational_flattening": False,
+                    "general_relativity": False,
+                    "disk": False,
+                }
+            },
+            "initial_time": float(initial_time),
+            "n_particles": 0,
+            "particles": [],
+            "particles_evolvers": [],
+            "star_planet_dependent_dissipation_factors": {},
+            "temporary_copied_particle_positions": [],
+            "temporary_copied_particles_masses": [],
+            "temporary_copied_particles_radiuses": [],
+            "time_limit": float(time_limit),
+            "wind_effects_exist": False,
+        }
 
 
     def add_dummy_particle(self):
-        mass = 0.0
-        radius = 0.0
-        dissipation_factor = 0.0
-        dissipation_factor_scale = 1.0
-        radius_of_gyration_2 = 0.0
-        love_number = 0.0
-        fluid_love_number = 0.0
-        disk = NoDisk()
-        position = Axes(0., 0., 0.)
-        velocity = Axes(0., 0., 0.)
-        spin = Axes(0., 0., 0.)
-        evolution_type = NonEvolving()
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, disk)
+        self.add_particle(DummyParticle())
         self._data['n_particles'] -= 1 # Compensate the addition from the previous add_particle call
 
-    def add_particle(self, mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, disk, wind_k_factor=0., wind_rotation_saturation=0.):
+    def add_particle(self, particle):
         if self._data['n_particles'] > MAX_PARTICLES:
             raise Exception("Maximum number of particles reached: {}".format(MAX_PARTICLES))
-        particle = {}
-        particle['mass'] = float(mass)
-        particle['radius'] = float(radius)
-        particle['scaled_dissipation_factor'] = float(dissipation_factor)*float(dissipation_factor_scale)
-        particle['dissipation_factor_scale'] = float(dissipation_factor_scale)
-        particle['radius_of_gyration_2'] = float(radius_of_gyration_2)
-        particle['love_number'] = float(love_number)
-        particle['fluid_love_number'] = float(fluid_love_number)
-        particle['disk'] = disk.get()
-        particle['migration_timescale'] = 0.0
-        if type(disk) == DiskHost and (disk._data['Host']['inner_edge_distance'] != 0 or disk._data['Host']['outer_edge_distance'] != 0):
-            if self._data['disk_host_particle_index'] == MAX_PARTICLES+1:
-                self._data['disk_host_particle_index'] = self._data['n_particles']
+
+        if effects.tides.CentralBody in particle.effects():
+            if self._data['hosts']['index']['tides'] == MAX_PARTICLES+1:
+                self._data['hosts']['index']['tides'] = self._data['n_particles']
+            else:
+                raise Exception("There can only be one central body for tidal effects!")
+
+        if effects.rotational_flattening.CentralBody in particle.effects():
+            if self._data['hosts']['index']['rotational_flattening'] == MAX_PARTICLES+1:
+                self._data['hosts']['index']['rotational_flattening'] = self._data['n_particles']
+            else:
+                raise Exception("There can only be one central body for rotational flattening effects!")
+
+        if effects.general_relativity.CentralBody in particle.effects():
+            if self._data['hosts']['index']['general_relativity'] == MAX_PARTICLES+1:
+                self._data['hosts']['index']['general_relativity'] = self._data['n_particles']
+            else:
+                raise Exception("There can only be one central body for rotational flattening effects!")
+            self._data['general_relativity_implementation'] = particle.general_relativity_implementation()
+
+        if effects.disk.CentralBody in particle.effects():
+            if self._data['hosts']['index']['disk'] == MAX_PARTICLES+1:
+                self._data['hosts']['index']['disk'] = self._data['n_particles']
             else:
                 raise Exception("Only one body with a disk is allowed!")
-        particle['position'] = position.get()
-        particle['velocity'] = velocity.get()
-        particle['spin'] = spin.get()
-        particle['evolution_type'] = evolution_type.get()
 
-        particle['inertial_position'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['inertial_velocity'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['inertial_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-
-        if type(evolution_type) != NonEvolving:
+        if particle.evolution_type() != NonEvolving:
             self._data['evolving_particles_exist'] = True;
 
-        particle['id'] = 0
-        particle['acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['dangular_momentum_dt_due_to_tides'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['dangular_momentum_dt_induced_by_rotational_flattening'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['dangular_momentum_dt'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['lag_angle'] = 0.0
-        particle['mass_g'] = particle['mass'] * K2
-        particle['general_relativity_factor'] = 0.0
-        particle['norm_velocity_vector'] = 0.0
-        particle['tidal_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['disk_interaction_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['scalar_product_of_vector_position_with_stellar_spin'] = 0.0
-        particle['scalar_product_of_vector_position_with_planetary_spin'] = 0.0
-        particle['radial_component_of_the_force_induced_by_rotation'] = 0.0
-        particle['orthogonal_component_of_the_force_induced_by_star_rotation'] = 0.0
-        particle['orthogonal_component_of_the_force_induced_by_planet_rotation'] = 0.0
-        particle['factor_for_the_force_induced_by_star_rotation'] = 0.0
-        particle['factor_for_the_force_induced_by_planet_rotation'] = 0.0
-        particle['radial_component_of_the_tidal_force'] = 0.0
-        particle['orthogonal_component_of_the_tidal_force_due_to_stellar_tide'] = 0.0
-        particle['orthogonal_component_of_the_tidal_force_due_to_planetary_tide'] = 0.0
-        particle['general_relativity_acceleration'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['dangular_momentum_dt_due_to_general_relativity'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['radial_velocity'] = 0.0
-        particle['wind_k_factor'] = wind_k_factor
-        particle['wind_rotation_saturation'] = wind_rotation_saturation
-        particle['wind_rotation_saturation_2'] = particle['wind_rotation_saturation']*particle['wind_rotation_saturation']
-        if wind_k_factor != 0.:
+        if effects.wind.Interaction in particle.effects():
             self._data['wind_effects_exist'] = True;
 
-        particle['moment_of_inertia_ratio'] = 1.0
-        particle['moment_of_inertia'] = particle['mass'] * particle['radius_of_gyration_2'] * particle['radius']*particle['radius']
-        particle['dangular_momentum_dt_per_moment_of_inertia'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['wind_factor'] = 0.
-        particle['distance'] = 0.0
-        particle['acceleration_induced_by_rotational_flattering'] = {u'x': 0.0, u'y': 0.0, u'z': 0.0}
-        particle['norm_velocity_vector_2'] = 0.0
-        particle['norm_spin_vector_2'] = particle['spin']['x']**2 + particle['spin']['y']**2 + particle['spin']['z']**2
-        particle['denergy_dt'] = 0.
-        particle['radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass'] = 0.
-
-        evolver = evolution_type.get_evolver(self._data['initial_time'])
+        evolver = particle.get_evolver(self._data['initial_time'])
         if len(evolver['time']) > 0 and evolver['time'][0] > 0.:
             raise Exception("Your initial time ({} days | {:.2e} years) is smaller than the minimum allowed age of the star ({} days | {:.2e} years)".format(self._data['initial_time'], self._data['initial_time']/365.25, evolver['time'][0]+self._data['initial_time'], (evolver['time'][0]+self._data['initial_time'])/365.25));
         if len(evolver['time']) > 0 and evolver['time'][-1] < self._data['initial_time']:
             raise Exception("Your time limit ({} days | {:.2e} years) is greater than the maximum allowed age of the star ({} days | {:.2e} years)", self._data['initial_time'], self._data['initial_time']/365.25, evolver['time'][0], evolver['time'][0]/365.25)
 
-        self._data['particles'].append(particle)
+        self._data['particles'].append(particle.get())
         self._data['particles_evolvers'].append(evolver)
         self._data['temporary_copied_particles_radiuses'].append(0.0)
         self._data['temporary_copied_particles_masses'].append(0.0)
-        self._data['temporary_copied_particle_velocities'].append({u'x': 0.0, u'y': 0.0, u'z': 0.0})
-        self._data['temporary_copied_particle_positions'].append({u'x': 0.0, u'y': 0.0, u'z': 0.0})
+        self._data['temporary_copied_particle_positions'].append(Axes(0.0, 0.0, 0.0).get())
         self._data['n_particles'] += 1
 
-    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity,  evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
+    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity, general_relativity_implementation, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
         rotation_period = None
         love_number = None
         if type(evolution_type) == NonEvolving:
@@ -210,25 +160,38 @@ class Universe(object):
         # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 2.006*3.845764e4 # -60+64
 
-        disk = NoDisk()
-
         radius_factor = 0.845649342247916
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 1.94e-1 # Brown dwarf
 
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, disk, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
+        tides = effects.tides.CentralBody({
+            "dissipation_factor_scale": dissipation_factor_scale,
+            "dissipation_factor": dissipation_factor,
+            "love_number": love_number,
+        })
+        rotational_flattening = effects.rotational_flattening.CentralBody({"fluid_love_number": fluid_love_number})
+        general_relativity = effects.general_relativity.CentralBody(general_relativity_implementation)
+        if wind_k_factor == 0:
+            wind = effects.wind.Disabled()
+        else:
+            wind = effects.wind.Interaction({
+                "k_factor": wind_k_factor,
+                "rotation_saturation": wind_rotation_saturation,
+            })
+        disk = effects.disk.Disabled()
+        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
 
-    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
+    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
         """
         Wind parametrisation (Bouvier 1997):
 
         wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
         wind_rotation_saturation = 14. * TWO_PI/25.0 # = 1.7592918860102842, wsat in units of the spin of the Sun today
         """
-        disk = NoDisk()
-        self._add_solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, disk, wind_k_factor, wind_rotation_saturation)
+        disk = effects.disk.Disabled()
+        self._add_solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, disk, wind_k_factor, wind_rotation_saturation)
 
-    def add_solar_like_with_disk(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
+    def add_solar_like_with_disk(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
         """
         Wind parametrisation (Bouvier 1997):
 
@@ -245,10 +208,10 @@ class Universe(object):
             'surface_density_normalization': disk_surface_density_normalization_SI * (1.0/M_SUN) * AU**2, # Msun.AU^-2
             'mean_molecular_weight': 2.4,
         }
-        disk = DiskHost(disk_properties)
-        self._add_solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, disk, wind_k_factor, wind_rotation_saturation)
+        disk = effects.disk.CentralBody(disk_properties)
+        self._add_solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, disk, wind_k_factor, wind_rotation_saturation)
 
-    def _add_solar_like_with_disk(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, disk, wind_k_factor, wind_rotation_saturation):
+    def _add_solar_like_with_disk(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, disk, wind_k_factor, wind_rotation_saturation):
         if type(evolution_type) not in (BolmontMathis2016, Leconte2011, Baraffe2015, GalletBolmont2017, NonEvolving) and not (type(evolution_type) is Baraffe1998 and mass == 1.0):
             raise Exception("Evolution type should be BolmontMathis2016 Leconte2011 Baraffe1998 (mass = 0.10) Baraffe2015 GalletBolmont2017 or NonEvolving!")
 
@@ -266,10 +229,25 @@ class Universe(object):
         radius_factor = 1.
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 5.9e-2 # Sun
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, disk, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
+
+        tides = effects.tides.CentralBody({
+            "dissipation_factor_scale": dissipation_factor_scale,
+            "dissipation_factor": dissipation_factor,
+            "love_number": love_number,
+        })
+        rotational_flattening = effects.rotational_flattening.CentralBody({"fluid_love_number": fluid_love_number})
+        general_relativity = effects.general_relativity.CentralBody(general_relativity_implementation)
+        if wind_k_factor == 0:
+            wind = effects.wind.Disabled()
+        else:
+            wind = effects.wind.Interaction({
+                "k_factor": wind_k_factor,
+                "rotation_saturation": wind_rotation_saturation,
+            })
+        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
 
 
-    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
+    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
         if type(evolution_type) not in (Baraffe2015, NonEvolving) and not (type(evolution_type) is Baraffe1998 and mass == 0.10):
             raise Exception("Evolution type should be Baraffe2015 Baraffe1998 (mass = 0.10) or NonEvolving!")
 
@@ -285,12 +263,26 @@ class Universe(object):
         # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 2.006*3.845764e4 # -60+64
 
-        disk = NoDisk()
-
         radius_factor = 0.845649342247916
         radius = radius_factor * R_SUN
         radius_of_gyration_2 = 2.0e-1 # M-dwarf
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, disk, wind_k_factor=wind_k_factor, wind_rotation_saturation=wind_rotation_saturation)
+
+        tides = effects.tides.CentralBody({
+            "dissipation_factor_scale": dissipation_factor_scale,
+            "dissipation_factor": dissipation_factor,
+            "love_number": love_number,
+        })
+        rotational_flattening = effects.rotational_flattening.CentralBody({"fluid_love_number": fluid_love_number})
+        general_relativity = effects.general_relativity.CentralBody(general_relativity_implementation)
+        if wind_k_factor == 0:
+            wind = effects.wind.Disabled()
+        else:
+            wind = effects.wind.Interaction({
+                "k_factor": wind_k_factor,
+                "rotation_saturation": wind_rotation_saturation,
+            })
+        disk = effects.disk.Disabled()
+        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
 
 
     def add_jupiter_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
@@ -310,10 +302,18 @@ class Universe(object):
         dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
         #dissipation_factor = 2.006*3.845764e4 // Gas giant
 
-        disk = DiskInteraction(True)
-
         radius_of_gyration_2 = 2.54e-1 # Gas giant
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, disk)
+
+        tides = effects.tides.OrbitingBody({
+            "dissipation_factor_scale": dissipation_factor_scale,
+            "dissipation_factor": dissipation_factor,
+            "love_number": love_number,
+        })
+        rotational_flattening = effects.rotational_flattening.OrbitingBody({"fluid_love_number": fluid_love_number})
+        general_relativity = effects.general_relativity.OrbitingBody()
+        wind = effects.wind.Disabled()
+        disk = effects.disk.OrbitingBody()
+        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
 
 
     def add_earth_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
@@ -331,32 +331,37 @@ class Universe(object):
         k2pdelta = 2.465278e-3 # Terrestrial planets
         dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
 
-        disk = DiskInteraction(True)
-
-        self.add_particle(mass, radius, dissipation_factor, dissipation_factor_scale, radius_of_gyration_2, love_number, fluid_love_number, position, velocity, spin, evolution_type, disk)
+        tides = effects.tides.OrbitingBody({
+            "dissipation_factor_scale": dissipation_factor_scale,
+            "dissipation_factor": dissipation_factor,
+            "love_number": love_number,
+        })
+        rotational_flattening = effects.rotational_flattening.OrbitingBody({"fluid_love_number": fluid_love_number})
+        general_relativity = effects.general_relativity.OrbitingBody()
+        wind = effects.wind.Disabled()
+        disk = effects.disk.OrbitingBody()
+        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
 
 
     def populate_inertial_frame(self):
         # Compute center of mass
         center_of_mass_position = Axes(0., 0., 0.)
         center_of_mass_velocity = Axes(0., 0., 0.)
-        center_of_mass_acceleration = Axes(0., 0., 0.)
         center_of_mass_mass = 0.;
 
         for particle in self._data['particles']:
             center_of_mass_mass = get_center_of_mass_of_pair(center_of_mass_position,
                                                                     center_of_mass_velocity,
-                                                                    center_of_mass_acceleration,
                                                                     center_of_mass_mass,
                                                                     particle)
 
         for particle in self._data['particles']:
-            particle['inertial_position']['x'] = particle['position']['x'] - center_of_mass_position.x()
-            particle['inertial_position']['y'] = particle['position']['y'] - center_of_mass_position.y()
-            particle['inertial_position']['z'] = particle['position']['z'] - center_of_mass_position.z()
-            particle['inertial_velocity']['x'] = particle['velocity']['x'] - center_of_mass_velocity.x()
-            particle['inertial_velocity']['y'] = particle['velocity']['y'] - center_of_mass_velocity.y()
-            particle['inertial_velocity']['z'] = particle['velocity']['z'] - center_of_mass_velocity.z()
+            particle['inertial_position']['x'] = particle['heliocentric_position']['x'] - center_of_mass_position.x()
+            particle['inertial_position']['y'] = particle['heliocentric_position']['y'] - center_of_mass_position.y()
+            particle['inertial_position']['z'] = particle['heliocentric_position']['z'] - center_of_mass_position.z()
+            particle['inertial_velocity']['x'] = particle['heliocentric_velocity']['x'] - center_of_mass_velocity.x()
+            particle['inertial_velocity']['y'] = particle['heliocentric_velocity']['y'] - center_of_mass_velocity.y()
+            particle['inertial_velocity']['z'] = particle['heliocentric_velocity']['z'] - center_of_mass_velocity.z()
 
 
 
@@ -364,26 +369,66 @@ class Universe(object):
         for i, particle in enumerate(self._data['particles']):
             particle['id'] = i
 
-    def compute_general_relativity_factor(self):
-        central_body_mass_g = self._data['particles'][0]['mass_g']
+    def find_most_massive_particle(self):
+        max_mass_found = 0.
         for i, particle in enumerate(self._data['particles']):
-            if self._data['consider_general_relativity'] == "None" or i == 0:
+            if particle['mass'] > max_mass_found:
+                max_mass_found = particle['mass']
+                self._data['hosts']['index']['most_massive'] = i
+        if self._data['hosts']['index']['general_relativity'] != MAX_PARTICLES+1 and self._data['hosts']['index']['general_relativity'] != self._data['hosts']['index']['most_massive']:
+                raise Exception("The most massive body should be the central body for general relativity effects!")
+
+        self._data["hosts"]["most_massive"] = {
+            "all": False,
+            "tides": self._data["consider_tides"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['tides'],
+            "rotational_flattening": self._data["consider_rotational_flattening"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['rotational_flattening'],
+            "general_relativity": self._data["consider_general_relativity"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['general_relativity'],
+            "disk": self._data["consider_disk_interaction"] and self._data['hosts']['index']['most_massive'] == self._data['hosts']['index']['disk'],
+        }
+        self._data["hosts"]["most_massive"]["all"] = ((self._data["consider_tides"] and self._data["hosts"]["most_massive"]["tides"]) or not self._data["consider_tides"]) \
+            and ((self._data["consider_rotational_flattening"] and self._data["hosts"]["most_massive"]["rotational_flattening"]) or not self._data["consider_rotational_flattening"]) \
+            and ((self._data["consider_general_relativity"] and self._data["hosts"]["most_massive"]["general_relativity"]) or not self._data["consider_general_relativity"]) \
+            and ((self._data["consider_disk_interaction"] and self._data["hosts"]["most_massive"]["disk"]) or not self._data["consider_disk_interaction"])
+
+    def compute_general_relativity_factor(self):
+        most_massive_particle_index = self._data['hosts']['index']['most_massive']
+        central_body_mass_g = self._data['particles'][most_massive_particle_index]['mass_g']
+        for i, particle in enumerate(self._data['particles']):
+            if not self._data['consider_general_relativity'] \
+                    or "CentralBody" in particle['general_relativity']['effect'] \
+                    or particle['general_relativity']['effect'] == "None" \
+                    or particle['mass'] == 0:
                 # Disabled GR or Enabled GR and central body
-                particle['general_relativity_factor'] = 0.0
+                particle['general_relativity']['parameters']['internal']['factor'] = 0.0
             else:
-                particle['general_relativity_factor'] =  central_body_mass_g*particle['mass_g'] / np.power(central_body_mass_g + particle['mass_g'], 2)
+                particle['general_relativity']['parameters']['internal']['factor'] = central_body_mass_g*particle['mass_g'] / np.power(central_body_mass_g + particle['mass_g'], 2)
 
     def get(self):
         self.populate_inertial_frame()
         self.assign_id()
+        self.find_most_massive_particle()
         self.compute_general_relativity_factor()
 
         # Add dummy particles to fill the vector
         n_dummy_particles = MAX_PARTICLES - self._data['n_particles']
-        for i in xrange(n_dummy_particles):
+        for i in range(n_dummy_particles):
             self.add_dummy_particle()
 
         data = self._data.copy()
+
+        # Reset indices according to enabled effects
+        if data['consider_rotational_flattening'] and not data['consider_tides']:
+            # In practice, rotational_flattening will use tidal_host_particle_index
+            # make sure it is the correct index, even if tides are disabled
+            data['hosts']['index']['tides'] = data['hosts']['index']['rotational_flattening']
+        elif not data['consider_tides']:
+            data['hosts']['index']['tides'] = MAX_PARTICLES+1
+        if not data['consider_rotational_flattening']:
+            data['hosts']['index']['rotational_flattening'] = MAX_PARTICLES+1
+        if not data['consider_general_relativity']:
+            data['hosts']['index']['general_relativity'] = MAX_PARTICLES+1
+        if not data['consider_disk_interaction']:
+            data['hosts']['index']['disk'] = MAX_PARTICLES+1
 
         # Forget the dummy particles
         if n_dummy_particles > 0:

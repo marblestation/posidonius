@@ -315,7 +315,7 @@ fn ias15_binary_setup2() -> posidonius::Ias15 {
 
 #[test]
 fn order_whfast_jacobi() {
-    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "order_whfast_jacobi");
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "whfast_jacobi");
     let (rust_data_dirname, _python_data_dirname) = common::get_data_dirname(&test_name);
     //
     let alternative_coordinates_type = posidonius::whfast::CoordinatesType::Jacobi;
@@ -330,7 +330,7 @@ fn order_whfast_jacobi() {
 
 #[test]
 fn order_whfast_democraticheliocentric() {
-    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "order_whfast_democraticheliocentric");
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "whfast_democraticheliocentric");
     let (rust_data_dirname, _python_data_dirname) = common::get_data_dirname(&test_name);
     let alternative_coordinates_type = posidonius::whfast::CoordinatesType::DemocraticHeliocentric;
     let mut universe_integrator = whfast_star_first(alternative_coordinates_type);
@@ -344,7 +344,7 @@ fn order_whfast_democraticheliocentric() {
 
 #[test]
 fn order_whfast_whds() {
-    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "order_whfast_whds");
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "whfast_whds");
     let (rust_data_dirname, _python_data_dirname) = common::get_data_dirname(&test_name);
     let alternative_coordinates_type = posidonius::whfast::CoordinatesType::WHDS;
     let mut universe_integrator = whfast_star_first(alternative_coordinates_type);
@@ -358,7 +358,7 @@ fn order_whfast_whds() {
 
 #[test]
 fn order_leapfrog() {
-    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "order_leapfrog");
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "leapfrog");
     let (rust_data_dirname, _python_data_dirname) = common::get_data_dirname(&test_name);
     //
     let mut universe_integrator = leapfrog_star_first();
@@ -372,7 +372,7 @@ fn order_leapfrog() {
 
 #[test]
 fn order_ias15() {
-    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "order_ias15");
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "ias15");
     let (rust_data_dirname, _python_data_dirname) = common::get_data_dirname(&test_name);
     //
     let mut universe_integrator = ias15_star_first();
@@ -386,7 +386,7 @@ fn order_ias15() {
 
 #[test]
 fn order_ias15_binary() {
-    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "order_ias15_binary");
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "ias15_binary");
     let (rust_data_dirname, _python_data_dirname) = common::get_data_dirname(&test_name);
     //
     let mut universe_integrator = ias15_binary_setup1();

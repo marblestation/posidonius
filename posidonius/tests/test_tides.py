@@ -24,10 +24,10 @@ class Tides(TestBase):
         consider_tides = True
         consider_disk_interaction = False
         consider_rotational_flattening = True
-        #consider_general_relativity = False
-        consider_general_relativity = "Kidder1995" # Assumes one central massive body
-        #consider_general_relativity = "Anderson1975" # Assumes one central massive body
-        #consider_general_relativity = "Newhall1983" # Considers all bodies
+        consider_general_relativity = True
+        general_relativity_implementation = "Kidder1995" # Assumes one central massive body
+        #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
+        #general_relativity_implementation = "Newhall1983" # Considers all bodies
         universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
 
         star_mass = 0.08 # Solar masses
@@ -43,7 +43,7 @@ class Tides(TestBase):
         #star_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
         #star_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
         #star_evolution_type = posidonius.NonEvolving()
-        universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_evolution_type)
+        universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution_type)
         common.basic_configuration(universe)
 
         ############################################################################
@@ -68,10 +68,10 @@ class Tides(TestBase):
         consider_tides = False
         consider_disk_interaction = False
         consider_rotational_flattening = True
-        #consider_general_relativity = False
-        consider_general_relativity = "Kidder1995" # Assumes one central massive body
-        #consider_general_relativity = "Anderson1975" # Assumes one central massive body
-        #consider_general_relativity = "Newhall1983" # Considers all bodies
+        consider_general_relativity = True
+        general_relativity_implementation = "Kidder1995" # Assumes one central massive body
+        #general_relativity_implementation = "Anderson1975" # Assumes one central massive body
+        #general_relativity_implementation = "Newhall1983" # Considers all bodies
         universe = posidonius.Universe(initial_time, time_limit, time_step, recovery_snapshot_period, historic_snapshot_period, consider_tides, consider_rotational_flattening, consider_disk_interaction, consider_general_relativity)
 
         star_mass = 0.08 # Solar masses
@@ -87,7 +87,7 @@ class Tides(TestBase):
         #star_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
         #star_evolution_type = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
         #star_evolution_type = posidonius.NonEvolving()
-        universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, star_evolution_type)
+        universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution_type)
         common.basic_configuration(universe)
 
         ############################################################################

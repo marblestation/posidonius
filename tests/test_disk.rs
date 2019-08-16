@@ -52,16 +52,16 @@ fn enabled_disk_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn enabled_disk_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "enabled_disk");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = enabled_disk_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn enabled_disk_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "enabled_disk");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = enabled_disk_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -111,16 +111,16 @@ fn disabled_disk_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn disabled_disk_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "disabled_disk");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = disabled_disk_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn disabled_disk_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "disabled_disk");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = disabled_disk_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

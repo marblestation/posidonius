@@ -400,13 +400,13 @@ impl WHFast {
     }
 
     fn democratic_heliocentric_jump_step(&mut self, _dt: f64){
-        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star, particles_right)) = particles_right.split_first_mut() {
             let m0 = star.mass;
             let mut px = 0.;
             let mut py = 0.;
             let mut pz = 0.;
-            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((_, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
                 for (particle_alternative_coordinates, particle) in particles_alternative_coordinates_left.iter_mut().chain(particles_alternative_coordinates_right.iter_mut())
                                                                     .zip(particles_left.iter_mut().chain(particles_right.iter_mut())) {
@@ -424,13 +424,13 @@ impl WHFast {
     }
 
     fn whds_jump_step(&mut self, _dt: f64){
-        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star, particles_right)) = particles_right.split_first_mut() {
             let m0 = star.mass;
             let mut px = 0.;
             let mut py = 0.;
             let mut pz = 0.;
-            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((_, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
                 for (particle_alternative_coordinates, particle) in particles_alternative_coordinates_left.iter_mut().chain(particles_alternative_coordinates_right.iter_mut())
                                                                     .zip(particles_left.iter_mut().chain(particles_right.iter_mut())) {
@@ -461,10 +461,10 @@ impl WHFast {
     fn jacobi_interaction_step(&mut self, _dt: f64){
         self.inertial_to_jacobi_acc();
         let softening = 1e-12;
-        let (_, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (_, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star, _)) = particles_right.split_first_mut() {
             let m0 = star.mass;
-            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((_, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
                 let mut eta = m0;
                 for (i, particle_alternative_coordinates) in particles_alternative_coordinates_left.iter_mut().chain(particles_alternative_coordinates_right.iter_mut()).enumerate() {
@@ -487,9 +487,9 @@ impl WHFast {
     }
 
     fn democratic_heliocentric_interaction_step(&mut self, _dt: f64){
-        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((_, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
-            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((_, particles_right)) = particles_right.split_first_mut() {
 
                 for (particle_alternative_coordinates, particle) in particles_alternative_coordinates_left.iter_mut().chain(particles_alternative_coordinates_right.iter_mut())
@@ -503,9 +503,9 @@ impl WHFast {
     }
 
     fn whds_interaction_step(&mut self, _dt: f64){
-        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((_, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
-            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((star, particles_right)) = particles_right.split_first_mut() {
                 let m0 = star.mass;
                 for (particle_alternative_coordinates, particle) in particles_alternative_coordinates_left.iter_mut().chain(particles_alternative_coordinates_right.iter_mut())
@@ -526,7 +526,7 @@ impl WHFast {
             CoordinatesType::DemocraticHeliocentric => self.democratic_heliocentric_kepler_steps(time_step),
             CoordinatesType::WHDS => self.whds_kepler_steps(time_step),
         };
-        let (_, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (_, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star_alternative_coordinates, _)) = particles_alternative_coordinates_right.split_first_mut() {
             star_alternative_coordinates.position.x += time_step*star_alternative_coordinates.velocity.x;
             star_alternative_coordinates.position.y += time_step*star_alternative_coordinates.velocity.y;
@@ -535,9 +535,9 @@ impl WHFast {
     }
 
     fn jacobi_kepler_steps(&mut self, time_step: f64){
-        let mut star_planets_mass_g = self.universe.particles[self.universe.most_massive_particle_index].mass_g;
+        let mut star_planets_mass_g = self.universe.particles[self.universe.hosts.index.most_massive].mass_g;
         for i in 0..self.universe.n_particles {
-            if i == self.universe.most_massive_particle_index {
+            if i == self.universe.hosts.index.most_massive {
                 continue;
             }
             star_planets_mass_g += self.particles_alternative_coordinates[i].mass_g;
@@ -546,9 +546,9 @@ impl WHFast {
     }
 
     fn democratic_heliocentric_kepler_steps(&mut self, time_step: f64){
-        let star_mass_g = self.universe.particles[self.universe.most_massive_particle_index].mass_g;
+        let star_mass_g = self.universe.particles[self.universe.hosts.index.most_massive].mass_g;
         for i in 0..self.universe.n_particles {
-            if i == self.universe.most_massive_particle_index {
+            if i == self.universe.hosts.index.most_massive {
                 continue;
             }
             self.kepler_individual_step(i, star_mass_g, time_step);
@@ -556,9 +556,9 @@ impl WHFast {
     }
 
     fn whds_kepler_steps(&mut self, time_step: f64){
-        let star_mass_g = self.universe.particles[self.universe.most_massive_particle_index].mass_g;
+        let star_mass_g = self.universe.particles[self.universe.hosts.index.most_massive].mass_g;
         for i in 0..self.universe.n_particles {
-            if i == self.universe.most_massive_particle_index {
+            if i == self.universe.hosts.index.most_massive {
                 continue;
             }
             let star_planet_mass_g = star_mass_g + self.particles_alternative_coordinates[i].mass_g;
@@ -782,7 +782,7 @@ impl WHFast {
     }
 
     fn inertial_to_jacobi_posvel(&mut self){
-        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star, particles_right)) = particles_right.split_first_mut() {
             let m0 = star.mass;
             let mut eta = m0;
@@ -792,7 +792,7 @@ impl WHFast {
             let mut s_vx = eta * star.inertial_velocity.x;
             let mut s_vy = eta * star.inertial_velocity.y;
             let mut s_vz = eta * star.inertial_velocity.z;
-            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((star_alternative_coordinates, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
                 for (particle_alternative_coordinates, particle) in particles_alternative_coordinates_left.iter_mut().chain(particles_alternative_coordinates_right.iter_mut())
                                                                     .zip(particles_left.iter_mut().chain(particles_right.iter_mut())) {
@@ -828,9 +828,9 @@ impl WHFast {
     }
 
     fn inertial_to_jacobi_acc(&mut self){
-        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star, particles_right)) = particles_right.split_first_mut() {
-            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((star_alternative_coordinates, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
                 let mut eta = star.mass;
                 let mut s_ax = eta * star.inertial_acceleration.x;
@@ -866,9 +866,9 @@ impl WHFast {
     }
 
     fn inertial_to_whds_and_democratic_heliocentric_posvel(&mut self){
-        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star, particles_right)) = particles_right.split_first_mut() {
-            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((star_alternative_coordinates, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
                 star_alternative_coordinates.position.x = 0.;
                 star_alternative_coordinates.position.y = 0.;
@@ -927,7 +927,7 @@ impl WHFast {
     }
 
     fn jacobi_to_inertial_posvel(&mut self) {
-        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star_alternative_coordinates, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
             let m0 = star_alternative_coordinates.mass;
             let mut eta = m0;
@@ -937,7 +937,7 @@ impl WHFast {
             let mut s_vx = eta * star_alternative_coordinates.velocity.x;
             let mut s_vy = eta * star_alternative_coordinates.velocity.y;
             let mut s_vz = eta * star_alternative_coordinates.velocity.z;
-            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((star, particles_right)) = particles_right.split_first_mut() {
                 for (particle_alternative_coordinates, particle) in particles_alternative_coordinates_left.iter().chain(particles_alternative_coordinates_right.iter()).rev()
                                                                     .zip(particles_left.iter_mut().chain(particles_right.iter_mut()).rev()) {
@@ -984,9 +984,9 @@ impl WHFast {
 
     fn whds_and_democratic_heliocentric_to_inertial_posvel(&mut self) {
         self.whds_and_democratic_heliocentric_to_inertial_pos();
-        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star_alternative_coordinates, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
-            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((star, particles_right)) = particles_right.split_first_mut() {
                 let m0 = star.mass;
                 let mut new_star_velocity = star_alternative_coordinates.velocity.clone();
@@ -1021,9 +1021,9 @@ impl WHFast {
     }
 
     fn whds_and_democratic_heliocentric_to_inertial_pos(&mut self) {
-        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+        let (particles_alternative_coordinates_left, particles_alternative_coordinates_right) = self.particles_alternative_coordinates[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
         if let Some((star_alternative_coordinates, particles_alternative_coordinates_right)) = particles_alternative_coordinates_right.split_first_mut() {
-            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.most_massive_particle_index);
+            let (particles_left, particles_right) = self.universe.particles[..self.universe.n_particles].split_at_mut(self.universe.hosts.index.most_massive);
             if let Some((star, particles_right)) = particles_right.split_first_mut() {
                 let mtot = star_alternative_coordinates.mass;
                 let mut new_star_position = star_alternative_coordinates.position; // Copy

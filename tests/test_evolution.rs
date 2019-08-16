@@ -52,16 +52,16 @@ fn solar_like_baraffe1998_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn solar_like_baraffe1998_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_baraffe1998");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = solar_like_baraffe1998_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn solar_like_baraffe1998_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_baraffe1998");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = solar_like_baraffe1998_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -110,16 +110,16 @@ fn solar_like_baraffe2015_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn solar_like_baraffe2015_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_baraffe2015");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = solar_like_baraffe2015_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn solar_like_baraffe2015_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_baraffe2015");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = solar_like_baraffe2015_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -169,16 +169,16 @@ fn solar_like_bolmontmathis2016_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn solar_like_bolmontmathis2016_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_bolmontmathis2016");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = solar_like_bolmontmathis2016_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn solar_like_bolmontmathis2016_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_bolmontmathis2016");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = solar_like_bolmontmathis2016_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -228,16 +228,16 @@ fn solar_like_galletbolmont2017_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn solar_like_galletbolmont2017_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_galletbolmont2017");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = solar_like_galletbolmont2017_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn solar_like_galletbolmont2017_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_galletbolmont2017");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = solar_like_galletbolmont2017_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -286,16 +286,16 @@ fn solar_like_non_evolving_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn solar_like_non_evolving_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_non_evolving");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = solar_like_non_evolving_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn solar_like_non_evolving_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "solar_like_non_evolving");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = solar_like_non_evolving_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -344,16 +344,16 @@ fn brown_dwarf_leconte2011_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn brown_dwarf_leconte2011_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "brown_dwarf_leconte2011");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = brown_dwarf_leconte2011_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn brown_dwarf_leconte2011_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "brown_dwarf_leconte2011");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = brown_dwarf_leconte2011_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
     
@@ -402,16 +402,16 @@ fn brown_dwarf_non_evolving_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn brown_dwarf_non_evolving_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "brown_dwarf_non_evolving");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = brown_dwarf_non_evolving_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn brown_dwarf_non_evolving_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "brown_dwarf_non_evolving");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = brown_dwarf_non_evolving_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -460,16 +460,16 @@ fn m_dwarf_baraffe1998_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn m_dwarf_baraffe1998_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "m_dwarf_baraffe1998");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = m_dwarf_baraffe1998_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn m_dwarf_baraffe1998_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "m_dwarf_baraffe1998");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = m_dwarf_baraffe1998_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -518,16 +518,16 @@ fn m_dwarf_baraffe2015_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn m_dwarf_baraffe2015_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "m_dwarf_baraffe2015");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = m_dwarf_baraffe2015_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn m_dwarf_baraffe2015_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "m_dwarf_baraffe2015");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = m_dwarf_baraffe2015_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -576,16 +576,16 @@ fn m_dwarf_non_evolving_rust() {
     common::universe::assert_stored_positions(&universe_integrator.universe, &rust_data_dirname);
 }
 
-//#[test]
-//fn m_dwarf_non_evolving_rust_vs_python() {
-    //let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "m_dwarf_non_evolving");
-    //let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
-    //let mut universe_integrator = m_dwarf_non_evolving_case();
-    //common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
-    //common::universe::iterate(&mut universe_integrator);
-    //let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    //common::universe::assert(&universe_integrator.universe, &parallel_universe);
-//}
+#[test]
+fn m_dwarf_non_evolving_rust_vs_python() {
+    let test_name = format!("{}-{}", Path::new(file!()).file_stem().unwrap().to_str().unwrap(), "m_dwarf_non_evolving");
+    let (rust_data_dirname, python_data_dirname) = common::get_data_dirname(&test_name);
+    let mut universe_integrator = m_dwarf_non_evolving_case();
+    common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
+    common::universe::iterate(&mut universe_integrator);
+    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
+    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

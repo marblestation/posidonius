@@ -113,9 +113,9 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                     );
         bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
 
-        if particle.id != universe.most_massive_particle_index {
+        if particle.id != universe.hosts.index.most_massive {
             //// Only for planets
-            let star_id = universe.most_massive_particle_index;
+            let star_id = universe.hosts.index.most_massive;
             let (semimajor_axis, perihelion_distance, eccentricity, inclination, longitude_of_perihelion, longitude_of_ascending_node, mean_anomaly, orbital_period) = calculate_keplerian_orbital_elements(universe.particles[star_id].mass_g+particle.mass_g, particle.heliocentric_position, particle.heliocentric_velocity);
             // Control once in a while (when historic point is written) that the
             // time step is small enough to correctly integrate an orbit
@@ -169,7 +169,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         particle.mass,                          // Msun
                         particle.radius,                        // Rsun
                         particle.radius_of_gyration_2,
-                        particle.tides.parameters.input.scaled_dissipation_factor,
+                        particle.tides.parameters.internal.scaled_dissipation_factor,
                         particle.tides.parameters.input.love_number,
                         particle.tides.parameters.internal.lag_angle,
                     );
