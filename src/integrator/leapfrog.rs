@@ -4,6 +4,7 @@ use std::fs::File;
 use super::Integrator;
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
+use super::super::particles::WindEffect;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
 use std::path::Path;
@@ -127,7 +128,7 @@ impl Integrator for LeapFrog {
         let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
-            self.inertial_to_heliocentric_posvel();
+            self.universe.inertial_to_heliocentric();
             if self.universe.consider_tides {
                 self.universe.calculate_denergy_dt();
             }
@@ -144,7 +145,7 @@ impl Integrator for LeapFrog {
         let ignore_gravity_terms = IgnoreGravityTerms::None;
         let ignored_gravity_terms = ignore_gravity_terms;
 
-        self.inertial_to_heliocentric_posvel();
+        self.universe.inertial_to_heliocentric();
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dangular_momentum_dt_per_moment_of_inertia = true;
@@ -157,7 +158,7 @@ impl Integrator for LeapFrog {
 
         // Calculate accelerations.
         self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
-        self.inertial_to_heliocentric_posvel();
+        self.universe.inertial_to_heliocentric();
 
         // Calculate non-gravity accelerations.
         let evolution = true;
@@ -210,11 +211,11 @@ impl LeapFrog {
                 particle.spin.y = particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
                 particle.spin.z = particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             }
-            if particle.wind_factor != 0. {
+            if particle.wind.effect != WindEffect::None && particle.wind.parameters.output.factor != 0. {
                 // TODO: Verify wind factor
-                particle.spin.x += self.half_time_step * particle.wind_factor * particle.spin.x;
-                particle.spin.y += self.half_time_step * particle.wind_factor * particle.spin.y;
-                particle.spin.z += self.half_time_step * particle.wind_factor * particle.spin.z;
+                particle.spin.x += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.x;
+                particle.spin.y += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.y;
+                particle.spin.z += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.z;
             }
         }
         self.current_time += self.half_time_step;
@@ -239,33 +240,14 @@ impl LeapFrog {
                 particle.spin.y = particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
                 particle.spin.z = particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             }
-            if particle.wind_factor != 0. {
+            if particle.wind.effect != WindEffect::None && particle.wind.parameters.output.factor != 0. {
                 // TODO: Verify wind factor
-                particle.spin.x += self.half_time_step * particle.wind_factor * particle.spin.x;
-                particle.spin.y += self.half_time_step * particle.wind_factor * particle.spin.y;
-                particle.spin.z += self.half_time_step * particle.wind_factor * particle.spin.z;
+                particle.spin.x += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.x;
+                particle.spin.y += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.y;
+                particle.spin.z += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.z;
             }
         }
         self.current_time += self.half_time_step;
-    }
-
-    fn inertial_to_heliocentric_posvel(&mut self) {
-        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
-            for particle in particles.iter_mut() {
-                particle.position.x = particle.inertial_position.x - star.inertial_position.x;
-                particle.position.y = particle.inertial_position.y - star.inertial_position.y;
-                particle.position.z = particle.inertial_position.z - star.inertial_position.z;
-                particle.velocity.x = particle.inertial_velocity.x - star.inertial_velocity.x;
-                particle.velocity.y = particle.inertial_velocity.y - star.inertial_velocity.y;
-                particle.velocity.z = particle.inertial_velocity.z - star.inertial_velocity.z;
-            }
-            star.position.x = 0.;
-            star.position.y = 0.;
-            star.position.z = 0.;
-            star.velocity.x = 0.;
-            star.velocity.y = 0.;
-            star.velocity.z = 0.;
-        }
     }
 
 }

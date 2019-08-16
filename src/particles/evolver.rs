@@ -534,12 +534,12 @@ pub fn calculate_particles_evolving_quantities(current_time: f64, particles: &mu
         ////////////////////////////////////////////////////////////////////
         // Love number
         ////////////////////////////////////////////////////////////////////
-        particle.love_number = evolver.love_number(current_time, particle.love_number);
+        particle.tides.parameters.input.love_number = evolver.love_number(current_time, particle.tides.parameters.input.love_number);
 
         ////////////////////////////////////////////////////////////////////
         // Lag angle
         ////////////////////////////////////////////////////////////////////
-        particle.lag_angle = match evolver.evolution_type {
+        particle.tides.parameters.internal.lag_angle = match evolver.evolution_type {
             EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
                     let inverse_tidal_q_factor = evolver.inverse_tidal_q_factor(current_time, 0.);
                     let epsilon_squared = particle.norm_spin_vector_2/SUN_DYN_FREQ;

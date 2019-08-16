@@ -101,22 +101,22 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         current_time,                           // days
                         time_step,                              // days
                         (particle.id as i32),
-                        particle.position.x,                    // AU
-                        particle.position.y,
-                        particle.position.z,
+                        particle.heliocentric_position.x,       // AU
+                        particle.heliocentric_position.y,
+                        particle.heliocentric_position.z,
                         particle.spin.x,                        // AU/days
                         particle.spin.y,
                         particle.spin.z,
-                        particle.velocity.x,                    // AU/days
-                        particle.velocity.y,
-                        particle.velocity.z,
+                        particle.heliocentric_velocity.x,       // AU/days
+                        particle.heliocentric_velocity.y,
+                        particle.heliocentric_velocity.z,
                     );
         bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
 
-        if particle.id > 0 {
+        if particle.id != universe.most_massive_particle_index {
             //// Only for planets
-            let star_id = 0;
-            let (semimajor_axis, perihelion_distance, eccentricity, inclination, longitude_of_perihelion, longitude_of_ascending_node, mean_anomaly, orbital_period) = calculate_keplerian_orbital_elements(universe.particles[star_id].mass_g+particle.mass_g, particle.position, particle.velocity);
+            let star_id = universe.most_massive_particle_index;
+            let (semimajor_axis, perihelion_distance, eccentricity, inclination, longitude_of_perihelion, longitude_of_ascending_node, mean_anomaly, orbital_period) = calculate_keplerian_orbital_elements(universe.particles[star_id].mass_g+particle.mass_g, particle.heliocentric_position, particle.heliocentric_velocity);
             // Control once in a while (when historic point is written) that the
             // time step is small enough to correctly integrate an orbit
             if orbital_period <= time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO {
@@ -124,9 +124,9 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                 panic!("[PANIC {} UTC] Time step is too large! Particle {} has an orbital period around particle {} of {:0.3} days which is less than the recommended limit ({:0.3} days) based on the current time step ({:0.3} days).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), particle.id, star_id, orbital_period, time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO, time_step);
             }
             // Calculation of orbital angular momentum (without mass and in AU^2/day)
-            let horb_x = particle.position.y * particle.velocity.z - particle.position.z * particle.velocity.y;
-            let horb_y = particle.position.z * particle.velocity.x - particle.position.x * particle.velocity.z;
-            let horb_z = particle.position.x * particle.velocity.y - particle.position.y * particle.velocity.x;
+            let horb_x = particle.heliocentric_position.y * particle.heliocentric_velocity.z - particle.heliocentric_position.z * particle.heliocentric_velocity.y;
+            let horb_y = particle.heliocentric_position.z * particle.heliocentric_velocity.x - particle.heliocentric_position.x * particle.heliocentric_velocity.z;
+            let horb_z = particle.heliocentric_position.x * particle.heliocentric_velocity.y - particle.heliocentric_position.y * particle.heliocentric_velocity.x;
             let horbn = (horb_x.powf(2.) + horb_y.powf(2.) + horb_z.powf(2.)).sqrt();
             let output = (
                             semimajor_axis,                     // AU
@@ -140,8 +140,8 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                             horb_y,
                             horb_z,
                             horbn,
-                            particle.denergy_dt,                // Msun.AU^2.day^-3
-                            particle.migration_timescale,
+                            particle.tides.parameters.internal.denergy_dt,                // Msun.AU^2.day^-3
+                            particle.disk.parameters.internal.migration_timescale,
                         );
             bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
         } else {
@@ -169,9 +169,9 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         particle.mass,                          // Msun
                         particle.radius,                        // Rsun
                         particle.radius_of_gyration_2,
-                        particle.scaled_dissipation_factor,
-                        particle.love_number,
-                        particle.lag_angle,
+                        particle.tides.parameters.input.scaled_dissipation_factor,
+                        particle.tides.parameters.input.love_number,
+                        particle.tides.parameters.internal.lag_angle,
                     );
         bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
 

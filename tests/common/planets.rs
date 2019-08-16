@@ -1,5 +1,6 @@
 extern crate posidonius;
 
+#[allow(dead_code)]
 pub fn basic_configuration(star: &posidonius::Particle) -> Vec<posidonius::Particle> {
     let planet1_mass_factor: f64 = 1.0;
     let planet1_mass: f64 = planet1_mass_factor * posidonius::constants::M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
@@ -21,6 +22,7 @@ pub fn basic_configuration(star: &posidonius::Particle) -> Vec<posidonius::Parti
     return vec![planet1, planet2, planet3];
 }
 
+#[allow(dead_code)]
 pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolution_type: posidonius::EvolutionType, semimajor_axis: f64) -> posidonius::Particle {
     match planet_evolution_type {
         posidonius::EvolutionType::NonEvolving => { },
@@ -72,7 +74,6 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
 
     let planet_position = posidonius::Axes{x:x, y:y, z:z};
     let planet_velocity = posidonius::Axes{x:vx, y:vy, z:vz};
-    let planet_acceleration = posidonius::Axes{x:0., y:0., z:0.};
 
     ////// Initialization of planetary spin
     let planet_obliquity: f64 = 11.459156 * posidonius::constants::DEG2RAD; // 0.2 rad
@@ -82,18 +83,22 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
     let planet_keplerian_orbital_elements = posidonius::tools::calculate_keplerian_orbital_elements(posidonius::constants::G*star.mass*planet_mass, planet_position, planet_velocity);
     let planet_inclination = planet_keplerian_orbital_elements.3;
     let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity);
-    // Disk
-    let planet_disk = posidonius::Disk::Interaction(true);
 
+    let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody, planet_dissipation_factor, planet_dissipation_factor_scale, planet_love_number);
+    let planet_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody, planet_fluid_love_number);
+    let planet_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;
-    let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
-                                            planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
-                                            planet_position, planet_velocity, planet_acceleration, planet_spin, 
-                                            planet_evolution_type, planet_disk, planet_wind_k_factor, planet_wind_rotation_saturation);
+    let planet_wind = posidonius::Wind::new(posidonius::WindEffect::None, planet_wind_k_factor, planet_wind_rotation_saturation);
+    let planet_disk = posidonius::Disk::new(posidonius::DiskEffect::OrbitingBody);
+    let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_radius_of_gyration_2,
+                                           planet_position, planet_velocity, planet_spin,
+                                           planet_tides, planet_rotational_flattening, planet_general_relativity,
+                                           planet_wind, planet_disk, planet_evolution_type);
     planet
 }
 
+#[allow(dead_code)]
 pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolution_type: posidonius::EvolutionType, semimajor_axis: f64) -> posidonius::Particle {
     match planet_evolution_type {
         posidonius::EvolutionType::LeconteChabrier2013(_) => { },
@@ -141,7 +146,6 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
 
     let planet_position = posidonius::Axes{x:x, y:y, z:z};
     let planet_velocity = posidonius::Axes{x:vx, y:vy, z:vz};
-    let planet_acceleration = posidonius::Axes{x:0., y:0., z:0.};
     
     ////// Initialization of planetary spin
     let planet_obliquity: f64 = 11.459156 * posidonius::constants::DEG2RAD; // 0.2 rad
@@ -151,14 +155,17 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
     let planet_keplerian_orbital_elements = posidonius::tools::calculate_keplerian_orbital_elements(posidonius::constants::G*star.mass*planet_mass, planet_position, planet_velocity);
     let planet_inclination = planet_keplerian_orbital_elements.3;
     let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity);
-    // Disk
-    let planet_disk = posidonius::Disk::Interaction(true);
 
+    let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody, planet_dissipation_factor, planet_dissipation_factor_scale, planet_love_number);
+    let planet_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody, planet_fluid_love_number);
+    let planet_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;
-    let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_dissipation_factor, planet_dissipation_factor_scale, 
-                                            planet_radius_of_gyration_2, planet_love_number, planet_fluid_love_number,
-                                            planet_position, planet_velocity, planet_acceleration, planet_spin, 
-                                            planet_evolution_type, planet_disk, planet_wind_k_factor, planet_wind_rotation_saturation);
+    let planet_wind = posidonius::Wind::new(posidonius::WindEffect::None, planet_wind_k_factor, planet_wind_rotation_saturation);
+    let planet_disk = posidonius::Disk::new(posidonius::DiskEffect::OrbitingBody);
+    let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_radius_of_gyration_2,
+                                           planet_position, planet_velocity, planet_spin,
+                                           planet_tides, planet_rotational_flattening, planet_general_relativity,
+                                           planet_wind, planet_disk, planet_evolution_type);
     planet
 }

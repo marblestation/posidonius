@@ -2,6 +2,7 @@ pub mod stars;
 pub mod planets;
 pub mod universe;
 
+#[allow(dead_code)]
 pub fn simulation_properties() -> (f64, f64, f64, f64, f64) {
     let time_step: f64 = 0.08; // in days
     let time_limit: f64 = 0.08; // days
@@ -11,6 +12,7 @@ pub fn simulation_properties() -> (f64, f64, f64, f64, f64) {
     (time_step, time_limit, initial_time, historic_snapshot_period, recovery_snapshot_period)
 }
 
+#[allow(dead_code)]
 pub fn get_data_dirname(test_name: &String) -> (String, String) {
     let rust_data_dirname = format!("tests/data/{0}/", test_name);
     let python_data_dirname = format!("posidonius/tests/data/{0}/", test_name);

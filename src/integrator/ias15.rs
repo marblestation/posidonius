@@ -5,7 +5,8 @@ use super::Integrator;
 use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR, MAX_PARTICLES};
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
-use super::super::particles::ConsiderGeneralRelativity;
+use super::super::particles::GeneralRelativityImplementation;
+use super::super::particles::WindEffect;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
 use std::path::Path;
@@ -172,7 +173,7 @@ impl Integrator for Ias15 {
         let historic_snapshot_time_trigger = self.last_historic_snapshot_time + self.historic_snapshot_period <= self.current_time;
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
-            self.inertial_to_heliocentric_posvel();
+            self.universe.inertial_to_heliocentric();
             if self.universe.consider_tides {
                 self.universe.calculate_denergy_dt();
             }
@@ -190,7 +191,7 @@ impl Integrator for Ias15 {
         let ignore_gravity_terms = IgnoreGravityTerms::None;
         let ignored_gravity_terms = ignore_gravity_terms;
         self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
-        self.inertial_to_heliocentric_posvel();
+        self.universe.inertial_to_heliocentric();
         // Calculate non-gravity accelerations.
         let evolution = true;
         let dangular_momentum_dt_per_moment_of_inertia = true;
@@ -270,7 +271,7 @@ impl Ias15 {
         let d : [f64; 21] = [0.0562625605369221464656522, 0.0031654757181708292499905, 0.2365032522738145114532321, 0.0001780977692217433881125, 0.0457929855060279188954539, 0.5891279693869841488271399, 0.0000100202365223291272096, 0.0084318571535257015445000, 0.2535340690545692665214616, 1.1362815957175395318285885, 0.0000005637641639318207610, 0.0015297840025004658189490, 0.0978342365324440053653648, 0.8752546646840910912297246, 1.8704917729329500633517991, 0.0000000317188154017613665, 0.0002762930909826476593130, 0.0360285539837364596003871, 0.5767330002770787313544596, 2.2485887607691597933926895, 2.7558127197720458314421588];
 
         let mut consider_dangular_momentum_dt_from_general_relativity = false;
-        if let ConsiderGeneralRelativity::Kidder1995 = self.universe.consider_general_relativity {
+        if self.universe.consider_general_relativity && self.universe.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995 {
             consider_dangular_momentum_dt_from_general_relativity = true;
         }
         let integrate_spin = self.universe.consider_tides || self.universe.consider_rotational_flattening
@@ -449,7 +450,7 @@ impl Ias15 {
                     let ignore_gravity_terms = IgnoreGravityTerms::None;
                     let ignored_gravity_terms = ignore_gravity_terms;
                     self.universe.gravity_calculate_acceleration(ignore_gravity_terms);
-                    self.inertial_to_heliocentric_posvel();
+                    self.universe.inertial_to_heliocentric();
                     // Calculate non-gravity accelerations.
                     let evolution = true;
                     let dangular_momentum_dt_per_moment_of_inertia = true;
@@ -1063,11 +1064,11 @@ impl Ias15 {
                     particle.spin.z = self.spin0[3*k+2];
                 } 
 
-                if particle.wind_factor != 0. {
+                if particle.wind.effect != WindEffect::None && particle.wind.parameters.output.factor != 0. {
                     // TODO: Verify wind factor
-                    particle.spin.x += dt_done * particle.wind_factor * particle.spin.x;
-                    particle.spin.y += dt_done * particle.wind_factor * particle.spin.y;
-                    particle.spin.z += dt_done * particle.wind_factor * particle.spin.z;
+                    particle.spin.x += dt_done * particle.wind.parameters.output.factor * particle.spin.x;
+                    particle.spin.y += dt_done * particle.wind.parameters.output.factor * particle.spin.y;
+                    particle.spin.z += dt_done * particle.wind.parameters.output.factor * particle.spin.z;
                 }
 
             }
@@ -1088,7 +1089,7 @@ impl Ias15 {
 
     fn predict_next_step(&mut self, ratio: f64) {
         let mut consider_dangular_momentum_dt_from_general_relativity = false;
-        if let ConsiderGeneralRelativity::Kidder1995 = self.universe.consider_general_relativity {
+        if self.universe.consider_general_relativity && self.universe.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995 {
             consider_dangular_momentum_dt_from_general_relativity = true;
         }
         let integrate_spin = self.universe.consider_tides || self.universe.consider_rotational_flattening
@@ -1194,25 +1195,6 @@ impl Ias15 {
                     self.sb[6][k] = self.se[6][k] + sbe6;
                 }
             }
-        }
-    }
-
-    fn inertial_to_heliocentric_posvel(&mut self) {
-        if let Some((star, particles)) = self.universe.particles[..self.universe.n_particles].split_first_mut() {
-            for particle in particles.iter_mut() {
-                particle.position.x = particle.inertial_position.x - star.inertial_position.x;
-                particle.position.y = particle.inertial_position.y - star.inertial_position.y;
-                particle.position.z = particle.inertial_position.z - star.inertial_position.z;
-                particle.velocity.x = particle.inertial_velocity.x - star.inertial_velocity.x;
-                particle.velocity.y = particle.inertial_velocity.y - star.inertial_velocity.y;
-                particle.velocity.z = particle.inertial_velocity.z - star.inertial_velocity.z;
-            }
-            star.position.x = 0.;
-            star.position.y = 0.;
-            star.position.z = 0.;
-            star.velocity.x = 0.;
-            star.velocity.y = 0.;
-            star.velocity.z = 0.;
         }
     }
 

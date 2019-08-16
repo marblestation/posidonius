@@ -10,12 +10,21 @@ mod general_relativity;
 mod common;
 
 pub use self::particle::Particle;
-pub use self::disk::Disk;
-pub use self::disk::DiskProperties;
 pub use self::universe::Universe;
 pub use self::universe::IgnoreGravityTerms;
-pub use self::universe::ConsiderGeneralRelativity;
 pub use self::axes::Axes;
 pub use self::evolver::Evolver;
+pub use self::tides::Tides;
+pub use self::tides::TidesEffect;
+pub use self::flattening::RotationalFlattening;
+pub use self::flattening::RotationalFlatteningEffect;
+pub use self::general_relativity::GeneralRelativity;
+pub use self::general_relativity::GeneralRelativityEffect;
+pub use self::general_relativity::GeneralRelativityImplementation;
+pub use self::wind::Wind;
+pub use self::wind::WindEffect;
+pub use self::disk::Disk;
+pub use self::disk::DiskEffect;
+pub use self::disk::DiskProperties;
 pub use self::evolver::EvolutionType;
 
