@@ -27,7 +27,7 @@ pub struct WindParticleParameters {
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum WindEffect {
     Interaction,
-    None,
+    Disabled,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
@@ -58,7 +58,7 @@ impl Wind {
 
 pub fn calculate_wind_factor(particles: &mut [Particle]) {
     for particle in particles.iter_mut() {
-        if particle.wind.effect == WindEffect::Interaction && particle.wind.parameters.input.k_factor != 0. {
+        if particle.wind.effect == WindEffect::Interaction {
             let threshold = (particle.norm_spin_vector_2).sqrt();
             let factor = - 1. / (particle.moment_of_inertia);
             if threshold >= particle.wind.parameters.input.rotation_saturation {

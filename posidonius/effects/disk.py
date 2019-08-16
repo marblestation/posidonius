@@ -3,7 +3,7 @@ from posidonius.particles.axes import Axes
 class Disk(object):
     def __init__(self, variant, properties=None):
         self._data = {
-            "effect": "None",
+            "effect": "Disabled",
             "parameters": {
                 "internal": {
                     "distance": 0.0,
@@ -26,7 +26,7 @@ class Disk(object):
             self._data["effect"] = {
                 variant: properties,
             }
-        elif variant in ("OrbitingBody", "None", ):
+        elif variant in ("OrbitingBody", "Disabled", ):
             self._data["effect"] = variant
         else:
             raise Exception("Unknown variant '{}'".format(variant))
@@ -39,7 +39,7 @@ class Disk(object):
 
 class Disabled(Disk):
     def __init__(self):
-        super(Disabled, self).__init__("None", properties=None)
+        super(Disabled, self).__init__("Disabled", properties=None)
 
 class OrbitingBody(Disk):
     def __init__(self):

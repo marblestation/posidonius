@@ -37,7 +37,7 @@ pub fn solar_like(star_mass: f64, star_evolution_type: posidonius::EvolutionType
     let star_wind_k_factor = 4.0e-18;
     let star_wind_rotation_saturation = 1.7592918860102842;
     let star_wind = posidonius::Wind::new(posidonius::WindEffect::Interaction, star_wind_k_factor, star_wind_rotation_saturation);
-    let star_disk = posidonius::Disk::new(posidonius::DiskEffect::None);
+    let star_disk = posidonius::Disk::new(posidonius::DiskEffect::Disabled);
     let star = posidonius::Particle::new(star_mass, star_radius, star_radius_of_gyration_2,
                                            star_position, star_velocity, star_spin,
                                            star_tides, star_rotational_flattening, star_general_relativity,
@@ -183,8 +183,8 @@ pub fn brown_dwarf(star_mass: f64, star_evolution_type: posidonius::EvolutionTyp
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     let star_wind_k_factor = 0.;
     let star_wind_rotation_saturation = 0.;
-    let star_wind = posidonius::Wind::new(posidonius::WindEffect::None, star_wind_k_factor, star_wind_rotation_saturation);
-    let star_disk = posidonius::Disk::new(posidonius::DiskEffect::None);
+    let star_wind = posidonius::Wind::new(posidonius::WindEffect::Disabled, star_wind_k_factor, star_wind_rotation_saturation);
+    let star_disk = posidonius::Disk::new(posidonius::DiskEffect::Disabled);
     let star = posidonius::Particle::new(star_mass, star_radius, star_radius_of_gyration_2,
                                            star_position, star_velocity, star_spin,
                                            star_tides, star_rotational_flattening, star_general_relativity,
@@ -224,8 +224,8 @@ pub fn m_dwarf(star_mass: f64, star_evolution_type: posidonius::EvolutionType, g
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     let star_wind_k_factor = 0.;
     let star_wind_rotation_saturation = 0.;
-    let star_wind = posidonius::Wind::new(posidonius::WindEffect::None, star_wind_k_factor, star_wind_rotation_saturation);
-    let star_disk = posidonius::Disk::new(posidonius::DiskEffect::None);
+    let star_wind = posidonius::Wind::new(posidonius::WindEffect::Disabled, star_wind_k_factor, star_wind_rotation_saturation);
+    let star_disk = posidonius::Disk::new(posidonius::DiskEffect::Disabled);
     let star = posidonius::Particle::new(star_mass, star_radius, star_radius_of_gyration_2,
                                            star_position, star_velocity, star_spin,
                                            star_tides, star_rotational_flattening, star_general_relativity,
@@ -264,7 +264,7 @@ pub fn solar_like_primary(primary_star_mass: f64, primary_star_evolution_type: p
     let primary_star_wind_k_factor = 4.0e-18;
     let primary_star_wind_rotation_saturation = 1.7592918860102842;
     let primary_star_wind = posidonius::Wind::new(posidonius::WindEffect::Interaction, primary_star_wind_k_factor, primary_star_wind_rotation_saturation);
-    let primary_star_disk = posidonius::Disk::new(posidonius::DiskEffect::None);
+    let primary_star_disk = posidonius::Disk::new(posidonius::DiskEffect::Disabled);
     let primary_star = posidonius::Particle::new(primary_star_mass, primary_star_radius, primary_star_radius_of_gyration_2,
                                            primary_star_position, primary_star_velocity, primary_star_spin,
                                            primary_star_tides, primary_star_rotational_flattening, primary_star_general_relativity,
@@ -317,7 +317,7 @@ pub fn solar_like_secondary(primary_star: &posidonius::Particle, secondary_star_
     let secondary_star_wind_k_factor = 4.0e-18;
     let secondary_star_wind_rotation_saturation = 1.7592918860102842;
     let secondary_star_wind = posidonius::Wind::new(posidonius::WindEffect::Interaction, secondary_star_wind_k_factor, secondary_star_wind_rotation_saturation);
-    let secondary_star_disk = posidonius::Disk::new(posidonius::DiskEffect::None);
+    let secondary_star_disk = posidonius::Disk::new(posidonius::DiskEffect::Disabled);
     let secondary_star = posidonius::Particle::new(secondary_star_mass, secondary_star_radius, secondary_star_radius_of_gyration_2,
                                            secondary_star_position, secondary_star_velocity, secondary_star_spin,
                                            secondary_star_tides, secondary_star_rotational_flattening, secondary_star_general_relativity,

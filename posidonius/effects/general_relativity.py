@@ -3,7 +3,7 @@ from posidonius.particles.axes import Axes
 class GeneralRelativity(object):
     def __init__(self, variant, implementation=None):
         self._data = {
-            "effect": "None",
+            "effect": "Disabled",
             "parameters": {
                 "internal": {
                     "distance": 0.0,
@@ -28,7 +28,7 @@ class GeneralRelativity(object):
             self._data["effect"] = {
                 variant: implementation,
             }
-        elif variant in ("OrbitingBody", "None", ):
+        elif variant in ("OrbitingBody", "Disabled", ):
             self._data["effect"] = variant
         else:
             raise Exception("Unknown variant '{}'".format(variant))
@@ -44,7 +44,7 @@ class GeneralRelativity(object):
 
 class Disabled(GeneralRelativity):
     def __init__(self):
-        super(Disabled, self).__init__("None")
+        super(Disabled, self).__init__("Disabled")
 
 class OrbitingBody(GeneralRelativity):
     def __init__(self):

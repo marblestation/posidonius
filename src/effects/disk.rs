@@ -44,7 +44,7 @@ pub struct DiskParticleCoordinates {
 pub enum DiskEffect {
     CentralBody(DiskProperties),
     OrbitingBody,
-    None,
+    Disabled,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]

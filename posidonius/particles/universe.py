@@ -37,7 +37,7 @@ class Universe(object):
         self._historic_snapshot_period = historic_snapshot_period
         self._data = {
             "consider_effects": consider_effects.get(),
-            "general_relativity_implementation": "None",
+            "general_relativity_implementation": "Disabled",
             "hosts": {
                 "index": {
                     "most_massive": MAX_PARTICLES+1,
@@ -407,7 +407,7 @@ class Universe(object):
         for particle in self._data['particles']:
             if particle["evolution_type"] != "NonEvolving":
                 found_evolving_body = True
-            if particle["wind"]["effect"] != "None":
+            if particle["wind"]["effect"] != "Disabled":
                 found_wind = True
         if self._data["consider_effects"]["wind"] and not found_wind:
             print("[INFO {} UTC] Disabled wind because no wind was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
@@ -436,7 +436,7 @@ class Universe(object):
         for i, particle in enumerate(self._data['particles']):
             if not self._data["consider_effects"]["general_relativity"] \
                     or "CentralBody" in particle['general_relativity']['effect'] \
-                    or particle['general_relativity']['effect'] == "None" \
+                    or particle['general_relativity']['effect'] == "Disabled" \
                     or particle['mass'] == 0:
                 # Disabled GR or Enabled GR and central body
                 particle['general_relativity']['parameters']['internal']['factor'] = 0.0

@@ -1064,7 +1064,7 @@ impl Ias15 {
                     particle.spin.z = self.spin0[3*k+2];
                 } 
 
-                if particle.wind.effect != WindEffect::None && particle.wind.parameters.output.factor != 0. {
+                if particle.wind.effect != WindEffect::Disabled && particle.wind.parameters.output.factor != 0. {
                     // TODO: Verify wind factor
                     particle.spin.x += dt_done * particle.wind.parameters.output.factor * particle.spin.x;
                     particle.spin.y += dt_done * particle.wind.parameters.output.factor * particle.spin.y;

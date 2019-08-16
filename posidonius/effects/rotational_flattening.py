@@ -3,7 +3,7 @@ from posidonius.particles.axes import Axes
 class RotationalFlattening(object):
     def __init__(self, variant, input_parameters=None):
         self._data = {
-            "effect": "None",
+            "effect": "Disabled",
             "parameters": {
                 "input": {
                     "fluid_love_number": 0.0,
@@ -36,7 +36,7 @@ class RotationalFlattening(object):
                     self._data["parameters"]["input"][key] = float(value)
                 else:
                     print("Ignored parameter: {}".format(key))
-        elif variant in ("None", ):
+        elif variant in ("Disabled", ):
             self._data["effect"] = variant
         else:
             raise Exception("Unknown variant '{}'".format(variant))
@@ -49,7 +49,7 @@ class RotationalFlattening(object):
 
 class Disabled(RotationalFlattening):
     def __init__(self):
-        super(Disabled, self).__init__("None")
+        super(Disabled, self).__init__("Disabled")
 
 class OrbitingBody(RotationalFlattening):
     def __init__(self, input_parameters):

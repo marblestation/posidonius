@@ -360,7 +360,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -773,7 +773,7 @@
           }
         }, 
         "wind": {
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "k_factor": 0.0, 
@@ -1000,7 +1000,7 @@
           }
         }, 
         "wind": {
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "k_factor": 0.0, 
@@ -1225,7 +1225,7 @@
           }
         }, 
         "wind": {
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "k_factor": 0.0, 
@@ -1264,7 +1264,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -1295,7 +1295,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -1368,7 +1368,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "fluid_love_number": 0.0
@@ -1415,7 +1415,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "dissipation_factor": 0.0, 
@@ -1450,7 +1450,7 @@
           }
         }, 
         "wind": {
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "k_factor": 0.0, 
@@ -1489,7 +1489,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -1520,7 +1520,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -1593,7 +1593,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "fluid_love_number": 0.0
@@ -1640,7 +1640,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "dissipation_factor": 0.0, 
@@ -1675,7 +1675,7 @@
           }
         }, 
         "wind": {
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "k_factor": 0.0, 
@@ -1714,7 +1714,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -1745,7 +1745,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -1818,7 +1818,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "fluid_love_number": 0.0
@@ -1865,7 +1865,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "dissipation_factor": 0.0, 
@@ -1900,7 +1900,7 @@
           }
         }, 
         "wind": {
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "k_factor": 0.0, 
@@ -1939,7 +1939,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -1970,7 +1970,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -2043,7 +2043,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "fluid_love_number": 0.0
@@ -2090,7 +2090,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "dissipation_factor": 0.0, 
@@ -2125,7 +2125,7 @@
           }
         }, 
         "wind": {
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "k_factor": 0.0, 
@@ -2164,7 +2164,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -2195,7 +2195,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -2268,7 +2268,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "fluid_love_number": 0.0
@@ -2315,7 +2315,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "dissipation_factor": 0.0, 
@@ -2350,7 +2350,7 @@
           }
         }, 
         "wind": {
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "k_factor": 0.0, 
@@ -2389,7 +2389,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -2420,7 +2420,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "internal": {
               "distance": 0.0, 
@@ -2493,7 +2493,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "fluid_love_number": 0.0
@@ -2540,7 +2540,7 @@
               "z": 0.0
             }
           }, 
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "dissipation_factor": 0.0, 
@@ -2575,7 +2575,7 @@
           }
         }, 
         "wind": {
-          "effect": "None", 
+          "effect": "Disabled", 
           "parameters": {
             "input": {
               "k_factor": 0.0, 

@@ -367,7 +367,7 @@ impl WHFast {
             spin_change.x = _dt * particle.dangular_momentum_dt_per_moment_of_inertia.x - spin_error.x;
             spin_change.y = _dt * particle.dangular_momentum_dt_per_moment_of_inertia.y - spin_error.y;
             spin_change.z = _dt * particle.dangular_momentum_dt_per_moment_of_inertia.z - spin_error.z;
-            if particle.wind.effect != WindEffect::None && particle.wind.parameters.output.factor != 0. {
+            if particle.wind.effect != WindEffect::Disabled && particle.wind.parameters.output.factor != 0. {
                 // TODO: Verify wind factor
                 spin_change.x += _dt * particle.wind.parameters.output.factor * particle.spin.x;
                 spin_change.y += _dt * particle.wind.parameters.output.factor * particle.spin.y;

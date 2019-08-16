@@ -54,7 +54,7 @@ pub struct TidesParticleCoordinates {
 pub enum TidesEffect {
     CentralBody,
     OrbitingBody,
-    None,
+    Disabled,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]

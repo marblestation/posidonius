@@ -2,7 +2,7 @@
 class Wind(object):
     def __init__(self, variant, input_parameters=None):
         self._data = {
-            "effect": "None",
+            "effect": "Disabled",
             "parameters": {
                 "input": {
                     "k_factor": 0.0,
@@ -25,7 +25,7 @@ class Wind(object):
                 else:
                     print("Ignored parameter: {}".format(key))
             self._data["parameters"]["internal"]["rotation_saturation_2"] = self._data["parameters"]["input"]["rotation_saturation"]*self._data["parameters"]["input"]["rotation_saturation"]
-        elif variant in ("None", ):
+        elif variant in ("Disabled", ):
             self._data["effect"] = variant
         else:
             raise Exception("Unknown variant '{}'".format(variant))
@@ -38,7 +38,7 @@ class Wind(object):
 
 class Disabled(Wind):
     def __init__(self):
-        super(Disabled, self).__init__("None")
+        super(Disabled, self).__init__("Disabled")
 
 class Interaction(Wind):
     def __init__(self, input_parameters):

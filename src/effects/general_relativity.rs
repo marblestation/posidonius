@@ -44,7 +44,7 @@ pub enum GeneralRelativityImplementation {
 pub enum GeneralRelativityEffect {
     CentralBody(GeneralRelativityImplementation),
     OrbitingBody,
-    None,
+    Disabled,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]

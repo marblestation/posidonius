@@ -89,7 +89,7 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
     let planet_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;
-    let planet_wind = posidonius::Wind::new(posidonius::WindEffect::None, planet_wind_k_factor, planet_wind_rotation_saturation);
+    let planet_wind = posidonius::Wind::new(posidonius::WindEffect::Disabled, planet_wind_k_factor, planet_wind_rotation_saturation);
     let planet_disk = posidonius::Disk::new(posidonius::DiskEffect::OrbitingBody);
     let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_radius_of_gyration_2,
                                            planet_position, planet_velocity, planet_spin,
@@ -161,7 +161,7 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
     let planet_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;
-    let planet_wind = posidonius::Wind::new(posidonius::WindEffect::None, planet_wind_k_factor, planet_wind_rotation_saturation);
+    let planet_wind = posidonius::Wind::new(posidonius::WindEffect::Disabled, planet_wind_k_factor, planet_wind_rotation_saturation);
     let planet_disk = posidonius::Disk::new(posidonius::DiskEffect::OrbitingBody);
     let planet = posidonius::Particle::new(planet_mass, planet_radius, planet_radius_of_gyration_2,
                                            planet_position, planet_velocity, planet_spin,

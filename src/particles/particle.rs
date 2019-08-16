@@ -102,11 +102,11 @@ impl Particle {
             radius_of_gyration_2: 0.,
             moment_of_inertia_ratio: 1.,
             moment_of_inertia: 0.,
-            tides: Tides::new(TidesEffect::None, dissipation_factor, dissipation_factor_scale, love_number),
-            rotational_flattening: RotationalFlattening::new(RotationalFlatteningEffect::None, fluid_love_number),
-            general_relativity: GeneralRelativity::new(GeneralRelativityEffect::None),
-            wind: Wind::new(WindEffect::None, k_factor, rotation_saturation),
-            disk: Disk::new(DiskEffect::None),
+            tides: Tides::new(TidesEffect::Disabled, dissipation_factor, dissipation_factor_scale, love_number),
+            rotational_flattening: RotationalFlattening::new(RotationalFlatteningEffect::Disabled, fluid_love_number),
+            general_relativity: GeneralRelativity::new(GeneralRelativityEffect::Disabled),
+            wind: Wind::new(WindEffect::Disabled, k_factor, rotation_saturation),
+            disk: Disk::new(DiskEffect::Disabled),
             evolution_type: EvolutionType::NonEvolving,
         }
     }

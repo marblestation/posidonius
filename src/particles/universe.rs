@@ -670,7 +670,7 @@ fn disable_unnecessary_effects(consider_effects: &mut ConsiderEffects, particles
             }
             found_central_body_disk = true;
         }
-        if WindEffect::None != particle.wind.effect {
+        if WindEffect::Disabled != particle.wind.effect {
             found_wind = true;
         }
         if EvolutionType::NonEvolving != particle.evolution_type {

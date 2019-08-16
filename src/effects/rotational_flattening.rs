@@ -43,7 +43,7 @@ pub struct RotationalFlatteningParticleCoordinates {
 pub enum RotationalFlatteningEffect {
     CentralBody,
     OrbitingBody,
-    None,
+    Disabled,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]

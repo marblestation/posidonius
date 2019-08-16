@@ -211,7 +211,7 @@ impl LeapFrog {
                 particle.spin.y = particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
                 particle.spin.z = particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             }
-            if particle.wind.effect != WindEffect::None && particle.wind.parameters.output.factor != 0. {
+            if particle.wind.effect != WindEffect::Disabled && particle.wind.parameters.output.factor != 0. {
                 // TODO: Verify wind factor
                 particle.spin.x += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.x;
                 particle.spin.y += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.y;
@@ -240,7 +240,7 @@ impl LeapFrog {
                 particle.spin.y = particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
                 particle.spin.z = particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
             }
-            if particle.wind.effect != WindEffect::None && particle.wind.parameters.output.factor != 0. {
+            if particle.wind.effect != WindEffect::Disabled && particle.wind.parameters.output.factor != 0. {
                 // TODO: Verify wind factor
                 particle.spin.x += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.x;
                 particle.spin.y += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.y;

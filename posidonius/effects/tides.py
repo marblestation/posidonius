@@ -3,7 +3,7 @@ from posidonius.particles.axes import Axes
 class Tides(object):
     def __init__(self, variant, input_parameters=None):
         self._data = {
-            "effect": "None",
+            "effect": "Disabled",
             "parameters": {
                 "input": {
                     "dissipation_factor_scale": 0.0,
@@ -42,7 +42,7 @@ class Tides(object):
                 else:
                     print("Ignored parameter: {}".format(key))
             self._data["parameters"]["internal"]["scaled_dissipation_factor"] = self._data["parameters"]["input"]["dissipation_factor"] * self._data["parameters"]["input"]["dissipation_factor_scale"]
-        elif variant in ("None", ):
+        elif variant in ("Disabled", ):
             self._data["effect"] = variant
         else:
             raise Exception("Unknown variant '{}'".format(variant))
@@ -55,7 +55,7 @@ class Tides(object):
 
 class Disabled(Tides):
     def __init__(self):
-        super(Disabled, self).__init__("None")
+        super(Disabled, self).__init__("Disabled")
 
 class OrbitingBody(Tides):
     def __init__(self, input_parameters):
