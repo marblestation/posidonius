@@ -62,8 +62,10 @@ fn solar_like_baraffe1998_rust_vs_python() {
     let mut universe_integrator = solar_like_baraffe1998_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -123,8 +125,10 @@ fn solar_like_baraffe2015_rust_vs_python() {
     let mut universe_integrator = solar_like_baraffe2015_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -185,8 +189,10 @@ fn solar_like_bolmontmathis2016_rust_vs_python() {
     let mut universe_integrator = solar_like_bolmontmathis2016_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -247,8 +253,10 @@ fn solar_like_galletbolmont2017_rust_vs_python() {
     let mut universe_integrator = solar_like_galletbolmont2017_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -308,8 +316,10 @@ fn solar_like_non_evolving_rust_vs_python() {
     let mut universe_integrator = solar_like_non_evolving_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -369,8 +379,10 @@ fn brown_dwarf_leconte2011_rust_vs_python() {
     let mut universe_integrator = brown_dwarf_leconte2011_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -430,8 +442,10 @@ fn brown_dwarf_non_evolving_rust_vs_python() {
     let mut universe_integrator = brown_dwarf_non_evolving_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -491,8 +505,10 @@ fn m_dwarf_baraffe1998_rust_vs_python() {
     let mut universe_integrator = m_dwarf_baraffe1998_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -552,8 +568,10 @@ fn m_dwarf_baraffe2015_rust_vs_python() {
     let mut universe_integrator = m_dwarf_baraffe2015_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -613,8 +631,10 @@ fn m_dwarf_non_evolving_rust_vs_python() {
     let mut universe_integrator = m_dwarf_non_evolving_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

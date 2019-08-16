@@ -62,8 +62,10 @@ fn enabled_flattening_rust_vs_python() {
     let mut universe_integrator = enabled_flattening_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -124,8 +126,10 @@ fn disabled_flattening_rust_vs_python() {
     let mut universe_integrator = disabled_flattening_case();
     common::universe::store_unless_files_exist(&universe_integrator, &rust_data_dirname); // Store just in case we want to inspect it/compare it to the python generated JSON
     common::universe::iterate(&mut universe_integrator);
-    let parallel_universe = common::universe::iterate_universe_from_python_generated_json(&python_data_dirname);
-    common::universe::assert(&universe_integrator.universe, &parallel_universe);
+    let parallel_universe_from_json = common::universe::iterate_universe_from_json(&python_data_dirname);
+    common::universe::loosly_assert(&universe_integrator.universe, &parallel_universe_from_json); // Built in situ vs Restored from JSON: it requires larger precision
+    let universe_from_json = common::universe::iterate_universe_from_json(&rust_data_dirname);
+    common::universe::assert(&universe_from_json, &parallel_universe_from_json);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -106,7 +106,7 @@ fn iterate_box(universe_integrator: &mut Box<dyn posidonius::Integrator>) {
 }
 
 #[allow(dead_code)]
-pub fn iterate_universe_from_python_generated_json(dirname: &String) -> posidonius::Universe {
+pub fn iterate_universe_from_json(dirname: &String) -> posidonius::Universe {
     let snapshot_from_python_filename = format!("{0}/case.json", dirname);
     let snapshot_from_python_path = Path::new(&snapshot_from_python_filename);
    
@@ -134,6 +134,26 @@ pub fn iterate_universe_from_python_generated_json(dirname: &String) -> posidoni
 
 #[allow(dead_code)]
 pub fn assert(universe: &posidonius::Universe, parallel_universe: &posidonius::Universe) {
+    for (i, (particle, parallel_particle)) in universe.particles[..universe.n_particles].iter()
+                                                                .zip(parallel_universe.particles[..parallel_universe.n_particles].iter()).enumerate() {
+        let precision = 1.0e-15;
+        println!("[ASSERT {} UTC] Particle {} - Position.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+        assert_approx_eq!(particle.inertial_position.x, parallel_particle.inertial_position.x, precision);
+        assert_approx_eq!(particle.inertial_position.y, parallel_particle.inertial_position.y, precision);
+        assert_approx_eq!(particle.inertial_position.z, parallel_particle.inertial_position.z, precision);
+        println!("[ASSERT {} UTC] Particle {} - Velocity.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+        assert_approx_eq!(particle.inertial_velocity.x, parallel_particle.inertial_velocity.x, precision);
+        assert_approx_eq!(particle.inertial_velocity.y, parallel_particle.inertial_velocity.y, precision);
+        assert_approx_eq!(particle.inertial_velocity.z, parallel_particle.inertial_velocity.z, precision);
+        println!("[ASSERT {} UTC] Particle {} - Acceleration.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+        assert_approx_eq!(particle.inertial_acceleration.x, parallel_particle.inertial_acceleration.x, precision);
+        assert_approx_eq!(particle.inertial_acceleration.y, parallel_particle.inertial_acceleration.y, precision);
+        assert_approx_eq!(particle.inertial_acceleration.z, parallel_particle.inertial_acceleration.z, precision);
+    }
+}
+
+#[allow(dead_code)]
+pub fn loosly_assert(universe: &posidonius::Universe, parallel_universe: &posidonius::Universe) {
     for (i, (particle, parallel_particle)) in universe.particles[..universe.n_particles].iter()
                                                                 .zip(parallel_universe.particles[..parallel_universe.n_particles].iter()).enumerate() {
         let precision = 1.0e-8;
