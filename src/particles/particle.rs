@@ -38,12 +38,25 @@ pub struct Particle {
     pub general_relativity: GeneralRelativity,
     pub wind: Wind,
     pub disk: Disk,
-    pub evolution_type: EvolutionType,
+    pub evolution: EvolutionType,
 }
 
 impl Particle {
-    pub fn new(mass: f64, radius: f64, radius_of_gyration_2: f64, position: Axes, velocity: Axes, spin: Axes, tides: Tides, rotational_flattening: RotationalFlattening, general_relativity: GeneralRelativity, wind: Wind, disk: Disk, evolution_type: EvolutionType) -> Particle {
-        evolution_warnings(evolution_type);
+
+    pub fn new(mass: f64, radius: f64, radius_of_gyration: f64, position: Axes, velocity: Axes, spin: Axes) -> Particle {
+        // Default effects: None
+        let dissipation_factor = 0.;
+        let dissipation_factor_scale = 0.;
+        let love_number = 0.;
+        let k_factor = 0.;
+        let rotation_saturation = 0.;
+        let tides = Tides::new(TidesEffect::Disabled, dissipation_factor, dissipation_factor_scale, love_number);
+        let rotational_flattening = RotationalFlattening::new(RotationalFlatteningEffect::Disabled, love_number);
+        let general_relativity = GeneralRelativity::new(GeneralRelativityEffect::Disabled);
+        let wind = Wind::new(WindEffect::Disabled, k_factor, rotation_saturation);
+        let disk = Disk::new(DiskEffect::Disabled);
+        let evolution = EvolutionType::NonEvolving;
+        let radius_of_gyration_2 = radius_of_gyration.powi(2);
         Particle { 
             id: 0, // Unique internal identifier, to be set by the universe
             mass: mass,
@@ -70,7 +83,7 @@ impl Particle {
             general_relativity: general_relativity,
             wind: wind,
             disk: disk,
-            evolution_type: evolution_type,
+            evolution: evolution,
         }
     }
 
@@ -78,7 +91,6 @@ impl Particle {
         let dissipation_factor = 0.;
         let dissipation_factor_scale = 0.;
         let love_number = 0.;
-        let fluid_love_number = 0.;
         let k_factor = 0.;
         let rotation_saturation = 0.;
         Particle { 
@@ -103,17 +115,42 @@ impl Particle {
             moment_of_inertia_ratio: 1.,
             moment_of_inertia: 0.,
             tides: Tides::new(TidesEffect::Disabled, dissipation_factor, dissipation_factor_scale, love_number),
-            rotational_flattening: RotationalFlattening::new(RotationalFlatteningEffect::Disabled, fluid_love_number),
+            rotational_flattening: RotationalFlattening::new(RotationalFlatteningEffect::Disabled, love_number),
             general_relativity: GeneralRelativity::new(GeneralRelativityEffect::Disabled),
             wind: Wind::new(WindEffect::Disabled, k_factor, rotation_saturation),
             disk: Disk::new(DiskEffect::Disabled),
-            evolution_type: EvolutionType::NonEvolving,
+            evolution: EvolutionType::NonEvolving,
         }
+    }
+
+    pub fn set_tides(&mut self, tides: Tides) {
+        self.tides = tides;
+    }
+
+    pub fn set_rotational_flattening(&mut self, rotational_flattening: RotationalFlattening) {
+        self.rotational_flattening = rotational_flattening;
+    }
+
+    pub fn set_general_relativity(&mut self, general_relativity: GeneralRelativity) {
+        self.general_relativity = general_relativity;
+    }
+
+    pub fn set_wind(&mut self, wind: Wind) {
+        self.wind = wind;
+    }
+
+    pub fn set_disk(&mut self, disk: Disk) {
+        self.disk = disk;
+    }
+
+    pub fn set_evolution(&mut self, evolution: EvolutionType) {
+        evolution_warnings(evolution);
+        self.evolution = evolution;
     }
 }
 
-fn evolution_warnings(evolution_type: EvolutionType) {
-    match evolution_type {
+fn evolution_warnings(evolution: EvolutionType) {
+    match evolution {
         EvolutionType::GalletBolmont2017(_) => {
             println!("[WARNING {} UTC] Bodies with GalletBolmont2017 evolution will ignore initial radius and dissipation factor.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap());
             println!("[WARNING {} UTC] GalletBolmont2017 prescription theoretically only works for circular orbits and non inclined orbits, use carefully.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap())

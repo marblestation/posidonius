@@ -41,8 +41,8 @@ def basic_configuration(universe):
     planet1_rotation_period = 24. # hours
     planet1_spin = _spin(planet1_obliquity, planet1_rotation_period, star_mass, planet1_mass, planet1_position, planet1_velocity)
 
-    planet1_evolution_type = posidonius.NonEvolving()
-    universe.add_earth_like(planet1_mass, planet1_dissipation_factor_scale, planet1_position, planet1_velocity, planet1_spin, planet1_evolution_type)
+    planet1_evolution = posidonius.NonEvolving()
+    universe.add_earth_like(planet1_mass, planet1_dissipation_factor_scale, planet1_position, planet1_velocity, planet1_spin, planet1_evolution)
 
     ############################################################################
     planet2_mass_factor = 0.00095
@@ -56,8 +56,8 @@ def basic_configuration(universe):
     planet2_rotation_period = 24. # hours
     planet2_spin = _spin(planet2_obliquity, planet2_rotation_period, star_mass, planet2_mass, planet2_position, planet2_velocity)
 
-    planet2_evolution_type = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
-    universe.add_jupiter_like(planet2_mass, planet2_dissipation_factor_scale, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)
+    planet2_evolution = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
+    universe.add_jupiter_like(planet2_mass, planet2_dissipation_factor_scale, planet2_position, planet2_velocity, planet2_spin, planet2_evolution)
 
     ############################################################################
     planet3_mass_factor = 0.00095
@@ -71,5 +71,5 @@ def basic_configuration(universe):
     planet3_rotation_period = 24. # hours
     planet3_spin = _spin(planet3_obliquity, planet3_rotation_period, star_mass, planet3_mass, planet3_position, planet3_velocity)
 
-    planet3_evolution_type = posidonius.NonEvolving()
-    universe.add_jupiter_like(planet3_mass, planet3_dissipation_factor_scale, planet3_position, planet3_velocity, planet3_spin, planet3_evolution_type)
+    planet3_evolution = posidonius.NonEvolving()
+    universe.add_jupiter_like(planet3_mass, planet3_dissipation_factor_scale, planet3_position, planet3_velocity, planet3_spin, planet3_evolution)

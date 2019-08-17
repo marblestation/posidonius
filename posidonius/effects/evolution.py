@@ -110,7 +110,7 @@ class Leconte2011(EvolutionType):
         time = time * 365.25 - initial_time
         evolver = {}
         evolver['left_index'] = 0
-        evolver['evolution_type'] = self.get()
+        evolver['evolution'] = self.get()
         evolver['love_number'] = []
         evolver['radius'] = radius.tolist()
         evolver['time'] = time.tolist()
@@ -195,7 +195,7 @@ class Baraffe2015(EvolutionType):
 
         evolver = {}
         evolver['left_index'] = 0
-        evolver['evolution_type'] = self.get()
+        evolver['evolution'] = self.get()
         evolver['love_number'] = []
         evolver['radius'] = radius.tolist()
         evolver['time'] = time.tolist()
@@ -227,7 +227,7 @@ class Baraffe1998(EvolutionType):
 
         evolver = {}
         evolver['left_index'] = 0
-        evolver['evolution_type'] = self.get()
+        evolver['evolution'] = self.get()
         evolver['love_number'] = []
         evolver['radius'] = radius.tolist()
         evolver['time'] = time.tolist()
@@ -257,7 +257,7 @@ class LeconteChabrier2013(EvolutionType):
 
         evolver = {}
         evolver['left_index'] = 0
-        evolver['evolution_type'] = self.get()
+        evolver['evolution'] = self.get()
         evolver['love_number'] = love_number.tolist()
         evolver['radius'] = radius.tolist()
         evolver['time'] = time.tolist()
@@ -309,7 +309,7 @@ class BolmontMathis2016(EvolutionType):
 
         evolver = {}
         evolver['left_index'] = 0
-        evolver['evolution_type'] = self.get()
+        evolver['evolution'] = self.get()
         evolver['love_number'] = []
         evolver['radius'] = radius.tolist()
         evolver['time'] = time.tolist()
@@ -357,7 +357,7 @@ class GalletBolmont2017(EvolutionType):
 
         evolver = {}
         evolver['left_index'] = 0
-        evolver['evolution_type'] = self.get()
+        evolver['evolution'] = self.get()
         evolver['love_number'] = []
         evolver['radius'] = radius.tolist()
         evolver['time'] = time.tolist()
@@ -373,7 +373,7 @@ class NonEvolving(EvolutionType):
     def get_evolver(self, initial_time):
         evolver = {}
         evolver['left_index'] = 0
-        evolver['evolution_type'] = self.get()
+        evolver['evolution'] = self.get()
         evolver['love_number'] = []
         evolver['radius'] = []
         evolver['time'] = []

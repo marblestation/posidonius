@@ -377,7 +377,7 @@
             }
           }
         }, 
-        "evolution_type": {
+        "evolution": {
           "BolmontMathis2016": 1.0
         }, 
         "general_relativity": {
@@ -450,11 +450,11 @@
         }, 
         "mass": 1.0, 
         "mass_g": 0.0002949276532633868, 
-        "moment_of_inertia": 1.2759838989715713e-06, 
+        "moment_of_inertia": 1.2770436144130902e-06, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 355.3057584392169, 
         "radius": 0.004650467260962157, 
-        "radius_of_gyration_2": 0.059, 
+        "radius_of_gyration_2": 0.059049, 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -471,7 +471,7 @@
           "effect": "CentralBody", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.03
+              "love_number": 0.03
             }, 
             "internal": {
               "distance": 0.0, 
@@ -606,7 +606,7 @@
             }
           }
         }, 
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "general_relativity": {
           "coordinates": {
             "position": {
@@ -675,11 +675,11 @@
         }, 
         "mass": 3.0034895963231186e-06, 
         "mass_g": 8.858121382445743e-10, 
-        "moment_of_inertia": 1.8435654123498543e-15, 
+        "moment_of_inertia": 1.8425901283499714e-15, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 39.47841760435743, 
         "radius": 4.307581066392812e-05, 
-        "radius_of_gyration_2": 0.3308, 
+        "radius_of_gyration_2": 0.33062499999999995, 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -696,7 +696,7 @@
           "effect": "OrbitingBody", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.9532
+              "love_number": 0.9532
             }, 
             "internal": {
               "distance": 0.0, 
@@ -831,7 +831,7 @@
             }
           }
         }, 
-        "evolution_type": {
+        "evolution": {
           "LeconteChabrier2013": false
         }, 
         "general_relativity": {
@@ -902,11 +902,11 @@
         }, 
         "mass": 2.8533151165069627e-09, 
         "mass_g": 8.415215313323456e-13, 
-        "moment_of_inertia": 1.5651943584527615e-16, 
+        "moment_of_inertia": 1.565292953372979e-16, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 39.47841760435743, 
         "radius": 0.00046472111985749006, 
-        "radius_of_gyration_2": 0.254, 
+        "radius_of_gyration_2": 0.254016, 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -923,7 +923,7 @@
           "effect": "OrbitingBody", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.38
+              "love_number": 0.38
             }, 
             "internal": {
               "distance": 0.0, 
@@ -1058,7 +1058,7 @@
             }
           }
         }, 
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "general_relativity": {
           "coordinates": {
             "position": {
@@ -1127,11 +1127,11 @@
         }, 
         "mass": 2.8533151165069627e-09, 
         "mass_g": 8.415215313323456e-13, 
-        "moment_of_inertia": 1.5651943584527615e-16, 
+        "moment_of_inertia": 1.565292953372979e-16, 
         "moment_of_inertia_ratio": 1.0, 
         "norm_spin_vector_2": 39.47841760435743, 
         "radius": 0.00046472111985749006, 
-        "radius_of_gyration_2": 0.254, 
+        "radius_of_gyration_2": 0.254016, 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -1148,7 +1148,7 @@
           "effect": "OrbitingBody", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.38
+              "love_number": 0.38
             }, 
             "internal": {
               "distance": 0.0, 
@@ -1283,7 +1283,7 @@
             }
           }
         }, 
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "general_relativity": {
           "coordinates": {
             "position": {
@@ -1373,7 +1373,7 @@
           "effect": "Disabled", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.0
+              "love_number": 0.0
             }, 
             "internal": {
               "distance": 0.0, 
@@ -1508,7 +1508,7 @@
             }
           }
         }, 
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "general_relativity": {
           "coordinates": {
             "position": {
@@ -1598,7 +1598,7 @@
           "effect": "Disabled", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.0
+              "love_number": 0.0
             }, 
             "internal": {
               "distance": 0.0, 
@@ -1733,7 +1733,7 @@
             }
           }
         }, 
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "general_relativity": {
           "coordinates": {
             "position": {
@@ -1823,7 +1823,7 @@
           "effect": "Disabled", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.0
+              "love_number": 0.0
             }, 
             "internal": {
               "distance": 0.0, 
@@ -1958,7 +1958,7 @@
             }
           }
         }, 
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "general_relativity": {
           "coordinates": {
             "position": {
@@ -2048,7 +2048,7 @@
           "effect": "Disabled", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.0
+              "love_number": 0.0
             }, 
             "internal": {
               "distance": 0.0, 
@@ -2183,7 +2183,7 @@
             }
           }
         }, 
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "general_relativity": {
           "coordinates": {
             "position": {
@@ -2273,7 +2273,7 @@
           "effect": "Disabled", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.0
+              "love_number": 0.0
             }, 
             "internal": {
               "distance": 0.0, 
@@ -2408,7 +2408,7 @@
             }
           }
         }, 
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "general_relativity": {
           "coordinates": {
             "position": {
@@ -2498,7 +2498,7 @@
           "effect": "Disabled", 
           "parameters": {
             "input": {
-              "fluid_love_number": 0.0
+              "love_number": 0.0
             }, 
             "internal": {
               "distance": 0.0, 
@@ -2595,7 +2595,7 @@
     ], 
     "particles_evolvers": [
       {
-        "evolution_type": {
+        "evolution": {
           "BolmontMathis2016": 1.0
         }, 
         "inverse_tidal_q_factor": [
@@ -3137,7 +3137,7 @@
         ]
       }, 
       {
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "inverse_tidal_q_factor": [], 
         "left_index": 0, 
         "love_number": [], 
@@ -3146,7 +3146,7 @@
         "time": []
       }, 
       {
-        "evolution_type": {
+        "evolution": {
           "LeconteChabrier2013": false
         }, 
         "inverse_tidal_q_factor": [], 
@@ -22181,7 +22181,7 @@
         ]
       }, 
       {
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "inverse_tidal_q_factor": [], 
         "left_index": 0, 
         "love_number": [], 
@@ -22190,7 +22190,7 @@
         "time": []
       }, 
       {
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "inverse_tidal_q_factor": [], 
         "left_index": 0, 
         "love_number": [], 
@@ -22199,7 +22199,7 @@
         "time": []
       }, 
       {
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "inverse_tidal_q_factor": [], 
         "left_index": 0, 
         "love_number": [], 
@@ -22208,7 +22208,7 @@
         "time": []
       }, 
       {
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "inverse_tidal_q_factor": [], 
         "left_index": 0, 
         "love_number": [], 
@@ -22217,7 +22217,7 @@
         "time": []
       }, 
       {
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "inverse_tidal_q_factor": [], 
         "left_index": 0, 
         "love_number": [], 
@@ -22226,7 +22226,7 @@
         "time": []
       }, 
       {
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "inverse_tidal_q_factor": [], 
         "left_index": 0, 
         "love_number": [], 
@@ -22235,7 +22235,7 @@
         "time": []
       }, 
       {
-        "evolution_type": "NonEvolving", 
+        "evolution": "NonEvolving", 
         "inverse_tidal_q_factor": [], 
         "left_index": 0, 
         "love_number": [], 

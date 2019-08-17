@@ -111,7 +111,7 @@ impl Universe {
         for i in 0..n_particles {
             transformed_particles[i] = particles[i];
             transformed_particles[i].id = i;
-            particles_evolvers.push(Evolver::new(transformed_particles[i].evolution_type, initial_time, time_limit));
+            particles_evolvers.push(Evolver::new(transformed_particles[i].evolution, initial_time, time_limit));
         }
         for _i in n_particles..MAX_PARTICLES {
             // For dummy particles
@@ -673,7 +673,7 @@ fn disable_unnecessary_effects(consider_effects: &mut ConsiderEffects, particles
         if WindEffect::Disabled != particle.wind.effect {
             found_wind = true;
         }
-        if EvolutionType::NonEvolving != particle.evolution_type {
+        if EvolutionType::NonEvolving != particle.evolution {
             found_evolving_body = true;
         }
     }

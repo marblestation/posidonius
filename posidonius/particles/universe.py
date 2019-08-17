@@ -113,14 +113,14 @@ class Universe(object):
         self._data['temporary_copied_particle_positions'].append(Axes(0.0, 0.0, 0.0).get())
         self._data['n_particles'] += 1
 
-    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity, general_relativity_implementation, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
+    def add_brown_dwarf(self, mass, dissipation_factor_scale, position, velocity, general_relativity_implementation, evolution, wind_k_factor=0., wind_rotation_saturation=0.):
         rotation_period = None
         love_number = None
-        if type(evolution_type) == NonEvolving:
+        if type(evolution) == NonEvolving:
             rotation_period = 70.0 # hours
             love_number = 0.307 # BrownDwarf
-        elif type(evolution_type) in (Leconte2011, Baraffe2015):
-            mass = evolution_type._data[evolution_type.__class__.__name__]
+        elif type(evolution) in (Leconte2011, Baraffe2015):
+            mass = evolution._data[evolution.__class__.__name__]
 
             if mass <= 0.0101 and mass >= 0.0099:
                 rotation_period = 8.0
@@ -168,20 +168,19 @@ class Universe(object):
         obliquity = 0.
         spin = calculate_spin(angular_frequency, inclination, obliquity)
 
-        fluid_love_number = love_number
         # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
         dissipation_factor = 2.006*3.845764e4 # -60+64
 
         radius_factor = 0.845649342247916
         radius = radius_factor * R_SUN
-        radius_of_gyration_2 = 1.94e-1 # Brown dwarf
+        radius_of_gyration = 4.41e-01 # Brown dwarf
 
         tides = effects.tides.CentralBody({
             "dissipation_factor_scale": dissipation_factor_scale,
             "dissipation_factor": dissipation_factor,
             "love_number": love_number,
         })
-        rotational_flattening = effects.rotational_flattening.CentralBody({"fluid_love_number": fluid_love_number})
+        rotational_flattening = effects.rotational_flattening.CentralBody({"love_number": love_number})
         general_relativity = effects.general_relativity.CentralBody(general_relativity_implementation)
         if wind_k_factor == 0:
             wind = effects.wind.Disabled()
@@ -191,9 +190,16 @@ class Universe(object):
                 "rotation_saturation": wind_rotation_saturation,
             })
         disk = effects.disk.Disabled()
-        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
+        particle = Particle(mass, radius, radius_of_gyration, position, velocity, spin)
+        particle.set_tides(tides)
+        particle.set_rotational_flattening(rotational_flattening)
+        particle.set_general_relativity(general_relativity)
+        particle.set_wind(wind)
+        particle.set_disk(disk)
+        particle.set_evolution(evolution)
+        self.add_particle(particle)
 
-    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
+    def add_solar_like(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
         """
         Wind parametrisation (Bouvier 1997):
 
@@ -201,9 +207,9 @@ class Universe(object):
         wind_rotation_saturation = 14. * TWO_PI/25.0 # = 1.7592918860102842, wsat in units of the spin of the Sun today
         """
         disk = effects.disk.Disabled()
-        self._add_solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, disk, wind_k_factor, wind_rotation_saturation)
+        self._add_solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution, disk, wind_k_factor, wind_rotation_saturation)
 
-    def add_solar_like_with_disk(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
+    def add_solar_like_with_disk(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution, wind_k_factor=4.0e-18, wind_rotation_saturation=1.7592918860102842):
         """
         Wind parametrisation (Bouvier 1997):
 
@@ -221,10 +227,10 @@ class Universe(object):
             'mean_molecular_weight': 2.4,
         }
         disk = effects.disk.CentralBody(disk_properties)
-        self._add_solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, disk, wind_k_factor, wind_rotation_saturation)
+        self._add_solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution, disk, wind_k_factor, wind_rotation_saturation)
 
-    def _add_solar_like_with_disk(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, disk, wind_k_factor, wind_rotation_saturation):
-        if type(evolution_type) not in (BolmontMathis2016, Leconte2011, Baraffe2015, GalletBolmont2017, NonEvolving) and not (type(evolution_type) is Baraffe1998 and mass == 1.0):
+    def _add_solar_like_with_disk(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution, disk, wind_k_factor, wind_rotation_saturation):
+        if type(evolution) not in (BolmontMathis2016, Leconte2011, Baraffe2015, GalletBolmont2017, NonEvolving) and not (type(evolution) is Baraffe1998 and mass == 1.0):
             raise Exception("Evolution type should be BolmontMathis2016 Leconte2011 Baraffe1998 (mass = 0.10) Baraffe2015 GalletBolmont2017 or NonEvolving!")
 
         # Typical rotation period: 24 hours
@@ -233,21 +239,19 @@ class Universe(object):
         obliquity = 0.
         spin = calculate_spin(angular_frequency, inclination, obliquity)
 
-        love_number = 0.03
-        fluid_love_number = love_number
-        # Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
-        dissipation_factor = 4.992*3.845764e-2 # -66+64
-
         radius_factor = 1.
         radius = radius_factor * R_SUN
-        radius_of_gyration_2 = 5.9e-2 # Sun
+        radius_of_gyration = 2.43e-01 # Sun
 
+        love_number = 0.03
+        # Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
+        dissipation_factor = 4.992*3.845764e-2 # -66+64
         tides = effects.tides.CentralBody({
             "dissipation_factor_scale": dissipation_factor_scale,
             "dissipation_factor": dissipation_factor,
             "love_number": love_number,
         })
-        rotational_flattening = effects.rotational_flattening.CentralBody({"fluid_love_number": fluid_love_number})
+        rotational_flattening = effects.rotational_flattening.CentralBody({"love_number": love_number})
         general_relativity = effects.general_relativity.CentralBody(general_relativity_implementation)
         if wind_k_factor == 0:
             wind = effects.wind.Disabled()
@@ -256,11 +260,18 @@ class Universe(object):
                 "k_factor": wind_k_factor,
                 "rotation_saturation": wind_rotation_saturation,
             })
-        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
+        particle = Particle(mass, radius, radius_of_gyration, position, velocity, spin)
+        particle.set_tides(tides)
+        particle.set_rotational_flattening(rotational_flattening)
+        particle.set_general_relativity(general_relativity)
+        particle.set_wind(wind)
+        particle.set_disk(disk)
+        particle.set_evolution(evolution)
+        self.add_particle(particle)
 
 
-    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution_type, wind_k_factor=0., wind_rotation_saturation=0.):
-        if type(evolution_type) not in (Baraffe2015, NonEvolving) and not (type(evolution_type) is Baraffe1998 and mass == 0.10):
+    def add_m_dwarf(self, mass, dissipation_factor_scale, position, velocity, rotation_period, general_relativity_implementation, evolution, wind_k_factor=0., wind_rotation_saturation=0.):
+        if type(evolution) not in (Baraffe2015, NonEvolving) and not (type(evolution) is Baraffe1998 and mass == 0.10):
             raise Exception("Evolution type should be Baraffe2015 Baraffe1998 (mass = 0.10) or NonEvolving!")
 
         # Typical rotation period: 70 hours
@@ -269,22 +280,19 @@ class Universe(object):
         obliquity = 0.
         spin = calculate_spin(angular_frequency, inclination, obliquity)
 
-        love_number = 0.307 # M Dwarf
-        fluid_love_number = love_number
-
-        # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
-        dissipation_factor = 2.006*3.845764e4 # -60+64
-
         radius_factor = 0.845649342247916
         radius = radius_factor * R_SUN
-        radius_of_gyration_2 = 2.0e-1 # M-dwarf
+        radius_of_gyration = 4.47e-01 # M-dwarf
 
+        love_number = 0.307 # M Dwarf
+        # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
+        dissipation_factor = 2.006*3.845764e4 # -60+64
         tides = effects.tides.CentralBody({
             "dissipation_factor_scale": dissipation_factor_scale,
             "dissipation_factor": dissipation_factor,
             "love_number": love_number,
         })
-        rotational_flattening = effects.rotational_flattening.CentralBody({"fluid_love_number": fluid_love_number})
+        rotational_flattening = effects.rotational_flattening.CentralBody({"love_number": love_number})
         general_relativity = effects.general_relativity.CentralBody(general_relativity_implementation)
         if wind_k_factor == 0:
             wind = effects.wind.Disabled()
@@ -294,65 +302,82 @@ class Universe(object):
                 "rotation_saturation": wind_rotation_saturation,
             })
         disk = effects.disk.Disabled()
-        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
+        particle = Particle(mass, radius, radius_of_gyration, position, velocity, spin)
+        particle.set_tides(tides)
+        particle.set_rotational_flattening(rotational_flattening)
+        particle.set_general_relativity(general_relativity)
+        particle.set_wind(wind)
+        particle.set_disk(disk)
+        particle.set_evolution(evolution)
+        self.add_particle(particle)
 
 
-    def add_jupiter_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
-        if type(evolution_type) not in (LeconteChabrier2013, NonEvolving):
+    def add_jupiter_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution):
+        if type(evolution) not in (LeconteChabrier2013, NonEvolving):
             raise Exception("Evolution type should be LeconteChabrier2013 or NonEvolving!")
-
-        # Typical rotation period: 9.8 hours
-        love_number = 0.380 # Gas giant
-        fluid_love_number = love_number
 
         radius_factor = 10.9 # Jupiter in R_EARTH
         radius = radius_factor * R_EARTH
+        radius_of_gyration = 5.04e-01 # Gas giant
 
+        # Typical rotation period: 9.8 hours
+        love_number = 0.380 # Gas giant
         # TODO: What k2pdelta/dissipation_factor is the recommended?
         #k2pdelta = 8.101852e-9 # Gas giant
         k2pdelta = 2.893519e-7 # Gas giant for Jupiter: 2-3d-2 s, here in day (Leconte)
         dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
         #dissipation_factor = 2.006*3.845764e4 // Gas giant
-
-        radius_of_gyration_2 = 2.54e-1 # Gas giant
-
         tides = effects.tides.OrbitingBody({
             "dissipation_factor_scale": dissipation_factor_scale,
             "dissipation_factor": dissipation_factor,
             "love_number": love_number,
         })
-        rotational_flattening = effects.rotational_flattening.OrbitingBody({"fluid_love_number": fluid_love_number})
+        rotational_flattening = effects.rotational_flattening.OrbitingBody({"love_number": love_number})
         general_relativity = effects.general_relativity.OrbitingBody()
         wind = effects.wind.Disabled()
         disk = effects.disk.OrbitingBody()
-        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
+        particle = Particle(mass, radius, radius_of_gyration, position, velocity, spin)
+        particle.set_tides(tides)
+        particle.set_rotational_flattening(rotational_flattening)
+        particle.set_general_relativity(general_relativity)
+        particle.set_wind(wind)
+        particle.set_disk(disk)
+        particle.set_evolution(evolution)
+        self.add_particle(particle)
 
 
-    def add_earth_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution_type):
-        if type(evolution_type) not in (NonEvolving,):
+    def add_earth_like(self, mass, dissipation_factor_scale, position, velocity, spin, evolution):
+        if type(evolution) not in (NonEvolving,):
             raise Exception("Evolution type should be NonEvolving!")
 
-        # Typical rotation period: 24 hours
-        love_number = 0.299 # Earth
-        fluid_love_number = 0.9532 # Earth
 
         # Earth-like => mass-radius relationship from Fortney 2007
         radius_factor = mass_radius_relation(mass, planet_mass_type='AU', planet_percent_rock=0.70)
         radius = radius_factor * R_EARTH
-        radius_of_gyration_2 = 3.308e-1 # Earth type planet
+        radius_of_gyration = 5.75e-01 # Earth type planet
+
+        # Typical rotation period: 24 hours
+        love_number = 0.299 # Earth
+        fluid_love_number = 0.9532 # Earth
         k2pdelta = 2.465278e-3 # Terrestrial planets
         dissipation_factor = 2. * K2 * k2pdelta/(3. * np.power(radius, 5))
-
         tides = effects.tides.OrbitingBody({
             "dissipation_factor_scale": dissipation_factor_scale,
             "dissipation_factor": dissipation_factor,
             "love_number": love_number,
         })
-        rotational_flattening = effects.rotational_flattening.OrbitingBody({"fluid_love_number": fluid_love_number})
+        rotational_flattening = effects.rotational_flattening.OrbitingBody({"love_number": fluid_love_number})
         general_relativity = effects.general_relativity.OrbitingBody()
         wind = effects.wind.Disabled()
         disk = effects.disk.OrbitingBody()
-        self.add_particle(Particle(mass, radius, radius_of_gyration_2, position, velocity, spin, tides, rotational_flattening, general_relativity, wind, disk, evolution_type))
+        particle = Particle(mass, radius, radius_of_gyration, position, velocity, spin)
+        particle.set_tides(tides)
+        particle.set_rotational_flattening(rotational_flattening)
+        particle.set_general_relativity(general_relativity)
+        particle.set_wind(wind)
+        particle.set_disk(disk)
+        particle.set_evolution(evolution)
+        self.add_particle(particle)
 
 
     def populate_inertial_frame(self):
@@ -406,7 +431,7 @@ class Universe(object):
         found_evolving_body = False
         found_wind = False
         for particle in self._data['particles']:
-            if particle["evolution_type"] != "NonEvolving":
+            if particle["evolution"] != "NonEvolving":
                 found_evolving_body = True
             if particle["wind"]["effect"] != "Disabled":
                 found_wind = True

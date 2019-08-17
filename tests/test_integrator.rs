@@ -22,14 +22,14 @@ fn whfast_jacobi_case() -> posidonius::WHFast {
     //let general_relativity_implementation = posidonius::GeneralRelativityImplementation::Newhall1983; // REBOUNDx GR full
 
     let star_mass: f64 = 0.08; // Solar masses
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
-    let star_evolution_type = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
-    //let star_evolution_type = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
-    //let star_evolution_type = posidonius::EvolutionType::NonEvolving;
-    let star = common::stars::brown_dwarf(star_mass, star_evolution_type, general_relativity_implementation);
+    //let star_evolution = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
+    //let star_evolution = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
+    let star_evolution = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
+    //let star_evolution = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
+    //let star_evolution = posidonius::EvolutionType::NonEvolving;
+    let star = common::stars::brown_dwarf(star_mass, star_evolution, general_relativity_implementation);
 
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));
@@ -85,14 +85,14 @@ fn whfast_democraticheliocentric_case() -> posidonius::WHFast {
     //let general_relativity_implementation = posidonius::GeneralRelativityImplementation::Newhall1983; // REBOUNDx GR full
 
     let star_mass: f64 = 0.08; // Solar masses
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
-    let star_evolution_type = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
-    //let star_evolution_type = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
-    //let star_evolution_type = posidonius::EvolutionType::NonEvolving;
-    let star = common::stars::brown_dwarf(star_mass, star_evolution_type, general_relativity_implementation);
+    //let star_evolution = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
+    //let star_evolution = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
+    let star_evolution = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
+    //let star_evolution = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
+    //let star_evolution = posidonius::EvolutionType::NonEvolving;
+    let star = common::stars::brown_dwarf(star_mass, star_evolution, general_relativity_implementation);
 
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));
@@ -148,14 +148,14 @@ fn whfast_whds_case() -> posidonius::WHFast {
     //let general_relativity_implementation = posidonius::GeneralRelativityImplementation::Newhall1983; // REBOUNDx GR full
 
     let star_mass: f64 = 0.08; // Solar masses
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
-    let star_evolution_type = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
-    //let star_evolution_type = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
-    //let star_evolution_type = posidonius::EvolutionType::NonEvolving;
-    let star = common::stars::brown_dwarf(star_mass, star_evolution_type, general_relativity_implementation);
+    //let star_evolution = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
+    //let star_evolution = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
+    let star_evolution = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
+    //let star_evolution = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
+    //let star_evolution = posidonius::EvolutionType::NonEvolving;
+    let star = common::stars::brown_dwarf(star_mass, star_evolution, general_relativity_implementation);
 
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));
@@ -211,14 +211,14 @@ fn leapfrog_case() -> posidonius::LeapFrog {
     //let general_relativity_implementation = posidonius::GeneralRelativityImplementation::Newhall1983; // REBOUNDx GR full
 
     let star_mass: f64 = 0.08; // Solar masses
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
-    let star_evolution_type = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
-    //let star_evolution_type = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
-    //let star_evolution_type = posidonius::EvolutionType::NonEvolving;
-    let star = common::stars::brown_dwarf(star_mass, star_evolution_type, general_relativity_implementation);
+    //let star_evolution = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
+    //let star_evolution = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
+    let star_evolution = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
+    //let star_evolution = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
+    //let star_evolution = posidonius::EvolutionType::NonEvolving;
+    let star = common::stars::brown_dwarf(star_mass, star_evolution, general_relativity_implementation);
 
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));
@@ -274,14 +274,14 @@ fn ias15_case() -> posidonius::Ias15 {
     //let general_relativity_implementation = posidonius::GeneralRelativityImplementation::Newhall1983; // REBOUNDx GR full
 
     let star_mass: f64 = 0.08; // Solar masses
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
-    //let star_evolution_type = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
-    let star_evolution_type = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
-    //let star_evolution_type = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
-    //let star_evolution_type = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
-    //let star_evolution_type = posidonius::EvolutionType::NonEvolving;
-    let star = common::stars::brown_dwarf(star_mass, star_evolution_type, general_relativity_implementation);
+    //let star_evolution = posidonius::EvolutionType::Baraffe1998(star_mass); // M-Dwarf (mass = 0.10) or SolarLike ConstantDissipation (mass = 1.0)
+    //let star_evolution = posidonius::EvolutionType::Baraffe2015(star_mass); // mass = 0.01 .. 1.40
+    let star_evolution = posidonius::EvolutionType::Leconte2011(star_mass); // BrownDwarf (mass = 0.01 .. 0.08)
+    //let star_evolution = posidonius::EvolutionType::BolmontMathis2016(star_mass); // SolarLike Evolving dissipation (mass = 0.40 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::GalletBolmont2017(star_mass); // SolarLike Evolving dissipation (mass = 0.30 .. 1.40)
+    //let star_evolution = posidonius::EvolutionType::LeconteChabrier2013; // Jupiter
+    //let star_evolution = posidonius::EvolutionType::NonEvolving;
+    let star = common::stars::brown_dwarf(star_mass, star_evolution, general_relativity_implementation);
 
     let mut particles = vec![star];
     particles.extend(common::planets::basic_configuration(&star));

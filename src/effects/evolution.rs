@@ -17,7 +17,7 @@ pub enum EvolutionType {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Evolver {
-    pub evolution_type: EvolutionType,
+    pub evolution: EvolutionType,
     pub time: Vec<f64>,
     pub radius: Vec<f64>,
     pub radius_of_gyration_2: Vec<f64>,
@@ -32,7 +32,7 @@ pub struct Evolver {
 impl Clone for Evolver {
     fn clone(&self) -> Self {
         Evolver {
-            evolution_type:EvolutionType::NonEvolving,
+            evolution:EvolutionType::NonEvolving,
             time:vec![],
             radius:vec![],
             radius_of_gyration_2:vec![],
@@ -47,7 +47,7 @@ impl Clone for Evolver {
 impl Evolver {
     //pub fn new_dummy() -> Evolver {
         //Evolver{
-            //evolution_type: EvolutionType::NonEvolving,
+            //evolution: EvolutionType::NonEvolving,
             //time: Vec::new(),
             //radius: Vec::new(),
             //radius_of_gyration_2: Vec::new(),
@@ -56,14 +56,14 @@ impl Evolver {
             //left_index: 0,
         //}
     //}
-    pub fn new(evolution_type: EvolutionType, initial_time: f64, time_limit: f64) -> Evolver {
+    pub fn new(evolution: EvolutionType, initial_time: f64, time_limit: f64) -> Evolver {
         let mut time: Vec<f64> = Vec::new();
         let mut radius: Vec<f64> = Vec::new();
         let mut radius_of_gyration_2: Vec<f64> = Vec::new();
         let mut love_number: Vec<f64> = Vec::new();
         let mut inverse_tidal_q_factor: Vec<f64> = Vec::new();
 
-        let filename = match evolution_type {
+        let filename = match evolution {
             EvolutionType::GalletBolmont2017(mass) => {
                 if mass <= 0.301 && mass >= 0.299 {
                     String::from("input/Gallet_Bolmont_2017/M_03_Z_0134.dat")
@@ -235,7 +235,7 @@ impl Evolver {
                 // First line, probably column headers
                 continue
             }
-            let raw_radius = match evolution_type {
+            let raw_radius = match evolution {
                 EvolutionType::Baraffe2015(_) => {
                     row[2].parse::<f64>().unwrap()
                 },
@@ -247,7 +247,7 @@ impl Evolver {
                 }
             };
             // All types have time and radius
-            let (current_time, current_radius) = match evolution_type {
+            let (current_time, current_radius) = match evolution {
                 EvolutionType::Leconte2011(_) => {
                     (raw_time, raw_radius * R_SUN)
                 },
@@ -277,7 +277,7 @@ impl Evolver {
                 }
             };
             // Fields that only some types have...
-            let current_radius_of_gyration_2 = match evolution_type {
+            let current_radius_of_gyration_2 = match evolution {
                 EvolutionType::LeconteChabrier2013(_) => {
                     let raw_radius_of_gyration_2 = row[3].parse::<f64>().unwrap();
                     raw_radius_of_gyration_2
@@ -290,7 +290,7 @@ impl Evolver {
                     0.
                 }
             };
-            let current_love_number = match evolution_type {
+            let current_love_number = match evolution {
                 EvolutionType::LeconteChabrier2013(_) => {
                     let raw_love_number = row[2].parse::<f64>().unwrap();
                     raw_love_number
@@ -299,7 +299,7 @@ impl Evolver {
                     0.
                 }
             };
-            let current_inverse_tidal_q_factor = match evolution_type {
+            let current_inverse_tidal_q_factor = match evolution {
                 EvolutionType::BolmontMathis2016(_) => {
                     let raw_inverse_tidal_q_factor = row[2].parse::<f64>().unwrap();
                     raw_inverse_tidal_q_factor
@@ -319,7 +319,7 @@ impl Evolver {
 
             // Only save values needed for the evolution model to save memory
             // and computation time when cloning
-            match evolution_type {
+            match evolution {
                 EvolutionType::GalletBolmont2017(_) => {
                     time.push(current_time);
                     radius.push(current_radius);
@@ -360,7 +360,7 @@ impl Evolver {
         }
         
         // Leconte2011 have a separate file for radius of gyration with a different time sampling:
-        if let EvolutionType::Leconte2011(mass) = evolution_type {
+        if let EvolutionType::Leconte2011(mass) = evolution {
             // Read separate file
             let mut aux_time: Vec<f64> = Vec::new();
             let mut aux_radius_of_gyration_2: Vec<f64> = Vec::new();
@@ -431,7 +431,7 @@ impl Evolver {
             panic!("Your time limit ({} days) is greater than the maximum allowed age of the star ({} days)", time_limit, time[time.len()-1]);
         }
 
-        Evolver { evolution_type:evolution_type, 
+        Evolver { evolution:evolution, 
                 time:time,
                 radius:radius,
                 radius_of_gyration_2:radius_of_gyration_2,
@@ -451,7 +451,7 @@ impl Evolver {
     }
 
     pub fn radius(&mut self, current_time: f64, current_radius: f64) -> f64 {
-        let (new_radius, left_index) = match self.evolution_type {
+        let (new_radius, left_index) = match self.evolution {
             EvolutionType::NonEvolving => { (current_radius, 0) },
             _ => { interpolate_b_spline(&self.time[self.idx()..], &self.radius[self.idx()..], current_time) }
         };
@@ -460,7 +460,7 @@ impl Evolver {
     }
 
     pub fn radius_of_gyration_2(&mut self, current_time: f64, current_radius_of_gyration_2: f64) -> f64 {
-        let (new_radius_of_gyration_2, left_index) = match self.evolution_type {
+        let (new_radius_of_gyration_2, left_index) = match self.evolution {
             EvolutionType::Baraffe2015(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
             EvolutionType::Leconte2011(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
             EvolutionType::LeconteChabrier2013(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
@@ -471,7 +471,7 @@ impl Evolver {
     }
 
     pub fn love_number(&mut self, current_time: f64, current_love_number: f64) -> f64 {
-        let (new_love_number, left_index) = match self.evolution_type {
+        let (new_love_number, left_index) = match self.evolution {
             EvolutionType::LeconteChabrier2013(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
             _ => { (current_love_number, 0) }
         };
@@ -497,7 +497,7 @@ impl Evolver {
         // The tidal theory (and this code) assumes circular orbits because they are easier.
         // Excentric orbits needs more than one frequency to be described and it will be
         // included in future versions of this code.
-        let (new_inverse_tidal_q_factor, left_index) = match self.evolution_type {
+        let (new_inverse_tidal_q_factor, left_index) = match self.evolution {
             EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
                 interpolate_b_spline(&self.time[self.idx()..], &self.inverse_tidal_q_factor[self.idx()..], current_time)
             },
@@ -539,7 +539,7 @@ pub fn calculate_particles_evolving_quantities(current_time: f64, particles: &mu
         ////////////////////////////////////////////////////////////////////
         // Lag angle
         ////////////////////////////////////////////////////////////////////
-        particle.tides.parameters.internal.lag_angle = match evolver.evolution_type {
+        particle.tides.parameters.internal.lag_angle = match evolver.evolution {
             EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
                     let inverse_tidal_q_factor = evolver.inverse_tidal_q_factor(current_time, 0.);
                     let epsilon_squared = particle.norm_spin_vector_2/SUN_DYN_FREQ;

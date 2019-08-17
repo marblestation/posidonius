@@ -7,7 +7,7 @@ class RotationalFlattening(object):
             "effect": "Disabled",
             "parameters": {
                 "input": {
-                    "fluid_love_number": 0.0,
+                    "love_number": 0.0,
                 },
                 "internal": {
                     "distance": 0.0,
