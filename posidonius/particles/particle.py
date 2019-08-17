@@ -1,4 +1,5 @@
-from axes import Axes
+import six
+from posidonius.particles.axes import Axes
 import posidonius.effects as effects
 from posidonius.constants import K2
 
@@ -42,7 +43,7 @@ class Particle(object):
         self._evolution_type = evolution_type
 
     def effects(self):
-        return [type(value) for key, value in self._effects.iteritems()]
+        return [type(value) for key, value in six.iteritems(self._effects)]
 
     def general_relativity_implementation(self):
         return self._effects['general_relativity'].implementation()

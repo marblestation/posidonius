@@ -1,3 +1,4 @@
+import six
 
 class Wind(object):
     def __init__(self, variant, input_parameters=None):
@@ -19,7 +20,7 @@ class Wind(object):
         if variant in ("Interaction", ):
             self._data["effect"] = variant
             # Update default values, ignore non-recognised keys
-            for key, value in input_parameters.iteritems():
+            for key, value in six.iteritems(input_parameters):
                 if key in self._data["parameters"]["input"]:
                     self._data["parameters"]["input"][key] = float(value)
                 else:

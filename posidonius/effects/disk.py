@@ -1,3 +1,4 @@
+import six
 from posidonius.particles.axes import Axes
 
 class Disk(object):
@@ -56,7 +57,7 @@ class CentralBody(Disk):
             "surface_density_normalization": 0.0,
         }
         # Update default values, ignore non-recognised keys
-        for key, value in input_properties.iteritems():
+        for key, value in six.iteritems(input_properties):
             if key in properties:
                 properties[key] = value
         super(CentralBody, self).__init__("CentralBody", properties)

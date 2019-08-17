@@ -1,3 +1,4 @@
+import six
 from posidonius.particles.axes import Axes
 
 class Tides(object):
@@ -36,7 +37,7 @@ class Tides(object):
         if variant in ("CentralBody", "OrbitingBody", ):
             self._data["effect"] = variant
             # Update default values, ignore non-recognised keys
-            for key, value in input_parameters.iteritems():
+            for key, value in six.iteritems(input_parameters):
                 if key in self._data["parameters"]["input"]:
                     self._data["parameters"]["input"][key] = float(value)
                 else:

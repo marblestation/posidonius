@@ -4,7 +4,7 @@ import shutil
 import filecmp
 import posidonius
 from posidonius.tests import common
-from test_base import TestBase
+from posidonius.tests.test_base import TestBase
 
 class Disk(TestBase):
 

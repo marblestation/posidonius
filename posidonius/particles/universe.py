@@ -1,6 +1,7 @@
 import os
+import six
 import datetime
-from axes import Axes
+from posidonius.particles.axes import Axes
 from posidonius.integrator import WHFast, Ias15, LeapFrog
 from posidonius.constants import *
 from posidonius.effects.evolution import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
@@ -19,7 +20,7 @@ class ConsiderEffects(object):
             "evolution": False,
         }
         # Update default values, ignore non-recognised keys
-        for key, value in input_properties.iteritems():
+        for key, value in six.iteritems(input_properties):
             if key in self._data:
                 self._data[key] = value
 

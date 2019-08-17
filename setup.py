@@ -4,9 +4,9 @@ import shutil
 from subprocess import Popen, PIPE
 
 try:
-    from setuptools import setup, find_packages
-except ImportError:
-    from distutils.core import setup, find_packages
+    from setuptools import setup
+except:
+    from distutils.core import setup
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -26,7 +26,7 @@ def get_git_version(default="v0.0.1"):
         p.stderr.close()
         line = p.stdout.readlines()[0]
         line = line.strip()
-        return line
+        return line.decode('utf-8')
     except:
         return default
 
@@ -39,7 +39,7 @@ setup(
     license = "GNU Affero General Public License",
     keywords = "N-Body simulations exoplanets tides",
     url = "http://www.blancocuaresma.com/s/",
-    packages=['posidonius', 'posidonius.analysis' ],
+    packages=['posidonius', 'posidonius.analysis', 'posidonius.effects', 'posidonius.particles', 'posidonius.integrator' ],
     data_files=[(basedir, [filename for filename in glob.iglob('{}/*.*'.format(basedir))]) for basedir in glob.iglob("input/*")],
     long_description=long_description,
     classifiers=[

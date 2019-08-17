@@ -107,7 +107,7 @@ if __name__ == "__main__":
         pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*posidonius.constants.AU)**(-3./2.) * posidonius.constants.DAY) # Days
         planet_computed_data['pseudo_synchronization_period'] = pseudo_synchronization_period
 
-        if universe_integrator_json['universe']['consider_tides']:
+        if universe_integrator_json['universe']['consider_effects']['tides']:
             ### Calculation of energydot and tidal flux, in W/m2
             # Gravitationl energy lost of the system due to dissipation
             # Masses in kg
@@ -126,7 +126,7 @@ if __name__ == "__main__":
             # The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
             # If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
             mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * posidonius.constants.AU, 2))
-            dissipation_factor_scale = universe_integrator_json['universe']['particles'][int(key)]['dissipation_factor_scale']
+            dissipation_factor_scale = universe_integrator_json['universe']['particles'][int(key)]['tides']['parameters']['input']['dissipation_factor_scale']
             mean_tidal_flux *= dissipation_factor_scale
             planet_computed_data['mean_tidal_flux'] = mean_tidal_flux
 

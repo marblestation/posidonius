@@ -1,6 +1,6 @@
 import os
 import errno
-from planets import *
+from posidonius.tests.common.planets import *
 
 
 def _mkdir_p(path):

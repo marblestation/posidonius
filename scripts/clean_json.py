@@ -1,8 +1,10 @@
 import fnmatch
 import os
 import json
+from itertools import chain
 
-for root, dirnames, filenames in os.walk('tests/data'):
+paths = ('tests/data', 'posidonius/tests/data',)
+for root, dirnames, filenames in chain.from_iterable(os.walk(path) for path in paths):
     for filename in fnmatch.filter(filenames, 'case.json'):
         full_path = os.path.join(root, filename)
         with open(full_path) as input_json_file:

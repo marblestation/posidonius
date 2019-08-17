@@ -1,3 +1,3 @@
-import computation
-import history
-import resonances
+import posidonius.analysis.computation
+import posidonius.analysis.history
+import posidonius.analysis.resonances

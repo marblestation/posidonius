@@ -52,7 +52,7 @@ def classify(n_particles, data, discard_first_hundred_years=False):
 
     planets_data = {}
     planets_keys = [] # To ensure the order
-    for i in xrange(n_particles-1):
+    for i in range(n_particles-1):
         planets_data["{}".format(i+1)] = data[data['particle'] == i+1]
         planets_keys.append("{}".format(i+1))
 
