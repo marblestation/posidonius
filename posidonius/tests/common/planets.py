@@ -1,4 +1,5 @@
 import posidonius
+import numpy as np
 
 def _posvel(star_mass, planet_mass, a):
     #////////// Specify initial position and velocity for a stable orbit
@@ -42,7 +43,8 @@ def basic_configuration(universe):
     planet1_spin = _spin(planet1_obliquity, planet1_rotation_period, star_mass, planet1_mass, planet1_position, planet1_velocity)
 
     planet1_evolution = posidonius.NonEvolving()
-    universe.add_earth_like(planet1_mass, planet1_dissipation_factor_scale, planet1_position, planet1_velocity, planet1_spin, planet1_evolution)
+    planet1 = earth_like(planet1_mass, planet1_dissipation_factor_scale, planet1_position, planet1_velocity, planet1_spin, planet1_evolution)
+    universe.add_particle(planet1)
 
     ############################################################################
     planet2_mass_factor = 0.00095
@@ -57,7 +59,8 @@ def basic_configuration(universe):
     planet2_spin = _spin(planet2_obliquity, planet2_rotation_period, star_mass, planet2_mass, planet2_position, planet2_velocity)
 
     planet2_evolution = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
-    universe.add_jupiter_like(planet2_mass, planet2_dissipation_factor_scale, planet2_position, planet2_velocity, planet2_spin, planet2_evolution)
+    planet2 = jupiter_like(planet2_mass, planet2_dissipation_factor_scale, planet2_position, planet2_velocity, planet2_spin, planet2_evolution)
+    universe.add_particle(planet2)
 
     ############################################################################
     planet3_mass_factor = 0.00095
@@ -72,4 +75,72 @@ def basic_configuration(universe):
     planet3_spin = _spin(planet3_obliquity, planet3_rotation_period, star_mass, planet3_mass, planet3_position, planet3_velocity)
 
     planet3_evolution = posidonius.NonEvolving()
-    universe.add_jupiter_like(planet3_mass, planet3_dissipation_factor_scale, planet3_position, planet3_velocity, planet3_spin, planet3_evolution)
+    planet3 = jupiter_like(planet3_mass, planet3_dissipation_factor_scale, planet3_position, planet3_velocity, planet3_spin, planet3_evolution)
+    universe.add_particle(planet3)
+
+def earth_like(mass, dissipation_factor_scale, position, velocity, spin, evolution):
+    if type(evolution) not in (posidonius.NonEvolving,):
+        raise Exception("Evolution type should be NonEvolving!")
+
+
+    # Earth-like => mass-radius relationship from Fortney 2007
+    radius_factor = posidonius.tools.mass_radius_relation(mass, planet_mass_type='AU', planet_percent_rock=0.70)
+    radius = radius_factor * posidonius.constants.R_EARTH
+    radius_of_gyration = 5.75e-01 # Earth type planet
+
+    # Typical rotation period: 24 hours
+    love_number = 0.299 # Earth
+    fluid_love_number = 0.9532 # Earth
+    k2pdelta = 2.465278e-3 # Terrestrial planets
+    dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(radius, 5))
+    tides = posidonius.effects.tides.OrbitingBody({
+        "dissipation_factor_scale": dissipation_factor_scale,
+        "dissipation_factor": dissipation_factor,
+        "love_number": love_number,
+    })
+    rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody({"love_number": fluid_love_number})
+    general_relativity = posidonius.effects.general_relativity.OrbitingBody()
+    wind = posidonius.effects.wind.Disabled()
+    disk = posidonius.effects.disk.OrbitingBody()
+    particle = posidonius.Particle(mass, radius, radius_of_gyration, position, velocity, spin)
+    particle.set_tides(tides)
+    particle.set_rotational_flattening(rotational_flattening)
+    particle.set_general_relativity(general_relativity)
+    particle.set_wind(wind)
+    particle.set_disk(disk)
+    particle.set_evolution(evolution)
+    return particle
+
+
+def jupiter_like(mass, dissipation_factor_scale, position, velocity, spin, evolution):
+    if type(evolution) not in (posidonius.LeconteChabrier2013, posidonius.NonEvolving):
+        raise Exception("Evolution type should be LeconteChabrier2013 or NonEvolving!")
+
+    radius_factor = 10.9 # Jupiter in R_EARTH
+    radius = radius_factor * posidonius.constants.R_EARTH
+    radius_of_gyration = 5.04e-01 # Gas giant
+
+    # Typical rotation period: 9.8 hours
+    love_number = 0.380 # Gas giant
+    # TODO: What k2pdelta/dissipation_factor is the recommended?
+    #k2pdelta = 8.101852e-9 # Gas giant
+    k2pdelta = 2.893519e-7 # Gas giant for Jupiter: 2-3d-2 s, here in day (Leconte)
+    dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(radius, 5))
+    #dissipation_factor = 2.006*3.845764e4 // Gas giant
+    tides = posidonius.effects.tides.OrbitingBody({
+        "dissipation_factor_scale": dissipation_factor_scale,
+        "dissipation_factor": dissipation_factor,
+        "love_number": love_number,
+    })
+    rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody({"love_number": love_number})
+    general_relativity = posidonius.effects.general_relativity.OrbitingBody()
+    wind = posidonius.effects.wind.Disabled()
+    disk = posidonius.effects.disk.OrbitingBody()
+    particle = posidonius.Particle(mass, radius, radius_of_gyration, position, velocity, spin)
+    particle.set_tides(tides)
+    particle.set_rotational_flattening(rotational_flattening)
+    particle.set_general_relativity(general_relativity)
+    particle.set_wind(wind)
+    particle.set_disk(disk)
+    particle.set_evolution(evolution)
+    return particle

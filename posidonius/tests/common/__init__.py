@@ -1,5 +1,6 @@
 import os
 import errno
+from posidonius.tests.common.stars import *
 from posidonius.tests.common.planets import *
 
 

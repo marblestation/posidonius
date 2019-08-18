@@ -262,13 +262,6 @@ if __name__ == "__main__":
     planet2_radius = planet2_radius_factor * posidonius.constants.R_EARTH
     planet2_radius_of_gyration = 5.75e-01
 
-    # Terrestrial:
-    k2pdelta = 2.465278e-3 # Terrestrial planet2s (no gas)
-    planet2_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet2_radius, 5))
-    planet2_dissipation_factor_scale = 10.0
-    planet2_love_number = 0.305
-    planet2_fluid_love_number = planet2_love_number
-
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     a = 0.1;                             # semi-major axis (in AU)
@@ -300,10 +293,64 @@ if __name__ == "__main__":
     planet2_inclination = planet2_keplerian_orbital_elements[3]
     planet2_spin = calculate_spin(planet2_angular_frequency, planet2_inclination, planet2_obliquity, planet2_position, planet2_velocity)
 
-    planet2_evolution_type = posidonius.NonEvolving()
-    #planet2_disk = posidonius.NoDisk()
-    #universe.add_particle(planet2_mass, planet2_radius, planet2_dissipation_factor, planet2_dissipation_factor_scale, planet2_radius_of_gyration, planet2_love_number, planet2_fluid_love_number, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type, planet2_disk)
-    universe.add_earth_like(planet2_mass, planet2_dissipation_factor_scale, planet2_position, planet2_velocity, planet2_spin, planet2_evolution_type)
+    k2pdelta = 2.465278e-3 # Terrestrial planet2s (no gas)
+    planet2_tides_parameters = {
+        "dissipation_factor_scale": 10.0,
+        "dissipation_factor": 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet2_radius, 5)),
+        "love_number": 0.305,
+    }
+    #planet2_tides = posidonius.effects.tides.CentralBody(planet2_tides_parameters)
+    planet2_tides = posidonius.effects.tides.OrbitingBody(planet2_tides_parameters)
+    #planet2_tides = posidonius.effects.tides.Disabled()
+    #
+    #planet2_rotational_flattening_parameters = {"love_number": planet2_tides_parameters["love_number"]}
+    #planet2_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(planet2_rotational_flattening_parameters)
+    #planet2_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(planet2_rotational_flattening_parameters)
+    planet2_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
+    #
+    #planet2_general_relativity = posidonius.effects.general_relativity.CentralBody("Kidder1995")
+    #planet2_general_relativity = posidonius.effects.general_relativity.CentralBody("Anderson1975")
+    #planet2_general_relativity = posidonius.effects.general_relativity.CentralBody("Newhall1983")
+    planet2_general_relativity = posidonius.effects.general_relativity.OrbitingBody()
+    #planet2_general_relativity = posidonius.effects.general_relativity.Disabled()
+    #
+    #planet2_wind = posidonius.effects.wind.Interaction({
+        ## Solar wind parametrisation (Bouvier 1997)
+        #"k_factor": 4.0e-18, # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
+        #"rotation_saturation": 1.7592918860102842, # 14. * TWO_PI/25.0, in units of the spin of the Sun today
+    #})
+    planet2_wind = posidonius.effects.wind.Disabled()
+    #
+    #disk_surface_density_normalization_gcm = 1000. # g.cm^-2
+    #disk_surface_density_normalization_SI = disk_surface_density_normalization_gcm * 1.0e-3 * 1.0e4 # kg.m^-2
+    #disk_properties = {
+        #'inner_edge_distance': 0.01,  # AU
+        #'outer_edge_distance': 100.0, # AU
+        #'lifetime': 1.0e5 * 365.25e0, # days
+        #'alpha': 1.0e-2,
+        #'surface_density_normalization': disk_surface_density_normalization_SI * (1.0/posidonius.constants.M_SUN) * posidonius.constants.AU**2, # Msun.AU^-2
+        #'mean_molecular_weight': 2.4,
+    #}
+    #planet2_disk = posidonius.effects.disk.CentralBody(disk_properties)
+    planet2_disk = posidonius.effects.disk.Disabled()
+    #
+    #planet2_evolution = posidonius.GalletBolmont2017(planet2_mass) # mass = 0.30 .. 1.40
+    #planet2_evolution = posidonius.BolmontMathis2016(planet2_mass) # mass = 0.40 .. 1.40
+    #planet2_evolution = posidonius.Baraffe2015(planet2_mass) # mass = 0.01 .. 1.40
+    #planet2_evolution = posidonius.Leconte2011(planet2_mass) # mass = 0.01 .. 0.08
+    #planet2_evolution = posidonius.Baraffe1998(planet2_mass) # Sun (mass = 1.0) or M-Dwarf (mass = 0.1)
+    #planet2_evolution = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
+    #planet2_evolution = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
+    planet2_evolution = posidonius.NonEvolving()
+    #
+    planet2 = posidonius.Particle(planet2_mass, planet2_radius, planet2_radius_of_gyration, planet2_position, planet2_velocity, planet2_spin)
+    planet2.set_tides(planet2_tides)
+    planet2.set_rotational_flattening(planet2_rotational_flattening)
+    planet2.set_general_relativity(planet2_general_relativity)
+    planet2.set_wind(planet2_wind)
+    planet2.set_disk(planet2_disk)
+    planet2.set_evolution(planet2_evolution)
+    universe.add_particle(planet2)
 
     whfast_alternative_coordinates="DemocraticHeliocentric"
     #whfast_alternative_coordinates="WHDS"

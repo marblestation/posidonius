@@ -47,7 +47,8 @@ class GeneralRelativity(TestBase):
         #star_evolution = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
         #star_evolution = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
         #star_evolution = posidonius.NonEvolving()
-        universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution)
+        star = common.brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution)
+        universe.add_particle(star)
         common.basic_configuration(universe)
 
         ############################################################################
@@ -96,7 +97,8 @@ class GeneralRelativity(TestBase):
         #star_evolution = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
         #star_evolution = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
         #star_evolution = posidonius.NonEvolving()
-        universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution)
+        star = common.brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution)
+        universe.add_particle(star)
         common.basic_configuration(universe)
 
         ############################################################################
@@ -144,7 +146,8 @@ class GeneralRelativity(TestBase):
         #star_evolution = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
         #star_evolution = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
         #star_evolution = posidonius.NonEvolving()
-        universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution)
+        star = common.brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution)
+        universe.add_particle(star)
         common.basic_configuration(universe)
 
         ############################################################################
@@ -192,7 +195,8 @@ class GeneralRelativity(TestBase):
         #star_evolution = posidonius.LeconteChabrier2013(False) # Jupiter without dissipation of dynamical tides
         #star_evolution = posidonius.LeconteChabrier2013(True) # Jupiter with dissipation of dynamical tides
         #star_evolution = posidonius.NonEvolving()
-        universe.add_brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution)
+        star = common.brown_dwarf(star_mass, star_dissipation_factor_scale, star_position, star_velocity, general_relativity_implementation, star_evolution)
+        universe.add_particle(star)
         common.basic_configuration(universe)
 
         ############################################################################
