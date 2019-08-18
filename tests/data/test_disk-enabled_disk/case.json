@@ -464,6 +464,7 @@
         "norm_spin_vector_2": 355.3057584392169, 
         "radius": 0.004650467260962157, 
         "radius_of_gyration_2": 0.059049, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -689,6 +690,7 @@
         "norm_spin_vector_2": 39.47841760435743, 
         "radius": 4.307581066392812e-05, 
         "radius_of_gyration_2": 0.33062499999999995, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -916,6 +918,7 @@
         "norm_spin_vector_2": 39.47841760435743, 
         "radius": 0.00046472111985749006, 
         "radius_of_gyration_2": 0.254016, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -1141,6 +1144,7 @@
         "norm_spin_vector_2": 39.47841760435743, 
         "radius": 0.00046472111985749006, 
         "radius_of_gyration_2": 0.254016, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -1366,6 +1370,7 @@
         "norm_spin_vector_2": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -1591,6 +1596,7 @@
         "norm_spin_vector_2": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -1816,6 +1822,7 @@
         "norm_spin_vector_2": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -2041,6 +2048,7 @@
         "norm_spin_vector_2": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -2266,6 +2274,7 @@
         "norm_spin_vector_2": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {
@@ -2491,6 +2500,7 @@
         "norm_spin_vector_2": 0.0, 
         "radius": 0.0, 
         "radius_of_gyration_2": 0.0, 
+        "reference": "MostMassiveParticle", 
         "rotational_flattening": {
           "coordinates": {
             "position": {

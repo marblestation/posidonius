@@ -13,6 +13,7 @@ mod particles;
 pub use self::particles::Universe;
 pub use self::particles::ConsiderEffects;
 pub use self::particles::Particle;
+pub use self::particles::Reference;
 pub use self::particles::Axes;
 mod effects;
 pub use self::effects::Tides;

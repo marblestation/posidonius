@@ -4,9 +4,49 @@ import posidonius.effects as effects
 from posidonius.constants import K2
 from posidonius.effects.evolution import NonEvolving
 
+class Reference(object):
+    def __init__(self, variant, index=None):
+        self._data = {
+            "effect": "Disabled",
+            "parameters": {
+                "input": {
+                    "k_factor": 0.0,
+                    "rotation_saturation": 0.0,
+                },
+                "internal": {
+                    "rotation_saturation_2": 0.0,
+                },
+                "output": {
+                    "factor": 0.0,
+                },
+            },
+        }
+        if variant in ("Particle", ):
+            self._data[variant] = int(index)
+        if variant in ("MostMassiveParticle", ):
+            self._data = variant
+        else:
+            raise Exception("Unknown variant '{}'".format(variant))
+
+    def get(self):
+        if type(self._data) == str:
+            return self._data
+        else:
+            return self._data.copy()
+
+class MostMassiveParticle(Reference):
+    def __init__(self):
+        super(MostMassiveParticle, self).__init__("MostMassiveParticle")
+
+class ReferenceParticle(Reference):
+    def __init__(self, index):
+        super(ReferenceParticle, self).__init__("ReferenceParticle", index=index)
+
+
 class Particle(object):
     def __init__(self, mass, radius, radius_of_gyration, position, velocity, spin):
         radius_of_gyration_2 = float(radius_of_gyration)**2
+        reference = MostMassiveParticle()
         tides = effects.tides.Disabled()
         rotational_flattening = effects.rotational_flattening.Disabled()
         general_relativity = effects.general_relativity.Disabled()
@@ -36,6 +76,7 @@ class Particle(object):
             "norm_spin_vector_2": spin.x()**2 + spin.y()**2 + spin.z()**2,
             "radius": float(radius),
             "radius_of_gyration_2": float(radius_of_gyration_2),
+            "reference": reference.get(),
             "rotational_flattening": rotational_flattening.get(),
             "spin": spin.get(),
             "tides": tides.get(),
@@ -92,6 +133,9 @@ class Particle(object):
         self._data["evolution"] = evolution.get()
         self._evolution = evolution
 
+    def set_reference(self, reference):
+        self._data["reference"] = reference.get()
+
 
 class DummyParticle(Particle):
     def __init__(self):
@@ -101,6 +145,7 @@ class DummyParticle(Particle):
         position = Axes(0.0, 0.0, 0.0)
         velocity = Axes(0.0, 0.0, 0.0)
         spin = Axes(0.0, 0.0, 0.0)
+        reference = MostMassiveParticle()
         tides = effects.tides.Disabled()
         rotational_flattening = effects.rotational_flattening.Disabled()
         general_relativity = effects.general_relativity.Disabled()
@@ -114,3 +159,4 @@ class DummyParticle(Particle):
         super(DummyParticle, self).set_wind(wind)
         super(DummyParticle, self).set_disk(disk)
         super(DummyParticle, self).set_evolution(evolution)
+        super(DummyParticle, self).set_reference(reference)

@@ -5,6 +5,12 @@ use super::super::{TidesEffect, RotationalFlatteningEffect, GeneralRelativityEff
 use time;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+pub enum Reference {
+    MostMassiveParticle,
+    Particle(usize), // Index
+}
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Particle {
     pub id: usize, // Unique internal identifier
     pub mass: f64,
@@ -32,6 +38,8 @@ pub struct Particle {
                                     // depends on the shape of the body and determines the torque needed for a desired angular acceleration
     pub moment_of_inertia_ratio: f64, // Spin related
     pub moment_of_inertia: f64, // Spin related
+    //
+    pub reference: Reference, // Particle of reference for computing keplerian orbital parameters
     //
     pub tides: Tides,
     pub rotational_flattening: RotationalFlattening,
@@ -78,6 +86,7 @@ impl Particle {
             radius_of_gyration_2: radius_of_gyration_2,
             moment_of_inertia_ratio: 1.,
             moment_of_inertia: mass * radius_of_gyration_2 * radius.powi(2),
+            reference: Reference::MostMassiveParticle,
             tides: tides,
             rotational_flattening: rotational_flattening,
             general_relativity: general_relativity,
@@ -114,6 +123,7 @@ impl Particle {
             radius_of_gyration_2: 0.,
             moment_of_inertia_ratio: 1.,
             moment_of_inertia: 0.,
+            reference: Reference::MostMassiveParticle,
             tides: Tides::new(TidesEffect::Disabled, dissipation_factor, dissipation_factor_scale, love_number),
             rotational_flattening: RotationalFlattening::new(RotationalFlatteningEffect::Disabled, love_number),
             general_relativity: GeneralRelativity::new(GeneralRelativityEffect::Disabled),

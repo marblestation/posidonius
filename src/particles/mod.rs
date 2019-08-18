@@ -4,6 +4,7 @@ mod axes;
 mod common;
 
 pub use self::particle::Particle;
+pub use self::particle::Reference;
 pub use self::universe::Universe;
 pub use self::universe::IgnoreGravityTerms;
 pub use self::universe::ConsiderEffects;
