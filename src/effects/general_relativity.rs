@@ -38,6 +38,7 @@ pub enum GeneralRelativityImplementation {
     Kidder1995, // MercuryT
     Anderson1975, // REBOUNDx gr
     Newhall1983, // REBOUNDx gr full
+    Disabled,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
@@ -81,7 +82,7 @@ impl GeneralRelativity {
 
 pub fn initialize(host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle]) {
     if let GeneralRelativityEffect::CentralBody(general_relativity_implementation) = host_particle.general_relativity.effect {
-        if general_relativity_implementation != GeneralRelativityImplementation::Newhall1983 {
+        if general_relativity_implementation != GeneralRelativityImplementation::Newhall1983 && general_relativity_implementation != GeneralRelativityImplementation::Disabled {
             host_particle.general_relativity.parameters.internal.factor = 0.;
             host_particle.general_relativity.parameters.output.acceleration.x = 0.;
             host_particle.general_relativity.parameters.output.acceleration.y = 0.;
@@ -106,7 +107,7 @@ pub fn initialize(host_particle: &mut Particle, particles: &mut [Particle], more
 
 pub fn inertial_to_heliocentric_coordinates(host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle]) {
     if let GeneralRelativityEffect::CentralBody(general_relativity_implementation) = host_particle.general_relativity.effect {
-        if general_relativity_implementation != GeneralRelativityImplementation::Newhall1983 {
+        if general_relativity_implementation != GeneralRelativityImplementation::Disabled {
             // Inertial to Heliocentric positions/velocities
             host_particle.general_relativity.coordinates.position.x = 0.;
             host_particle.general_relativity.coordinates.position.y = 0.;
@@ -147,21 +148,23 @@ pub fn inertial_to_heliocentric_coordinates(host_particle: &mut Particle, partic
 }
 
 pub fn copy_heliocentric_coordinates(host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle]) {
-    if let GeneralRelativityEffect::CentralBody(_general_relativity_implementation) = host_particle.general_relativity.effect {
-        host_particle.general_relativity.coordinates.position = host_particle.heliocentric_position;
-        host_particle.general_relativity.coordinates.velocity = host_particle.heliocentric_velocity;
-        host_particle.general_relativity.parameters.internal.distance = host_particle.heliocentric_distance;
-        host_particle.general_relativity.parameters.internal.radial_velocity = host_particle.heliocentric_radial_velocity;
-        host_particle.general_relativity.parameters.internal.norm_velocity_vector = host_particle.heliocentric_norm_velocity_vector;
-        host_particle.general_relativity.parameters.internal.norm_velocity_vector_2 = host_particle.heliocentric_norm_velocity_vector_2;
-        for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-            if let GeneralRelativityEffect::OrbitingBody = particle.general_relativity.effect {
-                particle.general_relativity.coordinates.position = particle.heliocentric_position;
-                particle.general_relativity.coordinates.velocity = particle.heliocentric_velocity;
-                particle.general_relativity.parameters.internal.distance = particle.heliocentric_distance;
-                particle.general_relativity.parameters.internal.radial_velocity = particle.heliocentric_radial_velocity;
-                particle.general_relativity.parameters.internal.norm_velocity_vector = particle.heliocentric_norm_velocity_vector;
-                particle.general_relativity.parameters.internal.norm_velocity_vector_2 = particle.heliocentric_norm_velocity_vector_2;
+    if let GeneralRelativityEffect::CentralBody(general_relativity_implementation) = host_particle.general_relativity.effect {
+        if general_relativity_implementation != GeneralRelativityImplementation::Disabled {
+            host_particle.general_relativity.coordinates.position = host_particle.heliocentric_position;
+            host_particle.general_relativity.coordinates.velocity = host_particle.heliocentric_velocity;
+            host_particle.general_relativity.parameters.internal.distance = host_particle.heliocentric_distance;
+            host_particle.general_relativity.parameters.internal.radial_velocity = host_particle.heliocentric_radial_velocity;
+            host_particle.general_relativity.parameters.internal.norm_velocity_vector = host_particle.heliocentric_norm_velocity_vector;
+            host_particle.general_relativity.parameters.internal.norm_velocity_vector_2 = host_particle.heliocentric_norm_velocity_vector_2;
+            for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
+                if let GeneralRelativityEffect::OrbitingBody = particle.general_relativity.effect {
+                    particle.general_relativity.coordinates.position = particle.heliocentric_position;
+                    particle.general_relativity.coordinates.velocity = particle.heliocentric_velocity;
+                    particle.general_relativity.parameters.internal.distance = particle.heliocentric_distance;
+                    particle.general_relativity.parameters.internal.radial_velocity = particle.heliocentric_radial_velocity;
+                    particle.general_relativity.parameters.internal.norm_velocity_vector = particle.heliocentric_norm_velocity_vector;
+                    particle.general_relativity.parameters.internal.norm_velocity_vector_2 = particle.heliocentric_norm_velocity_vector_2;
+                }
             }
         }
     }
@@ -453,8 +456,6 @@ fn calculate_kidder1995_spin_orbit_general_relativity_acceleration_and_dangular_
 //--------------------------------------------------------------------------
 // [start] General Relativity based on REBOUNDx gr.c
 pub fn calculate_anderson1975_general_relativity_acceleration(host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], ignored_gravity_terms: IgnoreGravityTerms) {
-    // TODO: Only consider "GeneralRelativityEffect::OrbitingBody = particle.general_relativity.effect" (no Disabled ones)
-    //
     // Calculate Newtonian accelerations in the current setup and considering all particles
     let mut host_particle = host_particle;
     let mut particles = particles;
@@ -677,8 +678,6 @@ fn get_anderson1975_newhall1983_newtonian_inertial_accelerations(host_particle: 
 //--------------------------------------------------------------------------
 // [start] General Relativity FULL based on REBOUNDx gr.c
 pub fn calculate_newhall1983_general_relativity_acceleration(host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], ignored_gravity_terms: IgnoreGravityTerms) {
-    // TODO: Only consider "GeneralRelativityEffect::OrbitingBody = particle.general_relativity.effect" (no Disabled ones)
-    //
     // host_particle is separated from particles for homogeneity with the rest of methods,
     // but this implementation of General Relativity does not uses a host, all
     // interactions between all the bodies are computed

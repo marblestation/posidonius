@@ -69,18 +69,21 @@ pub enum IgnoreGravityTerms {
 impl Universe {
     pub fn new(initial_time: f64, time_limit: f64, mut particles: Vec<Particle>, mut consider_effects: ConsiderEffects) -> Universe {
         disable_unnecessary_effects(&mut consider_effects, &particles);
+        check_effects_vs_central_and_orbiting(&particles, &consider_effects);
         let hosts = find_indices(&particles, &consider_effects);
 
         // Initialize general relativity factor
-        let mut general_relativity_implementation = GeneralRelativityImplementation::Kidder1995;
+        let mut general_relativity_implementation = GeneralRelativityImplementation::Disabled;
         if consider_effects.general_relativity {
             let (particles_left, particles_right) = particles.split_at_mut(hosts.index.general_relativity);
             if let Some((general_relativity_host_particle, particles_right)) = particles_right.split_first_mut() {
                 if let GeneralRelativityEffect::CentralBody(implementation) = general_relativity_host_particle.general_relativity.effect {
-                    general_relativity_implementation = implementation;
-                    let local_copy_star_mass_g = general_relativity_host_particle.mass_g;
-                    for particle in particles_left.iter_mut().chain(particles_right.iter_mut()) {
-                        particle.general_relativity.parameters.internal.factor =  local_copy_star_mass_g*particle.mass_g / (local_copy_star_mass_g + particle.mass_g).powi(2)
+                    if implementation != GeneralRelativityImplementation::Disabled {
+                        general_relativity_implementation = implementation;
+                        let local_copy_star_mass_g = general_relativity_host_particle.mass_g;
+                        for particle in particles_left.iter_mut().chain(particles_right.iter_mut()) {
+                            particle.general_relativity.parameters.internal.factor =  local_copy_star_mass_g*particle.mass_g / (local_copy_star_mass_g + particle.mass_g).powi(2)
+                        }
                     }
                 }
             }
@@ -482,6 +485,7 @@ impl Universe {
                                                                                                       &mut particles_left, &mut particles_right, 
                                                                                                       ignored_gravity_terms);
                         },
+                        GeneralRelativityImplementation::Disabled => {},
                     }
                 }
             }
@@ -658,11 +662,13 @@ fn disable_unnecessary_effects(consider_effects: &mut ConsiderEffects, particles
             }
             found_central_body_rotational_flattening = true;
         }
-        if let GeneralRelativityEffect::CentralBody(_) = particle.general_relativity.effect {
-            if found_central_body_general_relativity {
-                panic!("[PANIC {} UTC] Only one central body is allowed for general relativity effects!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        if let GeneralRelativityEffect::CentralBody(implementation) = particle.general_relativity.effect {
+            if implementation != GeneralRelativityImplementation::Disabled {
+                if found_central_body_general_relativity {
+                    panic!("[PANIC {} UTC] Only one central body is allowed for general relativity effects!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                }
+                found_central_body_general_relativity = true;
             }
-            found_central_body_general_relativity = true;
         }
         if let DiskEffect::CentralBody(_) = particle.disk.effect {
             if found_central_body_disk {
@@ -703,6 +709,140 @@ fn disable_unnecessary_effects(consider_effects: &mut ConsiderEffects, particles
     }
 }
 
+fn check_effects_vs_central_and_orbiting(particles: &Vec<Particle>, consider_effects: &ConsiderEffects) {
+    let mut found_tides_central_body = false;
+    let mut found_tides_orbiting_body = false;
+    for (i, particle) in particles.iter().enumerate() {
+        if let TidesEffect::CentralBody = particle.tides.effect {
+            found_tides_central_body = true;
+            if !consider_effects.tides {
+                println!("[WARNING {} UTC] Particle {} has tidal effect (central body) but the tidal effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+            }
+        }
+        if let TidesEffect::OrbitingBody = particle.tides.effect {
+            found_tides_orbiting_body = true;
+            if !consider_effects.tides {
+                println!("[WARNING {} UTC] Particle {} has tidal effect (orbiting body) but the tidal effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+            }
+        }
+    }
+    if consider_effects.tides {
+        if !found_tides_central_body {
+            println!("[INFO {} UTC] No central body for tidal effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        } 
+        if !found_tides_orbiting_body {
+            println!("[INFO {} UTC] No orbiting body for tidal effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        }
+    }
+
+    let mut found_rotational_flattening_central_body = false;
+    let mut found_rotational_flattening_orbiting_body = false;
+    for (i, particle) in particles.iter().enumerate() {
+        if let RotationalFlatteningEffect::CentralBody = particle.rotational_flattening.effect {
+            found_rotational_flattening_central_body = true;
+            if !consider_effects.rotational_flattening {
+                println!("[WARNING {} UTC] Particle {} has rotational flattening effect (central body) but the rotational flattening effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+            }
+        }
+        if let RotationalFlatteningEffect::OrbitingBody = particle.rotational_flattening.effect {
+            found_rotational_flattening_orbiting_body = true;
+            if !consider_effects.rotational_flattening {
+                println!("[WARNING {} UTC] Particle {} has rotatial flattening effect (orbiting body) but the rotatial flattening effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+            }
+        }
+    }
+    if consider_effects.rotational_flattening {
+        if !found_rotational_flattening_central_body {
+            println!("[INFO {} UTC] No central body for rotational flattening effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        } 
+        if !found_rotational_flattening_orbiting_body {
+            println!("[INFO {} UTC] No orbiting body for rotational flattening effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        }
+    }
+
+    let mut found_general_relativity_central_body = false;
+    let mut found_general_relativity_orbiting_body = false;
+    for (i, particle) in particles.iter().enumerate() {
+        if let GeneralRelativityEffect::CentralBody(implementation) = particle.general_relativity.effect {
+            if implementation != GeneralRelativityImplementation::Disabled {
+                found_general_relativity_central_body = true;
+                if !consider_effects.general_relativity {
+                    println!("[WARNING {} UTC] Particle {} has general relativity effect (central body) but the general relativity effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                }
+            }
+        }
+        if let GeneralRelativityEffect::OrbitingBody = particle.general_relativity.effect {
+            found_general_relativity_orbiting_body = true;
+            if !consider_effects.general_relativity {
+                println!("[WARNING {} UTC] Particle {} has general relativity effect (orbiting body) but the general relativity effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+            }
+        }
+    }
+    if consider_effects.general_relativity {
+        if !found_general_relativity_central_body {
+            println!("[INFO {} UTC] No central body for general relativity effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        } 
+        if !found_general_relativity_orbiting_body {
+            println!("[INFO {} UTC] No orbiting body for general relativity effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        }
+    }
+
+    let mut found_disk_central_body = false;
+    let mut found_disk_orbiting_body = false;
+    for (i, particle) in particles.iter().enumerate() {
+        if let DiskEffect::CentralBody( _disk ) = particle.disk.effect {
+            found_disk_central_body = true;
+            if !consider_effects.disk {
+                println!("[WARNING {} UTC] Particle {} has disk effect (central body) but the disk effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+            }
+        }
+        if let DiskEffect::OrbitingBody = particle.disk.effect {
+            found_disk_orbiting_body = true;
+            if !consider_effects.disk {
+                println!("[WARNING {} UTC] Particle {} has disk effect (orbiting body) but the disk effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+            }
+        }
+    }
+    if consider_effects.disk {
+        if !found_disk_central_body {
+            println!("[INFO {} UTC] No central body for disk effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        } 
+        if !found_disk_orbiting_body {
+            println!("[INFO {} UTC] No orbiting body for disk effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        }
+    }
+
+    let mut found_wind = false;
+    for (i, particle) in particles.iter().enumerate() {
+        if let WindEffect::Interaction = particle.wind.effect {
+            found_wind = true;
+            if !consider_effects.wind {
+                println!("[WARNING {} UTC] Particle {} has wind effect (central body) but the wind effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+            }
+        }
+    }
+    if consider_effects.wind {
+        if !found_wind {
+            println!("[INFO {} UTC] No wind effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        } 
+    }
+
+    let mut found_evolution = false;
+    for (i, particle) in particles.iter().enumerate() {
+        if particle.evolution != EvolutionType::NonEvolving {
+            found_evolution = true;
+            if !consider_effects.evolution {
+                println!("[WARNING {} UTC] Particle {} has evolution effect but the evolution effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+            }
+        }
+    }
+    if consider_effects.evolution {
+        if !found_evolution {
+            println!("[INFO {} UTC] No evolution effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        } 
+    }
+}
+
 fn find_indices(particles: &Vec<Particle>, consider_effects: &ConsiderEffects) -> Hosts {
     // Most massive particle
     let mut most_massive_particle_index = MAX_PARTICLES+1;
@@ -718,11 +858,13 @@ fn find_indices(particles: &Vec<Particle>, consider_effects: &ConsiderEffects) -
     let mut general_relativity_host_particle_index = MAX_PARTICLES+1;
     if consider_effects.general_relativity {
         for (i, particle) in particles.iter().enumerate() {
-            if let GeneralRelativityEffect::CentralBody(_implementation) = particle.general_relativity.effect {
-                if general_relativity_host_particle_index == MAX_PARTICLES+1 {
-                    general_relativity_host_particle_index = i;
-                } else {
-                    panic!("Only one central body is allowed for general relativity effects!");
+            if let GeneralRelativityEffect::CentralBody(implementation) = particle.general_relativity.effect {
+                if implementation != GeneralRelativityImplementation::Disabled {
+                    if general_relativity_host_particle_index == MAX_PARTICLES+1 {
+                        general_relativity_host_particle_index = i;
+                    } else {
+                        panic!("Only one central body is allowed for general relativity effects!");
+                    }
                 }
             }
         }

@@ -316,7 +316,7 @@
       "tides": true, 
       "wind": false
     }, 
-    "general_relativity_implementation": "Kidder1995", 
+    "general_relativity_implementation": "Disabled", 
     "hosts": {
       "index": {
         "disk": 11, 
