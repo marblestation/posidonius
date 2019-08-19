@@ -145,9 +145,11 @@ impl Universe {
 
 
     pub fn gravity_calculate_acceleration(&mut self, ignore_terms: IgnoreGravityTerms) {
+        let (particles, _) = self.particles.split_at_mut(self.n_particles);
+
         //let softening = 1e-12;
         // TODO: Try this pattern for gravity calculation
-        //for (i, particle_a) in self.particles[..self.n_particles].iter().enumerate() {
+        //for (i, particle_a) in particles.iter().enumerate() {
             //if let Some((newtonian_acceleration_a, newtonian_accelerations_b)) = newtonian_accelerations[i..self.n_particles].split_first_mut() {
                 //for (newtonian_acceleration_b, particle_b) in newtonian_accelerations_b[..self.n_particles-i-1].iter_mut().zip( self.particles[i+1..self.n_particles].iter()) {
                     //let dx = particle_a.inertial_position.x - particle_b.inertial_position.x;
@@ -175,7 +177,7 @@ impl Universe {
             //}
         //}
 
-        for (i, particle) in self.particles[..self.n_particles].iter().enumerate() {
+        for (i, particle) in particles.iter().enumerate() {
             self.temporary_copied_particle_positions[i].x = particle.inertial_position.x;
             self.temporary_copied_particle_positions[i].y = particle.inertial_position.y;
             self.temporary_copied_particle_positions[i].z = particle.inertial_position.z;
@@ -183,7 +185,7 @@ impl Universe {
             self.temporary_copied_particles_radiuses[i] = particle.radius;
         }
 
-        for (i, particle_a) in self.particles[..self.n_particles].iter_mut().enumerate() {
+        for (i, particle_a) in particles.iter_mut().enumerate() {
             particle_a.inertial_acceleration.x = 0.;
             particle_a.inertial_acceleration.y = 0.;
             particle_a.inertial_acceleration.z = 0.;
@@ -268,7 +270,7 @@ impl Universe {
             //// Tides require heliocentric point of reference, the star should continue in the zero point
             //// so we must compensate all the planets (but if WHFast is being used, it is
             //// automatically done by the integrator):
-            //if let Some((star, particles)) = self.particles[..self.n_particles].split_first_mut() {
+            //if let Some((star, particles)) = particles.split_first_mut() {
                 //for particle in particles.iter_mut() {
                     //particle.inertial_acceleration.x -= star.inertial_acceleration.x;
                     //particle.inertial_acceleration.y -= star.inertial_acceleration.y;
@@ -574,14 +576,16 @@ impl Universe {
         let mut e_kin = 0.;
         let mut e_pot = 0.;
         let e_offset = 0.; // Energy offset due to collisions and ejections
+        
+        let (particles, _) = self.particles.split_at(self.n_particles);
 
         // Kinectic energy
-        for particle in self.particles[..self.n_particles].iter() {
+        for particle in particles.iter() {
             e_kin += 0.5 * particle.mass * (particle.heliocentric_velocity.x.powi(2) + particle.heliocentric_velocity.y.powi(2) + particle.heliocentric_velocity.z.powi(2));
         }
         // Gravitationl potential energy
-        for (i, particle_a) in self.particles[..self.n_particles].iter().enumerate() {
-            for particle_b in self.particles[i+1..self.n_particles].iter() {
+        for (i, particle_a) in particles.iter().enumerate() {
+            for particle_b in particles[i+1..].iter() {
                 let dx = particle_a.heliocentric_position.x - particle_b.heliocentric_position.x;
                 let dy = particle_a.heliocentric_position.y - particle_b.heliocentric_position.y;
                 let dz = particle_a.heliocentric_position.z - particle_b.heliocentric_position.z;
