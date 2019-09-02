@@ -205,8 +205,8 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
 //- Restore functions
 ////////////////////////////////////////////////////////////////////////////////
 
-pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<Box<Integrator>, String> {
-    let mut universe_integrator: Box<Integrator>;
+pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<Box<dyn Integrator>, String> {
+    let mut universe_integrator: Box<dyn Integrator>;
     if universe_integrator_snapshot_path.exists() {
         // Open the path in read-only mode only to verify it exists, returns `io::Result<File>`
         if let Err(why) = File::open(&universe_integrator_snapshot_path) {
@@ -232,7 +232,7 @@ pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<Box<
     }
 }
 
-fn deserialize_json_snapshot(snapshot_path: &Path) -> Result<Box<Integrator>, String> {
+fn deserialize_json_snapshot(snapshot_path: &Path) -> Result<Box<dyn Integrator>, String> {
     // Open the path in read-only mode, returns `io::Result<File>`
     let mut snapshot_file = File::open(&snapshot_path).unwrap();
     //// Deserialize using `json::decode`
@@ -270,7 +270,7 @@ fn deserialize_json_snapshot(snapshot_path: &Path) -> Result<Box<Integrator>, St
     }
 }
 
-fn deserialize_bin_snapshot(snapshot_path: &Path) -> Result<Box<Integrator>, String> {
+fn deserialize_bin_snapshot(snapshot_path: &Path) -> Result<Box<dyn Integrator>, String> {
     // Open the path in read-only mode, returns `io::Result<File>`
     let snapshot_file = File::open(&snapshot_path).unwrap();
     let mut reader = BufReader::new(&snapshot_file);
