@@ -89,6 +89,31 @@ pub fn iterate<T>(universe_integrator: &mut T) where T: posidonius::Integrator {
 }
 
 #[allow(dead_code)]
+pub fn one_step<T>(universe_integrator: &mut T) where T: posidonius::Integrator {
+    let universe_history_filename = "/tmp/delete_me.dump";
+    let universe_history_path = Path::new(universe_history_filename);
+    let expected_n_bytes = 0;
+    let silent_mode = true;
+    let mut universe_history_writer = posidonius::output::get_universe_history_writer(universe_history_path, expected_n_bytes);
+    universe_integrator.initialize_physical_values();
+    let _ = universe_integrator.iterate(&mut universe_history_writer, silent_mode);
+    let _ = fs::remove_file(universe_history_filename);
+}
+
+#[allow(dead_code)]
+fn one_step_box(universe_integrator: &mut Box<dyn posidonius::Integrator>) {
+    let universe_history_filename = "/tmp/delete_me.dump";
+    let universe_history_path = Path::new(universe_history_filename);
+    let expected_n_bytes = 0;
+    let silent_mode = true;
+    let mut universe_history_writer = posidonius::output::get_universe_history_writer(universe_history_path, expected_n_bytes);
+    universe_integrator.initialize_physical_values();
+    let _ = universe_integrator.iterate(&mut universe_history_writer, silent_mode);
+    let _ = fs::remove_file(universe_history_filename);
+}
+
+
+#[allow(dead_code)]
 fn iterate_box(universe_integrator: &mut Box<dyn posidonius::Integrator>) {
     let universe_history_filename = "/tmp/delete_me.dump";
     let universe_history_path = Path::new(universe_history_filename);
@@ -112,6 +137,33 @@ pub fn iterate_universe_from_json(dirname: &String) -> posidonius::Universe {
    
     let mut boxed_universe_integrator_from_python : Box<dyn posidonius::Integrator> = posidonius::output::restore_snapshot(&snapshot_from_python_path).unwrap();
     iterate_box(&mut boxed_universe_integrator_from_python);
+    // Extract universe from the integrator
+    let universe_from_python: posidonius::Universe = match boxed_universe_integrator_from_python.as_any().downcast_ref::<posidonius::WHFast>() {
+            Some(universe_integrator_from_python) => { universe_integrator_from_python.universe.clone() },
+            None => {
+                match boxed_universe_integrator_from_python.as_any().downcast_ref::<posidonius::Ias15>() {
+                    Some(universe_integrator_from_python) => { universe_integrator_from_python.universe.clone() },
+                    None => {
+                        match boxed_universe_integrator_from_python.as_any().downcast_ref::<posidonius::LeapFrog>() {
+                            Some(universe_integrator_from_python) => { universe_integrator_from_python.universe.clone() },
+                            None => {
+                                panic!("Unknown integrator!");
+                            }
+                        }
+                    }
+                }
+            }
+    };
+    universe_from_python
+}
+
+#[allow(dead_code)]
+pub fn one_step_from_json(dirname: &String) -> posidonius::Universe {
+    let snapshot_from_python_filename = format!("{0}/case.json", dirname);
+    let snapshot_from_python_path = Path::new(&snapshot_from_python_filename);
+   
+    let mut boxed_universe_integrator_from_python : Box<dyn posidonius::Integrator> = posidonius::output::restore_snapshot(&snapshot_from_python_path).unwrap();
+    one_step_box(&mut boxed_universe_integrator_from_python);
     // Extract universe from the integrator
     let universe_from_python: posidonius::Universe = match boxed_universe_integrator_from_python.as_any().downcast_ref::<posidonius::WHFast>() {
             Some(universe_integrator_from_python) => { universe_integrator_from_python.universe.clone() },

@@ -5,19 +5,19 @@ pub fn basic_configuration(star: &posidonius::Particle) -> Vec<posidonius::Parti
     let planet1_mass_factor: f64 = 1.0;
     let planet1_mass: f64 = planet1_mass_factor * posidonius::constants::M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
     let planet1_evolution = posidonius::EvolutionType::NonEvolving;
-    let planet1_semimajor_axis = 0.018;
+    let planet1_semimajor_axis = 0.5;
     let planet1 = earth_like(&star, planet1_mass, planet1_evolution, planet1_semimajor_axis);
 
     let planet2_mass_factor: f64 = 0.00095; // Earth masses
     let planet2_mass: f64 = planet2_mass_factor * posidonius::constants::M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
     let planet2_evolution = posidonius::EvolutionType::LeconteChabrier2013(false); // Jupiter without dissipation of dynamical tides
-    let planet2_semimajor_axis = 0.18;
+    let planet2_semimajor_axis = 5.0;
     let planet2 = jupiter_like(&star, planet2_mass, planet2_evolution, planet2_semimajor_axis);
 
     let planet3_mass_factor: f64 = 0.00095; // Earth masses
     let planet3_mass: f64 = planet3_mass_factor * posidonius::constants::M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
     let planet3_evolution = posidonius::EvolutionType::NonEvolving;
-    let planet3_semimajor_axis = 1.8;
+    let planet3_semimajor_axis = 10.0;
     let planet3 = jupiter_like(&star, planet3_mass, planet3_evolution, planet3_semimajor_axis);
     return vec![planet1, planet2, planet3];
 }

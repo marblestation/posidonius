@@ -294,7 +294,7 @@ pub fn solar_like_secondary(primary_star: &posidonius::Particle, secondary_star_
     // Radius of gyration
     let secondary_star_radius_of_gyration: f64 = 2.43e-01; // Sun
     
-    let semimajor_axis = 10.;
+    let semimajor_axis = 100.;
     ////////// Specify initial position and velocity for a stable orbit
     ////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     //let a: f64 = 0.018;                             // semi-major axis (in AU)

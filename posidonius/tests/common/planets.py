@@ -35,7 +35,7 @@ def basic_configuration(universe):
     planet1_mass = planet1_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
 
     planet1_dissipation_factor_scale = 1.0
-    planet1_semimajoraxis = 0.018
+    planet1_semimajoraxis = 0.5
     planet1_position, planet1_velocity = _posvel(star_mass, planet1_mass, planet1_semimajoraxis)
 
     planet1_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
@@ -51,7 +51,7 @@ def basic_configuration(universe):
     planet2_mass = planet2_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
 
     planet2_dissipation_factor_scale = 1.0
-    planet2_semimajoraxis = 0.18
+    planet2_semimajoraxis = 5.0
     planet2_position, planet2_velocity = _posvel(star_mass, planet2_mass, planet2_semimajoraxis)
 
     planet2_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
@@ -67,7 +67,7 @@ def basic_configuration(universe):
     planet3_mass = planet3_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
 
     planet3_dissipation_factor_scale = 1.0
-    planet3_semimajoraxis = 1.8
+    planet3_semimajoraxis = 10.0
     planet3_position, planet3_velocity = _posvel(star_mass, planet3_mass, planet3_semimajoraxis)
 
     planet3_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad

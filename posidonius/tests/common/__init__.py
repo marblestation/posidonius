@@ -29,9 +29,9 @@ def setup(current_dirname, current_filename, current_function_name):
     return expected_json_filename, json_filename
 
 def simulation_properties():
-    initial_time = 2.5e6*365.25 # time [days] where simulation starts
+    initial_time = 1.2e8*365.25 # time [days] where simulation starts
     time_step = 0.08 # days
-    time_limit   = 0.08 # days
+    time_limit   = time_step*200. # days
     historic_snapshot_period = 100.*365.25 # days
     recovery_snapshot_period = 10.*historic_snapshot_period # days
     return initial_time, time_step, time_limit, historic_snapshot_period, recovery_snapshot_period
