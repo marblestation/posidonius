@@ -176,4 +176,30 @@ python scripts/clean_json.py
 
 If the results still differ, it is necessary to verify the changes you have made to your code to identify the reason/bug.
 
+#### Benchmarks
+
+We can use benchmarks to assess the relative performance of code changes (i.e., statistically significant variations in execution time / speed).  First, we need a `reference` measurement before we make any changes:
+
+```
+rm -rf target/criterion/
+cargo bench -- --save-baseline reference
+```
+
+Second, we can apply our changes to the code. And finally, we can run the benchmarks again to compare it to the previous `reference` measurement:
+
+```
+cargo bench -- --baseline reference
+```
+
+If we need to execute only some of the benchmarks, they can be filtered by their name:
+
+```
+cargo bench -- --baseline reference calculate_additional_effects/all
+```
+
+If [gnuplot](http://www.gnuplot.info/) is installed in the system, a report with plots will be generated/updated after each execution:
+
+```
+open target/criterion/report/index.html
+```
 

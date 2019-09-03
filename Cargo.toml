@@ -11,10 +11,12 @@ edition = "2018"
 [[bin]]
 path = "src/main.rs"
 name = "posidonius"
+bench = false
 
 [lib]
 path = "src/lib.rs"
 name = "posidonius"
+bench = false
 
 [profile.dev]
 opt-level = 0
@@ -31,7 +33,14 @@ serde_json = "1.0.*"
 serde_derive = "1.0.*"
 bincode = "0.9.*"
 csv = "0.15.*"
-clap = "2.29.*"
+clap = "2.33.*"
 assert_approx_eq = "1.1.*"
 libmath = "0.2.*"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "simulation"
+harness = false
 

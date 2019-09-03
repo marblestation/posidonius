@@ -15,6 +15,7 @@ pub use self::particles::ConsiderEffects;
 pub use self::particles::Particle;
 pub use self::particles::Reference;
 pub use self::particles::Axes;
+pub use self::particles::IgnoreGravityTerms;
 mod effects;
 pub use self::effects::Tides;
 pub use self::effects::TidesEffect;
