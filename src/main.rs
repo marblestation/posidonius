@@ -4,6 +4,7 @@ extern crate time;
 extern crate clap;
 use clap::{Arg, App, SubCommand, AppSettings};
 use std::path::Path;
+use std::time::{Duration, Instant};
 
 fn main() {
     let t1 = time::precise_time_s();
@@ -26,6 +27,12 @@ fn main() {
                                         .required(true)
                                         .index(3)
                                         .help("Historic snapshot filename")) 
+                                    .arg(Arg::with_name("limit")
+                                        .short("l")
+                                        .long("limit")
+                                        .multiple(false)
+                                        .value_name("seconds")
+                                        .help("Maximum execution time limit (default: no limit)"))
                                     .arg(Arg::with_name("silent")
                                         .short("s")
                                         .long("silent")
@@ -40,6 +47,12 @@ fn main() {
                                     .arg(Arg::with_name("historic_snapshot_filename")
                                         .required(true)
                                         .help("Historic snapshot filename")) 
+                                    .arg(Arg::with_name("limit")
+                                        .short("l")
+                                        .long("limit")
+                                        .multiple(false)
+                                        .value_name("seconds")
+                                        .help("Maximum execution time limit (default: no limit)"))
                                     .arg(Arg::with_name("silent")
                                         .short("s")
                                         .long("silent")
@@ -64,6 +77,7 @@ fn main() {
     let resume;
     let new_historic_snapshot_period;
     let new_recovery_snapshot_period;
+    let execution_time_limit;
 
     match matches.subcommand() {
         ("start", Some(start_matches)) =>{
@@ -74,6 +88,7 @@ fn main() {
             resume = false;
             new_historic_snapshot_period = -1.0;
             new_recovery_snapshot_period = -1.0;
+            execution_time_limit = Duration::from_secs(value_t!(start_matches.value_of("limit"), u64).unwrap_or(0));
         },
         ("resume", Some(resume_matches)) =>{
             universe_integrator_snapshot_filename = resume_matches.value_of("resume_case_filename").unwrap();
@@ -83,6 +98,7 @@ fn main() {
             resume = true;
             new_historic_snapshot_period = value_t!(resume_matches.value_of("change_historic_snapshot_period"), f64).unwrap_or(-1.);
             new_recovery_snapshot_period = value_t!(resume_matches.value_of("change_recovery_snapshot_period"), f64).unwrap_or(-1.);
+            execution_time_limit = Duration::from_secs(value_t!(resume_matches.value_of("limit"), u64).unwrap_or(0));
         },
         ("", None)   => unreachable!(),
         _            => unreachable!(),
@@ -121,10 +137,23 @@ fn main() {
     let mut universe_history_writer = posidonius::output::get_universe_history_writer(universe_history_path, expected_n_bytes);
 
     // Simulate
+    let instant = Instant::now();
+    let enabled_execution_time_limit = match execution_time_limit.as_secs() {
+        0 => false,
+        _ => true,
+    };
     loop {
         match boxed_universe_integrator.iterate(&mut universe_history_writer, silent_mode) {
             Ok(recovery_snapshot_time_trigger) => {
-                if recovery_snapshot_time_trigger {
+                if enabled_execution_time_limit {
+                    let elapsed = instant.elapsed();
+                    if elapsed >= execution_time_limit {
+                        // Save a universe snapshot so that we can resume later on
+                        boxed_universe_integrator.write_recovery_snapshot(&universe_integrator_snapshot_path, &mut universe_history_writer);
+                        println!("[INFO {} UTC] Execution time limit reached!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap()); 
+                        break;
+                    }
+                } else if recovery_snapshot_time_trigger {
                     // Save a universe snapshot so that we can resume in case of failure
                     boxed_universe_integrator.write_recovery_snapshot(&universe_integrator_snapshot_path, &mut universe_history_writer);
                 }
