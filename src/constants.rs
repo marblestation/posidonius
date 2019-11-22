@@ -13,6 +13,7 @@ pub const INTEGRATOR_EPSILON_GLOBAL : bool = true;  // if true: estimate the fra
 pub const INTEGRATOR_EPSILON : f64 = 1e-6;          // Precision parameter (default: 1e-9)
     							                    // If it is zero, then a constant timestep is used. 
 pub const INTEGRATOR_MIN_DT : f64 = 0.;             // Minimum timestep used as a floor when adaptive timestepping is enabled (default: 0.).
+pub const INTEGRATOR_MAX_DT : f64 = 0.;             // Maximum timestep used as a ceiling when adaptive timestepping is enabled (default: 0. => disabled).
 pub const SAFETY_FACTOR : f64 = 0.25;               // Maximum increase/deacrease of consecutve timesteps (default: 0.25).
 
 ///// Constants for WHFast

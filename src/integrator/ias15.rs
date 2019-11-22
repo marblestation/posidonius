@@ -2,7 +2,7 @@ use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
 use super::Integrator;
-use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, SAFETY_FACTOR, MAX_PARTICLES};
+use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, INTEGRATOR_MAX_DT, SAFETY_FACTOR, MAX_PARTICLES};
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::effects::GeneralRelativityImplementation;
@@ -934,6 +934,10 @@ impl Ias15 {
                     } else {
                         dt_new = -1. * INTEGRATOR_MIN_DT.abs();
                     }
+                }
+
+                if INTEGRATOR_MAX_DT > 0. && dt_new.abs() > INTEGRATOR_MAX_DT {
+                    dt_new = INTEGRATOR_MAX_DT.abs();
                 }
                 
                 if (dt_new/dt_done).abs() < SAFETY_FACTOR {	// New timestep is significantly smaller.
