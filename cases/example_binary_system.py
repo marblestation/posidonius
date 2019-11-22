@@ -77,7 +77,8 @@ if __name__ == "__main__":
         #'surface_density_normalization': disk_surface_density_normalization_SI * (1.0/posidonius.constants.M_SUN) * posidonius.constants.AU**2, # Msun.AU^-2
         #'mean_molecular_weight': 2.4,
     #}
-    #star_disk = posidonius.effects.disk.CentralBody(disk_properties)
+    #star1_disk = posidonius.effects.disk.CentralBody(disk_properties)
+    #star1_disk = posidonius.effects.disk.OrbitingBody()
     star1_disk = posidonius.effects.disk.Disabled()
     #
     #star1_evolution = posidonius.GalletBolmont2017(star1_mass) # mass = 0.30 .. 1.40
@@ -174,7 +175,8 @@ if __name__ == "__main__":
         #'surface_density_normalization': disk_surface_density_normalization_SI * (1.0/posidonius.constants.M_SUN) * posidonius.constants.AU**2, # Msun.AU^-2
         #'mean_molecular_weight': 2.4,
     #}
-    #star_disk = posidonius.effects.disk.CentralBody(disk_properties)
+    #star2_disk = posidonius.effects.disk.CentralBody(disk_properties)
+    #star2_disk = posidonius.effects.disk.OrbitingBody()
     star2_disk = posidonius.effects.disk.Disabled()
     #
     #star2_evolution = posidonius.GalletBolmont2017(star2_mass) # mass = 0.30 .. 1.40

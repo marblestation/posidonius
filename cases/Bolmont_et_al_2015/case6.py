@@ -87,6 +87,7 @@ if __name__ == "__main__":
         #'mean_molecular_weight': 2.4,
     #}
     #star_disk = posidonius.effects.disk.CentralBody(disk_properties)
+    #star_disk = posidonius.effects.disk.OrbitingBody()
     star_disk = posidonius.effects.disk.Disabled()
     #
     #star_evolution = posidonius.GalletBolmont2017(star_mass) # mass = 0.30 .. 1.40
@@ -201,6 +202,7 @@ if __name__ == "__main__":
         #'mean_molecular_weight': 2.4,
     #}
     #planet1_disk = posidonius.effects.disk.CentralBody(disk_properties)
+    #planet1_disk = posidonius.effects.disk.OrbitingBody()
     planet1_disk = posidonius.effects.disk.Disabled()
     #
     #planet1_evolution = posidonius.GalletBolmont2017(planet1_mass) # mass = 0.30 .. 1.40
@@ -315,6 +317,7 @@ if __name__ == "__main__":
         #'mean_molecular_weight': 2.4,
     #}
     #planet2_disk = posidonius.effects.disk.CentralBody(disk_properties)
+    #planet2_disk = posidonius.effects.disk.OrbitingBody()
     planet2_disk = posidonius.effects.disk.Disabled()
     #
     #planet2_evolution = posidonius.GalletBolmont2017(planet2_mass) # mass = 0.30 .. 1.40
