@@ -213,4 +213,35 @@ critcmp before after
 ```
 
 
+#### Performance bottlenecks
+
+
+Using [cargo-flamegraph](https://github.com/ferrous-systems/flamegraph) it is possible to generate a flame graph, which allows to easily visualize what elements in the code take more execution time (i.e., identify most expensive parts of posidonius at runtime). In the flame graph, the main function of posidonius will be closer to the bottom, and the called functions will be stacked on top. 
+
+The flame graph allows the developer to identify parts of the code to be optimized, but properly measuring the impact of the optimization needs to be done with the benchmark tests.
+
+Install cargo-flamegraph and its system dependencies in GNU/Linux:
+
+```
+sudo apt install linux-tools-common linux-tools-generic 
+cargo install flamegraph --force
+```
+
+Setup the system to allow performance measurement for non-root users:
+
+```
+sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
+sudo sysctl -w kernel.perf_event_paranoid=-1
+```
+
+Run an example to build a flame graph:
+
+```
+python cases/example.py target/example.json
+rm -f target/example*bin
+cargo flamegraph --bin posidonius -- start target/example.json target/example.bin target/example_history.bin
+```
+
+The previous command will generate the files `perf.data` and `flamegraph.svg`, the former can be inspected with the `perf` command while the latter is better visualized in a browser (it allows easy interaction to explore the graph and expand the function names).
+
 
