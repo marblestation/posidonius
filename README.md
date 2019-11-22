@@ -203,3 +203,14 @@ If [gnuplot](http://www.gnuplot.info/) is installed in the system, a report with
 open target/criterion/report/index.html
 ```
 
+Finally, multiple baselines can also be compared among them:
+
+```
+cargo install critcmp --force
+cargo bench -- --save-baseline before calculate_additional_effects/all
+cargo bench -- --save-baseline after calculate_additional_effects/all
+critcmp before after
+```
+
+
+
