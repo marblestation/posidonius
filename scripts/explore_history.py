@@ -63,9 +63,14 @@ if __name__ == "__main__":
         planet_computed_data['planet_rotation_period'] = planet_rotation_period
 
         ## Planet obliquity
-        relative_orbital_angular_momentum_x = planet_data['orbital_angular_momentum_x']/planet_data['orbital_angular_momentum']
-        relative_orbital_angular_momentum_y = planet_data['orbital_angular_momentum_y']/planet_data['orbital_angular_momentum']
-        relative_orbital_angular_momentum_z = planet_data['orbital_angular_momentum_z']/planet_data['orbital_angular_momentum']
+        # Calculation of orbital angular momentum (without mass and in AU^2/day)
+        orbital_angular_momentum_x = planet_data['position_y'] * planet_data['velocity_z'] - planet_data['position_z'] * planet_data['velocity_y'];
+        orbital_angular_momentum_y = planet_data['position_z'] * planet_data['velocity_x'] - planet_data['position_x'] * planet_data['velocity_z'];
+        orbital_angular_momentum_z = planet_data['position_x'] * planet_data['velocity_y'] - planet_data['position_y'] * planet_data['velocity_x'];
+        orbital_angular_momentum = np.sqrt(np.power(orbital_angular_momentum_x, 2) + np.power(orbital_angular_momentum_y, 2) + np.power(orbital_angular_momentum_x, 2));
+        relative_orbital_angular_momentum_x = orbital_angular_momentum_x/orbital_angular_momentum
+        relative_orbital_angular_momentum_y = orbital_angular_momentum_y/orbital_angular_momentum
+        relative_orbital_angular_momentum_z = orbital_angular_momentum_z/orbital_angular_momentum
         numerator = relative_orbital_angular_momentum_x * planet_data['spin_x'] + \
                             relative_orbital_angular_momentum_y * planet_data['spin_y'] + \
                             relative_orbital_angular_momentum_z * planet_data['spin_z']
@@ -394,25 +399,21 @@ if __name__ == "__main__":
     #ax.set_yscale('symlog')
     ax.legend(loc=0, prop={'size':8})
 
-    # How to compute the total energy if it is not provided:
-    #star_e_kin = 0.5 * star_data['mass'] * (np.power(star_data['velocity_x'], 2) + \
-                                            #np.power(star_data['velocity_y'], 2) + \
-                                            #np.power(star_data['velocity_z'], 2))
-    #planet_e_kin = 0.5 * planet_data['mass'] * (np.power(planet_data['velocity_x'], 2) + \
-                                            #np.power(planet_data['velocity_y'], 2) + \
-                                            #np.power(planet_data['velocity_z'], 2))
-    #e_kin = star_e_kin + planet_e_kin
-    #dx = planet_data['position_x'] - star_data['position_x']
-    #dy = planet_data['position_y'] - star_data['position_y']
-    #dz = planet_data['position_z'] - star_data['position_z']
-    #K2 = 0.01720209895**2
-    #e_pot = (-1. * K2 * (planet_data['mass']) * (star_data['mass']))  / np.sqrt(np.power(dx, 2) + np.power(dy, 2) + np.power(dz, 2))
-    #total_energy = e_kin + e_pot
-    ## conservation of energy (kinetic+potential)
-    #relative_energy_error = (total_energy - total_energy[0]) / total_energy[0]
-
     # conservation of energy (kinetic+potential)
-    relative_energy_error = (star_data['total_energy'] - star_data['total_energy'][0]) / star_data['total_energy'][0]
+    star_e_kin = 0.5 * star_data['mass'] * (np.power(star_data['velocity_x'], 2) + \
+                                            np.power(star_data['velocity_y'], 2) + \
+                                            np.power(star_data['velocity_z'], 2))
+    planet_e_kin = 0.5 * planet_data['mass'] * (np.power(planet_data['velocity_x'], 2) + \
+                                            np.power(planet_data['velocity_y'], 2) + \
+                                            np.power(planet_data['velocity_z'], 2))
+    e_kin = star_e_kin + planet_e_kin
+    dx = planet_data['position_x'] - star_data['position_x']
+    dy = planet_data['position_y'] - star_data['position_y']
+    dz = planet_data['position_z'] - star_data['position_z']
+    e_pot = (-1. * posidonius.constants.K2 * (planet_data['mass']) * (star_data['mass']))  / np.sqrt(np.power(dx, 2) + np.power(dy, 2) + np.power(dz, 2))
+    e_offset = 0. # Energy offset due to collisions and ejections
+    total_energy = e_kin + e_pot + e_offset
+    relative_energy_error = (total_energy - total_energy[0]) / total_energy[0]
 
     ax = fig.add_subplot(5,3,12, sharex=ax)
     field = '$\Delta E/E_{0}$'
