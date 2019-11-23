@@ -141,7 +141,7 @@ if __name__ == "__main__":
         # Pseudo-synchronization period
         planet_pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(a, e, star_mass, planet_mass) # days
         planet_angular_frequency = posidonius.constants.TWO_PI/(planet_pseudo_synchronization_period) # days^-1
-        planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet_mass, planet_position, planet_velocity)
+        planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*(star_mass+planet_mass), planet_position, planet_velocity)
         planet_inclination = planet_keplerian_orbital_elements[3]
         planet_spin = posidonius.calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity)
 

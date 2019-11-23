@@ -21,7 +21,7 @@ def _posvel(star_mass, planet_mass, a):
 def _spin(obliquity, rotation_period, star_mass, planet_mass, position, velocity):
     #////// Initialization of planetary spin
     angular_frequency = posidonius.constants.TWO_PI/(rotation_period/24.) # days^-1
-    keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet_mass, position, velocity)
+    keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*(star_mass+planet_mass), position, velocity)
     inclination = keplerian_orbital_elements[3]
     spin = posidonius.calculate_spin(angular_frequency, inclination, obliquity)
     return spin

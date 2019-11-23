@@ -151,14 +151,14 @@ if __name__ == "__main__":
     planet1_rotation_period = 24. # hours
     planet1_angular_frequency = posidonius.constants.TWO_PI/(planet1_rotation_period/24.) # days^-1
     # Pseudo-synchronization period
-    #planet1_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet1_mass, planet1_position, planet1_velocity)
+    #planet1_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*(star_mass+planet1_mass), planet1_position, planet1_velocity)
     #planet1_semi_major_axis = planet1_keplerian_orbital_elements[0]
     #planet1_eccentricity = planet1_keplerian_orbital_elements[2]
     #planet1_semi_major_axis = a
     #planet1_eccentricity = e
     #planet1_pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(planet1_semi_major_axis, planet1_eccentricity, star_mass, planet1_mass) # days
     #planet1_angular_frequency = posidonius.constants.TWO_PI/(planet1_pseudo_synchronization_period) # days^-1
-    planet1_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*star_mass*planet1_mass, planet1_position, planet1_velocity)
+    planet1_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*(star_mass+planet1_mass), planet1_position, planet1_velocity)
     planet1_inclination = planet1_keplerian_orbital_elements[3]
     planet1_spin = posidonius.calculate_spin(planet1_angular_frequency, planet1_inclination, planet1_obliquity)
 
