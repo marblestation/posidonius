@@ -187,7 +187,7 @@ impl Universe {
                         println!("\n");
                         panic!("[PANIC {} UTC] Collision between particle {} and {}!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
                     }
-                    if i == 0 && distance_2 > MAX_DISTANCE_2 {
+                    if i == self.hosts.index.most_massive && distance_2 > MAX_DISTANCE_2 {
                         println!("\n");
                         panic!("[PANIC {} UTC] Particle {} has been ejected!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), j);
                     }
