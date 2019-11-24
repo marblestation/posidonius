@@ -57,6 +57,13 @@ def calculate_keplerian_orbital_elements(gm, position, velocity):
     u = velocity.x()
     v = velocity.y()
     w = velocity.z()
+    gm = np.asarray((gm,)) if type(x) is float else gm
+    x = np.asarray((x,)) if type(x) is float else x
+    y = np.asarray((y,)) if type(y) is float else y
+    z = np.asarray((z,)) if type(z) is float else z
+    u = np.asarray((u,)) if type(u) is float else u
+    v = np.asarray((v,)) if type(v) is float else v
+    w = np.asarray((w,)) if type(w) is float else w
     # Output
     #a # semi-major axis (in AU)
     #q # perihelion distance
@@ -76,97 +83,209 @@ def calculate_keplerian_orbital_elements(gm, position, velocity):
     h = np.sqrt(h2)
     s = h2 / gm
 
-    # Semi-major axis
+    ###-------------------------------------------------------------------------
+    ### a: Semi-major axis
     a  = gm * r / (2.0 * gm  -  r * v2)
 
 
     # Inclination and node
     ci = hz / h
-    if abs(ci) < 1.:
-        i = np.arccos(ci)
-        n = np.arctan2(hx, -hy)
-        if n < 0.:
-            n = n + TWO_PI
 
-    else:
-        if ci > 0.:
-            i = 0.
-        if ci < 0.:
-            i = PI
-        n = 0.
+    ###-------------------------------------------------------------------------
+    ### n: longitude_of_ascending_node
+    ### i: inclination
+    # Algorithm:
+    #if abs(ci) < 1.:
+        #i = np.arccos(ci)
+        #n = np.arctan2(hx, -hy)
+        #if n < 0.:
+            #n = n + TWO_PI
+    #else:
+        #if ci > 0.:
+            #i = 0.
+        #if ci < 0.:
+            #i = PI
+        #n = 0.
+    i = np.zeros(len(ci))
+    n = np.zeros(len(ci))
+    less_than_one = np.abs(ci) < 1.
+    if np.any(less_than_one):
+        i[less_than_one] = np.arccos(ci[less_than_one])
+        n[less_than_one] = np.arctan2(hx[less_than_one], -hy[less_than_one])
+    negative_n = np.logical_and(n < 0, less_than_one)
+    if np.any(negative_n):
+        n[negative_n] += TWO_PI
 
-    # Eccentricity and perihelion distance
+    rest = np.logical_not(less_than_one)
+    if np.any(rest):
+        positive_ci = np.logical_and(ci > 0., rest)
+        negative_ci = np.logical_and(ci < 0., rest)
+        if np.any(positive_ci):
+            i[positive_ci] = 0.
+        if np.any(negative_ci):
+            i[negative_ci] = PI
+        n[rest] = 0.
+
+
+    ###-------------------------------------------------------------------------
+    ### eccentricity
+    ### q: perihelion_distance
     temp = 1.  +  s * (v2 / gm  -  2. / r)
-    if temp <= 0.:
-        eccentricity = 0.
-    else:
-        eccentricity = np.sqrt(temp)
+
+    eccentricity = np.zeros(len(ci))
+    ## Algorithm:
+    #if temp <= 0.:
+        #eccentricity = 0.
+    #else:
+        #eccentricity = np.sqrt(temp)
+    positive_temp = temp > 0.
+    if np.any(positive_temp):
+        eccentricity[positive_temp] = np.sqrt(temp[positive_temp])
     q = s / (1. + eccentricity)
 
-    # True longitude
-    if hy != 0.:
-        to = -hx/hy
-        temp = (1. - ci) * to
+    ###-------------------------------------------------------------------------
+    ### True longitude
+    # Algorithm:
+    #if hy != 0.:
+        #to = -hx/hy
+        #temp = (1. - ci) * to
+        #tmp2 = to * to
+        #true_longitude = np.arctan2(y*(1.+tmp2*ci)-x*temp, (x*(tmp2+ci)-y*temp))
+    #else:
+        #true_longitude = np.arctan2(y*ci, x)
+
+    #if ci < 0.:
+        #true_longitude = true_longitude + PI
+    true_longitude = np.zeros(len(ci))
+    non_zero = hy != 0.
+    if np.any(non_zero):
+        to = -hx[non_zero]/hy[non_zero]
+        temp = (1. - ci[non_zero]) * to
         tmp2 = to * to
-        true_longitude = np.arctan2(y*(1.+tmp2*ci)-x*temp, (x*(tmp2+ci)-y*temp))
-    else:
-        true_longitude = np.arctan2(y*ci, x)
+        true_longitude[non_zero] = np.arctan2(y[non_zero]*(1.+tmp2*ci[non_zero])-x[non_zero]*temp, (x[non_zero]*(tmp2+ci[non_zero])-y[non_zero]*temp))
 
-    if ci < 0.:
-        true_longitude = true_longitude + PI
+        zero = np.logical_not(non_zero)
+        if np.any(zero):
+            true_longitude[zero] = np.arctan2(y[zero]*ci[zero], x[zero])
 
-    if eccentricity < 3.0e-8:
-        p = 0.
-        l = true_longitude
-    else:
-        ce = (v2*r - gm) / (eccentricity*gm)
-
-        # Mean anomaly for ellipse
-        if eccentricity < 1.:
-            if abs(ce) > 1.:
-                #ce = ce.signum()
-                ce = np.sign(ce)
-
-            bige = np.arccos(ce)
-            if rv < 0.:
-                bige = TWO_PI - bige
-
-            l = bige - eccentricity*np.sin(bige)
-        else:
-            # Mean anomaly for hyperbola
-            if ce < 1.:
-                ce = 1.
-
-            bige = np.log(ce + np.sqrt(ce*ce-1.))
-            if rv < 0.:
-                bige = - bige
-
-            l = eccentricity * np.sinh(bige) - bige
+    negative_ci = ci < 0.
+    if np.any(negative_ci):
+        true_longitude[negative_ci] += PI
 
 
-        # Longitude of perihelion
-        cf = (s - r) / (eccentricity*r)
-        if abs(cf) > 1.:
-            #cf = cf.signum()
-            cf = np.sign(cf)
+    ###-------------------------------------------------------------------------
+    ### l: mean_anomaly
+    # Algorithm:
+    #if eccentricity < 3.0e-8:
+        #l = true_longitude
+    #else:
+        #ce = (v2*r - gm) / (eccentricity*gm)
 
+        ## Mean anomaly for ellipse
+        #if eccentricity < 1.:
+            #if abs(ce) > 1.:
+                ##ce = ce.signum()
+                #ce = np.sign(ce)
+
+            #bige = np.arccos(ce)
+            #if rv < 0.:
+                #bige = TWO_PI - bige
+
+            #l = bige - eccentricity*np.sin(bige)
+        #else:
+            ## Mean anomaly for hyperbola
+            #if ce < 1.:
+                #ce = 1.
+
+            #bige = np.log(ce + np.sqrt(ce*ce-1.))
+            #if rv < 0.:
+                #bige = - bige
+
+            #l = eccentricity * np.sinh(bige) - bige
+    l = np.zeros(len(true_longitude))
+    small_eccentricity = eccentricity < 3.0e-8
+    if np.any(small_eccentricity):
+        l[small_eccentricity] = true_longitude[small_eccentricity]
+
+    big_eccentricity = np.logical_not(small_eccentricity)
+    if np.any(big_eccentricity):
+        ce = np.zeros(len(true_longitude))
+        ce[big_eccentricity] = (v2[big_eccentricity]*r[big_eccentricity] - gm[big_eccentricity]) / (eccentricity[big_eccentricity]*gm[big_eccentricity])
+        ellipse = np.logical_and(big_eccentricity, eccentricity < 1.)
+        if np.any(ellipse):
+            change_sign = np.logical_and(eccentricity, np.abs(ce) > 1.)
+            if np.any(change_sign):
+                ce[change_sign] = np.sign(ce[change_sign])
+            bige = np.zeros(len(ce))
+            bige[ellipse] = np.arccos(ce[ellipse])
+            negative_rv = np.logical_and(ellipse, rv < 0.)
+            if np.any(negative_rv):
+                bige[negative_rv] = TWO_PI - bige[negative_rv]
+            l[ellipse] = bige[ellipse] - eccentricity[ellipse]*np.sin(bige[ellipse])
+
+        hyperbola = np.logical_and(big_eccentricity, eccentricity >= 1.)
+        if np.any(hyperbola):
+            negative_ce = np.logical_and(hyperbola, ce < 1.)
+            if np.any(negative_ce):
+                ce[negative_ce] = 1.
+            bige = np.zeros(len(ce))
+            bige[hyperbola] = np.log(ce[hyperbola] + np.sqrt(ce[hyperbola]*ce[hyperbola]-1.))
+            negative_rv = np.logical_and(hyperbola, rv < 0.)
+            if np.any(negative_rv):
+                bige[negative_rv] = - bige[negative_rv]
+            l[hyperbola] = eccentricity[hyperbola] * np.sinh(bige[hyperbola]) - bige[hyperbola]
+
+    # Algorithm:
+    #if l < 0.:
+        #l = l + TWO_PI
+
+    #if l > TWO_PI:
+        #l = modulus(l, TWO_PI)
+    negative_l = l < 0.
+    if np.any(negative_l):
+        l[negative_l] += TWO_PI
+    bigger_than_two_pi = l > TWO_PI
+    if np.any(bigger_than_two_pi):
+        l[bigger_than_two_pi] = modulus(l[bigger_than_two_pi], TWO_PI)
+
+    ###-------------------------------------------------------------------------
+    ### p: longitude_of_perihelion
+    ### l: mean_anomaly
+    # Algorithm:
+    #if eccentricity < 3.0e-8:
+        #p = 0.
+    #else:
+        ## Longitude of perihelion
+        #cf = (s - r) / (eccentricity*r)
+        #if abs(cf) > 1.:
+            ##cf = cf.signum()
+            #cf = np.sign(cf)
+
+        #f = np.arccos(cf)
+        #if rv < 0.:
+            #f = TWO_PI - f
+
+        #p = true_longitude - f
+        #p = modulus((p + TWO_PI + TWO_PI), TWO_PI)
+    p = np.zeros(len(eccentricity))
+    big_eccentricity = eccentricity >= 3.0e-8
+    if np.any(big_eccentricity):
+        cf = np.zeros(len(eccentricity))
+        cf[big_eccentricity] = (s[big_eccentricity] - r[big_eccentricity]) / (eccentricity[big_eccentricity]*r[big_eccentricity])
+        change_sign = np.abs(cf) > 1.
+        if np.any(change_sign):
+            cf[change_sign] = np.sign(cf[change_sign])
         f = np.arccos(cf)
-        if rv < 0.:
-            f = TWO_PI - f
+        negative_rv = rv < 0.
+        if np.any(negative_rv):
+            f[negative_rv] = TWO_PI - f[negative_rv]
+        p[big_eccentricity] = true_longitude[big_eccentricity] - f[big_eccentricity]
+        p[big_eccentricity] = modulus((p[big_eccentricity] + TWO_PI + TWO_PI), TWO_PI)
 
-        p = true_longitude - f
-        p = modulus((p + TWO_PI + TWO_PI), TWO_PI)
-
-
-    if l < 0.:
-        l = l + TWO_PI
-
-    if l > TWO_PI:
-        l = modulus(l, TWO_PI)
-
-
-    return (a, q, eccentricity, i, p, n, l)
-
+    if len(a) == 1:
+        return (a[0], q[0], eccentricity[0], i[0], p[0], n[0], l[0])
+    else:
+        return (a, q, eccentricity, i, p, n, l)
 
 
 def calculate_cartesian_coordinates(gm, q, e, i0, p, n0, l):

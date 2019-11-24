@@ -67,7 +67,7 @@ if __name__ == "__main__":
         orbital_angular_momentum_x = planet_data['position_y'] * planet_data['velocity_z'] - planet_data['position_z'] * planet_data['velocity_y'];
         orbital_angular_momentum_y = planet_data['position_z'] * planet_data['velocity_x'] - planet_data['position_x'] * planet_data['velocity_z'];
         orbital_angular_momentum_z = planet_data['position_x'] * planet_data['velocity_y'] - planet_data['position_y'] * planet_data['velocity_x'];
-        orbital_angular_momentum = np.sqrt(np.power(orbital_angular_momentum_x, 2) + np.power(orbital_angular_momentum_y, 2) + np.power(orbital_angular_momentum_x, 2));
+        orbital_angular_momentum = np.sqrt(np.power(orbital_angular_momentum_x, 2) + np.power(orbital_angular_momentum_y, 2) + np.power(orbital_angular_momentum_z, 2));
         relative_orbital_angular_momentum_x = orbital_angular_momentum_x/orbital_angular_momentum
         relative_orbital_angular_momentum_y = orbital_angular_momentum_y/orbital_angular_momentum
         relative_orbital_angular_momentum_z = orbital_angular_momentum_z/orbital_angular_momentum
@@ -106,10 +106,13 @@ if __name__ == "__main__":
         planet_computed_data['corotation_radius'] = corotation_radius
 
         e = planet_data['eccentricity']
-        alpha = (1.+15./2.*e**2+45./8.*e**4+5./16.*e**6)*1./(1.+3.*e**2+3./8.*e**4)*1./(1.-e**2)**1.5
+        non_zero = e != 0
+        alpha = np.ones(len(e))
+        alpha[non_zero] = (1.+15./2.*e[non_zero]**2+45./8.*e[non_zero]**4+5./16.*e[non_zero]**6)*1./(1.+3.*e[non_zero]**2+3./8.*e[non_zero]**4)*1./(1.-e[non_zero]**2)**1.5
         pseudo_rot = alpha * np.sqrt(posidonius.constants.G_SI*posidonius.constants.M_SUN*(star_mass+planet_mass))
         #pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*AU)**(-3./2.) * posidonius.constants.HOUR) # Hours
         pseudo_synchronization_period  = 2.*np.pi / (pseudo_rot * (planet_data['semi-major_axis']*posidonius.constants.AU)**(-3./2.) * posidonius.constants.DAY) # Days
+        pseudo_synchronization_period[non_zero] = np.nan
         planet_computed_data['pseudo_synchronization_period'] = pseudo_synchronization_period
 
         if universe_integrator_json['universe']['consider_effects']['tides']:

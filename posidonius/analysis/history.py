@@ -71,15 +71,11 @@ def classify(n_particles, data, reference_particle_index=0, discard_first_hundre
         semimajor_axis = []
         eccentricity = []
         inclination = []
-        for i in range(len(planets_data[key])):
-            gm = posidonius.constants.G * (star_data['mass'][i] + planets_data[key]['mass'][i])
-            position = Axes(planets_data[key]['position_x'][i], planets_data[key]['position_y'][i], planets_data[key]['position_z'][i])
-            velocity = Axes(planets_data[key]['velocity_x'][i], planets_data[key]['velocity_y'][i], planets_data[key]['velocity_z'][i])
-            a, q, e, i, p, n, l = posidonius.tools.calculate_keplerian_orbital_elements(gm, position, velocity)
-            semimajor_axis.append(a)
-            eccentricity.append(e)
-            inclination.append(i)
-        planets_data[key] = append_fields(planets_data[key], ('semi-major_axis', 'eccentricity', 'inclination'), (semimajor_axis, eccentricity, inclination), usemask=False)
+        gm = posidonius.constants.G * (star_data['mass'] + planets_data[key]['mass'])
+        position = Axes(planets_data[key]['position_x'], planets_data[key]['position_y'], planets_data[key]['position_z'])
+        velocity = Axes(planets_data[key]['velocity_x'], planets_data[key]['velocity_y'], planets_data[key]['velocity_z'])
+        a, q, e, i, p, n, l = posidonius.tools.calculate_keplerian_orbital_elements(gm, position, velocity)
+        planets_data[key] = append_fields(planets_data[key], ('semi-major_axis', 'eccentricity', 'inclination'), (a, e, i), usemask=False)
     star_data['position_x'] = 0.
     star_data['position_y'] = 0.
     star_data['position_z'] = 0.
