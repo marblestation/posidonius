@@ -20,7 +20,9 @@ if __name__ == "__main__":
 
     filename = args.historic_snapshot_filename
     n_particles, data = posidonius.analysis.history.read(filename)
-    star_data, planets_data, planets_keys = posidonius.analysis.history.classify(n_particles, data, discard_first_hundred_years=False)
+    most_massive_particle_index = universe_integrator_json['universe']['hosts']['index']['most_massive']
+    print("Transforming positions/velocities to heliocentric coordinates using the most masssive particle at index '{}'...".format(most_massive_particle_index))
+    star_data, planets_data, planets_keys = posidonius.analysis.history.classify(n_particles, data, reference_particle_index=most_massive_particle_index, discard_first_hundred_years=False)
     star_mass = star_data['mass'][0]
 
 
@@ -33,6 +35,7 @@ if __name__ == "__main__":
     #-------------------------------------------------------------------------------
     # Main
     #-------------------------------------------------------------------------------
+    print("Computing keplerian and supplementary values...")
 
     ################################################################################
     ## Star
@@ -258,6 +261,7 @@ if __name__ == "__main__":
 
 
 
+    print("Preparing plot...")
     fig = plt.figure(figsize=(16, 10))
     ax = fig.add_subplot(5,3,1)
     field = 'semi-major_axis'
@@ -451,9 +455,10 @@ if __name__ == "__main__":
     output_figure_filename = os.path.join(output_figure_dirname, os.path.splitext(os.path.basename(filename))[0] + ".png")
     plt.savefig(output_figure_filename)
     #plt.show()
-    print("Output figure file written to: {}".format(output_figure_filename))
+    print("> Output figure file written to: {}".format(output_figure_filename))
 
 
+    print("Preparing text output...")
     all_data = None
     for key in planets_keys:
         planet_data = planets_data[key]
@@ -484,6 +489,6 @@ if __name__ == "__main__":
     output_text_filename = os.path.join(output_text_dirname, os.path.splitext(os.path.basename(filename))[0] + ".txt")
     all_data.to_csv(output_text_filename, sep="\t", index=False)
 
-    print("Output plain text file written to: {}".format(output_text_filename))
+    print("> Output data written to plain text file: {}".format(output_text_filename))
 
 

@@ -76,7 +76,13 @@ The flag `--silent` can be added to avoid printing the current year of the simul
 
 ### Analyse a simulation
 
-While a simulation is in progress or when it has ended, the historic snapshot file can be interpreted to generate a plain text file and a plot with the history of the simulation:
+While a simulation is in progress or when it has ended, the historic snapshot file can be converted to plain text tab-separated files (one per body in the system):
+
+```bash
+python scripts/raw_history.py target/case3_history.bin
+```
+
+In the same way, the historic snapshot file can be interpreted by transforming positions/velocities to heliocentric coordinates using the most massive body as the reference one, computing keplerian parameters, and generating a plot + plain text tab-separated file with the history of the simulation:
 
 ```bash
 python scripts/explore_history.py target/case3.json   target/case3_history.bin
