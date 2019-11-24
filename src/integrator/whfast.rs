@@ -199,6 +199,7 @@ impl Integrator for WHFast {
         }
         self.universe.calculate_norm_spin(); // Needed for evolution
         self.universe.calculate_particles_evolving_quantities(self.current_time); // Make sure we start with the good initial values
+        self.universe.calculate_roche_radiuses(); // Needed for collision detection
     }
 
     fn iterate(&mut self, universe_history_writer: &mut BufWriter<File>, silent_mode: bool) -> Result<bool, String> {

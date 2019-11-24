@@ -60,9 +60,7 @@ class Universe(object):
             "particles": [],
             "particles_evolvers": [],
             "star_planet_dependent_dissipation_factors": {},
-            "temporary_copied_particle_positions": [],
-            "temporary_copied_particles_masses": [],
-            "temporary_copied_particles_radiuses": [],
+            "roche_radiuses": [[0.,] *  MAX_PARTICLES,] * MAX_PARTICLES,
             "time_limit": float(time_limit),
         }
 
@@ -136,9 +134,6 @@ class Universe(object):
 
         self._data['particles'].append(particle.get())
         self._data['particles_evolvers'].append(evolver)
-        self._data['temporary_copied_particles_radiuses'].append(0.0)
-        self._data['temporary_copied_particles_masses'].append(0.0)
-        self._data['temporary_copied_particle_positions'].append(Axes(0.0, 0.0, 0.0).get())
         self._data['n_particles'] += 1
 
 

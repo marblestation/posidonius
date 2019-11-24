@@ -54,9 +54,7 @@ pub struct Universe {
     pub general_relativity_implementation: GeneralRelativityImplementation, // Optimization: fast access to GR implementation for integrators
     pub hosts: Hosts,
     star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
-    temporary_copied_particle_positions: [Axes; MAX_PARTICLES], // For optimization purposes
-    temporary_copied_particles_masses: [f64; MAX_PARTICLES], // For optimization purposes
-    temporary_copied_particles_radiuses: [f64; MAX_PARTICLES], // For optimization purposes
+    roche_radiuses : [[f64; MAX_PARTICLES]; MAX_PARTICLES],
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
@@ -122,9 +120,7 @@ impl Universe {
         }
 
 
-        let temporary_copied_particle_positions = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES];
-        let temporary_copied_particles_masses = [0.; MAX_PARTICLES];
-        let temporary_copied_particles_radiuses = [0.; MAX_PARTICLES];
+        let roche_radiuses : [[f64; MAX_PARTICLES]; MAX_PARTICLES] = [[0.; MAX_PARTICLES]; MAX_PARTICLES];
 
         let universe = Universe {
                     initial_time: initial_time,
@@ -136,89 +132,58 @@ impl Universe {
                     general_relativity_implementation: general_relativity_implementation,
                     hosts: hosts,
                     star_planet_dependent_dissipation_factors:HashMap::new(),
-                    temporary_copied_particle_positions: temporary_copied_particle_positions,
-                    temporary_copied_particles_masses: temporary_copied_particles_masses,
-                    temporary_copied_particles_radiuses: temporary_copied_particles_radiuses,
+                    roche_radiuses: roche_radiuses,
                     };
         universe
     }
 
+    pub fn calculate_roche_radiuses(&mut self) {
+        let (particles, _) = self.particles.split_at_mut(self.n_particles);
+        let (roche_radiuses, _) = self.roche_radiuses.split_at_mut(self.n_particles);
+        for (i, (particle_a, roche_radiuses)) in particles.iter().zip(roche_radiuses.iter_mut()).enumerate() {
+            for (j, (particle_b, roche_radius)) in particles.iter().zip(roche_radiuses.iter_mut()).enumerate() {
+                // Roche radius calculation
+                if i == j {
+                    continue
+                }
+                // Faber et al, 2005; Pacynski, 1971
+                if particle_a.mass > particle_b.mass {
+                    // particle a is the most massive of both
+                    *roche_radius = (particle_a.radius/0.462)*(particle_a.mass/particle_b.mass).powf(-1./3.);
+                } else {
+                    // particle b is the most massive of both
+                    *roche_radius = (particle_b.radius/0.462)*(particle_b.mass/particle_a.mass).powf(-1./3.);
+                }
+            }
+        }
+    }
 
     pub fn gravity_calculate_acceleration(&mut self, ignore_terms: IgnoreGravityTerms) {
         let (particles, _) = self.particles.split_at_mut(self.n_particles);
+        let (roche_radiuses, _) = self.roche_radiuses.split_at_mut(self.n_particles);
 
-        //let softening = 1e-12;
-        // TODO: Try this pattern for gravity calculation
-        //for (i, particle_a) in particles.iter().enumerate() {
-            //if let Some((newtonian_acceleration_a, newtonian_accelerations_b)) = newtonian_accelerations[i..self.n_particles].split_first_mut() {
-                //for (newtonian_acceleration_b, particle_b) in newtonian_accelerations_b[..self.n_particles-i-1].iter_mut().zip( self.particles[i+1..self.n_particles].iter()) {
-                    //let dx = particle_a.inertial_position.x - particle_b.inertial_position.x;
-                    //let dy = particle_a.inertial_position.y - particle_b.inertial_position.y;
-                    //let dz = particle_a.inertial_position.z - particle_b.inertial_position.z;
-                    //let r2 = dx.powi(2) + dy.powi(2) + dz.powi(2);
-                    ////println!("r2 {:e} {:e} {:e} {:e}", r2, dx.powi(2), dy.powi(2), dz.powi(2));
-                    //let r = r2.sqrt();
-                    //let prefac = G/(r2*r);
-                    ////println!("prefac {:e} = {:e}/({:e}*{:e})", prefac, G, r2, r);
-                    //let prefac_mass_a = prefac*particle_a.mass;
-                    //let prefac_mass_b = prefac*particle_b.mass;
-                    ////println!("-- mass_a {:e} | mass_b {:e}", particle_a.mass, particle_b.mass);
-                    ////println!("* berfore: {:e}", newtonian_acceleration_a.x);
-                    //newtonian_acceleration_a.x -= prefac_mass_b*dx;
-                    ////println!("* after: {:e}", newtonian_acceleration_a.x);
-                    //newtonian_acceleration_a.y -= prefac_mass_b*dy;
-                    //newtonian_acceleration_a.z -= prefac_mass_b*dz;
-                    ////println!("+ berfore: {:e}", newtonian_acceleration_b.x);
-                    //newtonian_acceleration_b.x += prefac_mass_a*dx;
-                    ////println!("+ after: {:e}", newtonian_acceleration_b.x);
-                    //newtonian_acceleration_b.y += prefac_mass_a*dy;
-                    //newtonian_acceleration_b.z += prefac_mass_a*dz;
-                //}
-            //}
-        //}
+        let mut newtonian_inertial_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; 
+        let (newtonian_inertial_accelerations, _) = newtonian_inertial_accelerations.split_at_mut(self.n_particles);
 
-        for (i, particle) in particles.iter().enumerate() {
-            self.temporary_copied_particle_positions[i].x = particle.inertial_position.x;
-            self.temporary_copied_particle_positions[i].y = particle.inertial_position.y;
-            self.temporary_copied_particle_positions[i].z = particle.inertial_position.z;
-            self.temporary_copied_particles_masses[i] = particle.mass;
-            self.temporary_copied_particles_radiuses[i] = particle.radius;
-        }
-
-        for (i, particle_a) in particles.iter_mut().enumerate() {
-            particle_a.inertial_acceleration.x = 0.;
-            particle_a.inertial_acceleration.y = 0.;
-            particle_a.inertial_acceleration.z = 0.;
-            for (j, ((particle_b_position, particle_b_radius), particle_b_mass)) in self.temporary_copied_particle_positions[..self.n_particles].iter()
-                                                                .zip(self.temporary_copied_particles_radiuses[..self.n_particles].iter())
-                                                                .zip(self.temporary_copied_particles_masses[..self.n_particles].iter()).enumerate() {
+        for (i, (particle_a, (newtonian_inertial_acceleration, roche_radiuses))) in particles.iter().zip(newtonian_inertial_accelerations.iter_mut().zip(roche_radiuses.iter())).enumerate() {
+            for (j, (particle_b, roche_radius)) in particles.iter().zip(roche_radiuses.iter()).enumerate() {
                 if i == j {
                     continue;
                 }
 
                 //// Check collisions and ejections //////////////////////////////////
-                let dx = particle_a.inertial_position.x - particle_b_position.x;
-                let dy = particle_a.inertial_position.y - particle_b_position.y;
-                let dz = particle_a.inertial_position.z - particle_b_position.z;
+                let dx = particle_a.inertial_position.x - particle_b.inertial_position.x;
+                let dy = particle_a.inertial_position.y - particle_b.inertial_position.y;
+                let dz = particle_a.inertial_position.z - particle_b.inertial_position.z;
                 let distance_2 = dx*dx + dy*dy + dz*dz;
                 // Do not check twice the same pair of particles:
                 if i < j {
-                    // TODO: Optimize roche radius calculation and do it just once
-                    // Faber et al, 2005; Pacynski, 1971
-                    let roche_radius;
-                    if particle_a.mass > *particle_b_mass {
-                        // particle a is the most massive of both
-                        roche_radius = (particle_a.radius/0.462)*(particle_a.mass/particle_b_mass).powf(-1./3.);
-                    } else {
-                        // particle b is the most massive of both
-                        roche_radius = (particle_b_radius/0.462)*(particle_b_mass/particle_a.mass).powf(-1./3.);
-                    }
                     if distance_2 <= roche_radius.powi(2) {
                         println!("\n");
                         panic!("[PANIC {} UTC] Particle {} was destroyed by particle {} due to close encounter!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
                     }
                     // Check if particles are overlapping
-                    if distance_2 <= (particle_a.radius + particle_b_radius).powi(2) {
+                    if distance_2 <= (particle_a.radius + particle_b.radius).powi(2) {
                         println!("\n");
                         panic!("[PANIC {} UTC] Collision between particle {} and {}!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
                     }
@@ -252,35 +217,22 @@ impl Universe {
                 //
                 // acceleration:
                 // ax = Fx / m1 = - G * (m2 / r^3) * (x2 - x1)
-                //let dx = particle_a.inertial_position.x - particle_b_position.x;
-                //let dy = particle_a.inertial_position.y - particle_b_position.y;
-                //let dz = particle_a.inertial_position.z - particle_b_position.z;
+                //let dx = particle_a.inertial_position.x - particle_b.inertial_position.x;
+                //let dy = particle_a.inertial_position.y - particle_b.inertial_position.y;
+                //let dz = particle_a.inertial_position.z - particle_b.inertial_position.z;
                 //let r = (dx*dx + dy*dy + dz*dz).sqrt();
                 //let r = (distance_2 + softening).sqrt();
                 let distance = distance_2.sqrt();
-                let prefact = -G/(distance*distance*distance) * particle_b_mass;
+                let prefact = -G/(distance*distance*distance) * particle_b.mass;
 
-                particle_a.inertial_acceleration.x += prefact * dx;
-                particle_a.inertial_acceleration.y += prefact * dy;
-                particle_a.inertial_acceleration.z += prefact * dz;
+                newtonian_inertial_acceleration.x += prefact * dx;
+                newtonian_inertial_acceleration.y += prefact * dy;
+                newtonian_inertial_acceleration.z += prefact * dz;
             }
         }
-
-        //if ignore_terms != IgnoreGravityTerms::WHFastOne && ignore_terms != IgnoreGravityTerms::WHFastTwo {
-            //// Tides require heliocentric point of reference, the star should continue in the zero point
-            //// so we must compensate all the planets (but if WHFast is being used, it is
-            //// automatically done by the integrator):
-            //if let Some((star, particles)) = particles.split_first_mut() {
-                //for particle in particles.iter_mut() {
-                    //particle.inertial_acceleration.x -= star.inertial_acceleration.x;
-                    //particle.inertial_acceleration.y -= star.inertial_acceleration.y;
-                    //particle.inertial_acceleration.z -= star.inertial_acceleration.z;
-                //}
-                //star.inertial_acceleration.x = 0.;
-                //star.inertial_acceleration.y = 0.;
-                //star.inertial_acceleration.z = 0.;
-            //}
-        //}
+        for (particle, newtonian_inertial_acceleration) in particles.iter_mut().zip(newtonian_inertial_accelerations.iter()) {
+            particle.inertial_acceleration = *newtonian_inertial_acceleration;
+        }
     }
 
     pub fn calculate_particles_evolving_quantities(&mut self, current_time: f64) {

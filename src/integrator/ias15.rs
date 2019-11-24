@@ -164,6 +164,7 @@ impl Integrator for Ias15 {
         }
         self.universe.calculate_norm_spin(); // Needed for evolution
         self.universe.calculate_particles_evolving_quantities(self.current_time); // Make sure we start with the good initial values
+        self.universe.calculate_roche_radiuses(); // Needed for collision detection
     }
 
 
