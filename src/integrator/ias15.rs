@@ -204,7 +204,7 @@ impl Integrator for Ias15 {
 
         // Return
         if self.current_time+self.time_step > self.universe.time_limit {
-            Err("Reached maximum time limit".to_string())
+            Err("Simulation completed".to_string())
         } else {
             Ok(first_snapshot_trigger || recovery_snapshot_time_trigger)
         }

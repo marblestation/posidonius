@@ -150,7 +150,7 @@ fn main() {
                     if elapsed >= execution_time_limit {
                         // Save a universe snapshot so that we can resume later on
                         boxed_universe_integrator.write_recovery_snapshot(&universe_integrator_snapshot_path, &mut universe_history_writer);
-                        println!("[INFO {} UTC] Execution time limit reached!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap()); 
+                        println!("[WARNING {} UTC] Reached execution time limit before simulation completion", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap()); 
                         break;
                     }
                 } else if recovery_snapshot_time_trigger {
@@ -158,7 +158,7 @@ fn main() {
                     boxed_universe_integrator.write_recovery_snapshot(&universe_integrator_snapshot_path, &mut universe_history_writer);
                 }
             },
-            Err(e) => { println!("[WARNING {} UTC] {} '{}'.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), e, first_universe_integrator_snapshot_filename); break; }
+            Err(e) => { println!("[INFO {} UTC] {} '{}'.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), e, first_universe_integrator_snapshot_filename); break; }
         };
     }
 
