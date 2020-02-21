@@ -637,7 +637,7 @@ impl WHFast {
                 let fpp = eta0*gs[0] + zeta0*gs[1];
                 let denom = fp + (16.*fp*fp - 20.*f*fpp).abs().sqrt();
                 x = (x*denom - 5.*f)/denom;
-                'inner: for i in 1..n_lag {
+                for i in 1..n_lag {
                     if x == prev_x[i] {
                         // Converged. Exit.
                         //n_lag = WHFAST_NMAX_QUART;

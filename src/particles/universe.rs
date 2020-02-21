@@ -1,6 +1,6 @@
 extern crate time;
 use std::collections::HashMap;
-use super::super::constants::{G, MAX_PARTICLES, MAX_DISTANCE_2};
+use super::super::constants::{G, MAX_PARTICLES, MAX_DISTANCE_2, COMPENSATED_GRAVITY};
 use super::super::{Evolver, EvolutionType};
 use super::{Particle};
 use super::{Axes};
@@ -165,7 +165,10 @@ impl Universe {
         let mut newtonian_inertial_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; 
         let (newtonian_inertial_accelerations, _) = newtonian_inertial_accelerations.split_at_mut(self.n_particles);
 
-        for (i, (particle_a, (newtonian_inertial_acceleration, roche_radiuses))) in particles.iter().zip(newtonian_inertial_accelerations.iter_mut().zip(roche_radiuses.iter())).enumerate() {
+        let mut newtonian_inertial_acceleration_errors = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; 
+        let (newtonian_inertial_acceleration_errors, _) = newtonian_inertial_acceleration_errors.split_at_mut(self.n_particles);
+
+        for (i, (particle_a, (newtonian_inertial_acceleration, (newtonian_inertial_acceleration_error, roche_radiuses)))) in particles.iter().zip(newtonian_inertial_accelerations.iter_mut().zip(newtonian_inertial_acceleration_errors.iter_mut().zip(roche_radiuses.iter()))).enumerate() {
             for (j, (particle_b, roche_radius)) in particles.iter().zip(roche_radiuses.iter()).enumerate() {
                 if i == j {
                     continue;
@@ -187,7 +190,7 @@ impl Universe {
                         println!("\n");
                         panic!("[PANIC {} UTC] Collision between particle {} and {}!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
                     }
-                    if i == self.hosts.index.most_massive && distance_2 > MAX_DISTANCE_2 {
+                    if MAX_DISTANCE_2 > 0. && i == self.hosts.index.most_massive && distance_2 > MAX_DISTANCE_2 {
                         println!("\n");
                         panic!("[PANIC {} UTC] Particle {} has been ejected!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), j);
                     }
@@ -225,13 +228,37 @@ impl Universe {
                 let distance = distance_2.sqrt();
                 let prefact = -G/(distance*distance*distance) * particle_b.mass;
 
-                newtonian_inertial_acceleration.x += prefact * dx;
-                newtonian_inertial_acceleration.y += prefact * dy;
-                newtonian_inertial_acceleration.z += prefact * dz;
+                if COMPENSATED_GRAVITY {
+                    // x
+                    let acceleration_to_be_added = prefact * dx;
+                    let corrected_acceleration_to_be_added = acceleration_to_be_added - newtonian_inertial_acceleration_error.x;
+                    let added_acceleration = newtonian_inertial_acceleration.x + corrected_acceleration_to_be_added;
+                    newtonian_inertial_acceleration_error.x = (added_acceleration - newtonian_inertial_acceleration.x) - corrected_acceleration_to_be_added;
+                    newtonian_inertial_acceleration.x = added_acceleration;
+                    // y
+                    let acceleration_to_be_added = prefact * dy;
+                    let corrected_acceleration_to_be_added = acceleration_to_be_added - newtonian_inertial_acceleration_error.y;
+                    let added_acceleration = newtonian_inertial_acceleration.y + corrected_acceleration_to_be_added;
+                    newtonian_inertial_acceleration_error.y = (added_acceleration - newtonian_inertial_acceleration.y) - corrected_acceleration_to_be_added;
+                    newtonian_inertial_acceleration.y = added_acceleration;
+                    // z
+                    let acceleration_to_be_added = prefact * dz;
+                    let corrected_acceleration_to_be_added = acceleration_to_be_added - newtonian_inertial_acceleration_error.z;
+                    let added_acceleration = newtonian_inertial_acceleration.z + corrected_acceleration_to_be_added;
+                    newtonian_inertial_acceleration_error.z = (added_acceleration - newtonian_inertial_acceleration.z) - corrected_acceleration_to_be_added;
+                    newtonian_inertial_acceleration.z = added_acceleration;
+                } else {
+                    newtonian_inertial_acceleration.x += prefact * dx;
+                    newtonian_inertial_acceleration.y += prefact * dy;
+                    newtonian_inertial_acceleration.z += prefact * dz;
+                }
             }
         }
-        for (particle, newtonian_inertial_acceleration) in particles.iter_mut().zip(newtonian_inertial_accelerations.iter()) {
+        for (particle, (newtonian_inertial_acceleration, newtonian_inertial_acceleration_error)) in particles.iter_mut().zip(newtonian_inertial_accelerations.iter().zip(newtonian_inertial_acceleration_errors.iter_mut())) {
             particle.inertial_acceleration = *newtonian_inertial_acceleration;
+            if COMPENSATED_GRAVITY {
+                particle.inertial_acceleration_error = *newtonian_inertial_acceleration_error;
+            }
         }
     }
 

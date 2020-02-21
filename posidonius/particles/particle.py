@@ -66,6 +66,7 @@ class Particle(object):
             "heliocentric_radial_velocity": 0.0,
             "heliocentric_velocity": velocity.get(),
             "id": 0,
+            "inertial_acceleration_error": Axes(0.0, 0.0, 0.0).get(),
             "inertial_acceleration": Axes(0.0, 0.0, 0.0).get(),
             "inertial_position": Axes(0.0, 0.0, 0.0).get(),
             "inertial_velocity": Axes(0.0, 0.0, 0.0).get(),

@@ -150,7 +150,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
 
         // Control once in a while (when historic point is written) that the
         // time step is small enough to correctly integrate an orbit
-        if current_particle_index != reference_particle_index && orbital_period <= time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO {
+        if MIN_ORBITAL_PERIOD_TIME_STEP_RATIO > 0. && current_particle_index != reference_particle_index && orbital_period <= time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO {
             println!("\n");
             panic!("[PANIC {} UTC] Time step is too large! Particle {} has an orbital period around particle {} of {:0.3} days which is less than the recommended limit ({:0.3} days) based on the current time step ({:0.3} days).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), current_particle_index, reference_particle_index, orbital_period, time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO, time_step);
         }

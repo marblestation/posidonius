@@ -436,6 +436,11 @@
           "y": 0.0,
           "z": 0.0
         },
+        "inertial_acceleration_error": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
         "inertial_position": {
           "x": -1.3900858893770343e-06,
           "y": -5.639218561281962e-19,
@@ -658,6 +663,11 @@
         },
         "id": 1,
         "inertial_acceleration": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "inertial_acceleration_error": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -890,6 +900,11 @@
           "y": 0.0,
           "z": 0.0
         },
+        "inertial_acceleration_error": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
         "inertial_position": {
           "x": 4.499998609914111,
           "y": 1.825532931504191e-12,
@@ -1112,6 +1127,11 @@
         },
         "id": 3,
         "inertial_acceleration": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "inertial_acceleration_error": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -1342,228 +1362,7 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_position": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "inertial_velocity": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "mass": 0.0,
-        "mass_g": 0.0,
-        "moment_of_inertia": 0.0,
-        "moment_of_inertia_ratio": 1.0,
-        "norm_spin_vector_2": 0.0,
-        "radius": 0.0,
-        "radius_of_gyration_2": 0.0,
-        "reference": "MostMassiveParticle",
-        "rotational_flattening": {
-          "coordinates": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "velocity": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            }
-          },
-          "effect": "Disabled",
-          "parameters": {
-            "input": {
-              "love_number": 0.0
-            },
-            "internal": {
-              "distance": 0.0,
-              "factor_for_the_force_induced_by_planet_rotation": 0.0,
-              "factor_for_the_force_induced_by_star_rotation": 0.0,
-              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0,
-              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
-              "radial_component_of_the_force_induced_by_rotation": 0.0,
-              "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
-            },
-            "output": {
-              "acceleration": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              },
-              "dangular_momentum_dt": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              }
-            }
-          }
-        },
-        "spin": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "tides": {
-          "coordinates": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "velocity": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            }
-          },
-          "effect": "Disabled",
-          "parameters": {
-            "input": {
-              "dissipation_factor": 0.0,
-              "dissipation_factor_scale": 0.0,
-              "love_number": 0.0
-            },
-            "internal": {
-              "denergy_dt": 0.0,
-              "distance": 0.0,
-              "lag_angle": 0.0,
-              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0,
-              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0,
-              "radial_component_of_the_tidal_force": 0.0,
-              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0,
-              "radial_velocity": 0.0,
-              "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 0.0
-            },
-            "output": {
-              "acceleration": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              },
-              "dangular_momentum_dt": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              }
-            }
-          }
-        },
-        "wind": {
-          "effect": "Disabled",
-          "parameters": {
-            "input": {
-              "k_factor": 0.0,
-              "rotation_saturation": 0.0
-            },
-            "internal": {
-              "rotation_saturation_2": 0.0
-            },
-            "output": {
-              "factor": 0.0
-            }
-          }
-        }
-      },
-      {
-        "dangular_momentum_dt": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "dangular_momentum_dt_per_moment_of_inertia": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "disk": {
-          "coordinates": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "velocity": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            }
-          },
-          "effect": "Disabled",
-          "parameters": {
-            "internal": {
-              "distance": 0.0,
-              "migration_timescale": 0.0,
-              "norm_velocity_vector": 0.0,
-              "norm_velocity_vector_2": 0.0
-            },
-            "output": {
-              "acceleration": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              }
-            }
-          }
-        },
-        "evolution": "NonEvolving",
-        "general_relativity": {
-          "coordinates": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "velocity": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            }
-          },
-          "effect": "Disabled",
-          "parameters": {
-            "internal": {
-              "distance": 0.0,
-              "factor": 0.0,
-              "norm_velocity_vector": 0.0,
-              "norm_velocity_vector_2": 0.0,
-              "radial_velocity": 0.0
-            },
-            "output": {
-              "acceleration": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              },
-              "dangular_momentum_dt": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              }
-            }
-          }
-        },
-        "heliocentric_distance": 0.0,
-        "heliocentric_norm_velocity_vector": 0.0,
-        "heliocentric_norm_velocity_vector_2": 0.0,
-        "heliocentric_position": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "heliocentric_radial_velocity": 0.0,
-        "heliocentric_velocity": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "id": 0,
-        "inertial_acceleration": {
+        "inertial_acceleration_error": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -1794,228 +1593,7 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_position": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "inertial_velocity": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "mass": 0.0,
-        "mass_g": 0.0,
-        "moment_of_inertia": 0.0,
-        "moment_of_inertia_ratio": 1.0,
-        "norm_spin_vector_2": 0.0,
-        "radius": 0.0,
-        "radius_of_gyration_2": 0.0,
-        "reference": "MostMassiveParticle",
-        "rotational_flattening": {
-          "coordinates": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "velocity": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            }
-          },
-          "effect": "Disabled",
-          "parameters": {
-            "input": {
-              "love_number": 0.0
-            },
-            "internal": {
-              "distance": 0.0,
-              "factor_for_the_force_induced_by_planet_rotation": 0.0,
-              "factor_for_the_force_induced_by_star_rotation": 0.0,
-              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0,
-              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
-              "radial_component_of_the_force_induced_by_rotation": 0.0,
-              "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
-            },
-            "output": {
-              "acceleration": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              },
-              "dangular_momentum_dt": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              }
-            }
-          }
-        },
-        "spin": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "tides": {
-          "coordinates": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "velocity": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            }
-          },
-          "effect": "Disabled",
-          "parameters": {
-            "input": {
-              "dissipation_factor": 0.0,
-              "dissipation_factor_scale": 0.0,
-              "love_number": 0.0
-            },
-            "internal": {
-              "denergy_dt": 0.0,
-              "distance": 0.0,
-              "lag_angle": 0.0,
-              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0,
-              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0,
-              "radial_component_of_the_tidal_force": 0.0,
-              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0,
-              "radial_velocity": 0.0,
-              "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 0.0
-            },
-            "output": {
-              "acceleration": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              },
-              "dangular_momentum_dt": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              }
-            }
-          }
-        },
-        "wind": {
-          "effect": "Disabled",
-          "parameters": {
-            "input": {
-              "k_factor": 0.0,
-              "rotation_saturation": 0.0
-            },
-            "internal": {
-              "rotation_saturation_2": 0.0
-            },
-            "output": {
-              "factor": 0.0
-            }
-          }
-        }
-      },
-      {
-        "dangular_momentum_dt": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "dangular_momentum_dt_per_moment_of_inertia": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "disk": {
-          "coordinates": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "velocity": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            }
-          },
-          "effect": "Disabled",
-          "parameters": {
-            "internal": {
-              "distance": 0.0,
-              "migration_timescale": 0.0,
-              "norm_velocity_vector": 0.0,
-              "norm_velocity_vector_2": 0.0
-            },
-            "output": {
-              "acceleration": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              }
-            }
-          }
-        },
-        "evolution": "NonEvolving",
-        "general_relativity": {
-          "coordinates": {
-            "position": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            },
-            "velocity": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0
-            }
-          },
-          "effect": "Disabled",
-          "parameters": {
-            "internal": {
-              "distance": 0.0,
-              "factor": 0.0,
-              "norm_velocity_vector": 0.0,
-              "norm_velocity_vector_2": 0.0,
-              "radial_velocity": 0.0
-            },
-            "output": {
-              "acceleration": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              },
-              "dangular_momentum_dt": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-              }
-            }
-          }
-        },
-        "heliocentric_distance": 0.0,
-        "heliocentric_norm_velocity_vector": 0.0,
-        "heliocentric_norm_velocity_vector_2": 0.0,
-        "heliocentric_position": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "heliocentric_radial_velocity": 0.0,
-        "heliocentric_velocity": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "id": 0,
-        "inertial_acceleration": {
+        "inertial_acceleration_error": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -2246,6 +1824,11 @@
           "y": 0.0,
           "z": 0.0
         },
+        "inertial_acceleration_error": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
         "inertial_position": {
           "x": 0.0,
           "y": 0.0,
@@ -2468,6 +2051,473 @@
         },
         "id": 0,
         "inertial_acceleration": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "inertial_acceleration_error": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "inertial_position": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "inertial_velocity": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "mass": 0.0,
+        "mass_g": 0.0,
+        "moment_of_inertia": 0.0,
+        "moment_of_inertia_ratio": 1.0,
+        "norm_spin_vector_2": 0.0,
+        "radius": 0.0,
+        "radius_of_gyration_2": 0.0,
+        "reference": "MostMassiveParticle",
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "velocity": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          },
+          "effect": "Disabled",
+          "parameters": {
+            "input": {
+              "love_number": 0.0
+            },
+            "internal": {
+              "distance": 0.0,
+              "factor_for_the_force_induced_by_planet_rotation": 0.0,
+              "factor_for_the_force_induced_by_star_rotation": 0.0,
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0,
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
+              "radial_component_of_the_force_induced_by_rotation": 0.0,
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0,
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            },
+            "output": {
+              "acceleration": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            }
+          }
+        },
+        "spin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "velocity": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          },
+          "effect": "Disabled",
+          "parameters": {
+            "input": {
+              "dissipation_factor": 0.0,
+              "dissipation_factor_scale": 0.0,
+              "love_number": 0.0
+            },
+            "internal": {
+              "denergy_dt": 0.0,
+              "distance": 0.0,
+              "lag_angle": 0.0,
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0,
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0,
+              "radial_component_of_the_tidal_force": 0.0,
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0,
+              "radial_velocity": 0.0,
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0,
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "scaled_dissipation_factor": 0.0
+            },
+            "output": {
+              "acceleration": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            }
+          }
+        },
+        "wind": {
+          "effect": "Disabled",
+          "parameters": {
+            "input": {
+              "k_factor": 0.0,
+              "rotation_saturation": 0.0
+            },
+            "internal": {
+              "rotation_saturation_2": 0.0
+            },
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
+      },
+      {
+        "dangular_momentum_dt": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "dangular_momentum_dt_per_moment_of_inertia": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "disk": {
+          "coordinates": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "velocity": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          },
+          "effect": "Disabled",
+          "parameters": {
+            "internal": {
+              "distance": 0.0,
+              "migration_timescale": 0.0,
+              "norm_velocity_vector": 0.0,
+              "norm_velocity_vector_2": 0.0
+            },
+            "output": {
+              "acceleration": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            }
+          }
+        },
+        "evolution": "NonEvolving",
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "velocity": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          },
+          "effect": "Disabled",
+          "parameters": {
+            "internal": {
+              "distance": 0.0,
+              "factor": 0.0,
+              "norm_velocity_vector": 0.0,
+              "norm_velocity_vector_2": 0.0,
+              "radial_velocity": 0.0
+            },
+            "output": {
+              "acceleration": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            }
+          }
+        },
+        "heliocentric_distance": 0.0,
+        "heliocentric_norm_velocity_vector": 0.0,
+        "heliocentric_norm_velocity_vector_2": 0.0,
+        "heliocentric_position": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "heliocentric_radial_velocity": 0.0,
+        "heliocentric_velocity": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "id": 0,
+        "inertial_acceleration": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "inertial_acceleration_error": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "inertial_position": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "inertial_velocity": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "mass": 0.0,
+        "mass_g": 0.0,
+        "moment_of_inertia": 0.0,
+        "moment_of_inertia_ratio": 1.0,
+        "norm_spin_vector_2": 0.0,
+        "radius": 0.0,
+        "radius_of_gyration_2": 0.0,
+        "reference": "MostMassiveParticle",
+        "rotational_flattening": {
+          "coordinates": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "velocity": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          },
+          "effect": "Disabled",
+          "parameters": {
+            "input": {
+              "love_number": 0.0
+            },
+            "internal": {
+              "distance": 0.0,
+              "factor_for_the_force_induced_by_planet_rotation": 0.0,
+              "factor_for_the_force_induced_by_star_rotation": 0.0,
+              "orthogonal_component_of_the_force_induced_by_planet_rotation": 0.0,
+              "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
+              "radial_component_of_the_force_induced_by_rotation": 0.0,
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0,
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+            },
+            "output": {
+              "acceleration": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            }
+          }
+        },
+        "spin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "tides": {
+          "coordinates": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "velocity": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          },
+          "effect": "Disabled",
+          "parameters": {
+            "input": {
+              "dissipation_factor": 0.0,
+              "dissipation_factor_scale": 0.0,
+              "love_number": 0.0
+            },
+            "internal": {
+              "denergy_dt": 0.0,
+              "distance": 0.0,
+              "lag_angle": 0.0,
+              "orthogonal_component_of_the_tidal_force_due_to_planetary_tide": 0.0,
+              "orthogonal_component_of_the_tidal_force_due_to_stellar_tide": 0.0,
+              "radial_component_of_the_tidal_force": 0.0,
+              "radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass": 0.0,
+              "radial_velocity": 0.0,
+              "scalar_product_of_vector_position_with_planetary_spin": 0.0,
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "scaled_dissipation_factor": 0.0
+            },
+            "output": {
+              "acceleration": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            }
+          }
+        },
+        "wind": {
+          "effect": "Disabled",
+          "parameters": {
+            "input": {
+              "k_factor": 0.0,
+              "rotation_saturation": 0.0
+            },
+            "internal": {
+              "rotation_saturation_2": 0.0
+            },
+            "output": {
+              "factor": 0.0
+            }
+          }
+        }
+      },
+      {
+        "dangular_momentum_dt": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "dangular_momentum_dt_per_moment_of_inertia": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "disk": {
+          "coordinates": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "velocity": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          },
+          "effect": "Disabled",
+          "parameters": {
+            "internal": {
+              "distance": 0.0,
+              "migration_timescale": 0.0,
+              "norm_velocity_vector": 0.0,
+              "norm_velocity_vector_2": 0.0
+            },
+            "output": {
+              "acceleration": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            }
+          }
+        },
+        "evolution": "NonEvolving",
+        "general_relativity": {
+          "coordinates": {
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "velocity": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          },
+          "effect": "Disabled",
+          "parameters": {
+            "internal": {
+              "distance": 0.0,
+              "factor": 0.0,
+              "norm_velocity_vector": 0.0,
+              "norm_velocity_vector_2": 0.0,
+              "radial_velocity": 0.0
+            },
+            "output": {
+              "acceleration": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
+            }
+          }
+        },
+        "heliocentric_distance": 0.0,
+        "heliocentric_norm_velocity_vector": 0.0,
+        "heliocentric_norm_velocity_vector_2": 0.0,
+        "heliocentric_position": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "heliocentric_radial_velocity": 0.0,
+        "heliocentric_velocity": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "id": 0,
+        "inertial_acceleration": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "inertial_acceleration_error": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0

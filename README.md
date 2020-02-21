@@ -114,6 +114,8 @@ python scripts/explore_single_resonance.py target/example_history.bin 1 2 3 2
 
 This section is intended only for developers. 
 
+*NOTE*: Rust floats (f64) follow [IEEE_754 decimal64](https://en.wikipedia.org/wiki/IEEE_754#Character_representation), hence only the first 16 decimals are significant ([see page 74, Beginning Rust book](https://books.google.com/books?id=LM5SDwAAQBAJ&lpg=PA74&ots=X6j88qMM2O&dq=rust%20significant%20decimals&pg=PA74#v=onepage&q=rust%20significant%20decimals&f=false)).
+
 ### Python
 
 Prepare a python environment:
@@ -149,7 +151,7 @@ pytest
 Run the rust tests:
 
 ```
-cargo tests
+cargo test
 ```
 
 #### Rust
@@ -158,7 +160,7 @@ If the test results for a case differ from previous executions and the differenc
 
 ```
 find tests/data/ -name 'particle_*.json' -delete
-cargo tests
+cargo test
 ```
 
 But if the difference is not expected, then the changes made to the code have affected the expected behavior of posidonius and the changes you have made to your code to identify the reason/bug.
@@ -176,7 +178,7 @@ If it is necessary to recreate all the rust test's `case.json`, it is enough to 
 
 ```
 find tests/data/ -name 'case.json' -delete
-cargo tests
+cargo test
 python scripts/clean_json.py
 ```
 

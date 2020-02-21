@@ -921,7 +921,7 @@ impl Ias15 {
                     //dt_new = (INTEGRATOR_EPSILON/integrator_error).powf(1./7.) * dt_done;
                     dt_new = self.sqrt7(INTEGRATOR_EPSILON/integrator_error) * dt_done;
                 } else {
-                	// In the rare case that the error estimate doesn't give a finite number (e.g. when all forces accidentally cancel up to machine precission).
+                    // In the rare case that the error estimate doesn't give a finite number (e.g. when all forces accidentally cancel up to machine precission).
                     dt_new = dt_done/SAFETY_FACTOR; // by default, increase timestep a little
                 }
                 
@@ -982,6 +982,7 @@ impl Ias15 {
                 }
                 if (dt_new/dt_done).abs() > 1.0 {	// New timestep is larger.
                     if dt_new/dt_done > 1./SAFETY_FACTOR {
+                        //println!("Time step is too large ({:.15}), do not increase so much", dt_new);
                         dt_new = dt_done / SAFETY_FACTOR;	// Don't increase the timestep by too much compared to the last one.
                     }
                 }

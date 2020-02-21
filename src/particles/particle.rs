@@ -21,6 +21,11 @@ pub struct Particle {
     pub inertial_position: Axes,
     pub inertial_velocity: Axes,
     pub inertial_acceleration: Axes,
+    // Compensated summation to improve the accuracy of additions that involve
+    // one small and one large floating point number
+    //      As cited by IAS15 paper: Kahan 1965; Higham 2002; Hairer et al. 2006
+    //      https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+    pub inertial_acceleration_error: Axes,
     // Positions/velocities in a heliocentric frame: the host is at rest with respect to the origin of the coordinate system
     // where the host is the most massive particle in the universe
     pub heliocentric_position: Axes,
@@ -73,6 +78,7 @@ impl Particle {
             inertial_position: Axes{x: 0., y: 0., z: 0.}, // To be re-computed by the universe
             inertial_velocity: Axes{x: 0., y: 0., z: 0.}, // To be re-computed by the universe
             inertial_acceleration: Axes{x: 0., y: 0., z: 0.},
+            inertial_acceleration_error: Axes{x: 0., y: 0., z: 0.},
             heliocentric_position: position,
             heliocentric_velocity: velocity,
             heliocentric_distance: 0.,
@@ -110,6 +116,7 @@ impl Particle {
             inertial_position: Axes{x: 0., y: 0., z: 0.},
             inertial_velocity: Axes{x: 0., y: 0., z: 0.},
             inertial_acceleration: Axes{x: 0., y: 0., z: 0.},
+            inertial_acceleration_error: Axes{x: 0., y: 0., z: 0.},
             heliocentric_position: Axes{x: 0., y: 0., z: 0.},
             heliocentric_velocity: Axes{x: 0., y: 0., z: 0.},
             heliocentric_distance: 0.,
