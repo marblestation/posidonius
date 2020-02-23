@@ -124,35 +124,37 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                     );
         bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
 
-        let reference_particle_index;
-        let (_semimajor_axis, _perihelion_distance, _eccentricity, _inclination, _longitude_of_perihelion, _longitude_of_ascending_node, _mean_anomaly, orbital_period) = match particle.reference {
-            Reference::MostMassiveParticle => {
-                reference_particle_index = universe.hosts.index.most_massive;
-                let reference_particle = universe.particles[reference_particle_index];
-                calculate_keplerian_orbital_elements(reference_particle.mass_g+particle.mass_g, particle.heliocentric_position, particle.heliocentric_velocity)
-            },
-            Reference::Particle(index) => {
-                reference_particle_index = index;
-                let reference_particle = universe.particles[reference_particle_index];
-                let position = Axes{
-                    x: particle.inertial_position.x - reference_particle.inertial_position.x,
-                    y: particle.inertial_position.y - reference_particle.inertial_position.y,
-                    z: particle.inertial_position.z - reference_particle.inertial_position.z,
-                };
-                let velocity = Axes{
-                    x: particle.inertial_velocity.x - reference_particle.inertial_velocity.x,
-                    y: particle.inertial_velocity.y - reference_particle.inertial_velocity.y,
-                    z: particle.inertial_velocity.z - reference_particle.inertial_velocity.z,
-                };
-                calculate_keplerian_orbital_elements(reference_particle.mass_g+particle.mass_g, position, velocity)
-            },
-        };
+        if MIN_ORBITAL_PERIOD_TIME_STEP_RATIO > 0. {
+            let reference_particle_index;
+            let (_semimajor_axis, _perihelion_distance, _eccentricity, _inclination, _longitude_of_perihelion, _longitude_of_ascending_node, _mean_anomaly, orbital_period) = match particle.reference {
+                Reference::MostMassiveParticle => {
+                    reference_particle_index = universe.hosts.index.most_massive;
+                    let reference_particle = universe.particles[reference_particle_index];
+                    calculate_keplerian_orbital_elements(reference_particle.mass_g+particle.mass_g, particle.heliocentric_position, particle.heliocentric_velocity)
+                },
+                Reference::Particle(index) => {
+                    reference_particle_index = index;
+                    let reference_particle = universe.particles[reference_particle_index];
+                    let position = Axes{
+                        x: particle.inertial_position.x - reference_particle.inertial_position.x,
+                        y: particle.inertial_position.y - reference_particle.inertial_position.y,
+                        z: particle.inertial_position.z - reference_particle.inertial_position.z,
+                    };
+                    let velocity = Axes{
+                        x: particle.inertial_velocity.x - reference_particle.inertial_velocity.x,
+                        y: particle.inertial_velocity.y - reference_particle.inertial_velocity.y,
+                        z: particle.inertial_velocity.z - reference_particle.inertial_velocity.z,
+                    };
+                    calculate_keplerian_orbital_elements(reference_particle.mass_g+particle.mass_g, position, velocity)
+                },
+            };
 
-        // Control once in a while (when historic point is written) that the
-        // time step is small enough to correctly integrate an orbit
-        if MIN_ORBITAL_PERIOD_TIME_STEP_RATIO > 0. && current_particle_index != reference_particle_index && orbital_period <= time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO {
-            println!("\n");
-            panic!("[PANIC {} UTC] Time step is too large! Particle {} has an orbital period around particle {} of {:0.3} days which is less than the recommended limit ({:0.3} days) based on the current time step ({:0.3} days).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), current_particle_index, reference_particle_index, orbital_period, time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO, time_step);
+            // Control once in a while (when historic point is written) that the
+            // time step is small enough to correctly integrate an orbit
+            if current_particle_index != reference_particle_index && orbital_period <= time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO {
+                println!("\n");
+                panic!("[PANIC {} UTC] Time step is too large! Particle {} has an orbital period around particle {} of {:0.3} days which is less than the recommended limit ({:0.3} days) based on the current time step ({:0.3} days).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), current_particle_index, reference_particle_index, orbital_period, time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO, time_step);
+            }
         }
 
 

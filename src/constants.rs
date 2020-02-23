@@ -4,7 +4,7 @@ pub const MAX_PARTICLES : usize = 10; // The optimal value matches the real numb
 pub const MAX_DISTANCE : f64 = 100.; // AU
 pub const MAX_DISTANCE_2 : f64 = MAX_DISTANCE*MAX_DISTANCE; // AU (use a negative value to disable)
 //
-pub const MIN_ORBITAL_PERIOD_TIME_STEP_RATIO : f64 = 5.; // The orbital period should be N times greater than the time step to correctly integrate an orbit (use a negative value to disable)
+pub const MIN_ORBITAL_PERIOD_TIME_STEP_RATIO : f64 = -1.0; // The orbital period should be 5.0 times greater than the time step to correctly integrate an orbit (use a negative value to disable)
 pub const COMPENSATED_GRAVITY : bool = false;
 
 //// Constants for IAS15 integrator (to be ignored for others)
