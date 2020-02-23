@@ -61,6 +61,8 @@ def classify(n_particles, data, reference_particle_index=0, discard_first_hundre
         planets_keys.append("{}".format(i+1))
 
     # From inertial to heliocentric coordinates
+    n_data_points = len(star_data['position_x'])
+    zeros = Axes(np.zeros(n_data_points), np.zeros(n_data_points), np.zeros(n_data_points))
     for key in planets_keys:
         planets_data[key]['position_x'] -= star_data['position_x']
         planets_data[key]['position_y'] -= star_data['position_y']
@@ -71,10 +73,17 @@ def classify(n_particles, data, reference_particle_index=0, discard_first_hundre
         semimajor_axis = []
         eccentricity = []
         inclination = []
-        gm = posidonius.constants.G * (star_data['mass'] + planets_data[key]['mass'])
-        position = Axes(planets_data[key]['position_x'], planets_data[key]['position_y'], planets_data[key]['position_z'])
-        velocity = Axes(planets_data[key]['velocity_x'], planets_data[key]['velocity_y'], planets_data[key]['velocity_z'])
-        a, q, e, i, p, n, l = posidonius.tools.calculate_keplerian_orbital_elements(gm, position, velocity)
+        target_mass = planets_data[key]['mass']
+        target_position = Axes(planets_data[key]['position_x'], planets_data[key]['position_y'], planets_data[key]['position_z'])
+        target_velocity = Axes(planets_data[key]['velocity_x'], planets_data[key]['velocity_y'], planets_data[key]['velocity_z'])
+        masses = [planets_data[k]['mass'] for k in planets_keys if k != key]
+        masses.insert(0, star_data['mass'])
+        positions = [Axes(planets_data[k]['position_x'], planets_data[k]['position_y'], planets_data[k]['position_z']) for k in planets_keys if k != key]
+        positions.insert(0, zeros) # Star is at the center
+        velocities = [Axes(planets_data[k]['velocity_x'], planets_data[k]['velocity_y'], planets_data[k]['velocity_z']) for k in planets_keys if k != key]
+        velocities.insert(0, zeros) # Star is resting
+        a, q, e, i, p, n, l = posidonius.tools.calculate_keplerian_orbital_elements(target_mass, target_position, target_velocity, masses=masses, positions=positions, velocities=velocities)
+        #a, q, e, i, p, n, l = posidonius.tools.calculate_keplerian_orbital_elements(target_mass+star_data['mass'], target_position, target_velocity)
         planets_data[key] = append_fields(planets_data[key], ('semi-major_axis', 'eccentricity', 'inclination'), (a, e, i), usemask=False)
     star_data['position_x'] = 0.
     star_data['position_y'] = 0.

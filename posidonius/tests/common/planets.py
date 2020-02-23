@@ -2,6 +2,7 @@ import posidonius
 import numpy as np
 
 def _posvel(star_mass, planet_mass, a):
+    zeros = posidonius.Axes(0., 0., 0.)
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     #a = 0.018;                             # semi-major axis (in AU)
@@ -12,16 +13,14 @@ def _posvel(star_mass, planet_mass, a):
     l = 0. * posidonius.constants.DEG2RAD;                      # mean anomaly (degrees)
     p = (p + n);                 # Convert to longitude of perihelion !!
     q = a * (1.0 - e);                     # perihelion distance
-    gm = posidonius.constants.G*(planet_mass+star_mass);
-    x, y, z, vx, vy, vz = posidonius.calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
-    position = posidonius.Axes(x, y, z)
-    velocity = posidonius.Axes(vx, vy, vz)
+    position, velocity = posidonius.calculate_cartesian_coordinates(planet_mass, q, e, i, p, n, l, masses=[star_mass], positions=[zeros], velocities=[zeros])
     return position, velocity
 
-def _spin(obliquity, rotation_period, star_mass, planet_mass, position, velocity):
+def _spin(obliquity, rotation_period, star_mass, planet_mass, planet_position, planet_velocity):
+    zeros = posidonius.Axes(0., 0., 0.)
     #////// Initialization of planetary spin
     angular_frequency = posidonius.constants.TWO_PI/(rotation_period/24.) # days^-1
-    keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*(star_mass+planet_mass), position, velocity)
+    keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(planet_mass, planet_position, planet_velocity, masses=[star_mass], positions=[zeros], velocities=[zeros])
     inclination = keplerian_orbital_elements[3]
     spin = posidonius.calculate_spin(angular_frequency, inclination, obliquity)
     return spin

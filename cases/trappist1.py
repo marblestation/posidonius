@@ -131,17 +131,14 @@ if __name__ == "__main__":
         l = l * posidonius.constants.DEG2RAD;           # mean anomaly (degrees)
         p = (p + n);                 # Convert to longitude of perihelion !!
         q = a * (1.0 - e);                     # perihelion distance
-        gm = posidonius.constants.G*(planet_mass+star_mass);
-        x, y, z, vx, vy, vz = posidonius.calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
-        planet_position = posidonius.Axes(x, y, z)
-        planet_velocity = posidonius.Axes(vx, vy, vz)
+        planet_position, planet_velocity = posidonius.calculate_cartesian_coordinates(planet_mass, q, e, i, p, n, l, masses=[star_mass], positions=[star_position], velocities=[star_velocity])
 
         #////// Initialization of planetary spin
         planet_obliquity = 1.0e-4 # rad
         # Pseudo-synchronization period
         planet_pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(a, e, star_mass, planet_mass) # days
         planet_angular_frequency = posidonius.constants.TWO_PI/(planet_pseudo_synchronization_period) # days^-1
-        planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*(star_mass+planet_mass), planet_position, planet_velocity)
+        planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(planet_mass, planet_position, planet_velocity, masses=[star_mass], positions=[star_position], velocities=[star_velocity])
         planet_inclination = planet_keplerian_orbital_elements[3]
         planet_spin = posidonius.calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity)
 

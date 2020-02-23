@@ -117,24 +117,21 @@ if __name__ == "__main__":
     l = 0. * posidonius.constants.DEG2RAD;                      # mean anomaly (degrees)
     p = (p + n);                 # Convert to longitude of perihelion !!
     q = a * (1.0 - e);                     # perihelion distance
-    gm = posidonius.constants.G*(planet_mass+star_mass);
-    x, y, z, vx, vy, vz = posidonius.calculate_cartesian_coordinates(gm, q, e, i, p, n, l);
-    planet_position = posidonius.Axes(x, y, z)
-    planet_velocity = posidonius.Axes(vx, vy, vz)
+    planet_position, planet_velocity = posidonius.calculate_cartesian_coordinates(planet_mass, q, e, i, p, n, l, masses=[star_mass], positions=[star_position], velocities=[star_velocity])
 
     #////// Initialization of planetary spin
     planet_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
     planet_rotation_period = 13. # hours
     planet_angular_frequency = posidonius.constants.TWO_PI/(planet_rotation_period/24.) # days^-1
     # Pseudo-synchronization period
-    #planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*(star_mass+planet_mass), planet_position, planet_velocity)
+    #planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(planet_mass, planet_position, planet_velocity, masses=[star_mass], positions=[star_position], velocities=[star_velocity])
     #planet_semi_major_axis = planet_keplerian_orbital_elements[0]
     #planet_eccentricity = planet_keplerian_orbital_elements[2]
     #planet_semi_major_axis = a
     #planet_eccentricity = e
     #planet_pseudo_synchronization_period = posidonius.calculate_pseudo_synchronization_period(planet_semi_major_axis, planet_eccentricity, star_mass, planet_mass)
     #planet_angular_frequency = posidonius.constants.TWO_PI/(planet_pseudo_synchronization_period/24.) # days^-1
-    planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(posidonius.constants.G*(star_mass+planet_mass), planet_position, planet_velocity)
+    planet_keplerian_orbital_elements = posidonius.calculate_keplerian_orbital_elements(planet_mass, planet_position, planet_velocity, masses=[star_mass], positions=[star_position], velocities=[star_velocity])
     planet_inclination = planet_keplerian_orbital_elements[3]
     planet_spin = posidonius.calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity)
 

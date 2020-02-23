@@ -5,7 +5,7 @@ from posidonius.particles.axes import Axes
 from posidonius.integrator import WHFast, Ias15, LeapFrog
 from posidonius.constants import *
 from posidonius.effects.evolution import NonEvolving, Leconte2011, Baraffe2015, Baraffe1998, LeconteChabrier2013, BolmontMathis2016, GalletBolmont2017
-from posidonius.tools import calculate_spin, mass_radius_relation, get_center_of_mass_of_pair
+from posidonius.tools import calculate_spin, mass_radius_relation, calculate_center_of_mass
 import posidonius.effects as effects
 from posidonius.particles.particle import Particle, DummyParticle
 
@@ -143,11 +143,10 @@ class Universe(object):
         center_of_mass_velocity = Axes(0., 0., 0.)
         center_of_mass_mass = 0.;
 
-        for particle in self._data['particles']:
-            center_of_mass_mass = get_center_of_mass_of_pair(center_of_mass_position,
-                                                                    center_of_mass_velocity,
-                                                                    center_of_mass_mass,
-                                                                    particle)
+        masses = [p['mass'] for p in self._data['particles']]
+        positions = [Axes(p['heliocentric_position']['x'], p['heliocentric_position']['y'], p['heliocentric_position']['z']) for p in self._data['particles']]
+        velocities = [Axes(p['heliocentric_velocity']['x'], p['heliocentric_velocity']['y'], p['heliocentric_velocity']['z']) for p in self._data['particles']]
+        center_of_mass_mass, center_of_mass_position, center_of_mass_velocity = calculate_center_of_mass(masses, positions, velocities)
 
         for particle in self._data['particles']:
             particle['inertial_position']['x'] = particle['heliocentric_position']['x'] - center_of_mass_position.x()

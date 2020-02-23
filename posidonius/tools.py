@@ -3,24 +3,59 @@ import numpy as np
 from posidonius.constants import *
 from posidonius.particles.axes import Axes
 
-def get_center_of_mass_of_pair(center_of_mass_position, center_of_mass_velocity, center_of_mass_mass, particle):
-    center_of_mass_position.set_x(center_of_mass_position.x()*center_of_mass_mass + particle['heliocentric_position']['x']*particle['mass'])
-    center_of_mass_position.set_y(center_of_mass_position.y()*center_of_mass_mass + particle['heliocentric_position']['y']*particle['mass'])
-    center_of_mass_position.set_z(center_of_mass_position.z()*center_of_mass_mass + particle['heliocentric_position']['z']*particle['mass'])
-    center_of_mass_velocity.set_x(center_of_mass_velocity.x()*center_of_mass_mass + particle['heliocentric_velocity']['x']*particle['mass'])
-    center_of_mass_velocity.set_y(center_of_mass_velocity.y()*center_of_mass_mass + particle['heliocentric_velocity']['y']*particle['mass'])
-    center_of_mass_velocity.set_z(center_of_mass_velocity.z()*center_of_mass_mass + particle['heliocentric_velocity']['z']*particle['mass'])
 
-    new_center_of_mass_mass = center_of_mass_mass + particle['mass']
-    if new_center_of_mass_mass > 0.:
-        center_of_mass_position.set_x(center_of_mass_position.x() / new_center_of_mass_mass)
-        center_of_mass_position.set_y(center_of_mass_position.y() / new_center_of_mass_mass)
-        center_of_mass_position.set_z(center_of_mass_position.z() / new_center_of_mass_mass)
-        center_of_mass_velocity.set_x(center_of_mass_velocity.x() / new_center_of_mass_mass)
-        center_of_mass_velocity.set_y(center_of_mass_velocity.y() / new_center_of_mass_mass)
-        center_of_mass_velocity.set_z(center_of_mass_velocity.z() / new_center_of_mass_mass)
 
-    return new_center_of_mass_mass
+def calculate_center_of_mass(masses, positions, velocities):
+    if not isinstance(masses, list):
+        masses = [masses]
+    if not isinstance(positions, list):
+        positions = [positions]
+    if not isinstance(velocities, list):
+        velocities = [velocities]
+    if len(masses) != len(positions):
+        raise Exception("The number of masses needs to match the number of positions")
+    elif len(masses) != len(velocities):
+        raise Exception("The number of masses needs to match the number of velocities")
+    elif len(masses) == 0:
+        raise Exception("At least there should be one mass")
+
+    if isinstance(masses[0], np.ndarray):
+        # Case where the first dimension corresponds to different particles
+        # and the second dimension to different moments in time of that object
+        #
+        # masses = [(1., 1.), (0.8, 0.8)]
+        # positions = [Axes(...), (...)]
+        # velocities = [Axes(...), (...)]
+        n = len(masses[0])
+        if n != len(positions[0].x()):
+            raise Exception("The number of snapshots for masses needs to match the number of snapshots for positions")
+        elif n != len(velocities[0].x()):
+            raise Exception("The number of snapshots for masses needs to match the number of snapshots for velocities")
+        center_of_mass_position = Axes(np.zeros(n), np.zeros(n), np.zeros(n))
+        center_of_mass_velocity = Axes(np.zeros(n), np.zeros(n), np.zeros(n))
+        center_of_mass_mass = np.zeros(n)
+    else:
+        center_of_mass_position = Axes(0., 0., 0.)
+        center_of_mass_velocity = Axes(0., 0., 0.)
+        center_of_mass_mass = 0.
+
+    for particle_mass, particle_position, particle_velocity in zip(masses, positions, velocities):
+        center_of_mass_position.set_x(center_of_mass_position.x()*center_of_mass_mass + particle_position.x()*particle_mass)
+        center_of_mass_position.set_y(center_of_mass_position.y()*center_of_mass_mass + particle_position.y()*particle_mass)
+        center_of_mass_position.set_z(center_of_mass_position.z()*center_of_mass_mass + particle_position.z()*particle_mass)
+        center_of_mass_velocity.set_x(center_of_mass_velocity.x()*center_of_mass_mass + particle_velocity.x()*particle_mass)
+        center_of_mass_velocity.set_y(center_of_mass_velocity.y()*center_of_mass_mass + particle_velocity.y()*particle_mass)
+        center_of_mass_velocity.set_z(center_of_mass_velocity.z()*center_of_mass_mass + particle_velocity.z()*particle_mass)
+
+        center_of_mass_mass = center_of_mass_mass + particle_mass
+        # Assumption: no zero zero mass
+        center_of_mass_position.set_x(center_of_mass_position.x() / center_of_mass_mass)
+        center_of_mass_position.set_y(center_of_mass_position.y() / center_of_mass_mass)
+        center_of_mass_position.set_z(center_of_mass_position.z() / center_of_mass_mass)
+        center_of_mass_velocity.set_x(center_of_mass_velocity.x() / center_of_mass_mass)
+        center_of_mass_velocity.set_y(center_of_mass_velocity.y() / center_of_mass_mass)
+        center_of_mass_velocity.set_z(center_of_mass_velocity.z() / center_of_mass_mass)
+    return center_of_mass_mass, center_of_mass_position, center_of_mass_velocity
 
 def mass_radius_relation(planet_mass, planet_mass_type='factor', planet_percent_rock = 0.70):
     """
@@ -45,7 +80,62 @@ def mass_radius_relation(planet_mass, planet_mass_type='factor', planet_percent_
         raise Exception("Unknown planet mass type: {}".format(planet_mass_type))
     return planet_radius_factor # Factor to be multiplied by R_EARTH
 
-def calculate_keplerian_orbital_elements(gm, position, velocity):
+def calculate_keplerian_orbital_elements(target_mass, target_position, target_velocity, masses=[], positions=[], velocities=[]):
+    """
+    Calculate the keplerian orbital elements
+
+    - target_mass: mass (typically the target planet mass+central body mass)
+    - target_position: position (Axes)
+    - target_velocity: position (Axes)
+
+    In case of instead of a central massive body there are two (i.e., circumbinary
+    planet), then it is necessary to provide their masses, positions and velocities
+    (as list of Axes objects) and target_mass must correspond only to the planet
+    mass. Order is important, for instance:
+
+    - target_mass: planet mass
+    - masses: [star1_mass, star2_mass]
+    - positions: [star1_position, star2_position]
+    - velocities: [star1_velocity, star2_velocity]
+
+    It returns:
+
+    - a: semi-major axis (in AU)
+    - q: perihelion distance
+    - eccentricity: eccentricity
+    - i: inclination
+    - p: longitude of perihelion (NOT the argument of perihelion)
+    - n: longitude of ascending node
+    - l: mean anomaly (or mean longitude if eccentricity < 1.e-8)
+    """
+
+    if not isinstance(masses, list):
+        masses = [masses]
+    if not isinstance(positions, list):
+        positions = [positions]
+    if not isinstance(velocities, list):
+        velocities = [velocities]
+    if len(masses) != len(positions):
+        raise Exception("The number of masses needs to match the number of positions")
+    elif len(masses) != len(velocities):
+        raise Exception("The number of masses needs to match the number of velocities")
+
+    if len(positions) > 0:
+        center_of_mass_mass, center_of_mass_position, center_of_mass_velocity = calculate_center_of_mass(masses, positions, velocities)
+        target_position = Axes(target_position.x()-center_of_mass_position.x(), target_position.y()-center_of_mass_position.y(), target_position.z()-center_of_mass_position.z())
+        target_velocity = Axes(target_velocity.x()-center_of_mass_velocity.x(), target_velocity.y()-center_of_mass_velocity.y(), target_velocity.z()-center_of_mass_velocity.z())
+
+    gm = G*(sum(masses)+target_mass)
+    a, q, eccentricity, i, p, n, l = _calculate_keplerian_orbital_elements(gm, target_position, target_velocity)
+
+    if len(positions) > 0:
+        delta_a = np.sqrt(center_of_mass_position.x()**2 + center_of_mass_position.y()**2 + center_of_mass_position.z()**2)
+        delta_q = delta_a * (1.0 - eccentricity);                     # perihelion distance
+        a += delta_a
+        q += delta_q
+    return (a, q, eccentricity, i, p, n, l)
+
+def _calculate_keplerian_orbital_elements(gm, position, velocity):
     # ! Based on the implementation of Chambers in Mercury
     # Calculates Keplerian orbital elements given relative coordinates and
     # velocities, and GM = G times the sum of the masses.
@@ -287,8 +377,62 @@ def calculate_keplerian_orbital_elements(gm, position, velocity):
     else:
         return (a, q, eccentricity, i, p, n, l)
 
+def calculate_cartesian_coordinates(target_mass, q, e, i0, p, n0, l, masses=[], positions=[], velocities=[]):
+    """
+    Calculate the heliocentric position and velocity
 
-def calculate_cartesian_coordinates(gm, q, e, i0, p, n0, l):
+    - target_mass: mass (typically the target planet mass+central body mass)
+    - q: perihelion distance
+    - e: eccentricity
+    - i0: inclination (degrees)
+    - p: longitude of perihelion
+    - n0: longitude of the ascending node (degrees)
+    - l: mean anomaly
+
+    In case of instead of a central massive body there are two (i.e., circumbinary
+    planet), then it is necessary to provide their masses, positions and velocities
+    (as list of Axes objects) and target_mass must correspond only to the planet
+    mass. Order is important, for instance:
+
+    - target_mass: planet mass
+    - masses: [star1_mass, star2_mass]
+    - positions: [star1_position, star2_position]
+    - velocities: [star1_velocity, star2_velocity]
+    """
+    if not isinstance(masses, list):
+        masses = [masses]
+    if not isinstance(positions, list):
+        positions = [positions]
+    if not isinstance(velocities, list):
+        velocities = [velocities]
+    if len(masses) != len(positions):
+        raise Exception("The number of masses needs to match the number of positions")
+    elif len(masses) != len(velocities):
+        raise Exception("The number of masses needs to match the number of velocities")
+
+    if len(positions) > 0:
+        center_of_mass_mass, center_of_mass_position, center_of_mass_velocity = calculate_center_of_mass(masses, positions, velocities)
+        delta_a = np.sqrt(center_of_mass_position.x()**2 + center_of_mass_position.y()**2 + center_of_mass_position.z()**2)
+        delta_q = delta_a * (1.0 - e);                     # perihelion distance
+        q -= delta_q
+
+    gm = G*(sum(masses)+target_mass)
+    x, y, z, vx, vy, vz = _calculate_cartesian_coordinates(gm, q, e, i0, p, n0, l)
+
+    if len(positions) > 0:
+        x += center_of_mass_position.x()
+        y += center_of_mass_position.y()
+        z += center_of_mass_position.z()
+        vx += center_of_mass_velocity.x()
+        vy += center_of_mass_velocity.y()
+        vz += center_of_mass_velocity.z()
+
+    planet_position = Axes(x, y, z)
+    planet_velocity = Axes(vx, vy, vz)
+    return planet_position, planet_velocity
+
+
+def _calculate_cartesian_coordinates(gm, q, e, i0, p, n0, l):
     # Calculates Cartesian coordinates and velocities given Keplerian orbital
     # elements (for elliptical, parabolic or hyperbolic orbits).
     # ! Based on the implementation of Chambers in Mercury, which is
