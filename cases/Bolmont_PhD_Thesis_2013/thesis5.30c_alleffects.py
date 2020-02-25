@@ -41,7 +41,7 @@ if __name__ == "__main__":
     recovery_snapshot_period = 100.*historic_snapshot_period # days
     consider_effects = posidonius.ConsiderEffects({
         "tides": True,
-        "rotational_flattening": False,
+        "rotational_flattening": True,
         "general_relativity": True,
         "disk": False,
         "wind": False,
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     # Brown dwarf
     star_tides_parameters = {
-        "dissipation_factor_scale": 10.0,
+        "dissipation_factor_scale": 100.0,
         "dissipation_factor": 2.006*3.845764e4,
         "love_number": 0.307,
     }
@@ -78,10 +78,10 @@ if __name__ == "__main__":
     #star_tides = posidonius.effects.tides.OrbitingBody(star_tides_parameters)
     #star_tides = posidonius.effects.tides.Disabled()
     #
-    #star_rotational_flattening_parameters = {"love_number": star_tides_parameters["love_number"] }
-    #star_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(star_rotational_flattening_parameters)
+    star_rotational_flattening_parameters = {"love_number": star_tides_parameters["love_number"] }
+    star_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(star_rotational_flattening_parameters)
     #star_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(star_rotational_flattening_parameters)
-    star_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
+    #star_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
     #
     star_general_relativity = posidonius.effects.general_relativity.CentralBody("Kidder1995")
     #star_general_relativity = posidonius.effects.general_relativity.CentralBody("Anderson1975")
@@ -188,10 +188,10 @@ if __name__ == "__main__":
     planet1_tides = posidonius.effects.tides.OrbitingBody(planet1_tides_parameters)
     #planet1_tides = posidonius.effects.tides.Disabled()
     #
-    #planet1_rotational_flattening_parameters = {"love_number": planet1_tides_parameters["love_number"]}
+    planet1_rotational_flattening_parameters = {"love_number": 0.9532}
     #planet1_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(planet1_rotational_flattening_parameters)
-    #planet1_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(planet1_rotational_flattening_parameters)
-    planet1_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
+    planet1_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(planet1_rotational_flattening_parameters)
+    #planet1_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
     #
     #planet1_general_relativity = posidonius.effects.general_relativity.CentralBody("Kidder1995")
     #planet1_general_relativity = posidonius.effects.general_relativity.CentralBody("Anderson1975")
@@ -298,10 +298,10 @@ if __name__ == "__main__":
     planet2_tides = posidonius.effects.tides.OrbitingBody(planet2_tides_parameters)
     #planet2_tides = posidonius.effects.tides.Disabled()
     #
-    #planet2_rotational_flattening_parameters = {"love_number": planet2_tides_parameters["love_number"]}
+    planet2_rotational_flattening_parameters = {"love_number": 0.9532}
     #planet2_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(planet2_rotational_flattening_parameters)
-    #planet2_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(planet2_rotational_flattening_parameters)
-    planet2_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
+    planet2_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(planet2_rotational_flattening_parameters)
+    #planet2_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
     #
     #planet2_general_relativity = posidonius.effects.general_relativity.CentralBody("Kidder1995")
     #planet2_general_relativity = posidonius.effects.general_relativity.CentralBody("Anderson1975")

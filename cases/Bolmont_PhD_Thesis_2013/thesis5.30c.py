@@ -260,13 +260,6 @@ if __name__ == "__main__":
     planet2_radius = planet2_radius_factor * posidonius.constants.R_EARTH
     planet2_radius_of_gyration = 5.75e-01
 
-    # Terrestrial:
-    k2pdelta = 2.465278e-3 # Terrestrial planet2s (no gas)
-    planet2_dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet2_radius, 5))
-    planet2_dissipation_factor_scale = 1.0
-    planet2_love_number = 0.305
-    planet2_fluid_love_number = planet2_love_number
-
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     a = 0.025;                             # semi-major axis (in AU)
