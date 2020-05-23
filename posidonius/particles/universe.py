@@ -187,21 +187,21 @@ class Universe(object):
                 found_tides_central_body = True
             elif "OrbitingBody" in particle['tides']['effect']:
                 found_tides_orbiting_body = True
-            elif "CentralBody" in particle['rotational_flattening']['effect']:
+            if "CentralBody" in particle['rotational_flattening']['effect']:
                 found_rotational_flattening_central_body = True
             elif "OrbitingBody" in particle['rotational_flattening']['effect']:
                 found_rotational_flattening_orbiting_body = True
-            elif "CentralBody" in particle['general_relativity']['effect']:
+            if "CentralBody" in particle['general_relativity']['effect']:
                 found_general_relativity_central_body = True
             elif "OrbitingBody" in particle['general_relativity']['effect']:
                 found_general_relativity_orbiting_body = True
-            elif "CentralBody" in particle['disk']['effect']:
+            if "CentralBody" in particle['disk']['effect']:
                 found_disk_central_body = True
             elif "OrbitingBody" in particle['disk']['effect']:
                 found_disk_orbiting_body = True
-            elif "Interaction" in particle['wind']['effect']:
+            if "Interaction" in particle['wind']['effect']:
                 found_wind = True
-            elif "NonEvolving" in particle['evolution']:
+            if "NonEvolving" in particle['evolution']:
                 found_evolution = True
         if self._data["consider_effects"]["tides"]:
             if not found_tides_central_body:
