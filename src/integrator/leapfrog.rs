@@ -5,6 +5,7 @@ use super::Integrator;
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::effects::WindEffect;
+use super::super::effects::EvolutionType;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
 use std::path::Path;
@@ -96,6 +97,29 @@ impl Integrator for LeapFrog {
     
     fn get_current_time(&self) -> f64 {
         self.current_time
+    }
+
+    fn set_time_limit(&mut self, time_limit: f64) {
+        if time_limit > 0. && self.universe.time_limit != time_limit {
+            if time_limit > self.universe.time_limit && self.universe.consider_effects.evolution {
+                // Check if the new time is in the range of the evolutionary model
+                for (i, evolver) in self.universe.particles_evolvers.iter().enumerate() {
+                    let is_an_evolving_body = match evolver.evolution {
+                        EvolutionType::NonEvolving => { false },
+                        _ => { true }
+                    };
+                    if is_an_evolving_body && evolver.time[evolver.time.len()-1] < time_limit {
+                        panic!("Your new time limit ({} days) is greater than the maximum allowed age of the evolving body #{} ({} days)", time_limit, i+1, evolver.time[evolver.time.len()-1]);
+                    };
+                }
+            } else if time_limit < self.universe.time_limit {
+                if time_limit < self.current_time {
+                    panic!("Your new time limit ({} days) is smaller than the current time ({} days)", time_limit, self.current_time);
+                }
+            }
+            println!("[INFO {} UTC] The time limit changed from {} to {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.universe.time_limit, time_limit);
+            self.universe.time_limit = time_limit;
+        }
     }
 
     fn set_snapshot_periods(&mut self, historic_snapshot_period: f64, recovery_snapshot_period: f64) {

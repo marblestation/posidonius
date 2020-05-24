@@ -66,6 +66,10 @@ fn main() {
                                         .long("recovery-snapshot-period")
                                         .value_name("days")
                                         .help("Set new recovery snapshots period in days."))
+                                    .arg(Arg::with_name("change_time_limit")
+                                        .long("time-limit")
+                                        .value_name("days")
+                                        .help("Set new simulation time limit in days."))
                                     )
                             .setting(AppSettings::SubcommandRequiredElseHelp)
                           .get_matches();
@@ -77,6 +81,7 @@ fn main() {
     let resume;
     let new_historic_snapshot_period;
     let new_recovery_snapshot_period;
+    let new_time_limit;
     let execution_time_limit;
 
     match matches.subcommand() {
@@ -88,6 +93,7 @@ fn main() {
             resume = false;
             new_historic_snapshot_period = -1.0;
             new_recovery_snapshot_period = -1.0;
+            new_time_limit = -1.0;
             execution_time_limit = Duration::from_secs(value_t!(start_matches.value_of("limit"), u64).unwrap_or(0));
         },
         ("resume", Some(resume_matches)) =>{
@@ -98,6 +104,7 @@ fn main() {
             resume = true;
             new_historic_snapshot_period = value_t!(resume_matches.value_of("change_historic_snapshot_period"), f64).unwrap_or(-1.);
             new_recovery_snapshot_period = value_t!(resume_matches.value_of("change_recovery_snapshot_period"), f64).unwrap_or(-1.);
+            new_time_limit = value_t!(resume_matches.value_of("change_time_limit"), f64).unwrap_or(-1.);
             execution_time_limit = Duration::from_secs(value_t!(resume_matches.value_of("limit"), u64).unwrap_or(0));
         },
         ("", None)   => unreachable!(),
@@ -121,6 +128,7 @@ fn main() {
     };
 
     boxed_universe_integrator.set_snapshot_periods(new_historic_snapshot_period, new_recovery_snapshot_period);
+    boxed_universe_integrator.set_time_limit(new_time_limit);
 
     // Create/recover historic snapshot
     let expected_n_bytes = (boxed_universe_integrator.get_n_historic_snapshots() as u64) 

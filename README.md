@@ -59,7 +59,7 @@ posidonius start target/case7.json target/case7.bin target/case7_history.bin
 posidonius start target/example.json target/example.bin target/example_history.bin
 ```
 
-The flag `--silent` can be added to avoid printing the current year of the simulation.
+The flag `--silent` can be added to avoid printing the current year of the simulation.  An execution time limit can also be specified with the flag `--limit`, this can be useful for supercomputers that only allow processes to last a given amount of real time (not simulation time).
 
 ### Resume an interrupted simulation
 
@@ -72,7 +72,7 @@ posidonius resume target/case7.bin target/case7_history.bin
 posidonius resume target/example.bin target/example_history.bin
 ```
 
-The flag `--silent` can be added to avoid printing the current year of the simulation.
+The flag `--silent` can be added to avoid printing the current year of the simulation. n execution time limit can also be specified with the flag `--limit`, this can be useful for supercomputers that only allow processes to last a given amount of real time (not simulation time). In case the user wants to change historic or recovery snapshot periods when resuming a simulation, it can be done with the flags `--historic-snapshot-period` and `--recovery-snapshot-period` plus the new period (in days) after each one. The flag `--time-limit` can be used to change the simulation time limit (e.g., to increase it for a previous short simulation that looks promising).
 
 ### Analyse a simulation
 
@@ -121,8 +121,8 @@ This section is intended only for developers.
 Prepare a python environment:
 
 ```
-virtualenv python
-source python/bin/activate
+python3 -m venv venv # or "virtualenv venv" if still using Python 2
+source venv/bin/activate
 pip install -r requirements.txt
 pip install -r dev-requirements.txt
 ```
