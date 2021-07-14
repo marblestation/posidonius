@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use super::super::tools;
-use super::super::constants::{K2};
+use super::super::constants::{K2, SMOOTHING_FACTOR_DYN_TIDE_COROTATION};
 use super::super::{Particle};
 use super::super::{Axes};
 use super::{EvolutionType};
@@ -201,7 +201,10 @@ pub fn calculate_planet_dependent_dissipation_factors(tidal_host_particle: &mut 
                 let gm = tidal_host_particle.mass_g+particle.mass_g;
                 let (perihelion_distance, eccentricity) = tools::calculate_perihelion_distance_and_eccentricity(gm, particle.tides.coordinates.position, particle.tides.coordinates.velocity);
                 let mean_motion = gm.sqrt() * (perihelion_distance/(1.0 - eccentricity)).powf(-1.5);
-                let half_the_excitation_frequency = (star_norm_spin_vector - mean_motion).abs();
+                let mut half_the_excitation_frequency = (star_norm_spin_vector - mean_motion).abs();
+                if half_the_excitation_frequency < SMOOTHING_FACTOR_DYN_TIDE_COROTATION {
+                    half_the_excitation_frequency = SMOOTHING_FACTOR_DYN_TIDE_COROTATION;
+                }
                 let inverse_of_half_the_excitation_frequency = 1./half_the_excitation_frequency;
 
                 let planet_dependent_dissipation_factor = tidal_host_particle.tides.parameters.input.dissipation_factor_scale * 2.0 * K2
