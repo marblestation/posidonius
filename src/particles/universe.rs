@@ -149,10 +149,10 @@ impl Universe {
                 // Faber et al, 2005; Pacynski, 1971
                 if particle_a.mass > particle_b.mass {
                     // particle a is the most massive of both
-                    *roche_radius = (particle_a.radius/0.462)*(particle_a.mass/particle_b.mass).powf(-1./3.);
+                    *roche_radius = (particle_b.radius/0.462)*(particle_a.mass/particle_b.mass).powf(1./3.);
                 } else {
                     // particle b is the most massive of both
-                    *roche_radius = (particle_b.radius/0.462)*(particle_b.mass/particle_a.mass).powf(-1./3.);
+                    *roche_radius = (particle_a.radius/0.462)*(particle_b.mass/particle_a.mass).powf(1./3.);
                 }
             }
         }
