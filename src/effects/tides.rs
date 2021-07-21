@@ -182,36 +182,38 @@ pub fn calculate_planet_dependent_dissipation_factors(tidal_host_particle: &mut 
         EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
             let star_norm_spin_vector = tidal_host_particle.norm_spin_vector_2.sqrt();
             for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-                //
-                //// Excitation frequency needed by the model based on the
-                // instantaneous frequency (using positions, velocities and spins)
-                //let frequency = (particle.tides.coordinates.velocity.x - tidal_host_particle.spin.y*particle.tides.coordinates.position.z + tidal_host_particle.spin.z*particle.tides.coordinates.position.y).powi(2)
-                            //+ (particle.tides.coordinates.velocity.y - tidal_host_particle.spin.z*particle.tides.coordinates.position.x + tidal_host_particle.spin.x*particle.tides.coordinates.position.z).powi(2)
-                            //+ (particle.tides.coordinates.velocity.z - tidal_host_particle.spin.x*particle.tides.coordinates.position.y + tidal_host_particle.spin.y*particle.tides.coordinates.position.x).powi(2);
-                //let inverse_of_half_the_excitation_frequency = particle.tides.parameters.internal.distance / frequency;
-                // NOTE:  two_times_the_inverse_of_the_excitation_frequency: 2/w
-                //        inverse_of_half_the_excitation_frequency : 1/(w/2)
-                //
-                //// Excitation frequency needed by the model based on the
-                // mean frequency (using mean motion and spin). 
-                //
-                // NOTE: The model is already here being used outside the 
-                // validity domain, it seems not justified to use an 
-                // instantaneous frequency.
-                let gm = tidal_host_particle.mass_g+particle.mass_g;
-                let (perihelion_distance, eccentricity) = tools::calculate_perihelion_distance_and_eccentricity(gm, particle.tides.coordinates.position, particle.tides.coordinates.velocity);
-                let mean_motion = gm.sqrt() * (perihelion_distance/(1.0 - eccentricity)).powf(-1.5);
-                let mut half_the_excitation_frequency = (star_norm_spin_vector - mean_motion).abs();
-                if half_the_excitation_frequency < SMOOTHING_FACTOR_DYN_TIDE_COROTATION {
-                    half_the_excitation_frequency = SMOOTHING_FACTOR_DYN_TIDE_COROTATION;
+                if let TidesEffect::OrbitingBody = particle.tides.effect {
+                    //
+                    //// Excitation frequency needed by the model based on the
+                    // instantaneous frequency (using positions, velocities and spins)
+                    //let frequency = (particle.tides.coordinates.velocity.x - tidal_host_particle.spin.y*particle.tides.coordinates.position.z + tidal_host_particle.spin.z*particle.tides.coordinates.position.y).powi(2)
+                                //+ (particle.tides.coordinates.velocity.y - tidal_host_particle.spin.z*particle.tides.coordinates.position.x + tidal_host_particle.spin.x*particle.tides.coordinates.position.z).powi(2)
+                                //+ (particle.tides.coordinates.velocity.z - tidal_host_particle.spin.x*particle.tides.coordinates.position.y + tidal_host_particle.spin.y*particle.tides.coordinates.position.x).powi(2);
+                    //let inverse_of_half_the_excitation_frequency = particle.tides.parameters.internal.distance / frequency;
+                    // NOTE:  two_times_the_inverse_of_the_excitation_frequency: 2/w
+                    //        inverse_of_half_the_excitation_frequency : 1/(w/2)
+                    //
+                    //// Excitation frequency needed by the model based on the
+                    // mean frequency (using mean motion and spin). 
+                    //
+                    // NOTE: The model is already here being used outside the 
+                    // validity domain, it seems not justified to use an 
+                    // instantaneous frequency.
+                    let gm = tidal_host_particle.mass_g+particle.mass_g;
+                    let (perihelion_distance, eccentricity) = tools::calculate_perihelion_distance_and_eccentricity(gm, particle.tides.coordinates.position, particle.tides.coordinates.velocity);
+                    let mean_motion = gm.sqrt() * (perihelion_distance/(1.0 - eccentricity)).powf(-1.5);
+                    let mut half_the_excitation_frequency = (star_norm_spin_vector - mean_motion).abs();
+                    if half_the_excitation_frequency < SMOOTHING_FACTOR_DYN_TIDE_COROTATION {
+                        half_the_excitation_frequency = SMOOTHING_FACTOR_DYN_TIDE_COROTATION;
+                    }
+                    let inverse_of_half_the_excitation_frequency = 1./half_the_excitation_frequency;
+
+                    let planet_dependent_dissipation_factor = tidal_host_particle.tides.parameters.input.dissipation_factor_scale * 2.0 * K2
+                        * tidal_host_particle.tides.parameters.internal.lag_angle * inverse_of_half_the_excitation_frequency / (3.0*tidal_host_particle.radius.powi(5));
+
+                    star_planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
+                    //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);
                 }
-                let inverse_of_half_the_excitation_frequency = 1./half_the_excitation_frequency;
-
-                let planet_dependent_dissipation_factor = tidal_host_particle.tides.parameters.input.dissipation_factor_scale * 2.0 * K2
-                    * tidal_host_particle.tides.parameters.internal.lag_angle * inverse_of_half_the_excitation_frequency / (3.0*tidal_host_particle.radius.powi(5));
-
-                star_planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
-                //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);
             }
             //panic!("Please, contact Posidonius authors before using BolmontMathis2016/GalletBolmont2017/LeconteChabrier2013(true) evolutionary models. They may not be ready yet for scientific explotation.")
         },
