@@ -372,6 +372,13 @@ impl Universe {
                 }
             }
         }
+        if accelerations {
+            for particle in self.particles[..self.n_particles].iter_mut() {
+                particle.inertial_additional_acceleration.x = 0.;
+                particle.inertial_additional_acceleration.y = 0.;
+                particle.inertial_additional_acceleration.z = 0.;
+            }
+        }
     }
 
     pub fn calculate_additional_effects(&mut self, current_time: f64, evolution: bool, dangular_momentum_dt_per_moment_of_inertia: bool, accelerations: bool, ignored_gravity_terms: IgnoreGravityTerms) {
@@ -486,7 +493,8 @@ impl Universe {
         }
 
         if accelerations {
-            self.apply_acceleration_corrections();
+            self.add_additional_acceleration_corrections();
+            //self.apply_acceleration_corrections();
             //println!("{:?}", self.particles[1].tides.parameters.output.acceleration);
             //println!("{:?}", self.particles[1].rotational_flattening.parameters.output.acceleration);
             //println!("{:?}", self.particles[1].general_relativity.parameters.output.acceleration);
@@ -496,33 +504,41 @@ impl Universe {
 
     }
 
-
-    fn apply_acceleration_corrections(&mut self) {
+    fn add_additional_acceleration_corrections(&mut self) {
         // Add the tidal+flattening+general relativity accelerations to the gravitational one (already computed)
         for particle in self.particles[..self.n_particles].iter_mut() {
             if self.consider_effects.tides {
-                particle.inertial_acceleration.x += particle.tides.parameters.output.acceleration.x;
-                particle.inertial_acceleration.y += particle.tides.parameters.output.acceleration.y;
-                particle.inertial_acceleration.z += particle.tides.parameters.output.acceleration.z;
+                particle.inertial_additional_acceleration.x += particle.tides.parameters.output.acceleration.x;
+                particle.inertial_additional_acceleration.y += particle.tides.parameters.output.acceleration.y;
+                particle.inertial_additional_acceleration.z += particle.tides.parameters.output.acceleration.z;
             }
 
             if self.consider_effects.disk {
-                particle.inertial_acceleration.x += particle.disk.parameters.output.acceleration.x;
-                particle.inertial_acceleration.y += particle.disk.parameters.output.acceleration.y;
-                particle.inertial_acceleration.z += particle.disk.parameters.output.acceleration.z;
+                particle.inertial_additional_acceleration.x += particle.disk.parameters.output.acceleration.x;
+                particle.inertial_additional_acceleration.y += particle.disk.parameters.output.acceleration.y;
+                particle.inertial_additional_acceleration.z += particle.disk.parameters.output.acceleration.z;
             }
 
             if self.consider_effects.rotational_flattening {
-                particle.inertial_acceleration.x += particle.rotational_flattening.parameters.output.acceleration.x;
-                particle.inertial_acceleration.y += particle.rotational_flattening.parameters.output.acceleration.y;
-                particle.inertial_acceleration.z += particle.rotational_flattening.parameters.output.acceleration.z;
+                particle.inertial_additional_acceleration.x += particle.rotational_flattening.parameters.output.acceleration.x;
+                particle.inertial_additional_acceleration.y += particle.rotational_flattening.parameters.output.acceleration.y;
+                particle.inertial_additional_acceleration.z += particle.rotational_flattening.parameters.output.acceleration.z;
             }
 
             if self.consider_effects.general_relativity {
-                particle.inertial_acceleration.x += particle.general_relativity.parameters.output.acceleration.x;
-                particle.inertial_acceleration.y += particle.general_relativity.parameters.output.acceleration.y;
-                particle.inertial_acceleration.z += particle.general_relativity.parameters.output.acceleration.z;
+                particle.inertial_additional_acceleration.x += particle.general_relativity.parameters.output.acceleration.x;
+                particle.inertial_additional_acceleration.y += particle.general_relativity.parameters.output.acceleration.y;
+                particle.inertial_additional_acceleration.z += particle.general_relativity.parameters.output.acceleration.z;
             } 
+        }
+    }
+
+
+    pub fn apply_acceleration_corrections(&mut self) {
+        for particle in self.particles[..self.n_particles].iter_mut() {
+            particle.inertial_acceleration.x += particle.inertial_additional_acceleration.x;
+            particle.inertial_acceleration.y += particle.inertial_additional_acceleration.y;
+            particle.inertial_acceleration.z += particle.inertial_additional_acceleration.z;
         }
     }
     

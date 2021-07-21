@@ -16,5 +16,5 @@ pub fn simulation_properties() -> (f64, f64, f64, f64, f64) {
 pub fn get_data_dirname(test_name: &String) -> (String, String) {
     let rust_data_dirname = format!("tests/data/{0}/", test_name);
     let python_data_dirname = format!("posidonius/tests/data/{0}/", test_name);
-    ((rust_data_dirname, python_data_dirname))
+    (rust_data_dirname, python_data_dirname)
 }

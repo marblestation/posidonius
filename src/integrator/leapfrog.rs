@@ -190,6 +190,7 @@ impl Integrator for LeapFrog {
         let dangular_momentum_dt_per_moment_of_inertia = true;
         let accelerations = true;
         self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
+        self.universe.apply_acceleration_corrections();
 
 
         // A 'DKD'-like integrator will do the 'KD' part.

@@ -222,6 +222,7 @@ impl Integrator for Ias15 {
         let dangular_momentum_dt_per_moment_of_inertia = true;
         let accelerations = true;
         self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
+        self.universe.apply_acceleration_corrections();
 
         self.integrator();
         self.current_iteration += 1;
@@ -481,6 +482,7 @@ impl Ias15 {
                     let dangular_momentum_dt_per_moment_of_inertia = true;
                     let accelerations = true;
                     self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
+                    self.universe.apply_acceleration_corrections();
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
                         self.at[3*k]   = particle.inertial_acceleration.x;
