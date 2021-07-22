@@ -442,9 +442,12 @@ impl Evolver {
     }
 
     // OPTIMIZATION: Skip first N elements which belong to the past
+    // but still go through the last n elements just in case the integrator
+    // is travelling to the past (e.g., current time step did not converge)
     fn idx(&self) -> usize {
-        if self.left_index > 0 {
-            return self.left_index - 1;
+        let security_shift = 10;
+        if self.left_index > security_shift {
+            return self.left_index - security_shift;
         } else {
             return 0;
         }
