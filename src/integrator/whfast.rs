@@ -8,7 +8,6 @@ use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTI
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::effects::GeneralRelativityImplementation;
-use super::super::effects::WindEffect;
 use super::super::effects::EvolutionType;
 use super::super::particles::Axes;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
@@ -98,7 +97,6 @@ pub struct WHFast {
     time_step: f64,
     half_time_step: f64,
     pub universe: Universe,
-    last_spin: [Axes; MAX_PARTICLES], // For spin integration with the midpoint method
     pub current_time: f64,
     current_iteration: usize,
     pub recovery_snapshot_period: f64,
@@ -111,7 +109,8 @@ pub struct WHFast {
     particles_alternative_coordinates: [AlternativeCoordinates; MAX_PARTICLES], // Jacobi, democractic-heliocentric or WHDS
     alternative_coordinates_type: CoordinatesType,
     timestep_warning: usize ,
-    particle_spin_errors: [Axes; MAX_PARTICLES], // A running compensation for lost low-order bits (Kahan 1965; Higham 2002; Hairer et al. 2006) 
+    inertial_additional_acceleration_errors: [Axes; MAX_PARTICLES], // A running compensation for lost low-order bits (Kahan 1965; Higham 2002; Hairer et al. 2006) 
+    particle_angular_momentum_errors: [Axes; MAX_PARTICLES], // A running compensation for lost low-order bits (Kahan 1965; Higham 2002; Hairer et al. 2006) 
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -147,14 +146,14 @@ impl WHFast {
                     n_historic_snapshots:0,
                     hash: 0,
                     universe:universe,
-                    last_spin:[Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
                     current_time:0.,
                     current_iteration:0,
                     // WHFast specifics:
                     particles_alternative_coordinates: particles_alternative_coordinates,
                     alternative_coordinates_type: alternative_coordinates_type,
                     timestep_warning: 0,
-                    particle_spin_errors: [Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
+                    inertial_additional_acceleration_errors: [Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
+                    particle_angular_momentum_errors: [Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
                     };
         universe_integrator
     }
@@ -222,8 +221,8 @@ impl Integrator for WHFast {
         if self.current_time != 0. {
             panic!("Physical values cannot be initialized on a resumed simulation");
         }
-        self.universe.calculate_norm_spin(); // Needed for evolution
-        self.universe.calculate_particles_evolving_quantities(self.current_time); // Make sure we start with the good initial values
+        let evolution = true;
+        self.universe.calculate_spin_and_evolving_quantities(self.current_time, evolution); // Make sure we start with the good initial values
         self.universe.calculate_roche_radiuses(); // Needed for collision detection
     }
 
@@ -247,9 +246,6 @@ impl Integrator for WHFast {
             }
         }
         
-        // To calculate non-gravity accelerations:
-        // - Positions and velocities are needed in heliocentric
-        // - But accelerations are computed in barycentric and added to inertial_coordinates.acceleration
         let ignored_gravity_terms = match self.alternative_coordinates_type {
             CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
             CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
@@ -269,20 +265,17 @@ impl Integrator for WHFast {
         // A 'DKD'-like integrator will do the first 'D' part:
         self.iterate_position_and_velocity_with_whfasthelio_part1(); // updates alternative pos/vel (not using the inertial acceleration but the keplerian motion) by half-step
         self.universe.gravity_calculate_acceleration(ignore_gravity_terms); // computes gravitational inertial accelerations
+        //
+        //// Posidonius' additional effects are velocity dependent, thus we do not compute them here:
         //self.universe.inertial_to_heliocentric(); // required to compute additional effects
-        //let mut consider_dangular_momentum_dt_from_general_relativity = false;
-        //if self.universe.consider_effects.general_relativity && self.universe.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995 {
-            //consider_dangular_momentum_dt_from_general_relativity = true;
-        //}
-        //let integrate_spin = self.universe.consider_effects.tides || self.universe.consider_effects.rotational_flattening
-                            //|| self.universe.consider_effects.evolution || consider_dangular_momentum_dt_from_general_relativity;
-        //// A 'DKD'-like integrator will do the 'KD' part:
         //let evolution = true;
-        //let dangular_momentum_dt_per_moment_of_inertia = false;
+        //let dangular_momentum_dt = false;
         //let accelerations = true; 
-        //self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms); // changes inertial accelerations
+        //self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+        //
+        // A 'DKD'-like integrator will do the 'KD' part:
         self.iterate_position_and_velocity_with_whfasthelio_part2(); // updates alternative and inertial pos/vel (using the inertial acceleration by one time step to compute interactions and the keplerian motion by half-step)
-        let evolution = false; // Only evolve once per step (evolving more than once for a given current time will lead to a wrong computation of the moment of inertia)
+        let evolution = false; // Only evolve once per full step (optimization)
         self.integrate_velocity_dependent_forces(self.half_time_step, integrate_spin, evolution); // Corrects the inertial velocity and computes spin
         self.current_time += self.time_step;
 
@@ -313,76 +306,103 @@ impl Integrator for WHFast {
 
 impl WHFast {
     fn integrate_velocity_dependent_forces(&mut self, _dt: f64, integrate_spin: bool, evolution: bool) {
-        // Integrate velocity-dependent forces
-        //
+        // Integrate velocity-dependent forces using an implicit midpoint
+        // - It follows the schema implemented in REBOUNDx and described in Tamayo et al. 2020
+        // - It corresponds to the implicit midpoint method (https://en.wikipedia.org/wiki/Midpoint_method)
+        // - In addition, it implements compensated summation
         let ignored_gravity_terms = match self.alternative_coordinates_type {
             CoordinatesType::Jacobi => IgnoreGravityTerms::WHFastOne,
             CoordinatesType::DemocraticHeliocentric => IgnoreGravityTerms::WHFastTwo,
             CoordinatesType::WHDS => IgnoreGravityTerms::WHFastTwo,
         };
-        let ignore_gravity_terms = ignored_gravity_terms;
-        self.universe.gravity_calculate_acceleration(ignore_gravity_terms); // computes gravitational inertial accelerations
 
         let mut particles_orig = self.universe.particles.clone();
         let mut particles_final: [Particle; MAX_PARTICLES] = particles_orig;
         let mut particles_prev: [Particle; MAX_PARTICLES];
+        let mut inertial_additional_acceleration_changes: [Axes; MAX_PARTICLES] = [Axes{x:0., y:0., z:0.}; MAX_PARTICLES];
+        let mut angular_momentum_changes: [Axes; MAX_PARTICLES] = [Axes{x:0., y:0., z:0.}; MAX_PARTICLES];
         let mut converged = false;
         for i in 0..10 {
             particles_prev = particles_final;
+            // To calculate non-gravity/additional accelerations:
+            // - Positions and velocities are needed in heliocentric
+            // - But additional accelerations are computed in inertial (i.e., barycentric)
             self.universe.inertial_to_heliocentric(); // required to compute additional effects
             // Calculate non-gravity accelerations
-            let evolution = evolution && i == 0;
-            let dangular_momentum_dt_per_moment_of_inertia = integrate_spin;
-            let accelerations = true; 
-            self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms); // changes inertial accelerations
-            // Compute final velocity/spin
-            for ((particle_avg, particle_orig), particle_final) in self.universe.particles[..self.universe.n_particles].iter().zip(particles_orig[..self.universe.n_particles].iter_mut()).zip(particles_final[..self.universe.n_particles].iter_mut()) {
-                particle_final.inertial_velocity.x = particle_orig.inertial_velocity.x + _dt*(particle_orig.inertial_acceleration.x + particle_avg.inertial_additional_acceleration.x);
-                particle_final.inertial_velocity.y = particle_orig.inertial_velocity.y + _dt*(particle_orig.inertial_acceleration.y + particle_avg.inertial_additional_acceleration.y);
-                particle_final.inertial_velocity.z = particle_orig.inertial_velocity.z + _dt*(particle_orig.inertial_acceleration.z + particle_avg.inertial_additional_acceleration.z);
+            {
+                let evolution = evolution && i == 0; // Only evolve in the first iteration (optimization)
+                let dangular_momentum_dt = integrate_spin;
+                let accelerations = true; 
+                self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
+            }
+            // Compute final velocity/spin angular momentum
+            for ((((((particle_avg, particle_orig), particle_final), inertial_additional_acceleration_error), angular_momentum_error), inertial_additional_acceleration_change), angular_momentum_change) in self.universe.particles[..self.universe.n_particles].iter().zip(particles_orig[..self.universe.n_particles].iter_mut()).zip(particles_final[..self.universe.n_particles].iter_mut()).zip(self.inertial_additional_acceleration_errors[..self.universe.n_particles].iter()).zip(self.particle_angular_momentum_errors[..self.universe.n_particles].iter()).zip(inertial_additional_acceleration_changes[..self.universe.n_particles].iter_mut()).zip(angular_momentum_changes[..self.universe.n_particles].iter_mut()) {
+                // Compensated summation to improve the accuracy of additions that involve
+                // one small and one large floating point number (already considered by IAS15)
+                //      As cited by IAS15 paper: Kahan 1965; Higham 2002; Hairer et al. 2006
+                //      https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+                inertial_additional_acceleration_change.x = _dt * particle_avg.inertial_additional_acceleration.x - inertial_additional_acceleration_error.x;
+                inertial_additional_acceleration_change.y = _dt * particle_avg.inertial_additional_acceleration.y - inertial_additional_acceleration_error.y;
+                inertial_additional_acceleration_change.z = _dt * particle_avg.inertial_additional_acceleration.z - inertial_additional_acceleration_error.z;
+                //
+                particle_final.inertial_velocity.x = particle_orig.inertial_velocity.x + inertial_additional_acceleration_change.x;
+                particle_final.inertial_velocity.y = particle_orig.inertial_velocity.y + inertial_additional_acceleration_change.y;
+                particle_final.inertial_velocity.z = particle_orig.inertial_velocity.z + inertial_additional_acceleration_change.z;
                 if integrate_spin {
-                    particle_final.spin.x = particle_orig.spin.x + _dt * particle_avg.dangular_momentum_dt_per_moment_of_inertia.x;
-                    particle_final.spin.y = particle_orig.spin.y + _dt * particle_avg.dangular_momentum_dt_per_moment_of_inertia.x;
-                    particle_final.spin.z = particle_orig.spin.z + _dt * particle_avg.dangular_momentum_dt_per_moment_of_inertia.x;
-                    if particle_orig.wind.effect != WindEffect::Disabled && particle_orig.wind.parameters.output.factor != 0. {
-                        // TODO: Verify wind factor
-                        particle_final.spin.x += _dt * particle_final.wind.parameters.output.factor * particle_orig.spin.x;
-                        particle_final.spin.y += _dt * particle_final.wind.parameters.output.factor * particle_orig.spin.y;
-                        particle_final.spin.z += _dt * particle_final.wind.parameters.output.factor * particle_orig.spin.z;
-                    }
+                    // Compensated summation to improve the accuracy of additions that involve
+                    // one small and one large floating point number (already considered by IAS15)
+                    //      As cited by IAS15 paper: Kahan 1965; Higham 2002; Hairer et al. 2006
+                    //      https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+                    angular_momentum_change.x = _dt * particle_avg.dangular_momentum_dt.x - angular_momentum_error.x;
+                    angular_momentum_change.y = _dt * particle_avg.dangular_momentum_dt.y - angular_momentum_error.y;
+                    angular_momentum_change.z = _dt * particle_avg.dangular_momentum_dt.z - angular_momentum_error.z;
+                    //
+                    particle_final.angular_momentum.x = particle_orig.angular_momentum.x + angular_momentum_change.x;
+                    particle_final.angular_momentum.y = particle_orig.angular_momentum.y + angular_momentum_change.y;
+                    particle_final.angular_momentum.z = particle_orig.angular_momentum.z + angular_momentum_change.z;
                 }
             }
             // Compare final with previous velocity/spin
-            if self.converged_velocity_dependent_forces_integration(&particles_final, &particles_prev) {
+            if self.converged_velocity_dependent_forces_integration(&particles_final, &particles_prev, integrate_spin) {
                 converged = true;
                 break;
             }
             // Average velocities and spins using original and final ones
             // - Updates velocity/spin in self.universe.particles (i.e., particles_avg)
-            self.average_particles_for_velocity_dependent_forces_integration(&particles_orig, &particles_final);
+            self.average_particles_for_velocity_dependent_forces_integration(&particles_orig, &particles_final, integrate_spin);
         }
         if !converged {
             println!("[WARNING {} UTC] WHFast convergence issue with the integration of the additional forces. Most probably the perturbation is too strong.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
         }
         // 
-        for (particle, particle_final) in self.universe.particles[..self.universe.n_particles].iter_mut().zip(particles_final[..self.universe.n_particles].iter()) {
+        for ((((particle, particle_final), particle_orig), angular_momentum_error), angular_momentum_change) in self.universe.particles[..self.universe.n_particles].iter_mut().zip(particles_final[..self.universe.n_particles].iter()).zip(particles_orig[..self.universe.n_particles].iter()).zip(self.particle_angular_momentum_errors[..self.universe.n_particles].iter_mut()).zip(angular_momentum_changes[..self.universe.n_particles].iter_mut()) {
             // Inertial positions and accelerations didn't change
             // Use modified velocities
             particle.inertial_velocity.x = particle_final.inertial_velocity.x;
             particle.inertial_velocity.y = particle_final.inertial_velocity.y;
             particle.inertial_velocity.z = particle_final.inertial_velocity.z;
-            // Use modified spin
-            particle.spin.x = particle_final.spin.x;
-            particle.spin.y = particle_final.spin.y;
-            particle.spin.z = particle_final.spin.z;
+            if integrate_spin {
+                // Use modified angular_momentum
+                particle.angular_momentum.x = particle_final.angular_momentum.x;
+                particle.angular_momentum.y = particle_final.angular_momentum.y;
+                particle.angular_momentum.z = particle_final.angular_momentum.z;
+
+                // Compensated summation to improve the accuracy of additions that involve
+                // one small and one large floating point number (already considered by IAS15)
+                //      As cited by IAS15 paper: Kahan 1965; Higham 2002; Hairer et al. 2006
+                //      https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+                angular_momentum_error.x = (particle.angular_momentum.x - particle_orig.angular_momentum.x) - angular_momentum_change.x;
+                angular_momentum_error.y = (particle.angular_momentum.y - particle_orig.angular_momentum.y) - angular_momentum_change.y;
+                angular_momentum_error.z = (particle.angular_momentum.z - particle_orig.angular_momentum.z) - angular_momentum_change.z;
+            }
         }
     }
 
-    fn converged_velocity_dependent_forces_integration(&mut self, particles_final: &[Particle; MAX_PARTICLES], particles_prev: &[Particle; MAX_PARTICLES]) -> bool {
+    fn converged_velocity_dependent_forces_integration(&mut self, particles_final: &[Particle; MAX_PARTICLES], particles_prev: &[Particle; MAX_PARTICLES], integrate_spin: bool) -> bool {
         let mut final_total_velocity_2 = 0.;
         let mut delta_total_velocity_2 = 0.;
-        let mut final_total_spin_2 = 0.;
-        let mut delta_total_spin_2 = 0.;
+        let mut final_total_angular_momentum_2 = 0.;
+        let mut delta_total_angular_momentum_2 = 0.;
         for (particle_final, particle_prev) in particles_final[..self.universe.n_particles].iter().zip(particles_prev[..self.universe.n_particles].iter()) {
             // Velocity
             let dvx = particle_final.inertial_velocity.x - particle_prev.inertial_velocity.x;
@@ -390,14 +410,16 @@ impl WHFast {
             let dvz = particle_final.inertial_velocity.z - particle_prev.inertial_velocity.z;
             delta_total_velocity_2 += dvx.powi(2) + dvy.powi(2) + dvz.powi(2);
             final_total_velocity_2 += particle_final.inertial_velocity.x.powi(2) + particle_final.inertial_velocity.y.powi(2) + particle_final.inertial_velocity.z.powi(2);
-            // Spin
-            let dsx = particle_final.spin.x - particle_prev.spin.x;
-            let dsy = particle_final.spin.y - particle_prev.spin.y;
-            let dsz = particle_final.spin.z - particle_prev.spin.z;
-            delta_total_spin_2 += dsx.powi(2) + dsy.powi(2) + dsz.powi(2);
-            final_total_spin_2 += particle_final.spin.x.powi(2) + particle_final.spin.y.powi(2) + particle_final.spin.z.powi(2);
+            if integrate_spin {
+                // Angular momentum
+                let dsx = particle_final.angular_momentum.x - particle_prev.angular_momentum.x;
+                let dsy = particle_final.angular_momentum.y - particle_prev.angular_momentum.y;
+                let dsz = particle_final.angular_momentum.z - particle_prev.angular_momentum.z;
+                delta_total_angular_momentum_2 += dsx.powi(2) + dsy.powi(2) + dsz.powi(2);
+                final_total_angular_momentum_2 += particle_final.angular_momentum.x.powi(2) + particle_final.angular_momentum.y.powi(2) + particle_final.angular_momentum.z.powi(2);
+            }
         }
-        if delta_total_velocity_2/final_total_velocity_2 < DBL_EPSILON_2 && delta_total_spin_2/final_total_spin_2 < DBL_EPSILON_2 {
+        if (integrate_spin && delta_total_velocity_2/final_total_velocity_2 < DBL_EPSILON_2 && delta_total_angular_momentum_2/final_total_angular_momentum_2 < DBL_EPSILON_2) || (!integrate_spin && delta_total_velocity_2/final_total_velocity_2 < DBL_EPSILON_2){
             return true;
         }
         else{
@@ -405,16 +427,18 @@ impl WHFast {
         }
     }
 
-    fn average_particles_for_velocity_dependent_forces_integration(&mut self, particles_orig: &[Particle; MAX_PARTICLES], particles_final: &[Particle; MAX_PARTICLES]) {
+    fn average_particles_for_velocity_dependent_forces_integration(&mut self, particles_orig: &[Particle; MAX_PARTICLES], particles_final: &[Particle; MAX_PARTICLES], integrate_spin: bool) {
         for ((particle_avg, particle_orig), particle_final) in self.universe.particles[..self.universe.n_particles].iter_mut().zip(particles_orig[..self.universe.n_particles].iter()).zip(particles_final[..self.universe.n_particles].iter()) {
             // Velocity
             particle_avg.inertial_velocity.x = 0.5*(particle_orig.inertial_velocity.x + particle_final.inertial_velocity.x);
             particle_avg.inertial_velocity.y = 0.5*(particle_orig.inertial_velocity.y + particle_final.inertial_velocity.y);
             particle_avg.inertial_velocity.z = 0.5*(particle_orig.inertial_velocity.z + particle_final.inertial_velocity.z);
-            // Spin
-            particle_avg.spin.x = 0.5*(particle_orig.spin.x + particle_final.spin.x);
-            particle_avg.spin.y = 0.5*(particle_orig.spin.y + particle_final.spin.y);
-            particle_avg.spin.z = 0.5*(particle_orig.spin.z + particle_final.spin.z);
+            if integrate_spin {
+                // Angular momentum
+                particle_avg.angular_momentum.x = 0.5*(particle_orig.angular_momentum.x + particle_final.angular_momentum.x);
+                particle_avg.angular_momentum.y = 0.5*(particle_orig.angular_momentum.y + particle_final.angular_momentum.y);
+                particle_avg.angular_momentum.z = 0.5*(particle_orig.angular_momentum.z + particle_final.angular_momentum.z);
+            }
         }
     }
 

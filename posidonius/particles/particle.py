@@ -1,4 +1,5 @@
 import six
+import numpy as np
 from posidonius.particles.axes import Axes
 import posidonius.effects as effects
 from posidonius.constants import K2
@@ -53,9 +54,10 @@ class Particle(object):
         wind = effects.wind.Disabled()
         disk = effects.disk.Disabled()
         evolution = NonEvolving()
+        moment_of_inertia = float(mass)*float(radius_of_gyration_2)*float(radius)*float(radius)
         self._data = {
+            "angular_momentum": Axes(moment_of_inertia*spin.x(), moment_of_inertia*spin.y(), moment_of_inertia*spin.z()).get(),
             "dangular_momentum_dt": Axes(0.0, 0.0, 0.0).get(),
-            "dangular_momentum_dt_per_moment_of_inertia": Axes(0.0, 0.0, 0.0).get(),
             "disk": disk.get(),
             "evolution": evolution.get(),
             "general_relativity": general_relativity.get(),
@@ -66,15 +68,13 @@ class Particle(object):
             "heliocentric_radial_velocity": 0.0,
             "heliocentric_velocity": velocity.get(),
             "id": 0,
-            "inertial_acceleration_error": Axes(0.0, 0.0, 0.0).get(),
             "inertial_acceleration": Axes(0.0, 0.0, 0.0).get(),
             "inertial_additional_acceleration": Axes(0.0, 0.0, 0.0).get(),
             "inertial_position": Axes(0.0, 0.0, 0.0).get(),
             "inertial_velocity": Axes(0.0, 0.0, 0.0).get(),
             "mass": float(mass),
             "mass_g": float(mass)*K2,
-            "moment_of_inertia": float(mass)*float(radius_of_gyration_2)*float(radius)*float(radius),
-            "moment_of_inertia_ratio": 1.0,
+            "moment_of_inertia": moment_of_inertia,
             "norm_spin_vector_2": spin.x()**2 + spin.y()**2 + spin.z()**2,
             "radius": float(radius),
             "radius_of_gyration_2": float(radius_of_gyration_2),

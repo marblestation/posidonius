@@ -1,5 +1,6 @@
 import os
 import six
+import math
 import datetime
 from posidonius.particles.axes import Axes
 from posidonius.integrator import WHFast, Ias15, LeapFrog
@@ -131,6 +132,29 @@ class Universe(object):
             raise Exception("Your initial time ({} days | {:.2e} years) is smaller than the minimum allowed age of the star ({} days | {:.2e} years)".format(self._data['initial_time'], self._data['initial_time']/365.25, evolver['time'][0]+self._data['initial_time'], (evolver['time'][0]+self._data['initial_time'])/365.25));
         if len(evolver['time']) > 0 and evolver['time'][-1] < self._data['initial_time']:
             raise Exception("Your time limit ({} days | {:.2e} years) is greater than the maximum allowed age of the star ({} days | {:.2e} years)", self._data['initial_time'], self._data['initial_time']/365.25, evolver['time'][0], evolver['time'][0]/365.25)
+
+        if particle.evolution() != effects.evolution.NonEvolving and self._data["consider_effects"]["evolution"]:
+            # Check if input radius is close enough to evolved radius at the corresponding time and update it + angular momentum if not
+            update_angular_momentum = False
+            current_time = 0
+            if len(evolver.get("radius", [])) > 0:
+                radius = np.interp(current_time, evolver['time'], evolver['radius'])
+                if radius - particle._data["radius"] > 1e-6:
+                    print("[WARNING {} UTC] Changed radius value from '{:.6f}' to '{:.6f}' to match expected state following the selected evolving body model".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S"), particle._data["radius"], radius))
+                    particle._data["radius"] = radius
+                    update_angular_momentum = True
+            if len(evolver.get("radius_of_gyration_2", [])) > 0:
+                radius_of_gyration_2 = np.interp(current_time, evolver['time'], evolver['radius_of_gyration_2'])
+                if radius_of_gyration_2 - particle._data["radius_of_gyration_2"] > 1e-6:
+                    print("[WARNING {} UTC] Changed radius of gyration value from '{:.6f}' to '{:.6f}' to match expected state following the selected evolving body model".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S"), math.sqrt(particle._data["radius_of_gyration_2"]), math.sqrt(radius_of_gyration_2)))
+                    particle._data["radius_of_gyration_2"] = radius_of_gyration_2
+                    update_angular_momentum = True
+            if update_angular_momentum:
+                print("[WARNING {} UTC] Recomputed moment of inertia and angular momentum to match expected state following the selected evolving body model".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                particle._data["moment_of_inertia"] = float(particle._data["mass"])*float(particle._data["radius_of_gyration_2"])*float(particle._data["radius"])*float(particle._data["radius"])
+                particle._data["angular_momentum"] = Axes(particle._data["spin"]["x"]*particle._data["moment_of_inertia"],
+                                                          particle._data["spin"]["y"]*particle._data["moment_of_inertia"],
+                                                          particle._data["spin"]["z"]*particle._data["moment_of_inertia"]).get()
 
         self._data['particles'].append(particle.get())
         self._data['particles_evolvers'].append(evolver)

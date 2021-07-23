@@ -5,7 +5,6 @@ pub const MAX_DISTANCE : f64 = 100.; // AU
 pub const MAX_DISTANCE_2 : f64 = MAX_DISTANCE*MAX_DISTANCE; // AU (use a negative value to disable)
 //
 pub const MIN_ORBITAL_PERIOD_TIME_STEP_RATIO : f64 = -1.0; // The orbital period should be 5.0 times greater than the time step to correctly integrate an orbit (use a negative value to disable)
-pub const COMPENSATED_GRAVITY : bool = false;
 
 //// Constants for IAS15 integrator (to be ignored for others)
 pub const INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT : bool = true;	// Turn this off to safe some time if the force is not velocity dependent (i.e. radiation forces, tides depend on vel.).

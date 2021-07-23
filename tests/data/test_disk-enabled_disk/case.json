@@ -5,9 +5,7 @@
   "half_time_step": 0.04,
   "hash": 0,
   "historic_snapshot_period": 36525.0,
-  "last_historic_snapshot_time": -1.0,
-  "last_recovery_snapshot_time": -1.0,
-  "last_spin": [
+  "inertial_additional_acceleration_errors": [
     {
       "x": 0.0,
       "y": 0.0,
@@ -59,8 +57,10 @@
       "z": 0.0
     }
   ],
+  "last_historic_snapshot_time": -1.0,
+  "last_recovery_snapshot_time": -1.0,
   "n_historic_snapshots": 0,
-  "particle_spin_errors": [
+  "particle_angular_momentum_errors": [
     {
       "x": 0.0,
       "y": 0.0,
@@ -337,12 +337,12 @@
     "n_particles": 4,
     "particles": [
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 2.4071705024123524e-05
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -447,11 +447,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -470,7 +465,6 @@
         "mass": 1.0,
         "mass_g": 0.0002949276532633868,
         "moment_of_inertia": 1.2770436144130902e-06,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 355.3057584392169,
         "radius": 0.004650467260962157,
         "radius_of_gyration_2": 0.059049,
@@ -580,18 +574,22 @@
               "rotation_saturation_2": 3.095107940181623
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }
       },
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
+          "y": -3.2802268359413373e-15,
+          "z": 1.1102918658538955e-14
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -683,11 +681,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -706,7 +699,6 @@
         "mass": 3.0034895963231186e-06,
         "mass_g": 8.858121382445743e-10,
         "moment_of_inertia": 1.8425901283499714e-15,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 39.47841760435744,
         "radius": 4.307581066392812e-05,
         "radius_of_gyration_2": 0.33062499999999995,
@@ -816,18 +808,22 @@
               "rotation_saturation_2": 0.0
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }
       },
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
+          "y": -2.786575198013173e-16,
+          "z": 9.432005561457916e-16
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -921,11 +917,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -944,7 +935,6 @@
         "mass": 2.8533151165069627e-09,
         "mass_g": 8.415215313323456e-13,
         "moment_of_inertia": 1.565292953372979e-16,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 39.47841760435743,
         "radius": 0.00046472111985749006,
         "radius_of_gyration_2": 0.254016,
@@ -1054,18 +1044,22 @@
               "rotation_saturation_2": 0.0
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }
       },
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
+          "y": -2.786575198013173e-16,
+          "z": 9.432005561457916e-16
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -1157,11 +1151,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -1180,7 +1169,6 @@
         "mass": 2.8533151165069627e-09,
         "mass_g": 8.415215313323456e-13,
         "moment_of_inertia": 1.565292953372979e-16,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 39.47841760435743,
         "radius": 0.00046472111985749006,
         "radius_of_gyration_2": 0.254016,
@@ -1290,18 +1278,22 @@
               "rotation_saturation_2": 0.0
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }
       },
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -1393,11 +1385,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -1416,7 +1403,6 @@
         "mass": 0.0,
         "mass_g": 0.0,
         "moment_of_inertia": 0.0,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 0.0,
         "radius": 0.0,
         "radius_of_gyration_2": 0.0,
@@ -1526,18 +1512,22 @@
               "rotation_saturation_2": 0.0
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }
       },
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -1629,11 +1619,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -1652,7 +1637,6 @@
         "mass": 0.0,
         "mass_g": 0.0,
         "moment_of_inertia": 0.0,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 0.0,
         "radius": 0.0,
         "radius_of_gyration_2": 0.0,
@@ -1762,18 +1746,22 @@
               "rotation_saturation_2": 0.0
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }
       },
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -1865,11 +1853,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -1888,7 +1871,6 @@
         "mass": 0.0,
         "mass_g": 0.0,
         "moment_of_inertia": 0.0,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 0.0,
         "radius": 0.0,
         "radius_of_gyration_2": 0.0,
@@ -1998,18 +1980,22 @@
               "rotation_saturation_2": 0.0
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }
       },
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -2101,11 +2087,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -2124,7 +2105,6 @@
         "mass": 0.0,
         "mass_g": 0.0,
         "moment_of_inertia": 0.0,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 0.0,
         "radius": 0.0,
         "radius_of_gyration_2": 0.0,
@@ -2234,18 +2214,22 @@
               "rotation_saturation_2": 0.0
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }
       },
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -2337,11 +2321,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -2360,7 +2339,6 @@
         "mass": 0.0,
         "mass_g": 0.0,
         "moment_of_inertia": 0.0,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 0.0,
         "radius": 0.0,
         "radius_of_gyration_2": 0.0,
@@ -2470,18 +2448,22 @@
               "rotation_saturation_2": 0.0
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }
       },
       {
-        "dangular_momentum_dt": {
+        "angular_momentum": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
         },
-        "dangular_momentum_dt_per_moment_of_inertia": {
+        "dangular_momentum_dt": {
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
@@ -2573,11 +2555,6 @@
           "y": 0.0,
           "z": 0.0
         },
-        "inertial_acceleration_error": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "inertial_additional_acceleration": {
           "x": 0.0,
           "y": 0.0,
@@ -2596,7 +2573,6 @@
         "mass": 0.0,
         "mass_g": 0.0,
         "moment_of_inertia": 0.0,
-        "moment_of_inertia_ratio": 1.0,
         "norm_spin_vector_2": 0.0,
         "radius": 0.0,
         "radius_of_gyration_2": 0.0,
@@ -2706,7 +2682,11 @@
               "rotation_saturation_2": 0.0
             },
             "output": {
-              "factor": 0.0
+              "dangular_momentum_dt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             }
           }
         }

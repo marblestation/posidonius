@@ -511,27 +511,19 @@ impl Evolver {
     }
 }
 
-
-pub fn calculate_particles_evolving_quantities(current_time: f64, particles: &mut [Particle], particles_evolvers: &mut Vec<Evolver>) {
+pub fn calculate_particles_non_spin_dependent_evolving_quantities(current_time: f64, particles: &mut [Particle], particles_evolvers: &mut Vec<Evolver>) {
     for (particle, evolver) in particles.iter_mut().zip(particles_evolvers.iter_mut()) {
         ////////////////////////////////////////////////////////////////////
         // Radius and radius of gyration 2
         ////////////////////////////////////////////////////////////////////
         // If particle radius/radius_of_gyration_2 evolves
-        // - Compute ratio between previous and new moment of inertia 
-        // - The ratio will be used in the spin integration
+        // - Compute the moment of inertia
         let new_radius = evolver.radius(current_time, particle.radius);
         let new_radius_of_gyration_2 = evolver.radius_of_gyration_2(current_time, particle.radius_of_gyration_2);
         if new_radius != particle.radius || new_radius_of_gyration_2 != particle.radius_of_gyration_2 {
-            // Update moment of inertia ratio only if it is not during first initialization
-            if current_time > 0. {
-                particle.moment_of_inertia_ratio = (particle.radius_of_gyration_2 * particle.radius.powi(2)) / (new_radius_of_gyration_2 * new_radius.powi(2));
-            }
             particle.radius = new_radius;
             particle.radius_of_gyration_2 = new_radius_of_gyration_2;
             particle.moment_of_inertia = particle.mass * particle.radius_of_gyration_2 * particle.radius.powi(2);
-        } else {
-            particle.moment_of_inertia_ratio = 1.;
         }
 
         ////////////////////////////////////////////////////////////////////
@@ -539,6 +531,13 @@ pub fn calculate_particles_evolving_quantities(current_time: f64, particles: &mu
         ////////////////////////////////////////////////////////////////////
         particle.tides.parameters.input.love_number = evolver.love_number(current_time, particle.tides.parameters.input.love_number);
 
+        //println!("[{}] Evolve Radius {:e} Gyration {:e} Love {:e}", current_time, particle.radius, particle.radius_of_gyration_2, particle.love_number);
+    }
+
+}
+
+pub fn calculate_particles_spin_dependent_evolving_quantities(current_time: f64, particles: &mut [Particle], particles_evolvers: &mut Vec<Evolver>) {
+    for (particle, evolver) in particles.iter_mut().zip(particles_evolvers.iter_mut()) {
         ////////////////////////////////////////////////////////////////////
         // Lag angle
         ////////////////////////////////////////////////////////////////////
@@ -553,7 +552,7 @@ pub fn calculate_particles_evolving_quantities(current_time: f64, particles: &mu
                 },
             _ => 0.,
         };
-        //println!("[{}] Evolve Radius {:e} Gyration {:e} Love {:e} Lag {:e}", current_time, particle.radius, particle.radius_of_gyration_2, particle.love_number, particle.lag_angle);
+        //println!("[{}] Evolve Lag {:e}", current_time, particle.lag_angle);
     }
 
 }

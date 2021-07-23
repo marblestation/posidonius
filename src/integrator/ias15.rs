@@ -6,7 +6,6 @@ use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::effects::GeneralRelativityImplementation;
-use super::super::effects::WindEffect;
 use super::super::effects::EvolutionType;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
@@ -48,8 +47,6 @@ pub struct Ias15 {
     x0: [f64; 3*MAX_PARTICLES], // Temporary buffer for position (used for initial values at h=0)
     v0: [f64; 3*MAX_PARTICLES], // Temporary buffer for velocity (used for initial values at h=0)
     a0: [f64; 3*MAX_PARTICLES], // Temporary buffer for acceleration (used for initial values at h=0)
-    radius0: [f64; MAX_PARTICLES], // Temporary buffer for radius (used for initial values at h=0)
-    radius_of_gyration_2_0: [f64; MAX_PARTICLES], // Temporary buffer for radius of gyration**2 (used for initial values at h=0)
     // spin coeff
     sb: [[f64; 3*MAX_PARTICLES]; 7], // Coefficient b: acceleration dimension
     sbr: [[f64; 3*MAX_PARTICLES]; 7], // Previous b
@@ -57,10 +54,8 @@ pub struct Ias15 {
     se: [[f64; 3*MAX_PARTICLES]; 7],
     ser: [[f64; 3*MAX_PARTICLES]; 7], // Previous g
     dangular_momentum_dtt: [f64; 3*MAX_PARTICLES], // Temporary buffer for dangular_momentum_dt
-    spin0: [f64; 3*MAX_PARTICLES], // Temporary buffer for spin0 (used for initial values at h=0)
     dangular_momentum_dt0: [f64; 3*MAX_PARTICLES], // Temporary buffer for dangular_momentum_dt (used for initial values at h=0)
     angular_momentum0: [f64; 3*MAX_PARTICLES], // Temporary buffer for angular_momentum (used for initial values at h=0)
-    moment_of_inertia0: [f64; MAX_PARTICLES], // Temporary buffer for moment of inertia (used for initial values at h=0)
     // Compensated summation coefficients
     csx : [f64; 3*MAX_PARTICLES], // position
     csv : [f64; 3*MAX_PARTICLES], // velocity
@@ -103,18 +98,14 @@ impl Ias15 {
                     x0  : [0.; 3*MAX_PARTICLES],
                     v0  : [0.; 3*MAX_PARTICLES],
                     a0  : [0.; 3*MAX_PARTICLES],
-                    radius0  : [0.; MAX_PARTICLES],
-                    radius_of_gyration_2_0  : [0.; MAX_PARTICLES],
                     sb :   [[0.; 3*MAX_PARTICLES]; 7],
                     sg  :  [[0.; 3*MAX_PARTICLES]; 7],
                     se  :  [[0.; 3*MAX_PARTICLES]; 7],
                     sbr :  [[0.; 3*MAX_PARTICLES]; 7],
                     ser :  [[0.; 3*MAX_PARTICLES]; 7],
                     dangular_momentum_dtt  : [0.; 3*MAX_PARTICLES],
-                    spin0  : [0.; 3*MAX_PARTICLES],
                     dangular_momentum_dt0  : [0.; 3*MAX_PARTICLES],
                     angular_momentum0  : [0.; 3*MAX_PARTICLES],
-                    moment_of_inertia0  : [0.; MAX_PARTICLES],
                     csx : [0.; 3*MAX_PARTICLES],
                     csv : [0.; 3*MAX_PARTICLES],
                     css : [0.; 3*MAX_PARTICLES],
@@ -186,8 +177,8 @@ impl Integrator for Ias15 {
         if self.current_time != 0. {
             panic!("Physical values cannot be initialized on a resumed simulation");
         }
-        self.universe.calculate_norm_spin(); // Needed for evolution
-        self.universe.calculate_particles_evolving_quantities(self.current_time); // Make sure we start with the good initial values
+        let evolution = true;
+        self.universe.calculate_spin_and_evolving_quantities(self.current_time, evolution); // Make sure we start with the good initial values
         self.universe.calculate_roche_radiuses(); // Needed for collision detection
     }
 
@@ -219,9 +210,9 @@ impl Integrator for Ias15 {
         self.universe.inertial_to_heliocentric();
         // Calculate non-gravity accelerations.
         let evolution = true;
-        let dangular_momentum_dt_per_moment_of_inertia = true;
+        let dangular_momentum_dt = true;
         let accelerations = true;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt, accelerations, ignored_gravity_terms);
         self.universe.apply_acceleration_corrections();
 
         self.integrator();
@@ -316,19 +307,12 @@ impl Ias15 {
                 self.a0[3*k+1] = particle.inertial_acceleration.y;  
                 self.a0[3*k+2] = particle.inertial_acceleration.z;
                 if integrate_spin {
-                    self.radius0[k]   = particle.radius; // Required to correctly compute the momen of inertia if a step is repeated after evolution was applied
-                    self.radius_of_gyration_2_0[k]   = particle.radius_of_gyration_2;
-                    self.moment_of_inertia0[k]   = particle.moment_of_inertia;
-
-                    self.spin0[3*k]   = particle.spin.x;
-                    self.spin0[3*k+1] = particle.spin.y;
-                    self.spin0[3*k+2] = particle.spin.z;
                     self.dangular_momentum_dt0[3*k]   = particle.dangular_momentum_dt.x;
                     self.dangular_momentum_dt0[3*k+1] = particle.dangular_momentum_dt.y;
                     self.dangular_momentum_dt0[3*k+2] = particle.dangular_momentum_dt.z;
-                    self.angular_momentum0[3*k] = particle.moment_of_inertia*particle.spin.x;
-                    self.angular_momentum0[3*k+1] = particle.moment_of_inertia*particle.spin.y;
-                    self.angular_momentum0[3*k+2] = particle.moment_of_inertia*particle.spin.z;
+                    self.angular_momentum0[3*k] = particle.angular_momentum.x;
+                    self.angular_momentum0[3*k+1] = particle.angular_momentum.y;
+                    self.angular_momentum0[3*k+2] = particle.angular_momentum.z;
                 }
             }
 
@@ -457,17 +441,13 @@ impl Ias15 {
                                 let k1 = 3*i+1;
                                 let k2 = 3*i+2;
 
-                                if particle.moment_of_inertia == 0. {
-                                    panic!("Moment of inertia for particle {} is zero!", i);
-                                }
-
                                 // Equation 6 in paper 2015MNRAS.446.1424R
                                 let angular_momentum_k0 =  -self.css[k0] + self.s[7]*self.sb[6][k0] + self.s[6]*self.sb[5][k0] + self.s[5]*self.sb[4][k0] + self.s[4]*self.sb[3][k0] + self.s[3]*self.sb[2][k0] + self.s[2]*self.sb[1][k0] + self.s[1]*self.sb[0][k0] + self.s[0]*self.dangular_momentum_dt0[k0];
-                                particle.spin.x = (angular_momentum_k0 + self.angular_momentum0[k0])/particle.moment_of_inertia;
+                                particle.angular_momentum.x = angular_momentum_k0 + self.angular_momentum0[k0];
                                 let angular_momentum_k1 =  -self.css[k1] + self.s[7]*self.sb[6][k1] + self.s[6]*self.sb[5][k1] + self.s[5]*self.sb[4][k1] + self.s[4]*self.sb[3][k1] + self.s[3]*self.sb[2][k1] + self.s[2]*self.sb[1][k1] + self.s[1]*self.sb[0][k1] + self.s[0]*self.dangular_momentum_dt0[k1];
-                                particle.spin.y = (angular_momentum_k1 + self.angular_momentum0[k1])/particle.moment_of_inertia;
+                                particle.angular_momentum.y = angular_momentum_k1 + self.angular_momentum0[k1];
                                 let angular_momentum_k2 =  -self.css[k2] + self.s[7]*self.sb[6][k2] + self.s[6]*self.sb[5][k2] + self.s[5]*self.sb[4][k2] + self.s[4]*self.sb[3][k2] + self.s[3]*self.sb[2][k2] + self.s[2]*self.sb[1][k2] + self.s[1]*self.sb[0][k2] + self.s[0]*self.dangular_momentum_dt0[k2];
-                                particle.spin.z = (angular_momentum_k2 + self.angular_momentum0[k2])/particle.moment_of_inertia;
+                                particle.angular_momentum.z = angular_momentum_k2 + self.angular_momentum0[k2];
                             }
                         }
                     }
@@ -479,9 +459,9 @@ impl Ias15 {
                     self.universe.inertial_to_heliocentric();
                     // Calculate non-gravity accelerations.
                     let evolution = true;
-                    let dangular_momentum_dt_per_moment_of_inertia = true;
+                    let dangular_momentum_dt = true;
                     let accelerations = true;
-                    self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
+                    self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt, accelerations, ignored_gravity_terms);
                     self.universe.apply_acceleration_corrections();
 
                     for (k, particle) in self.universe.particles[..self.universe.n_particles].iter().enumerate() {
@@ -856,7 +836,7 @@ impl Ias15 {
                 // INTEGRATOR_EPSILON_GLOBAL==true  (default)
                 //   First, we determine the maximum acceleration and the maximum of the last term in the series. 
                 //   Then, the two are divided.
-                // INTEGRATOR_EPSILON_GLOBAL==true
+                // INTEGRATOR_EPSILON_GLOBAL==false
                 //   Here, the fractional error is calculated for each particle individually and we use the maximum of the fractional error.
                 //   This might fail in cases where a particle does not experience any (physical) acceleration besides roundoff errors. 
                 let mut integrator_error: f64 = 0.0;
@@ -875,16 +855,16 @@ impl Ias15 {
                                     +particle.inertial_position.z*particle.inertial_position.z;
 
                         if integrate_spin {
-                            let spin2 = particle.spin.x*particle.spin.x
-                                        +particle.spin.y*particle.spin.y
-                                        +particle.spin.z*particle.spin.z;
                             let dangular_momentum_dt2 = particle.dangular_momentum_dt.x*particle.dangular_momentum_dt.x
                                         +particle.dangular_momentum_dt.y*particle.dangular_momentum_dt.y
                                         +particle.dangular_momentum_dt.z*particle.dangular_momentum_dt.z;
+                            let angular_momentum2 = particle.angular_momentum.x*particle.angular_momentum.x
+                                        +particle.angular_momentum.y*particle.angular_momentum.y
+                                        +particle.angular_momentum.z*particle.angular_momentum.z;
                             
                             // Skip slowly varying accelerations and angular momentums (spin)
                             if (v2*self.time_step*self.time_step/x2).abs() < 1e-16
-                                && ((dangular_momentum_dt2/particle.moment_of_inertia.powi(2))*self.time_step*self.time_step/spin2).abs() < 1e-16 {
+                                && (dangular_momentum_dt2*self.time_step*self.time_step/angular_momentum2).abs() < 1e-16 {
                                 continue;
                             }
                         } else {
@@ -983,18 +963,13 @@ impl Ias15 {
                         particle.inertial_acceleration.z = self.a0[3*k+2];
 
                         if integrate_spin {
-                            // Required to correctly compute the momen of inertia if a step is repeated after evolution was applied
-                            particle.radius = self.radius0[k];	// Set inital radius
-                            particle.radius_of_gyration_2 = self.radius_of_gyration_2_0[k];	// Set inital radius of gyration**2
-                            particle.moment_of_inertia = self.moment_of_inertia0[k];	// Set inital radius of gyration**2
-
-                            particle.spin.x = self.spin0[3*k+0];	// Set inital spin
-                            particle.spin.y = self.spin0[3*k+1];
-                            particle.spin.z = self.spin0[3*k+2];
-
                             particle.dangular_momentum_dt.x = self.dangular_momentum_dt0[3*k+0];	// Set inital dangular_momentum_dt
                             particle.dangular_momentum_dt.y = self.dangular_momentum_dt0[3*k+1];
                             particle.dangular_momentum_dt.z = self.dangular_momentum_dt0[3*k+2];
+
+                            particle.angular_momentum.x = self.angular_momentum0[3*k+0];	// Set inital angular_momentum
+                            particle.angular_momentum.y = self.angular_momentum0[3*k+1];
+                            particle.angular_momentum.z = self.angular_momentum0[3*k+2];
                         }
                     }
                     self.time_step = dt_new;
@@ -1024,10 +999,6 @@ impl Ias15 {
             // (Eqs. 11, 12 of Everhart)
             ////////////////////////////////////////////////////////////////////
             let dt_done2 = dt_done * dt_done;
-            if self.universe.consider_effects.evolution {
-                // We need the moment of inertia at the final time to convert the angular momentum
-                self.universe.calculate_particles_evolving_quantities(self.current_time+dt_done);
-            }
             for k in 0..3*self.n_particles {
                 {
                     let (tmp_x0, tmp_csx) = self.add_cs(self.x0[k], self.csx[k], self.b[6][k]/72.*dt_done2);
@@ -1066,12 +1037,6 @@ impl Ias15 {
                         let (tmp_angular_momentum0, tmp_css) = self.add_cs(tmp_angular_momentum0, tmp_css, self.dangular_momentum_dt0[k]*dt_done);
                         self.css[k] = tmp_css;
                         self.angular_momentum0[k] = tmp_angular_momentum0;
-
-                        let moment_of_inertia_k = self.universe.particles[k/3].moment_of_inertia;
-                        if moment_of_inertia_k == 0. {
-                            panic!("Moment of inertia for particle {} is zero!", k/3);
-                        }
-                        self.spin0[k] = self.angular_momentum0[k] / moment_of_inertia_k; // we need the spin, so we transform the angular momentum
                     }
                 }
             }
@@ -1090,19 +1055,10 @@ impl Ias15 {
                 particle.inertial_velocity.z = self.v0[3*k+2];
 
                 if integrate_spin {
-                    // Spin
-                    particle.spin.x = self.spin0[3*k+0];
-                    particle.spin.y = self.spin0[3*k+1];
-                    particle.spin.z = self.spin0[3*k+2];
+                    particle.angular_momentum.x = self.angular_momentum0[3*k+0];  // Set final angular momentum
+                    particle.angular_momentum.y = self.angular_momentum0[3*k+1];
+                    particle.angular_momentum.z = self.angular_momentum0[3*k+2];
                 } 
-
-                if particle.wind.effect != WindEffect::Disabled && particle.wind.parameters.output.factor != 0. {
-                    // TODO: Verify wind factor
-                    particle.spin.x += dt_done * particle.wind.parameters.output.factor * particle.spin.x;
-                    particle.spin.y += dt_done * particle.wind.parameters.output.factor * particle.spin.y;
-                    particle.spin.z += dt_done * particle.wind.parameters.output.factor * particle.spin.z;
-                }
-
             }
 
             //self.copybuffers(&mut self.e, &mut self.er);		

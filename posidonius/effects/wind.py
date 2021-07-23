@@ -1,4 +1,5 @@
 import six
+from posidonius.particles.axes import Axes
 
 class Wind(object):
     def __init__(self, variant, input_parameters=None):
@@ -13,7 +14,7 @@ class Wind(object):
                     "rotation_saturation_2": 0.0,
                 },
                 "output": {
-                    "factor": 0.0,
+                    "dangular_momentum_dt": Axes(0.0, 0.0, 0.0).get(),
                 },
             },
         }

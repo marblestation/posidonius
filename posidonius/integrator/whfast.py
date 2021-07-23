@@ -17,8 +17,8 @@ class WHFast(Integrator):
     def __init__(self, alternative_coordinates, time_step, recovery_snapshot_period, historic_snapshot_period, universe):
         super(WHFast, self).__init__(time_step, recovery_snapshot_period, historic_snapshot_period, universe)
         self._data['half_time_step'] = self._data['time_step']*0.5
-        self._data['last_spin'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0}]*MAX_PARTICLES # For spin integration with the midpoint method
-        self._data['particle_spin_errors'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0}]*MAX_PARTICLES # For spin integration with the midpoint method
+        self._data['inertial_additional_acceleration_errors'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0}]*MAX_PARTICLES
+        self._data['particle_angular_momentum_errors'] = [{u'x': 0.0, u'y': 0.0, u'z': 0.0}]*MAX_PARTICLES
         self._data['timestep_warning'] = 0
         self._data['alternative_coordinates_type'] = CoordinatesType(alternative_coordinates).get()
         self._data['particles_alternative_coordinates'] = []

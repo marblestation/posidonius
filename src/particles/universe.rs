@@ -1,6 +1,6 @@
 extern crate time;
 use std::collections::HashMap;
-use super::super::constants::{G, MAX_PARTICLES, MAX_DISTANCE_2, COMPENSATED_GRAVITY};
+use super::super::constants::{G, MAX_PARTICLES, MAX_DISTANCE_2};
 use super::super::{Evolver, EvolutionType};
 use super::{Particle};
 use super::{Axes};
@@ -165,10 +165,13 @@ impl Universe {
         let mut newtonian_inertial_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; 
         let (newtonian_inertial_accelerations, _) = newtonian_inertial_accelerations.split_at_mut(self.n_particles);
 
-        let mut newtonian_inertial_acceleration_errors = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; 
-        let (newtonian_inertial_acceleration_errors, _) = newtonian_inertial_acceleration_errors.split_at_mut(self.n_particles);
+        //// For compensated summation:
+        //let mut newtonian_inertial_acceleration_errors = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; 
+        //let (newtonian_inertial_acceleration_errors, _) = newtonian_inertial_acceleration_errors.split_at_mut(self.n_particles);
 
-        for (i, (particle_a, (newtonian_inertial_acceleration, (newtonian_inertial_acceleration_error, roche_radiuses)))) in particles.iter().zip(newtonian_inertial_accelerations.iter_mut().zip(newtonian_inertial_acceleration_errors.iter_mut().zip(roche_radiuses.iter()))).enumerate() {
+        //// For compensated summation:
+        //for (i, (particle_a, (newtonian_inertial_acceleration, (newtonian_inertial_acceleration_error, roche_radiuses)))) in particles.iter().zip(newtonian_inertial_accelerations.iter_mut().zip(newtonian_inertial_acceleration_errors.iter_mut().zip(roche_radiuses.iter()))).enumerate() {
+        for (i, (particle_a, (newtonian_inertial_acceleration, roche_radiuses))) in particles.iter().zip(newtonian_inertial_accelerations.iter_mut().zip(roche_radiuses.iter())).enumerate() {
             for (j, (particle_b, roche_radius)) in particles.iter().zip(roche_radiuses.iter()).enumerate() {
                 if i == j {
                     continue;
@@ -228,51 +231,49 @@ impl Universe {
                 let distance = distance_2.sqrt();
                 let prefact = -G/(distance*distance*distance) * particle_b.mass;
 
-                if COMPENSATED_GRAVITY {
-                    // x
-                    let acceleration_to_be_added = prefact * dx;
-                    let corrected_acceleration_to_be_added = acceleration_to_be_added - newtonian_inertial_acceleration_error.x;
-                    let added_acceleration = newtonian_inertial_acceleration.x + corrected_acceleration_to_be_added;
-                    newtonian_inertial_acceleration_error.x = (added_acceleration - newtonian_inertial_acceleration.x) - corrected_acceleration_to_be_added;
-                    newtonian_inertial_acceleration.x = added_acceleration;
-                    // y
-                    let acceleration_to_be_added = prefact * dy;
-                    let corrected_acceleration_to_be_added = acceleration_to_be_added - newtonian_inertial_acceleration_error.y;
-                    let added_acceleration = newtonian_inertial_acceleration.y + corrected_acceleration_to_be_added;
-                    newtonian_inertial_acceleration_error.y = (added_acceleration - newtonian_inertial_acceleration.y) - corrected_acceleration_to_be_added;
-                    newtonian_inertial_acceleration.y = added_acceleration;
-                    // z
-                    let acceleration_to_be_added = prefact * dz;
-                    let corrected_acceleration_to_be_added = acceleration_to_be_added - newtonian_inertial_acceleration_error.z;
-                    let added_acceleration = newtonian_inertial_acceleration.z + corrected_acceleration_to_be_added;
-                    newtonian_inertial_acceleration_error.z = (added_acceleration - newtonian_inertial_acceleration.z) - corrected_acceleration_to_be_added;
-                    newtonian_inertial_acceleration.z = added_acceleration;
-                } else {
-                    newtonian_inertial_acceleration.x += prefact * dx;
-                    newtonian_inertial_acceleration.y += prefact * dy;
-                    newtonian_inertial_acceleration.z += prefact * dz;
-                }
+                newtonian_inertial_acceleration.x += prefact * dx;
+                newtonian_inertial_acceleration.y += prefact * dy;
+                newtonian_inertial_acceleration.z += prefact * dz;
+
+                ////// Compensated summation to improve the accuracy of additions that involve
+                ////// one small and one large floating point number (already considered by IAS15)
+                //////      As cited by IAS15 paper: Kahan 1965; Higham 2002; Hairer et al. 2006
+                //////      https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+                //// x
+                //let acceleration_to_be_added = prefact * dx;
+                //let corrected_acceleration_to_be_added = acceleration_to_be_added - newtonian_inertial_acceleration_error.x;
+                //let added_acceleration = newtonian_inertial_acceleration.x + corrected_acceleration_to_be_added;
+                //newtonian_inertial_acceleration_error.x = (added_acceleration - newtonian_inertial_acceleration.x) - corrected_acceleration_to_be_added;
+                //newtonian_inertial_acceleration.x = added_acceleration;
+                //// y
+                //let acceleration_to_be_added = prefact * dy;
+                //let corrected_acceleration_to_be_added = acceleration_to_be_added - newtonian_inertial_acceleration_error.y;
+                //let added_acceleration = newtonian_inertial_acceleration.y + corrected_acceleration_to_be_added;
+                //newtonian_inertial_acceleration_error.y = (added_acceleration - newtonian_inertial_acceleration.y) - corrected_acceleration_to_be_added;
+                //newtonian_inertial_acceleration.y = added_acceleration;
+                //// z
+                //let acceleration_to_be_added = prefact * dz;
+                //let corrected_acceleration_to_be_added = acceleration_to_be_added - newtonian_inertial_acceleration_error.z;
+                //let added_acceleration = newtonian_inertial_acceleration.z + corrected_acceleration_to_be_added;
+                //newtonian_inertial_acceleration_error.z = (added_acceleration - newtonian_inertial_acceleration.z) - corrected_acceleration_to_be_added;
+                //newtonian_inertial_acceleration.z = added_acceleration;
             }
         }
-        for (particle, (newtonian_inertial_acceleration, newtonian_inertial_acceleration_error)) in particles.iter_mut().zip(newtonian_inertial_accelerations.iter().zip(newtonian_inertial_acceleration_errors.iter_mut())) {
+        for (particle, newtonian_inertial_acceleration) in particles.iter_mut().zip(newtonian_inertial_accelerations.iter()) {
             particle.inertial_acceleration = *newtonian_inertial_acceleration;
-            if COMPENSATED_GRAVITY {
-                particle.inertial_acceleration_error = *newtonian_inertial_acceleration_error;
-            }
         }
     }
 
-    pub fn calculate_particles_evolving_quantities(&mut self, current_time: f64) {
-        if self.consider_effects.evolution {
-            let (mut particles, _) = self.particles.split_at_mut(self.n_particles);
-            evolution::calculate_particles_evolving_quantities(current_time, &mut particles, &mut self.particles_evolvers);
+    pub fn calculate_spin_and_evolving_quantities(&mut self, current_time: f64, evolution: bool) {
+        let (mut particles, _) = self.particles.split_at_mut(self.n_particles);
+        if evolution && self.consider_effects.evolution {
+            // Evolve quantities (among others, it computes a new moment of inertia)
+            evolution::calculate_particles_non_spin_dependent_evolving_quantities(current_time, &mut particles, &mut self.particles_evolvers);
         }
-    }
-
-    pub fn calculate_norm_spin(&mut self) {
-        if self.consider_effects.evolution || self.consider_effects.rotational_flattening {
-            let (mut particles, _) = self.particles.split_at_mut(self.n_particles);
-            common::calculate_norm_spin(&mut particles); // Needed for rotational flattening (torque and accelerations) and evolution
+        common::calculate_spin(&mut particles); // uses moment of inertia to compute spin
+        if evolution && self.consider_effects.evolution {
+            // Evolve quantities that require a computed spin
+            evolution::calculate_particles_spin_dependent_evolving_quantities(current_time, &mut particles, &mut self.particles_evolvers);
         }
     }
 
@@ -311,15 +312,20 @@ impl Universe {
         }
     }
 
-    pub fn initialize(&mut self, dangular_momentum_dt_per_moment_of_inertia: bool, accelerations: bool) {
-        let initialize_tides = (dangular_momentum_dt_per_moment_of_inertia && self.consider_effects.tides) || (accelerations && self.consider_effects.tides);
-        let initialize_rotational_flattening = (dangular_momentum_dt_per_moment_of_inertia && self.consider_effects.rotational_flattening) || (accelerations && self.consider_effects.rotational_flattening);
-        let initialize_general_relativity = (dangular_momentum_dt_per_moment_of_inertia && self.consider_effects.general_relativity && self.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995) || (accelerations && self.consider_effects.general_relativity);
+    pub fn initialize(&mut self, dangular_momentum_dt: bool, accelerations: bool) {
+        let initialize_tides = (dangular_momentum_dt && self.consider_effects.tides) || (accelerations && self.consider_effects.tides);
+        let initialize_rotational_flattening = (dangular_momentum_dt && self.consider_effects.rotational_flattening) || (accelerations && self.consider_effects.rotational_flattening);
+        let initialize_wind = dangular_momentum_dt && self.consider_effects.wind;
+        let initialize_general_relativity = (dangular_momentum_dt && self.consider_effects.general_relativity && self.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995) || (accelerations && self.consider_effects.general_relativity);
         let initialize_disk = accelerations && self.consider_effects.disk;
         //
-        let initialize = initialize_tides || initialize_rotational_flattening || initialize_general_relativity || initialize_disk;
+        let initialize = initialize_tides || initialize_rotational_flattening || initialize_wind || initialize_general_relativity || initialize_disk;
         if initialize {
-            let (particles, _) = self.particles.split_at_mut(self.n_particles);
+            let (mut particles, _) = self.particles.split_at_mut(self.n_particles);
+            //
+            if initialize_wind {
+                wind::initialize(&mut particles);
+            }
             //
             let (mut particles_left, particles_right) = particles.split_at_mut(self.hosts.index.most_massive);
             if let Some((mut host_particle, mut particles_right)) = particles_right.split_first_mut() {
@@ -381,28 +387,19 @@ impl Universe {
         }
     }
 
-    pub fn calculate_additional_effects(&mut self, current_time: f64, evolution: bool, dangular_momentum_dt_per_moment_of_inertia: bool, accelerations: bool, ignored_gravity_terms: IgnoreGravityTerms) {
-        self.initialize(dangular_momentum_dt_per_moment_of_inertia, accelerations);
+    pub fn calculate_additional_effects(&mut self, current_time: f64, evolution: bool, dangular_momentum_dt: bool, accelerations: bool, ignored_gravity_terms: IgnoreGravityTerms) {
+        self.initialize(dangular_momentum_dt, accelerations);
+        self.calculate_spin_and_evolving_quantities(current_time, evolution); // Make sure we start with the good initial values
 
         let (mut particles, _) = self.particles.split_at_mut(self.n_particles);
-        if (evolution && self.consider_effects.evolution) || 
-            ((dangular_momentum_dt_per_moment_of_inertia || accelerations) && self.consider_effects.rotational_flattening) {
-            common::calculate_norm_spin(&mut particles); // Needed for rotational flattening (torque and accelerations) and evolution
-        }
-       
-        if evolution && self.consider_effects.evolution {
-            evolution::calculate_particles_evolving_quantities(current_time, &mut particles, &mut self.particles_evolvers);
-        }
-
-        let (mut particles, _) = self.particles.split_at_mut(self.n_particles);
-        if dangular_momentum_dt_per_moment_of_inertia && self.consider_effects.wind {
+        if dangular_momentum_dt && self.consider_effects.wind {
             wind::calculate_wind_factor(&mut particles);
         }
 
         if self.consider_effects.tides || self.consider_effects.rotational_flattening {
             let (mut particles_left, particles_right) = particles.split_at_mut(self.hosts.index.tides);
             if let Some((mut tidal_host_particle, mut particles_right)) = particles_right.split_first_mut() {
-                if (dangular_momentum_dt_per_moment_of_inertia && (self.consider_effects.tides || self.consider_effects.rotational_flattening)) ||
+                if (dangular_momentum_dt && (self.consider_effects.tides || self.consider_effects.rotational_flattening)) ||
                     (accelerations && (self.consider_effects.tides || self.consider_effects.disk || self.consider_effects.rotational_flattening || 
                                        self.consider_effects.general_relativity)) {
 
@@ -420,10 +417,10 @@ impl Universe {
                         }
                     }
 
-                    if dangular_momentum_dt_per_moment_of_inertia && (self.consider_effects.tides || self.consider_effects.rotational_flattening) {
+                    if dangular_momentum_dt && (self.consider_effects.tides || self.consider_effects.rotational_flattening) {
                         // Not needed for additional accelerations
                         {
-                            //// calculate_torques // Needed for dangular_momentum_dt_per_moment_of_inertia
+                            //// calculate_torques // Needed for dangular_momentum_dt
                             let central_body = true;
 
                             if self.consider_effects.tides {
@@ -486,9 +483,9 @@ impl Universe {
                 }
             }
         }
-        if dangular_momentum_dt_per_moment_of_inertia {
-            if  self.consider_effects.tides || self.consider_effects.rotational_flattening || (self.consider_effects.general_relativity && self.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995) {
-                self.calculate_dangular_momentum_dt_per_moment_of_inertia();
+        if dangular_momentum_dt {
+            if  self.consider_effects.tides || self.consider_effects.rotational_flattening || (self.consider_effects.general_relativity && self.general_relativity_implementation == GeneralRelativityImplementation::Kidder1995) || self.consider_effects.wind {
+                self.calculate_dangular_momentum_dt();
             }
         }
 
@@ -544,17 +541,39 @@ impl Universe {
     
     ////////////////////////////////////////////////////////////////////////////
     // TIDES
-    fn calculate_dangular_momentum_dt_per_moment_of_inertia(&mut self) {
+    fn calculate_dangular_momentum_dt(&mut self) {
+        //// For compensated summation:
+        //let mut dangular_momentum_dt_errors = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; 
+        //let (dangular_momentum_dt_errors, _) = dangular_momentum_dt_errors.split_at_mut(self.n_particles);
+
+        //// For compensated summation:
+        //for (particle, dangular_momentum_dt_error) in self.particles[..self.n_particles].iter_mut().zip(dangular_momentum_dt_errors.iter_mut()) {
         for particle in self.particles[..self.n_particles].iter_mut() {
             // - Equation 25 from Bolmont et al. 2015
-            particle.dangular_momentum_dt.x = particle.tides.parameters.output.dangular_momentum_dt.x + particle.rotational_flattening.parameters.output.dangular_momentum_dt.x + particle.general_relativity.parameters.output.dangular_momentum_dt.x;
-            particle.dangular_momentum_dt.y = particle.tides.parameters.output.dangular_momentum_dt.y + particle.rotational_flattening.parameters.output.dangular_momentum_dt.y + particle.general_relativity.parameters.output.dangular_momentum_dt.y;
-            particle.dangular_momentum_dt.z = particle.tides.parameters.output.dangular_momentum_dt.z + particle.rotational_flattening.parameters.output.dangular_momentum_dt.z + particle.general_relativity.parameters.output.dangular_momentum_dt.z;
-            //
-            let factor = 1. / (particle.moment_of_inertia);
-            particle.dangular_momentum_dt_per_moment_of_inertia.x = factor * particle.dangular_momentum_dt.x;
-            particle.dangular_momentum_dt_per_moment_of_inertia.y = factor * particle.dangular_momentum_dt.y;
-            particle.dangular_momentum_dt_per_moment_of_inertia.z = factor * particle.dangular_momentum_dt.z;
+            particle.dangular_momentum_dt.x = particle.tides.parameters.output.dangular_momentum_dt.x + particle.rotational_flattening.parameters.output.dangular_momentum_dt.x + particle.general_relativity.parameters.output.dangular_momentum_dt.x + particle.wind.parameters.output.dangular_momentum_dt.x;
+            particle.dangular_momentum_dt.y = particle.tides.parameters.output.dangular_momentum_dt.y + particle.rotational_flattening.parameters.output.dangular_momentum_dt.y + particle.general_relativity.parameters.output.dangular_momentum_dt.y + particle.wind.parameters.output.dangular_momentum_dt.y;
+            particle.dangular_momentum_dt.z = particle.tides.parameters.output.dangular_momentum_dt.z + particle.rotational_flattening.parameters.output.dangular_momentum_dt.z + particle.general_relativity.parameters.output.dangular_momentum_dt.z + particle.wind.parameters.output.dangular_momentum_dt.z;
+
+            //// Compensated summation to improve the accuracy of additions that involve
+            //// one small and one large floating point number (already considered by IAS15)
+            ////      As cited by IAS15 paper: Kahan 1965; Higham 2002; Hairer et al. 2006
+            ////      https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+            //for &dangular_momentum_dt_to_be_added in [particle.tides.parameters.output.dangular_momentum_dt, particle.rotational_flattening.parameters.output.dangular_momentum_dt, particle.general_relativity.parameters.output.dangular_momentum_dt, particle.wind.parameters.output.dangular_momentum_dt].iter() {
+                //let corrected_dangular_momentum_dt_to_be_added = dangular_momentum_dt_to_be_added.x - dangular_momentum_dt_error.x;
+                //let added_dangular_momentum_dt = particle.dangular_momentum_dt.x + corrected_dangular_momentum_dt_to_be_added;
+                //dangular_momentum_dt_error.x = (added_dangular_momentum_dt - particle.dangular_momentum_dt.x) - corrected_dangular_momentum_dt_to_be_added;
+                //particle.dangular_momentum_dt.x = added_dangular_momentum_dt;
+                ////
+                //let corrected_dangular_momentum_dt_to_be_added = dangular_momentum_dt_to_be_added.y - dangular_momentum_dt_error.y;
+                //let added_dangular_momentum_dt = particle.dangular_momentum_dt.y + corrected_dangular_momentum_dt_to_be_added;
+                //dangular_momentum_dt_error.y = (added_dangular_momentum_dt - particle.dangular_momentum_dt.y) - corrected_dangular_momentum_dt_to_be_added;
+                //particle.dangular_momentum_dt.y = added_dangular_momentum_dt;
+                ////
+                //let corrected_dangular_momentum_dt_to_be_added = dangular_momentum_dt_to_be_added.z - dangular_momentum_dt_error.z;
+                //let added_dangular_momentum_dt = particle.dangular_momentum_dt.z + corrected_dangular_momentum_dt_to_be_added;
+                //dangular_momentum_dt_error.z = (added_dangular_momentum_dt - particle.dangular_momentum_dt.z) - corrected_dangular_momentum_dt_to_be_added;
+                //particle.dangular_momentum_dt.z = added_dangular_momentum_dt;
+            //}
         }
     }
 

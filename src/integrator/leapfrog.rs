@@ -4,7 +4,6 @@ use std::fs::File;
 use super::Integrator;
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
-use super::super::effects::WindEffect;
 use super::super::effects::EvolutionType;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
 use time;
@@ -142,8 +141,8 @@ impl Integrator for LeapFrog {
         if self.current_time != 0. {
             panic!("Physical values cannot be initialized on a resumed simulation");
         }
-        self.universe.calculate_norm_spin(); // Needed for evolution
-        self.universe.calculate_particles_evolving_quantities(self.current_time); // Make sure we start with the good initial values
+        let evolution = true;
+        self.universe.calculate_spin_and_evolving_quantities(self.current_time, evolution); // Make sure we start with the good initial values
         self.universe.calculate_roche_radiuses(); // Needed for collision detection
     }
 
@@ -173,9 +172,9 @@ impl Integrator for LeapFrog {
         self.universe.inertial_to_heliocentric();
         // Calculate non-gravity accelerations.
         let evolution = true;
-        let dangular_momentum_dt_per_moment_of_inertia = true;
+        let dangular_momentum_dt = true;
         let accelerations = false;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt, accelerations, ignored_gravity_terms);
 
 
         // A 'DKD'-like integrator will do the first 'D' part.
@@ -187,9 +186,9 @@ impl Integrator for LeapFrog {
 
         // Calculate non-gravity accelerations.
         let evolution = true;
-        let dangular_momentum_dt_per_moment_of_inertia = true;
+        let dangular_momentum_dt = true;
         let accelerations = true;
-        self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt_per_moment_of_inertia, accelerations, ignored_gravity_terms);
+        self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt, accelerations, ignored_gravity_terms);
         self.universe.apply_acceleration_corrections();
 
 
@@ -227,22 +226,10 @@ impl LeapFrog {
             particle.inertial_position.x += self.half_time_step * particle.inertial_velocity.x;
             particle.inertial_position.y += self.half_time_step * particle.inertial_velocity.y;
             particle.inertial_position.z += self.half_time_step * particle.inertial_velocity.z;
-
-            if particle.moment_of_inertia_ratio != 1. {
-                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.x;
-                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
-                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
-            } else {
-                particle.spin.x = particle.spin.x + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.x;
-                particle.spin.y = particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
-                particle.spin.z = particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
-            }
-            if particle.wind.effect != WindEffect::Disabled && particle.wind.parameters.output.factor != 0. {
-                // TODO: Verify wind factor
-                particle.spin.x += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.x;
-                particle.spin.y += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.y;
-                particle.spin.z += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.z;
-            }
+            //
+            particle.angular_momentum.x = particle.angular_momentum.x + particle.dangular_momentum_dt.x*self.half_time_step;
+            particle.angular_momentum.y = particle.angular_momentum.y + particle.dangular_momentum_dt.y*self.half_time_step;
+            particle.angular_momentum.z = particle.angular_momentum.z + particle.dangular_momentum_dt.z*self.half_time_step;
         }
         self.current_time += self.half_time_step;
     }
@@ -256,22 +243,10 @@ impl LeapFrog {
             particle.inertial_position.x += self.half_time_step * particle.inertial_velocity.x;
             particle.inertial_position.y += self.half_time_step * particle.inertial_velocity.y;
             particle.inertial_position.z += self.half_time_step * particle.inertial_velocity.z;
-
-            if particle.moment_of_inertia_ratio != 1. {
-                particle.spin.x = particle.moment_of_inertia_ratio * particle.spin.x + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.x;
-                particle.spin.y = particle.moment_of_inertia_ratio * particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
-                particle.spin.z = particle.moment_of_inertia_ratio * particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
-            } else {
-                particle.spin.x = particle.spin.x + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.x;
-                particle.spin.y = particle.spin.y + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.y;
-                particle.spin.z = particle.spin.z + self.half_time_step * particle.dangular_momentum_dt_per_moment_of_inertia.z;
-            }
-            if particle.wind.effect != WindEffect::Disabled && particle.wind.parameters.output.factor != 0. {
-                // TODO: Verify wind factor
-                particle.spin.x += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.x;
-                particle.spin.y += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.y;
-                particle.spin.z += self.half_time_step * particle.wind.parameters.output.factor * particle.spin.z;
-            }
+            //
+            particle.angular_momentum.x = particle.angular_momentum.x + particle.dangular_momentum_dt.x*self.half_time_step;
+            particle.angular_momentum.y = particle.angular_momentum.y + particle.dangular_momentum_dt.y*self.half_time_step;
+            particle.angular_momentum.z = particle.angular_momentum.z + particle.dangular_momentum_dt.z*self.half_time_step;
         }
         self.current_time += self.half_time_step;
     }
