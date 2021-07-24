@@ -23,6 +23,8 @@ pub const WHFAST_NMAX_NEWT : usize = 32;               // Maximum number of iter
 pub const DBL_EPSILON: f64 = 2.2204460492503131e-16; // https://en.wikipedia.org/wiki/Machine_epsilon
 pub const DBL_EPSILON_2 : f64 = DBL_EPSILON*DBL_EPSILON;
 
+///// Constants for WHFast
+pub const IMPLICIT_MIDPOINT_MAX_ITER : usize = 10;      // Maximum number of iterations for implicit midpoint integrator
 
 //// Physical constants
 pub const PI : f64 = std::f64::consts::PI;

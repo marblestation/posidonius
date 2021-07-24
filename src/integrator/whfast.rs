@@ -4,7 +4,7 @@ use std::io::{Write, BufWriter};
 use std::fs::File;
 use super::Integrator;
 use super::super::{Particle};
-use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES, G, DBL_EPSILON_2};
+use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES, G, DBL_EPSILON_2, IMPLICIT_MIDPOINT_MAX_ITER};
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::effects::GeneralRelativityImplementation;
@@ -322,7 +322,7 @@ impl WHFast {
         let mut inertial_additional_acceleration_changes: [Axes; MAX_PARTICLES] = [Axes{x:0., y:0., z:0.}; MAX_PARTICLES];
         let mut angular_momentum_changes: [Axes; MAX_PARTICLES] = [Axes{x:0., y:0., z:0.}; MAX_PARTICLES];
         let mut converged = false;
-        for i in 0..10 {
+        for i in 0..IMPLICIT_MIDPOINT_MAX_ITER {
             particles_prev = particles_final;
             // To calculate non-gravity/additional accelerations:
             // - Positions and velocities are needed in heliocentric
