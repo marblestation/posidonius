@@ -1,5 +1,5 @@
 use super::super::{Particle};
-use super::super::constants::{SUN_DYN_FREQ};
+use super::super::constants::{SUN_DYN_FREQ_2};
 use super::super::tools::{interpolate_b_spline};
 use super::super::{csv};
 use super::super::constants::{R_SUN, M2AU};
@@ -544,7 +544,7 @@ pub fn calculate_particles_spin_dependent_evolving_quantities(current_time: f64,
         particle.tides.parameters.internal.lag_angle = match evolver.evolution {
             EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
                     let inverse_tidal_q_factor = evolver.inverse_tidal_q_factor(current_time, 0.);
-                    let epsilon_squared = particle.norm_spin_vector_2/SUN_DYN_FREQ;
+                    let epsilon_squared = particle.norm_spin_vector_2/SUN_DYN_FREQ_2;
                     // Normal formula = 3.d0*epsilon_squared*Q_str_inv/(4.d0*k2s)
                     // but as for sigma it is necessary to divide by k2s, we do not divide here
                     let lag_angle = 3.0*epsilon_squared*inverse_tidal_q_factor/4.0;

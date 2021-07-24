@@ -60,7 +60,7 @@ pub const K2 : f64 = G_MERCURY;
 
 
 // Solar system
-pub const SUN_DYN_FREQ : f64 = K2/(R_SUN*R_SUN*R_SUN); // Needed for MathisSolarLike
+pub const SUN_DYN_FREQ_2 : f64 = K2/(R_SUN*R_SUN*R_SUN); // Needed for MathisSolarLike
 pub const SMOOTHING_FACTOR_DYN_TIDE_COROTATION : f64 = 1.0e-5*86400.; // smoothing factor from Bolmont and Mathis 2016 (rho in Eq.11). Here rho = 1e-5 s-1.
 
 // Boltzmann constant and mass of an hydrogen atom from CODATA 2017
