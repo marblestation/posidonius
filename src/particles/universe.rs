@@ -119,6 +119,41 @@ impl Universe {
             particles_evolvers.push(Evolver::new(EvolutionType::NonEvolving, initial_time, time_limit));
         }
 
+        if consider_effects.evolution {
+            // Check if moment of inertia and angular momentum needs to be recomputed to match the 
+            // proper state of the selected evolving body model (i.e., initial radius and radius of
+            // gyration are good given the initial time)
+            for (particle, evolver) in transformed_particles.iter_mut().zip(particles_evolvers.iter_mut()) {
+                if EvolutionType::NonEvolving == particle.evolution {
+                    continue;
+                }
+                let mut update_angular_momentum = false;
+                let current_time = 0.;
+                let new_radius = evolver.radius(current_time, particle.radius);
+                if (new_radius - particle.radius).abs() > 1e-6 {
+                    println!("[WARNING {} UTC] Changed radius value from '{:.6}' to '{:.6}' to match expected state following the selected evolving body model", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), particle.radius, new_radius);
+                    // Round to minimize incoherence with rust interpolation which lead to slightly different result,
+                    // which gets amplified when updating angular momentum and makes tests fail
+                    particle.radius = math::round::half_up(new_radius, 4);
+                    update_angular_momentum = true;
+                }
+                let new_radius_of_gyration_2 = evolver.radius_of_gyration_2(current_time, particle.radius_of_gyration_2);
+                if (new_radius_of_gyration_2 - particle.radius_of_gyration_2).abs() > 1e-6 {
+                    println!("[WARNING {} UTC] Changed radius of gyration value from '{:.6}' to '{:.6}' to match expected state following the selected evolving body model", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), particle.radius_of_gyration_2.sqrt(), new_radius_of_gyration_2.sqrt());
+                    // Round to minimize incoherence with rust interpolation which lead to slightly different result,
+                    // which gets amplified when updating angular momentum and makes tests fail
+                    particle.radius_of_gyration_2 = math::round::half_up(new_radius_of_gyration_2, 4);
+                    update_angular_momentum = true;
+                }
+                if update_angular_momentum {
+                    println!("[WARNING {} UTC] Recomputed moment of inertia and angular momentum to match expected state following the selected evolving body model", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                    particle.moment_of_inertia = particle.mass * particle.radius_of_gyration_2 * particle.radius.powi(2);
+                    particle.angular_momentum.x = particle.spin.x * particle.moment_of_inertia;
+                    particle.angular_momentum.y = particle.spin.y * particle.moment_of_inertia;
+                    particle.angular_momentum.z = particle.spin.z * particle.moment_of_inertia;
+                }
+            }
+        }
 
         let roche_radiuses : [[f64; MAX_PARTICLES]; MAX_PARTICLES] = [[0.; MAX_PARTICLES]; MAX_PARTICLES];
 

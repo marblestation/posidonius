@@ -340,7 +340,7 @@
         "angular_momentum": {
           "x": 0.0,
           "y": -0.0,
-          "z": 6.657051699614265e-07
+          "z": 2.7547874151327008e-08
         },
         "dangular_momentum_dt": {
           "x": 0.0,
@@ -455,9 +455,9 @@
         },
         "mass": 0.1,
         "mass_g": 2.949276532633868e-05,
-        "moment_of_inertia": 3.090216162868081e-07,
+        "moment_of_inertia": 1.2787776000000005e-08,
         "norm_spin_vector_2": 4.6407282734918125,
-        "radius": 0.003932664580378116,
+        "radius": 0.0008,
         "radius_of_gyration_2": 0.19980900000000001,
         "reference": "MostMassiveParticle",
         "rotational_flattening": {
@@ -811,8 +811,8 @@
       {
         "angular_momentum": {
           "x": 0.0,
-          "y": -3.721622909109986e-16,
-          "z": 1.2596957010671278e-15
+          "y": -3.1658268755334827e-16,
+          "z": 1.0715697433155625e-15
         },
         "dangular_momentum_dt": {
           "x": 0.0,
@@ -925,10 +925,10 @@
         },
         "mass": 2.8533151165069627e-09,
         "mass_g": 8.415215313323456e-13,
-        "moment_of_inertia": 2.0905339711969237e-16,
+        "moment_of_inertia": 1.7783286463629647e-16,
         "norm_spin_vector_2": 39.47841760435744,
-        "radius": 0.0005370604971734809,
-        "radius_of_gyration_2": 0.254016,
+        "radius": 0.0005,
+        "radius_of_gyration_2": 0.2493,
         "reference": "MostMassiveParticle",
         "rotational_flattening": {
           "coordinates": {

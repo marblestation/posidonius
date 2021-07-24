@@ -2,6 +2,7 @@ import os
 import six
 import math
 import datetime
+import scipy.interpolate
 from posidonius.particles.axes import Axes
 from posidonius.integrator import WHFast, Ias15, LeapFrog
 from posidonius.constants import *
@@ -138,14 +139,22 @@ class Universe(object):
             update_angular_momentum = False
             current_time = 0
             if len(evolver.get("radius", [])) > 0:
-                radius = np.interp(current_time, evolver['time'], evolver['radius'])
-                if radius - particle._data["radius"] > 1e-6:
+                # Scipy's spline interpolation of first order is the closest to current rust spline interpolation implementation
+                radius = float(scipy.interpolate.interp1d(evolver['time'], evolver['radius'], kind='slinear', bounds_error=False, fill_value=(evolver['radius'][0], evolver['radius'][-1]))(current_time))
+                # Round to minimize incoherence with rust interpolation which lead to slightly different result,
+                # which gets amplified when updating angular momentum and makes tests fail
+                radius = round(radius, 4)
+                if abs(radius - particle._data["radius"]) > 1e-6:
                     print("[WARNING {} UTC] Changed radius value from '{:.6f}' to '{:.6f}' to match expected state following the selected evolving body model".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S"), particle._data["radius"], radius))
                     particle._data["radius"] = radius
                     update_angular_momentum = True
             if len(evolver.get("radius_of_gyration_2", [])) > 0:
-                radius_of_gyration_2 = np.interp(current_time, evolver['time'], evolver['radius_of_gyration_2'])
-                if radius_of_gyration_2 - particle._data["radius_of_gyration_2"] > 1e-6:
+                # Scipy's spline interpolation of first order is the closest to current rust spline interpolation implementation
+                radius_of_gyration_2 = float(scipy.interpolate.interp1d(evolver['time'], evolver['radius_of_gyration_2'], kind='slinear', bounds_error=False, fill_value=(evolver['radius'][0], evolver['radius'][-1]))(current_time))
+                # Round to minimize incoherence with rust interpolation which lead to slightly different result,
+                # which gets amplified when updating angular momentum and makes tests fail
+                radius_of_gyration_2 = round(radius_of_gyration_2, 4)
+                if abs(radius_of_gyration_2 - particle._data["radius_of_gyration_2"]) > 1e-6:
                     print("[WARNING {} UTC] Changed radius of gyration value from '{:.6f}' to '{:.6f}' to match expected state following the selected evolving body model".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S"), math.sqrt(particle._data["radius_of_gyration_2"]), math.sqrt(radius_of_gyration_2)))
                     particle._data["radius_of_gyration_2"] = radius_of_gyration_2
                     update_angular_momentum = True
