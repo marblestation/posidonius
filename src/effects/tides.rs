@@ -321,7 +321,7 @@ fn calculate_orthogonal_component_of_the_tidal_force_for(central_body:bool, tida
                 //   and not k2$\Delta$t (between k2$\Delta$t and sigma 
                 //   there is a R**5 factor as shown in Equation 28)
                 //   - k2 is love number
-                let star_scaled_dissipation_factor = planet_dependent_dissipation_factor(&star_planet_dependent_dissipation_factors, &tidal_host_particle.id, tidal_host_particle.evolution, tidal_host_particle.tides.parameters.internal.scaled_dissipation_factor);
+                let star_scaled_dissipation_factor = planet_dependent_dissipation_factor(&star_planet_dependent_dissipation_factors, &particle.id, tidal_host_particle.evolution, tidal_host_particle.tides.parameters.internal.scaled_dissipation_factor);
                 particle.tides.parameters.internal.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass.powi(2))
                                                 * (tidal_host_particle.radius.powi(10)) 
                                                 * star_scaled_dissipation_factor / distance_7;
