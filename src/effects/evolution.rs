@@ -1,6 +1,6 @@
 use super::super::{Particle};
 use super::super::constants::{SUN_DYN_FREQ_2};
-use super::super::tools::{interpolate_b_spline};
+use super::super::tools::{linear_interpolation};
 use super::super::{csv};
 use super::super::constants::{R_SUN, M2AU};
 
@@ -415,7 +415,7 @@ impl Evolver {
             // Interpolate the radius of gyration to match the same time sampling shared by other parameters (e.g., radius)
             let precision = 7;
             for current_time in time.iter() {
-                let (current_radius_of_gyration_2, _) = interpolate_b_spline(&aux_time, &aux_radius_of_gyration_2, *current_time);
+                let (current_radius_of_gyration_2, _) = linear_interpolation(*current_time, &aux_time, &aux_radius_of_gyration_2);
                 radius_of_gyration_2.push(math::round::half_up(current_radius_of_gyration_2, precision));
                 //println!("Rg2 {} {}", current_time, current_radius_of_gyration_2);
             }
@@ -456,7 +456,7 @@ impl Evolver {
     pub fn radius(&mut self, current_time: f64, current_radius: f64) -> f64 {
         let (new_radius, left_index) = match self.evolution {
             EvolutionType::NonEvolving => { (current_radius, 0) },
-            _ => { interpolate_b_spline(&self.time[self.idx()..], &self.radius[self.idx()..], current_time) }
+            _ => { linear_interpolation(current_time, &self.time[self.idx()..], &self.radius[self.idx()..]) }
         };
         self.left_index += left_index;
         return new_radius;
@@ -464,9 +464,9 @@ impl Evolver {
 
     pub fn radius_of_gyration_2(&mut self, current_time: f64, current_radius_of_gyration_2: f64) -> f64 {
         let (new_radius_of_gyration_2, left_index) = match self.evolution {
-            EvolutionType::Baraffe2015(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
-            EvolutionType::Leconte2011(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
-            EvolutionType::LeconteChabrier2013(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..], current_time) },
+            EvolutionType::Baraffe2015(_) => { linear_interpolation(current_time, &self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..]) },
+            EvolutionType::Leconte2011(_) => { linear_interpolation(current_time, &self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..]) },
+            EvolutionType::LeconteChabrier2013(_) => { linear_interpolation(current_time, &self.time[self.idx()..], &self.radius_of_gyration_2[self.idx()..]) },
             _ => { (current_radius_of_gyration_2, 0) }
         };
         self.left_index += left_index;
@@ -475,7 +475,7 @@ impl Evolver {
 
     pub fn love_number(&mut self, current_time: f64, current_love_number: f64) -> f64 {
         let (new_love_number, left_index) = match self.evolution {
-            EvolutionType::LeconteChabrier2013(_) => { interpolate_b_spline(&self.time[self.idx()..], &self.love_number[self.idx()..], current_time) },
+            EvolutionType::LeconteChabrier2013(_) => { linear_interpolation(current_time, &self.time[self.idx()..], &self.love_number[self.idx()..]) },
             _ => { (current_love_number, 0) }
         };
         self.left_index += left_index;
@@ -502,7 +502,7 @@ impl Evolver {
         // included in future versions of this code.
         let (new_inverse_tidal_q_factor, left_index) = match self.evolution {
             EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
-                interpolate_b_spline(&self.time[self.idx()..], &self.inverse_tidal_q_factor[self.idx()..], current_time)
+                linear_interpolation(current_time, &self.time[self.idx()..], &self.inverse_tidal_q_factor[self.idx()..])
             },
             _ => (current_inverse_tidal_q_factor, 0),
         };

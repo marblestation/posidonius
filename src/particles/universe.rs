@@ -132,17 +132,13 @@ impl Universe {
                 let new_radius = evolver.radius(current_time, particle.radius);
                 if (new_radius - particle.radius).abs() > 1e-6 {
                     println!("[WARNING {} UTC] Changed radius value from '{:.6}' to '{:.6}' to match expected state following the selected evolving body model", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), particle.radius, new_radius);
-                    // Round to minimize incoherence with rust interpolation which lead to slightly different result,
-                    // which gets amplified when updating angular momentum and makes tests fail
-                    particle.radius = math::round::half_up(new_radius, 4);
+                    particle.radius = new_radius;
                     update_angular_momentum = true;
                 }
                 let new_radius_of_gyration_2 = evolver.radius_of_gyration_2(current_time, particle.radius_of_gyration_2);
                 if (new_radius_of_gyration_2 - particle.radius_of_gyration_2).abs() > 1e-6 {
                     println!("[WARNING {} UTC] Changed radius of gyration value from '{:.6}' to '{:.6}' to match expected state following the selected evolving body model", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), particle.radius_of_gyration_2.sqrt(), new_radius_of_gyration_2.sqrt());
-                    // Round to minimize incoherence with rust interpolation which lead to slightly different result,
-                    // which gets amplified when updating angular momentum and makes tests fail
-                    particle.radius_of_gyration_2 = math::round::half_up(new_radius_of_gyration_2, 4);
+                    particle.radius_of_gyration_2 = new_radius_of_gyration_2;
                     update_angular_momentum = true;
                 }
                 if update_angular_momentum {

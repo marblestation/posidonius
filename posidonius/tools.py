@@ -3,6 +3,50 @@ import numpy as np
 from posidonius.constants import *
 from posidonius.particles.axes import Axes
 
+def _find_indices_around_target_value(target_x, x):
+    positions = np.where(x >= np.asarray(target_x))[0]
+    if len(positions) > 0:
+        right = positions[0]
+        if right > 0:
+            left = right - 1
+        else:
+            left = right
+    else:
+        left = len(x) - 1
+        right = left
+    return left, right
+
+def linear_interpolation(target_x, x, y):
+    """Linear interpolation"""
+    # Find index
+    left, right = _find_indices_around_target_value(target_x, x)
+    if left == right:
+        # Target value out of range, use limit values
+        target_y = y[left]
+    else:
+        ### Interpolate
+        ## Linear
+        #target_y = (y[left] * (x[right] - target_x) + y[right] * (target_x - x[left])) / (x[right] - x[left])
+        ## Linear (alternative)
+        target_percent = (target_x - x[left])/(x[right] - x[left]) # Transform target to percent as in transforming x[left]..x[right] to 0..1
+        target_y = y[left] * (1. - target_percent) + y[right] * target_percent
+    return target_y
+
+def cosine_interpolation(target_x, x, y):
+    """Cosine interpolation"""
+    # Find index
+    left, right = _find_indices_around_target_value(target_x, x)
+    if left == right:
+        # Target value out of range, use limit values
+        target_y = y[left]
+    else:
+        ### Interpolate
+        ## Cosine interpolate (http://paulbourke.net/miscellaneous/interpolation/)
+        # - Smooth around the real data points (contrary to the linear interpolation)
+        target_percent = (target_x - x[left])/(x[right] - x[left]) # Transform target to percent as in transforming x[left]..x[right] to 0..1
+        target_percent = (1. - math.cos(target_percent*PI)) / 2. # Transform target percent so that it gets smoothed when close to 0 or 1 (i.e., closer to x[left] or x[right])
+        target_y = y[left] * (1. - target_percent) + y[right] * target_percent
+    return target_y
 
 
 def calculate_center_of_mass(masses, positions, velocities):

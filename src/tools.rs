@@ -725,83 +725,48 @@ fn modulus(a: f64, b: f64) -> f64 {
     return a - (a / b).floor() * b;
 }
 
-pub fn interpolate_b_spline(tdata: &[f64], ydata: &[f64], tval: f64) -> (f64, usize) {
-    //// OPTIMIZATION: Return last left to reduce future searches
-    // Based on: 
-    //
-    //    SPLINE_B_VAL evaluates a cubic B spline approximant.
-    //
-    //  Discussion:
-    //
-    //    The cubic B spline will approximate the data, but is not
-    //    designed to interpolate it.
-    //
-    //    In effect, two "phantom" data values are appended to the data,
-    //    so that the spline will interpolate the first and last data values.
-    //
-    //  Licensing:
-    //
-    //    This code is distributed under the GNU LGPL license.
-    //
-    //  Modified:
-    //
-    //    14 August 2005
-    //
-    //  Author:
-    //
-    //    John Burkardt
-    //
-    //  Reference:
-    //
-    //    Carl de Boor,
-    //    A Practical Guide to Splines,
-    //    Springer Verlag, 1978.
-
-    let mut yval : f64 = 0.;
+pub fn linear_interpolation(target_x: f64, x: &[f64], y: &[f64]) -> (f64, usize) {
+    let target_y : f64;
     
-    // Find the nearest interval [ TDATA(LEFT), TDATA(RIGHT) ] to TVAL.
-    let (left, right) = find_indices_around_target_value(&tdata, tval);
+    // Find the nearest interval [ x(LEFT), x(RIGHT) ] to target_x.
+    let (left, right) = find_indices_around_target_value(&x, target_x);
 
     if left == right {
         // Target value out of range, use limit values
-        yval = ydata[left];
+        target_y = y[left];
     } else {
-        // Evaluate the 5 nonzero B spline basis functions in the interval,
-        // weighted by their corresponding data values.
-        let u = (tval - tdata[left]) / (tdata[right] - tdata[left]);
-        
-        // B function associated with node LEFT - 1, (or "phantom node"),
-        // evaluated in its 4th interval.
-        let bval = ( 1.0 - 3.0 * u + 3.0 * u.powi(2) - u.powi(3) ) / 6.0;
-        if left > 0 {
-           yval = yval + ydata[left - 1] * bval;
-        } else {
-           yval = yval + ( 2.0 * ydata[0] - ydata[1] ) * bval;
-        }
-        
-        // B function associated with node LEFT,
-        // evaluated in its third interval.
-        let bval = ( 4.0 - 6.0 * u.powi(2) + 3.0 * u.powi(3) ) / 6.0;
-        yval = yval + ydata[left] * bval;
-        
-        // B function associated with node RIGHT,
-        // evaluated in its second interval.
-        let bval = ( 1.0 + 3.0 * u + 3.0 * u.powi(2) - 3.0 * u.powi(3) ) / 6.0;
-        yval = yval + ydata[right] * bval;
-        
-        // B function associated with node RIGHT+1, (or "phantom node"),
-        // evaluated in its first interval.
-        let bval = u.powi(3) / 6.0;
-        let ndata = ydata.len();
-        if right + 1 < ndata {
-           yval = yval + ydata[right + 1] * bval;
-        } else if ndata >= 2 {
-           yval = yval + ( 2.0 * ydata[ndata - 1] - ydata[ndata - 2] ) * bval;
-        }
-
+        //// Interpolate
+        // Linear
+        //target_y = (y[left] * (x[right] - target_x) + y[right] * (target_x - x[left])) / (x[right] - x[left])
+        // Linear (alternative)
+        let x_left = x[left];
+        let target_percent = (target_x - x_left)/(x[right] - x_left); // Transform target to percent as in transforming x[left]..x[right] to 0..1
+        target_y = y[left] * (1. - target_percent) + y[right] * target_percent;
     }
 
-    return (yval, left);
+    return (target_y, left);
+}
+
+pub fn cosine_interpolation(target_x: f64, x: &[f64], y: &[f64]) -> (f64, usize) {
+    let target_y : f64;
+    
+    // Find the nearest interval [ x(LEFT), x(RIGHT) ] to target_x.
+    let (left, right) = find_indices_around_target_value(&x, target_x);
+
+    if left == right {
+        // Target value out of range, use limit values
+        target_y = y[left];
+    } else {
+        //// Interpolate
+        // Cosine interpolate (http://paulbourke.net/miscellaneous/interpolation/)
+        // - Smooth around the real data points (contrary to the linear interpolation)
+        let x_left = x[left];
+        let mut target_percent = (target_x - x_left)/(x[right] - x_left); // Transform target to percent as in transforming x[left]..x[right] to 0..1
+        target_percent = (1. - (target_percent*PI).cos()) / 2.; // Transform target percent so that it gets smoothed when close to 0 or 1 (i.e., closer to x[left] or x[right])
+        target_y = y[left] * (1. - target_percent) + y[right] * target_percent;
+    }
+
+    return (target_y, left);
 }
 
 fn find_indices_around_target_value(data: &[f64], target_value: f64) -> (usize, usize) {
