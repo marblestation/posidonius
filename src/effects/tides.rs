@@ -203,16 +203,26 @@ pub fn calculate_planet_dependent_dissipation_factors(tidal_host_particle: &mut 
                     let (perihelion_distance, eccentricity) = tools::calculate_perihelion_distance_and_eccentricity(gm, particle.tides.coordinates.position, particle.tides.coordinates.velocity);
                     let mean_motion = gm.sqrt() * (perihelion_distance/(1.0 - eccentricity)).powf(-1.5);
                     let mut half_the_excitation_frequency = (star_norm_spin_vector - mean_motion).abs();
-                    if half_the_excitation_frequency < SMOOTHING_FACTOR_DYN_TIDE_COROTATION {
-                        half_the_excitation_frequency = SMOOTHING_FACTOR_DYN_TIDE_COROTATION;
+                    // If the dynamical tide is excited, compute the planet-dependent stellar dissipation
+                    // If the dynamical tide is not excited (i.e., equilibrium tide), do nothing since the default value corresponds to the planet scaled dissipation factor
+                    if half_the_excitation_frequency < star_norm_spin_vector { 
+                        // The dynamical tide is excited
+                        if half_the_excitation_frequency < SMOOTHING_FACTOR_DYN_TIDE_COROTATION {
+                            half_the_excitation_frequency = SMOOTHING_FACTOR_DYN_TIDE_COROTATION;
+                        }
+                        let inverse_of_half_the_excitation_frequency = 1./half_the_excitation_frequency;
+
+                        // Eq. 4 and Eq.10 of Bolmont & Mathis have a typo, see page 5 of Gallet &
+                        // Bolmont 2017. The lag angle has a 1/k2, but here we should *k2, that is why
+                        // k2 does not appear here
+                        // We add here the dissipation from the equilibrium tide to the dynamical tide one
+                        let planet_dependent_dissipation_factor = tidal_host_particle.tides.parameters.input.dissipation_factor_scale 
+                            * (2.0 * K2 / (3.0*tidal_host_particle.radius.powi(5))
+                            * tidal_host_particle.tides.parameters.internal.lag_angle * inverse_of_half_the_excitation_frequency
+                            + tidal_host_particle.tides.parameters.input.dissipation_factor);
+
+                        star_planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
                     }
-                    let inverse_of_half_the_excitation_frequency = 1./half_the_excitation_frequency;
-
-                    let planet_dependent_dissipation_factor = tidal_host_particle.tides.parameters.input.dissipation_factor_scale * 2.0 * K2
-                        * tidal_host_particle.tides.parameters.internal.lag_angle * inverse_of_half_the_excitation_frequency / (3.0*tidal_host_particle.radius.powi(5));
-
-                    star_planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
-                    //println!("Insert {} in {}", planet_dependent_dissipation_factor, particle.id);
                 }
             }
             //panic!("Please, contact Posidonius authors before using BolmontMathis2016/GalletBolmont2017/LeconteChabrier2013(true) evolutionary models. They may not be ready yet for scientific explotation.")
