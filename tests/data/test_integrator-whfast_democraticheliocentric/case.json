@@ -33689,7 +33689,7 @@
   ],
   "alternative_coordinates_type": "DemocraticHeliocentric",
   "timestep_warning": 0,
-  "inertial_additional_acceleration_errors": [
+  "inertial_velocity_errors": [
     {
       "x": 0.0,
       "y": 0.0,

@@ -5,7 +5,7 @@
   "half_time_step": 0.04,
   "hash": 0,
   "historic_snapshot_period": 36525.0,
-  "inertial_additional_acceleration_errors": [
+  "inertial_velocity_errors": [
     {
       "x": 0.0,
       "y": 0.0,
