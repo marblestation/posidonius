@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # M: Mean anomaly (degrees)
     # q: periastron or perihelion (AU)
     # Q: apastron or aphelion (AU)
-    t, a, e, g, n, M, q, Q = posidonius.analysis.resonances.calculate_resonance_data(planets_keys, planets_data)
+    t, a, e, g, n, M, q, Q = posidonius.analysis.resonances.calculate_resonance_data(star_data, planets_keys, planets_data)
 
     inner_planet = args.inner_planet
     outer_planet = args.outer_planet
@@ -156,7 +156,7 @@ if __name__ == "__main__":
       plot_phi = fig.add_subplot(nb_lines, nb_rows, subplot_index, sharex=plot_period)
       plot_phi.plot(t, phi[i], '.')
       plot_phi.set_xlabel("time [years]")
-      plot_phi.set_ylabel(unicode("phi %i" % i, 'utf8'))
+      plot_phi.set_ylabel("phi %i" % i)
       plot_phi.grid(True)
 
     plot_period.xaxis.set_major_formatter(myxfmt)

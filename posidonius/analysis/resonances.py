@@ -3,7 +3,10 @@ Based on a script developed by Dr. Christophe Cossou
 """
 import numpy as np
 from fractions import Fraction
+import posidonius
+from posidonius.tools import calculate_keplerian_orbital_elements
 from posidonius.constants import RAD2DEG
+from posidonius.particles.axes import Axes
 
 #-------------------------------------------------------------------------------
 # Resonances
@@ -135,7 +138,7 @@ def is_resonance(res, g_inner, n_inner, M_inner, g_outer, n_outer, M_outer, nb_p
     else:
         return False
 
-def calculate_resonance_data(planets_keys, planets_data):
+def calculate_resonance_data(star_data, planets_keys, planets_data):
     # We initialize the arrays
     t = [] # time in years
     a = [] # demi-grand axe en ua
@@ -148,19 +151,23 @@ def calculate_resonance_data(planets_keys, planets_data):
 
     for key in planets_keys:
         planet_data = planets_data[key]
+        target_mass = star_data['mass'] + planet_data['mass']
+        target_position = Axes(planet_data['position_x'], planet_data['position_y'], planet_data['position_z'])
+        target_velocity = Axes(planet_data['velocity_x'], planet_data['velocity_y'], planet_data['velocity_z'])
+        _a, _q, _e, _i, _p, _n, _l = calculate_keplerian_orbital_elements(target_mass, target_position, target_velocity)
         t.append(planet_data['current_time']) # Years
-        a.append(planet_data['semi-major_axis']) # AU
-        e.append(planet_data['eccentricity'])
+        a.append(_a) # AU
+        e.append(_e)
         # Change from longitude of perihelion to argument of perihelion
-        longitude_of_perihelion_degrees = (planet_data['longitude_of_perihelion'] * RAD2DEG) % 360.
-        longitude_of_ascending_node_degrees = (planet_data['longitude_of_ascending_node'] * RAD2DEG) % 360.
+        longitude_of_perihelion_degrees = (_p * RAD2DEG) % 360.
+        longitude_of_ascending_node_degrees = (_p * RAD2DEG) % 360.
         g.append((longitude_of_perihelion_degrees - longitude_of_ascending_node_degrees) % 360.)
         n.append(longitude_of_ascending_node_degrees)
-        M.append((planet_data['mean_anomaly'] * RAD2DEG) % 360.)
+        M.append((_l * RAD2DEG) % 360.)
         #q.append(planet_data['perihelion_distance'])
         #Q.append(planet_data['semi-major_axis']*2 - planet_data['perihelion_distance'])
-        q.append(planet_data['semi-major_axis'] * (1 - planet_data['eccentricity']))
-        Q.append(planet_data['semi-major_axis'] * (1 + planet_data['eccentricity']))
+        q.append(_a * (1 - _e))
+        Q.append(_a * (1 + _e))
     return t, a, e, g, n, M, q, Q
 
 def get_subplot_shape(number_of_plots):

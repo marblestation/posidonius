@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # M: Mean anomaly (degrees)
     # q: periastron or perihelion (AU)
     # Q: apastron or aphelion (AU)
-    t, a, e, g, n, M, q, Q = posidonius.analysis.resonances.calculate_resonance_data(planets_keys, planets_data)
+    t, a, e, g, n, M, q, Q = posidonius.analysis.resonances.calculate_resonance_data(star_data, planets_keys, planets_data)
     max_lengths = len(t[0])
 
     # If the user require more measurement than timestep available, we force to have nb_measurements equal the number of timestep
