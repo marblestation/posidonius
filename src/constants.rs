@@ -24,6 +24,7 @@ pub const DBL_EPSILON: f64 = 2.2204460492503131e-16; // https://en.wikipedia.org
 pub const DBL_EPSILON_2 : f64 = DBL_EPSILON*DBL_EPSILON;
 
 ///// Constants for WHFast
+pub const IMPLICIT_MIDPOINT_MIN_ITER : usize = 3;       // Minimum number of iterations for implicit midpoint integrator
 pub const IMPLICIT_MIDPOINT_MAX_ITER : usize = 10;      // Maximum number of iterations for implicit midpoint integrator
 
 //// Physical constants

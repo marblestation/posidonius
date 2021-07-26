@@ -364,8 +364,9 @@ impl WHFast {
                     particle_final.angular_momentum.z = particle_orig.angular_momentum.z + angular_momentum_change.z;
                 }
             }
-            // Compare final with previous velocity/spin
-            if self.converged_velocity_dependent_forces_integration(&particles_final, &particles_prev, integrate_spin) {
+            // Compare final with previous velocity/spin but make sure there is a minimum of
+            // iterations first to guarantee a minimum precision independent of the time step
+            if i >= IMPLICIT_MIDPOINT_MIN_ITER-1 && self.converged_velocity_dependent_forces_integration(&particles_final, &particles_prev, integrate_spin) {
                 converged = true;
                 break;
             }
