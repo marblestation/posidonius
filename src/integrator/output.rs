@@ -104,7 +104,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         particle.inertial_position.x,       // AU
                         particle.inertial_position.y,
                         particle.inertial_position.z,
-                        particle.spin.x,                        // AU/days
+                        particle.spin.x,
                         particle.spin.y,
                         particle.spin.z,
                         particle.inertial_velocity.x,       // AU/days

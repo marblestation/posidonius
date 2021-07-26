@@ -153,6 +153,8 @@ impl Integrator for LeapFrog {
         let recovery_snapshot_time_trigger = self.last_recovery_snapshot_time + self.recovery_snapshot_period <= self.current_time;
         if first_snapshot_trigger || historic_snapshot_time_trigger {
             self.universe.inertial_to_heliocentric();
+            let evolution = true;
+            self.universe.calculate_spin_and_evolving_quantities(self.current_time, evolution);
             if self.universe.consider_effects.tides {
                 self.universe.calculate_denergy_dt();
             }
