@@ -4,7 +4,7 @@ use std::io::{Write, BufWriter};
 use std::fs::File;
 use super::Integrator;
 use super::super::{Particle};
-use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES, G, DBL_EPSILON_2, IMPLICIT_MIDPOINT_MAX_ITER};
+use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES, G, DBL_EPSILON_2, IMPLICIT_MIDPOINT_MIN_ITER, IMPLICIT_MIDPOINT_MAX_ITER};
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::effects::GeneralRelativityImplementation;
@@ -109,7 +109,7 @@ pub struct WHFast {
     particles_alternative_coordinates: [AlternativeCoordinates; MAX_PARTICLES], // Jacobi, democractic-heliocentric or WHDS
     alternative_coordinates_type: CoordinatesType,
     timestep_warning: usize ,
-    inertial_additional_acceleration_errors: [Axes; MAX_PARTICLES], // A running compensation for lost low-order bits (Kahan 1965; Higham 2002; Hairer et al. 2006) 
+    inertial_velocity_errors: [Axes; MAX_PARTICLES], // A running compensation for lost low-order bits (Kahan 1965; Higham 2002; Hairer et al. 2006) 
     particle_angular_momentum_errors: [Axes; MAX_PARTICLES], // A running compensation for lost low-order bits (Kahan 1965; Higham 2002; Hairer et al. 2006) 
 }
 
@@ -152,7 +152,7 @@ impl WHFast {
                     particles_alternative_coordinates: particles_alternative_coordinates,
                     alternative_coordinates_type: alternative_coordinates_type,
                     timestep_warning: 0,
-                    inertial_additional_acceleration_errors: [Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
+                    inertial_velocity_errors: [Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
                     particle_angular_momentum_errors: [Axes{x:0., y:0., z:0. }; MAX_PARTICLES],
                     };
         universe_integrator
@@ -321,7 +321,7 @@ impl WHFast {
         let mut particles_orig = self.universe.particles.clone();
         let mut particles_final: [Particle; MAX_PARTICLES] = particles_orig;
         let mut particles_prev: [Particle; MAX_PARTICLES];
-        let mut inertial_additional_acceleration_changes: [Axes; MAX_PARTICLES] = [Axes{x:0., y:0., z:0.}; MAX_PARTICLES];
+        let mut inertial_velocity_changes: [Axes; MAX_PARTICLES] = [Axes{x:0., y:0., z:0.}; MAX_PARTICLES];
         let mut angular_momentum_changes: [Axes; MAX_PARTICLES] = [Axes{x:0., y:0., z:0.}; MAX_PARTICLES];
         let mut converged = false;
         for i in 0..IMPLICIT_MIDPOINT_MAX_ITER {
@@ -338,18 +338,18 @@ impl WHFast {
                 self.universe.calculate_additional_effects(self.current_time, evolution, dangular_momentum_dt, accelerations, ignored_gravity_terms); // changes inertial accelerations
             }
             // Compute final velocity/spin angular momentum
-            for ((((((particle_avg, particle_orig), particle_final), inertial_additional_acceleration_error), angular_momentum_error), inertial_additional_acceleration_change), angular_momentum_change) in self.universe.particles[..self.universe.n_particles].iter().zip(particles_orig[..self.universe.n_particles].iter_mut()).zip(particles_final[..self.universe.n_particles].iter_mut()).zip(self.inertial_additional_acceleration_errors[..self.universe.n_particles].iter()).zip(self.particle_angular_momentum_errors[..self.universe.n_particles].iter()).zip(inertial_additional_acceleration_changes[..self.universe.n_particles].iter_mut()).zip(angular_momentum_changes[..self.universe.n_particles].iter_mut()) {
+            for ((((((particle_avg, particle_orig), particle_final), inertial_velocity_error), angular_momentum_error), inertial_velocity_change), angular_momentum_change) in self.universe.particles[..self.universe.n_particles].iter().zip(particles_orig[..self.universe.n_particles].iter_mut()).zip(particles_final[..self.universe.n_particles].iter_mut()).zip(self.inertial_velocity_errors[..self.universe.n_particles].iter()).zip(self.particle_angular_momentum_errors[..self.universe.n_particles].iter()).zip(inertial_velocity_changes[..self.universe.n_particles].iter_mut()).zip(angular_momentum_changes[..self.universe.n_particles].iter_mut()) {
                 // Compensated summation to improve the accuracy of additions that involve
                 // one small and one large floating point number (already considered by IAS15)
                 //      As cited by IAS15 paper: Kahan 1965; Higham 2002; Hairer et al. 2006
                 //      https://en.wikipedia.org/wiki/Kahan_summation_algorithm
-                inertial_additional_acceleration_change.x = _dt * particle_avg.inertial_additional_acceleration.x - inertial_additional_acceleration_error.x;
-                inertial_additional_acceleration_change.y = _dt * particle_avg.inertial_additional_acceleration.y - inertial_additional_acceleration_error.y;
-                inertial_additional_acceleration_change.z = _dt * particle_avg.inertial_additional_acceleration.z - inertial_additional_acceleration_error.z;
+                inertial_velocity_change.x = _dt * particle_avg.inertial_additional_acceleration.x - inertial_velocity_error.x;
+                inertial_velocity_change.y = _dt * particle_avg.inertial_additional_acceleration.y - inertial_velocity_error.y;
+                inertial_velocity_change.z = _dt * particle_avg.inertial_additional_acceleration.z - inertial_velocity_error.z;
                 //
-                particle_final.inertial_velocity.x = particle_orig.inertial_velocity.x + inertial_additional_acceleration_change.x;
-                particle_final.inertial_velocity.y = particle_orig.inertial_velocity.y + inertial_additional_acceleration_change.y;
-                particle_final.inertial_velocity.z = particle_orig.inertial_velocity.z + inertial_additional_acceleration_change.z;
+                particle_final.inertial_velocity.x = particle_orig.inertial_velocity.x + inertial_velocity_change.x;
+                particle_final.inertial_velocity.y = particle_orig.inertial_velocity.y + inertial_velocity_change.y;
+                particle_final.inertial_velocity.z = particle_orig.inertial_velocity.z + inertial_velocity_change.z;
                 if integrate_spin {
                     // Compensated summation to improve the accuracy of additions that involve
                     // one small and one large floating point number (already considered by IAS15)
@@ -377,12 +377,20 @@ impl WHFast {
             println!("[WARNING {} UTC] WHFast convergence issue with the integration of the additional forces. Most probably the perturbation is too strong.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
         }
         // 
-        for ((((particle, particle_final), particle_orig), angular_momentum_error), angular_momentum_change) in self.universe.particles[..self.universe.n_particles].iter_mut().zip(particles_final[..self.universe.n_particles].iter()).zip(particles_orig[..self.universe.n_particles].iter()).zip(self.particle_angular_momentum_errors[..self.universe.n_particles].iter_mut()).zip(angular_momentum_changes[..self.universe.n_particles].iter_mut()) {
+        for ((((((particle, particle_final), particle_orig), inertial_velocity_error), angular_momentum_error), inertial_velocity_change), angular_momentum_change) in self.universe.particles[..self.universe.n_particles].iter_mut().zip(particles_final[..self.universe.n_particles].iter()).zip(particles_orig[..self.universe.n_particles].iter()).zip(self.inertial_velocity_errors[..self.universe.n_particles].iter_mut()).zip(self.particle_angular_momentum_errors[..self.universe.n_particles].iter_mut()).zip(inertial_velocity_changes[..self.universe.n_particles].iter()).zip(angular_momentum_changes[..self.universe.n_particles].iter_mut()) {
             // Inertial positions and accelerations didn't change
             // Use modified velocities
             particle.inertial_velocity.x = particle_final.inertial_velocity.x;
             particle.inertial_velocity.y = particle_final.inertial_velocity.y;
             particle.inertial_velocity.z = particle_final.inertial_velocity.z;
+            
+            // Compensated summation to improve the accuracy of additions that involve
+            // one small and one large floating point number (already considered by IAS15)
+            //      As cited by IAS15 paper: Kahan 1965; Higham 2002; Hairer et al. 2006
+            //      https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+            inertial_velocity_error.x = (particle.inertial_velocity.x - particle_orig.inertial_velocity.x) - inertial_velocity_change.x;
+            inertial_velocity_error.y = (particle.inertial_velocity.y - particle_orig.inertial_velocity.y) - inertial_velocity_change.y;
+            inertial_velocity_error.z = (particle.inertial_velocity.z - particle_orig.inertial_velocity.z) - inertial_velocity_change.z;
             if integrate_spin {
                 // Use modified angular_momentum
                 particle.angular_momentum.x = particle_final.angular_momentum.x;
