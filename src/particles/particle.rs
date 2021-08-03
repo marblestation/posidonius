@@ -53,12 +53,10 @@ impl Particle {
 
     pub fn new(mass: f64, radius: f64, radius_of_gyration: f64, position: Axes, velocity: Axes, spin: Axes) -> Particle {
         // Default effects: None
-        let dissipation_factor = 0.;
-        let dissipation_factor_scale = 0.;
         let love_number = 0.;
         let k_factor = 0.;
         let rotation_saturation = 0.;
-        let tides = Tides::new(TidesEffect::Disabled, dissipation_factor, dissipation_factor_scale, love_number);
+        let tides = Tides::new(TidesEffect::Disabled);
         let rotational_flattening = RotationalFlattening::new(RotationalFlatteningEffect::Disabled, love_number);
         let general_relativity = GeneralRelativity::new(GeneralRelativityEffect::Disabled);
         let wind = Wind::new(WindEffect::Disabled, k_factor, rotation_saturation);
@@ -98,8 +96,6 @@ impl Particle {
     }
 
     pub fn new_dummy() -> Particle {
-        let dissipation_factor = 0.;
-        let dissipation_factor_scale = 0.;
         let love_number = 0.;
         let k_factor = 0.;
         let rotation_saturation = 0.;
@@ -125,7 +121,7 @@ impl Particle {
             radius_of_gyration_2: 0.,
             moment_of_inertia: 0.,
             reference: Reference::MostMassiveParticle,
-            tides: Tides::new(TidesEffect::Disabled, dissipation_factor, dissipation_factor_scale, love_number),
+            tides: Tides::new(TidesEffect::Disabled),
             rotational_flattening: RotationalFlattening::new(RotationalFlatteningEffect::Disabled, love_number),
             general_relativity: GeneralRelativity::new(GeneralRelativityEffect::Disabled),
             wind: Wind::new(WindEffect::Disabled, k_factor, rotation_saturation),

@@ -46,7 +46,7 @@ pub fn store_unless_files_exist<I: serde::ser::Serialize>(universe_integrator: &
 
 #[allow(dead_code)]
 pub fn assert_stored_positions(universe: &posidonius::Universe, dirname: &String) {
-    let precision = 1.0e-15;
+    let precision = 1.0e-14;
     for (i, particle) in universe.particles[..universe.n_particles].iter().enumerate() {
         let expected_particle_filename = format!("{0}/particle_{1}.json", dirname, i);
         let expected_particle_path = Path::new(&expected_particle_filename);

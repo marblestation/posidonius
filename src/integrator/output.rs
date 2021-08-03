@@ -5,7 +5,7 @@ use std::io::{Read, BufReader};
 use super::super::Integrator;
 use super::super::particles::Universe;
 use super::super::particles::Reference;
-use super::super::{Axes};
+use super::super::{Axes, TidesEffect, TidalModel};
 use super::super::tools::calculate_keplerian_orbital_elements;
 use bincode;
 use time;
@@ -114,9 +114,18 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         particle.radius,                        // Rsun
                         particle.radius_of_gyration_2,
                     );
+        let love_number = match particle.tides.effect {
+            TidesEffect::CentralBody(tidal_model) | TidesEffect::OrbitingBody(tidal_model) => {
+                match tidal_model {
+                    TidalModel::ConstantTimeLag(params) => params.love_number,
+                    _ => 0.
+                }
+            },
+            _ => 0.
+        };
         bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
         let output = (
-                        particle.tides.parameters.input.love_number,
+                        love_number,
                         particle.tides.parameters.internal.scaled_dissipation_factor,
                         particle.tides.parameters.internal.lag_angle,
                         particle.tides.parameters.internal.denergy_dt,                // Msun.AU^2.day^-3

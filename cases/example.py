@@ -45,8 +45,8 @@ if __name__ == "__main__":
         "dissipation_factor": 2.006*3.845764e4,
         "love_number": 0.307,
     }
-    star_tides = posidonius.effects.tides.CentralBody(star_tides_parameters)
-    #star_tides = posidonius.effects.tides.OrbitingBody(star_tides_parameters)
+    star_tides = posidonius.effects.tides.CentralBody(posidonius.effects.tides.ConstantTimeLag(star_tides_parameters))
+    #star_tides = posidonius.effects.tides.OrbitingBody(posidonius.effects.tides.ConstantTimeLag(star_tides_parameters))
     #star_tides = posidonius.effects.tides.Disabled()
     #
     star_rotational_flattening_parameters = {"love_number": star_tides_parameters["love_number"] }
@@ -142,8 +142,8 @@ if __name__ == "__main__":
         "dissipation_factor": 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet_radius, 5)),
         "love_number": 0.305,
     }
-    #planet_tides = posidonius.effects.tides.CentralBody(planet_tides_parameters)
-    planet_tides = posidonius.effects.tides.OrbitingBody(planet_tides_parameters)
+    #planet_tides = posidonius.effects.tides.CentralBody(posidonius.effects.tides.ConstantTimeLag(planet_tides_parameters))
+    planet_tides = posidonius.effects.tides.OrbitingBody(posidonius.effects.tides.ConstantTimeLag(planet_tides_parameters))
     #planet_tides = posidonius.effects.tides.Disabled()
     #
     planet_rotational_flattening_parameters = {"love_number": planet_tides_parameters["love_number"]}

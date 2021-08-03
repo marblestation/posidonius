@@ -52,8 +52,8 @@ if __name__ == "__main__":
         #"dissipation_factor": 2.006*3.845764e4,
         #"love_number": 0.307,
     #}
-    #star_tides = posidonius.effects.tides.CentralBody(star_tides_parameters)
-    #star_tides = posidonius.effects.tides.OrbitingBody(star_tides_parameters)
+    #star_tides = posidonius.effects.tides.CentralBody(posidonius.effects.tides.ConstantTimeLag(star_tides_parameters))
+    #star_tides = posidonius.effects.tides.OrbitingBody(posidonius.effects.tides.ConstantTimeLag(star_tides_parameters))
     star_tides = posidonius.effects.tides.Disabled()
     #
     star_rotational_flattening_parameters = {"love_number": 0. } # A love number of zero, disables the stellar effect
@@ -166,8 +166,8 @@ if __name__ == "__main__":
         "dissipation_factor": 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet1_radius, 5)),
         "love_number": 0.305,
     }
-    #planet1_tides = posidonius.effects.tides.CentralBody(planet1_tides_parameters)
-    #planet1_tides = posidonius.effects.tides.OrbitingBody(planet1_tides_parameters)
+    #planet1_tides = posidonius.effects.tides.CentralBody(posidonius.effects.tides.ConstantTimeLag(planet1_tides_parameters))
+    #planet1_tides = posidonius.effects.tides.OrbitingBody(posidonius.effects.tides.ConstantTimeLag(planet1_tides_parameters))
     planet1_tides = posidonius.effects.tides.Disabled()
     #
     planet1_rotational_flattening_parameters = {"love_number": planet1_tides_parameters["love_number"]}
@@ -278,8 +278,8 @@ if __name__ == "__main__":
         "dissipation_factor": 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet2_radius, 5)),
         "love_number": 0.0,
     }
-    #planet2_tides = posidonius.effects.tides.CentralBody(planet2_tides_parameters)
-    #planet2_tides = posidonius.effects.tides.OrbitingBody(planet2_tides_parameters)
+    #planet2_tides = posidonius.effects.tides.CentralBody(posidonius.effects.tides.ConstantTimeLag(planet2_tides_parameters))
+    #planet2_tides = posidonius.effects.tides.OrbitingBody(posidonius.effects.tides.ConstantTimeLag(planet2_tides_parameters))
     planet2_tides = posidonius.effects.tides.Disabled()
     #
     planet2_rotational_flattening_parameters = {"love_number": planet2_tides_parameters["love_number"]}

@@ -27,7 +27,10 @@ pub fn solar_like(star_mass: f64, star_evolution: posidonius::EvolutionType, gen
     let star_dissipation_factor_scale: f64 = 1.;
     // Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
     let star_dissipation_factor: f64 = 4.992*3.845764e-2; // -66+64
-    let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody, star_dissipation_factor, star_dissipation_factor_scale, star_love_number);
+    let star_tidal_model_params = posidonius::ConstantTimeLagParameters{dissipation_factor: star_dissipation_factor,
+                                                                        dissipation_factor_scale: star_dissipation_factor_scale, 
+                                                                        love_number: star_love_number};
+    let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(star_tidal_model_params)));
     let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, star_love_number);
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     // Wind parametrisation (Bouvier 1997):
@@ -75,7 +78,10 @@ pub fn solar_like_with_disk(star_mass: f64, star_evolution: posidonius::Evolutio
     let star_dissipation_factor_scale: f64 = 1.;
     // Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
     let star_dissipation_factor: f64 = 4.992*3.845764e-2; // -66+64
-    let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody, star_dissipation_factor, star_dissipation_factor_scale, star_love_number);
+    let star_tidal_model_params = posidonius::ConstantTimeLagParameters{dissipation_factor: star_dissipation_factor,
+                                                                        dissipation_factor_scale: star_dissipation_factor_scale, 
+                                                                        love_number: star_love_number};
+    let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(star_tidal_model_params)));
     let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, star_love_number);
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     // Wind parametrisation (Bouvier 1997):
@@ -183,7 +189,10 @@ pub fn brown_dwarf(star_mass: f64, star_evolution: posidonius::EvolutionType, ge
     let star_angular_frequency = posidonius::constants::TWO_PI/(star_rotation_period/24.); // days^-1
     let star_spin = posidonius::Axes{x:0., y:0., z:star_angular_frequency };
 
-    let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody, star_dissipation_factor, star_dissipation_factor_scale, star_love_number);
+    let star_tidal_model_params = posidonius::ConstantTimeLagParameters{dissipation_factor: star_dissipation_factor,
+                                                                        dissipation_factor_scale: star_dissipation_factor_scale, 
+                                                                        love_number: star_love_number};
+    let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(star_tidal_model_params)));
     let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, star_love_number);
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     let star_wind_k_factor = 0.;
@@ -227,7 +236,10 @@ pub fn m_dwarf(star_mass: f64, star_evolution: posidonius::EvolutionType, genera
     let star_dissipation_factor_scale: f64 = 1.;
     // BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
     let star_dissipation_factor: f64 = 2.006*3.845764e4; // -60+64
-    let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody, star_dissipation_factor, star_dissipation_factor_scale, star_love_number);
+    let star_tidal_model_params = posidonius::ConstantTimeLagParameters{dissipation_factor: star_dissipation_factor,
+                                                                        dissipation_factor_scale: star_dissipation_factor_scale, 
+                                                                        love_number: star_love_number};
+    let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(star_tidal_model_params)));
     let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, star_love_number);
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     let star_wind_k_factor = 0.;
@@ -266,7 +278,10 @@ pub fn solar_like_primary(primary_star_mass: f64, primary_star_evolution: posido
     let primary_star_dissipation_factor_scale: f64 = 1.;
     // Sun-like-primary_star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
     let primary_star_dissipation_factor: f64 = 4.992*3.845764e-2; // -66+64
-    let primary_star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody, primary_star_dissipation_factor, primary_star_dissipation_factor_scale, primary_star_love_number);
+    let primary_star_tidal_model_params = posidonius::ConstantTimeLagParameters{dissipation_factor: primary_star_dissipation_factor,
+                                                                        dissipation_factor_scale: primary_star_dissipation_factor_scale, 
+                                                                        love_number: primary_star_love_number};
+    let primary_star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(primary_star_tidal_model_params)));
     let primary_star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, primary_star_love_number);
     let primary_star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     // Wind parametrisation (Bouvier 1997):
@@ -322,7 +337,10 @@ pub fn solar_like_secondary(primary_star: &posidonius::Particle, secondary_star_
     let secondary_star_dissipation_factor_scale: f64 = 1.;
     // Sun-like-secondary_star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
     let secondary_star_dissipation_factor: f64 = 4.992*3.845764e-2; // -66+64
-    let secondary_star_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody, secondary_star_dissipation_factor, secondary_star_dissipation_factor_scale, secondary_star_love_number);
+    let secondary_star_tidal_model_params = posidonius::ConstantTimeLagParameters{dissipation_factor: secondary_star_dissipation_factor,
+                                                                        dissipation_factor_scale: secondary_star_dissipation_factor_scale, 
+                                                                        love_number: secondary_star_love_number};
+    let secondary_star_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::ConstantTimeLag(secondary_star_tidal_model_params)));
     let secondary_star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody, secondary_star_love_number);
     let secondary_star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     // Wind parametrisation (Bouvier 1997):

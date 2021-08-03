@@ -699,7 +699,7 @@ fn disable_unnecessary_effects(consider_effects: &mut ConsiderEffects, particles
     let mut found_wind = false;
     let mut found_evolving_body = false;
     for particle in particles.iter() {
-        if let TidesEffect::CentralBody = particle.tides.effect {
+        if let TidesEffect::CentralBody(_) = particle.tides.effect {
             if found_central_body_tides {
                 panic!("[PANIC {} UTC] Only one central body is allowed for tidal effect!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
             }
@@ -762,13 +762,13 @@ fn check_effects_vs_central_and_orbiting(particles: &Vec<Particle>, consider_eff
     let mut found_tides_central_body = false;
     let mut found_tides_orbiting_body = false;
     for (i, particle) in particles.iter().enumerate() {
-        if let TidesEffect::CentralBody = particle.tides.effect {
+        if let TidesEffect::CentralBody(_) = particle.tides.effect {
             found_tides_central_body = true;
             if !consider_effects.tides {
                 println!("[WARNING {} UTC] Particle {} has tidal effect (central body) but the tidal effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
             }
         }
-        if let TidesEffect::OrbitingBody = particle.tides.effect {
+        if let TidesEffect::OrbitingBody(_) = particle.tides.effect {
             found_tides_orbiting_body = true;
             if !consider_effects.tides {
                 println!("[WARNING {} UTC] Particle {} has tidal effect (orbiting body) but the tidal effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
@@ -927,7 +927,7 @@ fn find_indices(particles: &Vec<Particle>, consider_effects: &ConsiderEffects) -
     let mut tidal_host_particle_index = MAX_PARTICLES+1;
     if consider_effects.tides {
         for (i, particle) in particles.iter().enumerate() {
-            if let TidesEffect::CentralBody = particle.tides.effect {
+            if let TidesEffect::CentralBody(_) = particle.tides.effect {
                 if tidal_host_particle_index == MAX_PARTICLES+1 {
                     tidal_host_particle_index = i;
                 } else {

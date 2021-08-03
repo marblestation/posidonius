@@ -92,11 +92,13 @@ def earth_like(mass, dissipation_factor_scale, position, velocity, spin, evoluti
     fluid_love_number = 0.9532 # Earth
     k2pdelta = 2.465278e-3 # Terrestrial planets
     dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(radius, 5))
-    tides = posidonius.effects.tides.OrbitingBody({
-        "dissipation_factor_scale": dissipation_factor_scale,
-        "dissipation_factor": dissipation_factor,
-        "love_number": love_number,
-    })
+    tides = posidonius.effects.tides.OrbitingBody(
+                posidonius.effects.tides.ConstantTimeLag({
+                    "dissipation_factor_scale": dissipation_factor_scale,
+                    "dissipation_factor": dissipation_factor,
+                    "love_number": love_number,
+                })
+            )
     rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody({"love_number": fluid_love_number})
     general_relativity = posidonius.effects.general_relativity.OrbitingBody()
     wind = posidonius.effects.wind.Disabled()
@@ -126,11 +128,13 @@ def jupiter_like(mass, dissipation_factor_scale, position, velocity, spin, evolu
     k2pdelta = 2.893519e-7 # Gas giant for Jupiter: 2-3d-2 s, here in day (Leconte)
     dissipation_factor = 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(radius, 5))
     #dissipation_factor = 2.006*3.845764e4 // Gas giant
-    tides = posidonius.effects.tides.OrbitingBody({
-        "dissipation_factor_scale": dissipation_factor_scale,
-        "dissipation_factor": dissipation_factor,
-        "love_number": love_number,
-    })
+    tides = posidonius.effects.tides.OrbitingBody(
+                posidonius.effects.tides.ConstantTimeLag({
+                    "dissipation_factor_scale": dissipation_factor_scale,
+                    "dissipation_factor": dissipation_factor,
+                    "love_number": love_number,
+                })
+            )
     rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody({"love_number": love_number})
     general_relativity = posidonius.effects.general_relativity.OrbitingBody()
     wind = posidonius.effects.wind.Disabled()

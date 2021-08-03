@@ -7,6 +7,8 @@ pub mod general_relativity;
 
 pub use self::tides::Tides;
 pub use self::tides::TidesEffect;
+pub use self::tides::TidalModel;
+pub use self::tides::ConstantTimeLagParameters;
 pub use self::rotational_flattening::RotationalFlattening;
 pub use self::rotational_flattening::RotationalFlatteningEffect;
 pub use self::general_relativity::GeneralRelativity;

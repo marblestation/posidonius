@@ -19,6 +19,8 @@ pub use self::particles::IgnoreGravityTerms;
 mod effects;
 pub use self::effects::Tides;
 pub use self::effects::TidesEffect;
+pub use self::effects::TidalModel;
+pub use self::effects::ConstantTimeLagParameters;
 pub use self::effects::RotationalFlattening;
 pub use self::effects::RotationalFlatteningEffect;
 pub use self::effects::GeneralRelativity;

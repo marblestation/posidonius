@@ -222,13 +222,16 @@
               "z": 0.0
             }
           },
-          "effect": "CentralBody",
+          "effect": {
+            "CentralBody": {
+              "ConstantTimeLag": {
+                "dissipation_factor": 77146.02583999999,
+                "dissipation_factor_scale": 1.0,
+                "love_number": 0.307
+              }
+            }
+          },
           "parameters": {
-            "input": {
-              "dissipation_factor": 77146.02583999999,
-              "dissipation_factor_scale": 1.0,
-              "love_number": 0.307
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,
@@ -456,13 +459,16 @@
               "z": 0.0
             }
           },
-          "effect": "OrbitingBody",
+          "effect": {
+            "OrbitingBody": {
+              "ConstantTimeLag": {
+                "dissipation_factor": 3268306963540669.0,
+                "dissipation_factor_scale": 1.0,
+                "love_number": 0.299
+              }
+            }
+          },
           "parameters": {
-            "input": {
-              "dissipation_factor": 3268306963540669.0,
-              "dissipation_factor_scale": 1.0,
-              "love_number": 0.299
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,
@@ -692,13 +698,16 @@
               "z": 0.0
             }
           },
-          "effect": "OrbitingBody",
+          "effect": {
+            "OrbitingBody": {
+              "ConstantTimeLag": {
+                "dissipation_factor": 2624753.50617771,
+                "dissipation_factor_scale": 1.0,
+                "love_number": 0.38
+              }
+            }
+          },
           "parameters": {
-            "input": {
-              "dissipation_factor": 2624753.50617771,
-              "dissipation_factor_scale": 1.0,
-              "love_number": 0.38
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,
@@ -926,13 +935,16 @@
               "z": 0.0
             }
           },
-          "effect": "OrbitingBody",
+          "effect": {
+            "OrbitingBody": {
+              "ConstantTimeLag": {
+                "dissipation_factor": 2624753.50617771,
+                "dissipation_factor_scale": 1.0,
+                "love_number": 0.38
+              }
+            }
+          },
           "parameters": {
-            "input": {
-              "dissipation_factor": 2624753.50617771,
-              "dissipation_factor_scale": 1.0,
-              "love_number": 0.38
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,
@@ -1162,11 +1174,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "dissipation_factor": 0.0,
-              "dissipation_factor_scale": 0.0,
-              "love_number": 0.0
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,
@@ -1396,11 +1403,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "dissipation_factor": 0.0,
-              "dissipation_factor_scale": 0.0,
-              "love_number": 0.0
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,
@@ -1630,11 +1632,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "dissipation_factor": 0.0,
-              "dissipation_factor_scale": 0.0,
-              "love_number": 0.0
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,
@@ -1864,11 +1861,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "dissipation_factor": 0.0,
-              "dissipation_factor_scale": 0.0,
-              "love_number": 0.0
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,
@@ -2098,11 +2090,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "dissipation_factor": 0.0,
-              "dissipation_factor_scale": 0.0,
-              "love_number": 0.0
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,
@@ -2332,11 +2319,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "dissipation_factor": 0.0,
-              "dissipation_factor_scale": 0.0,
-              "love_number": 0.0
-            },
             "internal": {
               "denergy_dt": 0.0,
               "distance": 0.0,

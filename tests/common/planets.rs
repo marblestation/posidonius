@@ -84,7 +84,10 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
     //// Terrestrial:
     let k2pdelta: f64 = 2.465278e-3; // Terrestrial planets (no gas)
     let planet_dissipation_factor: f64 = 2. * posidonius::constants::K2 * k2pdelta/(3. * planet_radius.powi(5));
-    let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody, planet_dissipation_factor, planet_dissipation_factor_scale, planet_love_number);
+    let planet_tidal_model_params = posidonius::ConstantTimeLagParameters{dissipation_factor: planet_dissipation_factor,
+                                                                        dissipation_factor_scale: planet_dissipation_factor_scale, 
+                                                                        love_number: planet_love_number};
+    let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::ConstantTimeLag(planet_tidal_model_params)));
     let planet_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody, planet_fluid_love_number);
     let planet_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     let planet_wind_k_factor = 0.;
@@ -159,7 +162,10 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
     let k2pdelta: f64 = 2.893519e-7; // Gas giant for Jupiter: 2-3d-2 s, here in day (Leconte)
     let planet_dissipation_factor: f64 = 2. * posidonius::constants::K2 * k2pdelta/(3. * planet_radius.powi(5));
     //let planet_dissipation_factor: f64 = 2.006*3.845764d4; // Gas giant
-    let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody, planet_dissipation_factor, planet_dissipation_factor_scale, planet_love_number);
+    let planet_tidal_model_params = posidonius::ConstantTimeLagParameters{dissipation_factor: planet_dissipation_factor,
+                                                                        dissipation_factor_scale: planet_dissipation_factor_scale, 
+                                                                        love_number: planet_love_number};
+    let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::ConstantTimeLag(planet_tidal_model_params)));
     let planet_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody, planet_love_number);
     let planet_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     let planet_wind_k_factor = 0.;

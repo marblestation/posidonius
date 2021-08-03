@@ -1,4 +1,4 @@
-use super::super::{Particle};
+use super::super::{Particle, TidesEffect, TidalModel};
 use super::super::constants::{SUN_DYN_FREQ_2};
 use super::super::tools::{linear_interpolation};
 use super::super::{csv};
@@ -529,7 +529,14 @@ pub fn calculate_particles_non_spin_dependent_evolving_quantities(current_time: 
         ////////////////////////////////////////////////////////////////////
         // Love number
         ////////////////////////////////////////////////////////////////////
-        particle.tides.parameters.input.love_number = evolver.love_number(current_time, particle.tides.parameters.input.love_number);
+        match particle.tides.effect {
+            TidesEffect::CentralBody(tidal_model) | TidesEffect::OrbitingBody(tidal_model) => {
+                if let TidalModel::ConstantTimeLag(mut params) = tidal_model {
+                    params.love_number = evolver.love_number(current_time, params.love_number);
+                }
+            },
+            _ => {},
+        };
 
         //println!("[{}] Evolve Radius {:e} Gyration {:e} Love {:e}", current_time, particle.radius, particle.radius_of_gyration_2, particle.love_number);
     }

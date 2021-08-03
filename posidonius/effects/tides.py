@@ -2,15 +2,10 @@ import six
 from posidonius.particles.axes import Axes
 
 class Tides(object):
-    def __init__(self, variant, input_parameters=None):
+    def __init__(self, variant, tidal_model=None):
         self._data = {
             "effect": "Disabled",
             "parameters": {
-                "input": {
-                    "dissipation_factor_scale": 0.0,
-                    "dissipation_factor": 0.0,
-                    "love_number": 0.0,
-                },
                 "internal": {
                     "denergy_dt": 0.0,
                     "distance": 0.0,
@@ -35,14 +30,9 @@ class Tides(object):
             },
         }
         if variant in ("CentralBody", "OrbitingBody", ):
-            self._data["effect"] = variant
-            # Update default values, ignore non-recognised keys
-            for key, value in six.iteritems(input_parameters):
-                if key in self._data["parameters"]["input"]:
-                    self._data["parameters"]["input"][key] = float(value)
-                else:
-                    print("Ignored parameter: {}".format(key))
-            self._data["parameters"]["internal"]["scaled_dissipation_factor"] = self._data["parameters"]["input"]["dissipation_factor"] * self._data["parameters"]["input"]["dissipation_factor_scale"]
+            self._data["effect"] = {variant: tidal_model.get()}
+            if isinstance(tidal_model, ConstantTimeLag):
+                self._data["parameters"]["internal"]["scaled_dissipation_factor"] = self._data["effect"][variant]["ConstantTimeLag"]["dissipation_factor"] * self._data["effect"][variant]["ConstantTimeLag"]["dissipation_factor_scale"]
         elif variant in ("Disabled", ):
             self._data["effect"] = variant
         else:
@@ -59,11 +49,54 @@ class Disabled(Tides):
         super(Disabled, self).__init__("Disabled")
 
 class OrbitingBody(Tides):
-    def __init__(self, input_parameters):
-        super(OrbitingBody, self).__init__("OrbitingBody", input_parameters=input_parameters)
+    def __init__(self, tidal_model):
+        super(OrbitingBody, self).__init__("OrbitingBody", tidal_model=tidal_model)
 
 class CentralBody(Tides):
-    def __init__(self, input_parameters):
-        super(CentralBody, self).__init__("CentralBody", input_parameters=input_parameters)
+    def __init__(self, tidal_model):
+        super(CentralBody, self).__init__("CentralBody", tidal_model=tidal_model)
 
+class ConstantTimeLag(object):
+    def __init__(self, input_parameters):
+        self._data = {
+            "ConstantTimeLag": {
+                "dissipation_factor_scale": 0.0,
+                "dissipation_factor": 0.0,
+                "love_number": 0.0,
+            },
+        }
+        # Update default values, ignore non-recognised keys
+        for key, value in six.iteritems(input_parameters):
+            if key in self._data["ConstantTimeLag"]:
+                self._data["ConstantTimeLag"][key] = float(value)
+            else:
+                print("Ignored parameter: {}".format(key))
+
+    def get(self):
+        if type(self._data) == str:
+            return self._data
+        else:
+            return self._data.copy()
+
+class CreepCoplanar(object):
+    def __init__(self, input_parameters):
+        self._data = {
+            "CreepCoplanar": {
+                "uniform_viscosity_coefficient": 0.0,
+            },
+        }
+        # Update default values, ignore non-recognised keys
+        for key, value in six.iteritems(input_parameters):
+            if key in self._data["CreepCoplanar"]:
+                self._data["CreepCoplanar"][key] = float(value)
+            else:
+                print("Ignored parameter: {}".format(key))
+        raise Exception("CreepCoplanar tidal model is not implemented yet!")
+
+    def get(self):
+        raise Exception("CreepCoplanar tidal model is not implemented yet!")
+        if type(self._data) == str:
+            return self._data
+        else:
+            return self._data.copy()
 

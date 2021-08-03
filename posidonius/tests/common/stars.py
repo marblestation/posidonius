@@ -47,11 +47,13 @@ def _solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, ro
     love_number = 0.03
     # Sun-like-star: sigmast = 4.992e-66 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
     dissipation_factor = 4.992*3.845764e-2 # -66+64
-    tides = posidonius.effects.tides.CentralBody({
-        "dissipation_factor_scale": dissipation_factor_scale,
-        "dissipation_factor": dissipation_factor,
-        "love_number": love_number,
-    })
+    tides = posidonius.effects.tides.CentralBody(
+                posidonius.effects.tides.ConstantTimeLag({
+                    "dissipation_factor_scale": dissipation_factor_scale,
+                    "dissipation_factor": dissipation_factor,
+                    "love_number": love_number,
+                })
+            )
     rotational_flattening = posidonius.effects.rotational_flattening.CentralBody({"love_number": love_number})
     general_relativity = posidonius.effects.general_relativity.CentralBody(general_relativity_implementation)
     if wind_k_factor == 0:
@@ -88,11 +90,13 @@ def m_dwarf(mass, dissipation_factor_scale, position, velocity, rotation_period,
     love_number = 0.307 # M Dwarf
     # BD, Mdwarf: sigmast = 2.006d-60 cgs, conversion to Msun-1.AU-2.day-1 = 3.845764022293d64
     dissipation_factor = 2.006*3.845764e4 # -60+64
-    tides = posidonius.effects.tides.CentralBody({
-        "dissipation_factor_scale": dissipation_factor_scale,
-        "dissipation_factor": dissipation_factor,
-        "love_number": love_number,
-    })
+    tides = posidonius.effects.tides.CentralBody(
+                posidonius.effects.tides.ConstantTimeLag({
+                    "dissipation_factor_scale": dissipation_factor_scale,
+                    "dissipation_factor": dissipation_factor,
+                    "love_number": love_number,
+                })
+            )
     rotational_flattening = posidonius.effects.rotational_flattening.CentralBody({"love_number": love_number})
     general_relativity = posidonius.effects.general_relativity.CentralBody(general_relativity_implementation)
     if wind_k_factor == 0:
@@ -174,11 +178,13 @@ def brown_dwarf(mass, dissipation_factor_scale, position, velocity, general_rela
     radius = radius_factor * posidonius.constants.R_SUN
     radius_of_gyration = 4.41e-01 # Brown dwarf
 
-    tides = posidonius.effects.tides.CentralBody({
-        "dissipation_factor_scale": dissipation_factor_scale,
-        "dissipation_factor": dissipation_factor,
-        "love_number": love_number,
-    })
+    tides = posidonius.effects.tides.CentralBody(
+                posidonius.effects.tides.ConstantTimeLag({
+                    "dissipation_factor_scale": dissipation_factor_scale,
+                    "dissipation_factor": dissipation_factor,
+                    "love_number": love_number,
+                })
+            )
     rotational_flattening = posidonius.effects.rotational_flattening.CentralBody({"love_number": love_number})
     general_relativity = posidonius.effects.general_relativity.CentralBody(general_relativity_implementation)
     if wind_k_factor == 0:
