@@ -161,7 +161,7 @@ pub fn copy_heliocentric_coordinates(host_particle: &mut Particle, particles: &m
 
 
 
-pub fn calculate_torque_induced_by_rotational_flattening(rotational_flattening_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], central_body:bool) {
+pub fn calculate_dangular_momentum_dt_induced_by_rotational_flattening(rotational_flattening_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], central_body:bool) {
     let mut dangular_momentum_dt = Axes{x: 0., y: 0., z:0.};
 
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {

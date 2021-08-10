@@ -457,13 +457,13 @@ impl Universe {
                             let central_body = true;
 
                             if self.consider_effects.tides {
-                                tides::calculate_torque_due_to_tides(&mut tidal_host_particle, &mut particles_left, &mut particles_right, central_body);
-                                tides::calculate_torque_due_to_tides(&mut tidal_host_particle, &mut particles_left, &mut particles_right, !central_body);
+                                tides::calculate_dangular_momentum_dt_due_to_tides(&mut tidal_host_particle, &mut particles_left, &mut particles_right, central_body);
+                                tides::calculate_dangular_momentum_dt_due_to_tides(&mut tidal_host_particle, &mut particles_left, &mut particles_right, !central_body);
                             }
 
                             if self.consider_effects.rotational_flattening {
-                                rotational_flattening::calculate_torque_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right, central_body);
-                                rotational_flattening::calculate_torque_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right, !central_body);
+                                rotational_flattening::calculate_dangular_momentum_dt_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right, central_body);
+                                rotational_flattening::calculate_dangular_momentum_dt_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right, !central_body);
                             }
                         }
                     }

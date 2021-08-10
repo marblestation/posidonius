@@ -8,7 +8,7 @@ pub use self::common::TidalModel;
 pub use self::common::initialize;
 pub use self::common::inertial_to_heliocentric_coordinates;
 pub use self::common::copy_heliocentric_coordinates;
-pub use self::common::calculate_torque_due_to_tides;
+pub use self::common::calculate_dangular_momentum_dt_due_to_tides;
 pub use self::common::calculate_denergy_dt;
 pub use self::common::calculate_tidal_acceleration;
 pub use self::constant_time_lag::calculate_planet_dependent_dissipation_factors;
