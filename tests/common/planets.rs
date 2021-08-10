@@ -88,7 +88,8 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
                                                                         dissipation_factor_scale: planet_dissipation_factor_scale, 
                                                                         love_number: planet_love_number};
     let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::ConstantTimeLag(planet_tidal_model_params)));
-    let planet_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody, planet_fluid_love_number);
+    let planet_rotational_flattening_oblate_spheroid_params = posidonius::OblateSpheroidParameters{love_number: planet_fluid_love_number};
+    let planet_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody(posidonius::RotationalFlatteningModel::OblateSpheroid(planet_rotational_flattening_oblate_spheroid_params)));
     let planet_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;
@@ -166,7 +167,8 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
                                                                         dissipation_factor_scale: planet_dissipation_factor_scale, 
                                                                         love_number: planet_love_number};
     let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::ConstantTimeLag(planet_tidal_model_params)));
-    let planet_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody, planet_love_number);
+    let planet_rotational_flattening_oblate_spheroid_params = posidonius::OblateSpheroidParameters{love_number: planet_love_number};
+    let planet_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody(posidonius::RotationalFlatteningModel::OblateSpheroid(planet_rotational_flattening_oblate_spheroid_params)));
     let planet_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     let planet_wind_k_factor = 0.;
     let planet_wind_rotation_saturation = 0.;

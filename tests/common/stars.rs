@@ -31,7 +31,8 @@ pub fn solar_like(star_mass: f64, star_evolution: posidonius::EvolutionType, gen
                                                                         dissipation_factor_scale: star_dissipation_factor_scale, 
                                                                         love_number: star_love_number};
     let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(star_tidal_model_params)));
-    let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, star_love_number);
+    let star_rotational_flattening_oblate_spheroid_params = posidonius::OblateSpheroidParameters{love_number: star_love_number};
+    let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody(posidonius::RotationalFlatteningModel::OblateSpheroid(star_rotational_flattening_oblate_spheroid_params)));
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     // Wind parametrisation (Bouvier 1997):
     //      wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
@@ -82,7 +83,8 @@ pub fn solar_like_with_disk(star_mass: f64, star_evolution: posidonius::Evolutio
                                                                         dissipation_factor_scale: star_dissipation_factor_scale, 
                                                                         love_number: star_love_number};
     let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(star_tidal_model_params)));
-    let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, star_love_number);
+    let star_rotational_flattening_oblate_spheroid_params = posidonius::OblateSpheroidParameters{love_number: star_love_number};
+    let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody(posidonius::RotationalFlatteningModel::OblateSpheroid(star_rotational_flattening_oblate_spheroid_params)));
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     // Wind parametrisation (Bouvier 1997):
     //      wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
@@ -193,7 +195,8 @@ pub fn brown_dwarf(star_mass: f64, star_evolution: posidonius::EvolutionType, ge
                                                                         dissipation_factor_scale: star_dissipation_factor_scale, 
                                                                         love_number: star_love_number};
     let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(star_tidal_model_params)));
-    let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, star_love_number);
+    let star_rotational_flattening_oblate_spheroid_params = posidonius::OblateSpheroidParameters{love_number: star_love_number};
+    let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody(posidonius::RotationalFlatteningModel::OblateSpheroid(star_rotational_flattening_oblate_spheroid_params)));
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     let star_wind_k_factor = 0.;
     let star_wind_rotation_saturation = 0.;
@@ -240,7 +243,8 @@ pub fn m_dwarf(star_mass: f64, star_evolution: posidonius::EvolutionType, genera
                                                                         dissipation_factor_scale: star_dissipation_factor_scale, 
                                                                         love_number: star_love_number};
     let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(star_tidal_model_params)));
-    let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, star_love_number);
+    let star_rotational_flattening_oblate_spheroid_params = posidonius::OblateSpheroidParameters{love_number: star_love_number};
+    let star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody(posidonius::RotationalFlatteningModel::OblateSpheroid(star_rotational_flattening_oblate_spheroid_params)));
     let star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     let star_wind_k_factor = 0.;
     let star_wind_rotation_saturation = 0.;
@@ -282,7 +286,8 @@ pub fn solar_like_primary(primary_star_mass: f64, primary_star_evolution: posido
                                                                         dissipation_factor_scale: primary_star_dissipation_factor_scale, 
                                                                         love_number: primary_star_love_number};
     let primary_star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::ConstantTimeLag(primary_star_tidal_model_params)));
-    let primary_star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody, primary_star_love_number);
+    let primary_star_rotational_flattening_oblate_spheroid_params = posidonius::OblateSpheroidParameters{love_number: primary_star_love_number};
+    let primary_star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::CentralBody(posidonius::RotationalFlatteningModel::OblateSpheroid(primary_star_rotational_flattening_oblate_spheroid_params)));
     let primary_star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
     // Wind parametrisation (Bouvier 1997):
     //      wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day
@@ -341,7 +346,8 @@ pub fn solar_like_secondary(primary_star: &posidonius::Particle, secondary_star_
                                                                         dissipation_factor_scale: secondary_star_dissipation_factor_scale, 
                                                                         love_number: secondary_star_love_number};
     let secondary_star_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::ConstantTimeLag(secondary_star_tidal_model_params)));
-    let secondary_star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody, secondary_star_love_number);
+    let secondary_star_rotational_flattening_oblate_spheroid_params = posidonius::OblateSpheroidParameters{love_number: secondary_star_love_number};
+    let secondary_star_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody(posidonius::RotationalFlatteningModel::OblateSpheroid(secondary_star_rotational_flattening_oblate_spheroid_params)));
     let secondary_star_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::CentralBody(general_relativity_implementation));
     // Wind parametrisation (Bouvier 1997):
     //      wind_k_factor = 4.0e-18 # K_wind = 1.6d47 cgs, which is in Msun.AU2.day

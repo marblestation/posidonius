@@ -11,6 +11,8 @@ pub use self::tides::TidalModel;
 pub use self::tides::ConstantTimeLagParameters;
 pub use self::rotational_flattening::RotationalFlattening;
 pub use self::rotational_flattening::RotationalFlatteningEffect;
+pub use self::rotational_flattening::RotationalFlatteningModel;
+pub use self::rotational_flattening::OblateSpheroidParameters;
 pub use self::general_relativity::GeneralRelativity;
 pub use self::general_relativity::GeneralRelativityEffect;
 pub use self::general_relativity::GeneralRelativityImplementation;

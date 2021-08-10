@@ -4,6 +4,7 @@ from posidonius.particles.axes import Axes
 import posidonius.effects as effects
 from posidonius.constants import K2
 from posidonius.effects.evolution import NonEvolving
+from posidonius import effects
 
 class Reference(object):
     def __init__(self, variant, index=None):
@@ -114,10 +115,28 @@ class Particle(object):
     def set_tides(self, tides):
         self._data["tides"] = tides.get()
         self._effects["tides"] = tides
+        self.check_uniform_viscosity_coefficient()
 
     def set_rotational_flattening(self, rotational_flattening):
         self._data["rotational_flattening"] = rotational_flattening.get()
         self._effects["rotational_flattening"] = rotational_flattening
+        self.check_uniform_viscosity_coefficient()
+
+    def check_uniform_viscosity_coefficient(self):
+        # If creep coplanar tides and rotational flattening are set, both need to have the same
+        # uniform viscosity coefficient parameter
+        if self._effects["tides"] and self._effects["rotational_flattening"]:
+            disabled_tides = isinstance(self._effects["tides"], effects.tides.Disabled)
+            disabled_rotational_flattening = isinstance(self._effects["rotational_flattening"], effects.rotational_flattening.Disabled)
+            if not disabled_tides and not disabled_rotational_flattening:
+                creep_coplanar_tides = isinstance(self._effects["tides"]._model, effects.tides.CreepCoplanar)
+                creep_coplanar_rotational_flattening = isinstance(self._effects["rotational_flattening"]._model, effects.rotational_flattening.CreepCoplanar)
+                if (creep_coplanar_tides and not creep_coplanar_rotational_flattening) or (not creep_coplanar_tides and creep_coplanar_rotational_flattening):
+                    raise Exception("When using Creep Coplanar Tidal or rotational flattening effects, both effects need to be Creep Coplanar and not just one of them (e.g., it cannot be mixed with ConstantTimeLag or OblateSpheroid).")
+                elif creep_coplanar_tides and creep_coplanar_rotational_flattening:
+                    uniform_viscosity_coefficient_diff = self._effects["rotational_flattening"]._model._data['CreepCoplanar']['uniform_viscosity_coefficient'] - self._effects["tides"]._model._data['CreepCoplanar']['uniform_viscosity_coefficient']
+                    if abs(uniform_viscosity_coefficient_diff) > 1.e-16:
+                        raise Exception("When using Creep Coplanar Tidal and rotational flattening effects, the uniform viscosity coefficient must be identical.")
 
     def set_general_relativity(self, general_relativity):
         self._data["general_relativity"] = general_relativity.get()

@@ -99,7 +99,11 @@ def earth_like(mass, dissipation_factor_scale, position, velocity, spin, evoluti
                     "love_number": love_number,
                 })
             )
-    rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody({"love_number": fluid_love_number})
+    rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(
+                                posidonius.effects.rotational_flattening.OblateSpheroid({
+                                    "love_number": fluid_love_number
+                                })
+                            )
     general_relativity = posidonius.effects.general_relativity.OrbitingBody()
     wind = posidonius.effects.wind.Disabled()
     disk = posidonius.effects.disk.OrbitingBody()
@@ -135,7 +139,11 @@ def jupiter_like(mass, dissipation_factor_scale, position, velocity, spin, evolu
                     "love_number": love_number,
                 })
             )
-    rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody({"love_number": love_number})
+    rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(
+                                posidonius.effects.rotational_flattening.OblateSpheroid({
+                                    "love_number": love_number
+                                })
+                            )
     general_relativity = posidonius.effects.general_relativity.OrbitingBody()
     wind = posidonius.effects.wind.Disabled()
     disk = posidonius.effects.disk.OrbitingBody()

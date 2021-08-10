@@ -3,6 +3,7 @@ from posidonius.particles.axes import Axes
 
 class Tides(object):
     def __init__(self, variant, tidal_model=None):
+        self._model = tidal_model
         self._data = {
             "effect": "Disabled",
             "parameters": {
@@ -18,6 +19,7 @@ class Tides(object):
                     "scalar_product_of_vector_position_with_planetary_spin": 0.0,
                     "scalar_product_of_vector_position_with_stellar_spin": 0.0,
                     "scaled_dissipation_factor": 0.0,
+                    "shape": Axes(0.0, 0.0, 0.0).get(),
                 },
                 "output": {
                     "acceleration": Axes(0.0, 0.0, 0.0).get(),
@@ -31,6 +33,8 @@ class Tides(object):
         }
         if variant in ("CentralBody", "OrbitingBody", ):
             self._data["effect"] = {variant: tidal_model.get()}
+            if variant == "CentralBody" and isinstance(tidal_model, CreepCoplanar):
+                raise Exception("Creep coplanar not implemented for central body.")
             if isinstance(tidal_model, ConstantTimeLag):
                 self._data["parameters"]["internal"]["scaled_dissipation_factor"] = self._data["effect"][variant]["ConstantTimeLag"]["dissipation_factor"] * self._data["effect"][variant]["ConstantTimeLag"]["dissipation_factor_scale"]
         elif variant in ("Disabled", ):
@@ -91,10 +95,8 @@ class CreepCoplanar(object):
                 self._data["CreepCoplanar"][key] = float(value)
             else:
                 print("Ignored parameter: {}".format(key))
-        raise Exception("CreepCoplanar tidal model is not implemented yet!")
 
     def get(self):
-        raise Exception("CreepCoplanar tidal model is not implemented yet!")
         if type(self._data) == str:
             return self._data
         else:

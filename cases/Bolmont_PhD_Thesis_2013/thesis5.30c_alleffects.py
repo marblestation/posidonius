@@ -74,13 +74,15 @@ if __name__ == "__main__":
         "dissipation_factor": 2.006*3.845764e4,
         "love_number": 0.307,
     }
-    star_tides = posidonius.effects.tides.CentralBody(posidonius.effects.tides.ConstantTimeLag(star_tides_parameters))
-    #star_tides = posidonius.effects.tides.OrbitingBody(posidonius.effects.tides.ConstantTimeLag(star_tides_parameters))
+    star_tides_model = posidonius.effects.tides.ConstantTimeLag(star_tides_parameters)
+    star_tides = posidonius.effects.tides.CentralBody(star_tides_model)
+    #star_tides = posidonius.effects.tides.OrbitingBody(star_tides_model)
     #star_tides = posidonius.effects.tides.Disabled()
     #
     star_rotational_flattening_parameters = {"love_number": star_tides_parameters["love_number"] }
-    star_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(star_rotational_flattening_parameters)
-    #star_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(star_rotational_flattening_parameters)
+    star_rotational_flattening_model = posidonius.effects.rotational_flattening.OblateSpheroid(star_rotational_flattening_parameters)
+    star_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(star_rotational_flattening_model)
+    #star_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(star_rotational_flattening_model)
     #star_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
     #
     star_general_relativity = posidonius.effects.general_relativity.CentralBody("Kidder1995")
@@ -184,13 +186,15 @@ if __name__ == "__main__":
         "dissipation_factor": 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet1_radius, 5)),
         "love_number": 0.305,
     }
-    #planet1_tides = posidonius.effects.tides.CentralBody(posidonius.effects.tides.ConstantTimeLag(planet1_tides_parameters))
-    planet1_tides = posidonius.effects.tides.OrbitingBody(posidonius.effects.tides.ConstantTimeLag(planet1_tides_parameters))
+    planet1_tides_model = posidonius.effects.tides.ConstantTimeLag(planet1_tides_parameters)
+    #planet1_tides = posidonius.effects.tides.CentralBody(planet1_tides_model)
+    planet1_tides = posidonius.effects.tides.OrbitingBody(planet1_tides_model)
     #planet1_tides = posidonius.effects.tides.Disabled()
     #
     planet1_rotational_flattening_parameters = {"love_number": 0.9532}
-    #planet1_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(planet1_rotational_flattening_parameters)
-    planet1_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(planet1_rotational_flattening_parameters)
+    planet1_rotational_flattening_model = posidonius.effects.rotational_flattening.OblateSpheroid(planet1_rotational_flattening_parameters)
+    #planet1_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(planet1_rotational_flattening_model)
+    planet1_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(planet1_rotational_flattening_model)
     #planet1_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
     #
     #planet1_general_relativity = posidonius.effects.general_relativity.CentralBody("Kidder1995")
@@ -294,13 +298,15 @@ if __name__ == "__main__":
         "dissipation_factor": 2. * posidonius.constants.K2 * k2pdelta/(3. * np.power(planet2_radius, 5)),
         "love_number": 0.305,
     }
-    #planet2_tides = posidonius.effects.tides.CentralBody(posidonius.effects.tides.ConstantTimeLag(planet2_tides_parameters))
-    planet2_tides = posidonius.effects.tides.OrbitingBody(posidonius.effects.tides.ConstantTimeLag(planet2_tides_parameters))
+    planet2_tides_model = posidonius.effects.tides.ConstantTimeLag(planet2_tides_parameters)
+    #planet2_tides = posidonius.effects.tides.CentralBody(planet2_tides_model)
+    planet2_tides = posidonius.effects.tides.OrbitingBody(planet2_tides_model)
     #planet2_tides = posidonius.effects.tides.Disabled()
     #
     planet2_rotational_flattening_parameters = {"love_number": 0.9532}
-    #planet2_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(planet2_rotational_flattening_parameters)
-    planet2_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(planet2_rotational_flattening_parameters)
+    planet2_rotational_flattening_model = posidonius.effects.rotational_flattening.OblateSpheroid(planet2_rotational_flattening_parameters)
+    #planet2_rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(planet2_rotational_flattening_model)
+    planet2_rotational_flattening = posidonius.effects.rotational_flattening.OrbitingBody(planet2_rotational_flattening_model)
     #planet2_rotational_flattening = posidonius.effects.rotational_flattening.Disabled()
     #
     #planet2_general_relativity = posidonius.effects.general_relativity.CentralBody("Kidder1995")

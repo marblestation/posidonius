@@ -23,6 +23,8 @@ pub use self::effects::TidalModel;
 pub use self::effects::ConstantTimeLagParameters;
 pub use self::effects::RotationalFlattening;
 pub use self::effects::RotationalFlatteningEffect;
+pub use self::effects::RotationalFlatteningModel;
+pub use self::effects::OblateSpheroidParameters;
 pub use self::effects::GeneralRelativity;
 pub use self::effects::GeneralRelativityEffect;
 pub use self::effects::GeneralRelativityImplementation;

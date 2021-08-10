@@ -17,6 +17,9 @@ pub struct TidesParticleInternalParameters {
     pub radial_component_of_the_tidal_force: f64,
     pub radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass: f64, // Needed to compute denergy_dt
     //
+    // Creep coplanar specific:
+    pub shape: Axes,
+    //
     pub denergy_dt: f64, // Only for history output
     pub lag_angle: f64, // Used by EvolutionType::BolmontMathis2016, EvolutionType::GalletBolmont2017 and EvolutionType::LeconteChabrier2013(true)
 }
@@ -85,6 +88,7 @@ impl Tides {
                     orthogonal_component_of_the_tidal_force_due_to_planetary_tide: 0.,
                     radial_component_of_the_tidal_force: 0.,
                     radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass: 0.,
+                    shape: Axes{x: 0., y: 0., z: 0.},
                     denergy_dt: 0., // Only for history output
                     lag_angle: 0., // It will be initialized the first time the evolver is called
                 },

@@ -482,11 +482,14 @@
               "z": 0.0
             }
           },
-          "effect": "CentralBody",
+          "effect": {
+            "CentralBody": {
+              "OblateSpheroid": {
+                "love_number": 0.03
+              }
+            }
+          },
           "parameters": {
-            "input": {
-              "love_number": 0.03
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -495,7 +498,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -550,7 +558,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 0.19198053888
+              "scaled_dissipation_factor": 0.19198053888,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -719,11 +732,14 @@
               "z": 0.0
             }
           },
-          "effect": "OrbitingBody",
+          "effect": {
+            "OrbitingBody": {
+              "OblateSpheroid": {
+                "love_number": 0.9532
+              }
+            }
+          },
           "parameters": {
-            "input": {
-              "love_number": 0.9532
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -732,7 +748,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -787,7 +808,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 3268306963540669.0
+              "scaled_dissipation_factor": 3268306963540669.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -958,11 +984,14 @@
               "z": 0.0
             }
           },
-          "effect": "OrbitingBody",
+          "effect": {
+            "OrbitingBody": {
+              "OblateSpheroid": {
+                "love_number": 0.38
+              }
+            }
+          },
           "parameters": {
-            "input": {
-              "love_number": 0.38
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -971,7 +1000,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -1026,7 +1060,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 2624753.50617771
+              "scaled_dissipation_factor": 2624753.50617771,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -1195,11 +1234,14 @@
               "z": 0.0
             }
           },
-          "effect": "OrbitingBody",
+          "effect": {
+            "OrbitingBody": {
+              "OblateSpheroid": {
+                "love_number": 0.38
+              }
+            }
+          },
           "parameters": {
-            "input": {
-              "love_number": 0.38
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -1208,7 +1250,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -1263,7 +1310,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 2624753.50617771
+              "scaled_dissipation_factor": 2624753.50617771,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -1434,9 +1486,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "love_number": 0.0
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -1445,7 +1494,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -1492,7 +1546,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 0.0
+              "scaled_dissipation_factor": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -1663,9 +1722,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "love_number": 0.0
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -1674,7 +1730,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -1721,7 +1782,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 0.0
+              "scaled_dissipation_factor": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -1892,9 +1958,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "love_number": 0.0
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -1903,7 +1966,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -1950,7 +2018,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 0.0
+              "scaled_dissipation_factor": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -2121,9 +2194,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "love_number": 0.0
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -2132,7 +2202,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -2179,7 +2254,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 0.0
+              "scaled_dissipation_factor": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -2350,9 +2430,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "love_number": 0.0
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -2361,7 +2438,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -2408,7 +2490,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 0.0
+              "scaled_dissipation_factor": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -2579,9 +2666,6 @@
           },
           "effect": "Disabled",
           "parameters": {
-            "input": {
-              "love_number": 0.0
-            },
             "internal": {
               "distance": 0.0,
               "factor_for_the_force_induced_by_planet_rotation": 0.0,
@@ -2590,7 +2674,12 @@
               "orthogonal_component_of_the_force_induced_by_star_rotation": 0.0,
               "radial_component_of_the_force_induced_by_rotation": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
-              "scalar_product_of_vector_position_with_stellar_spin": 0.0
+              "scalar_product_of_vector_position_with_stellar_spin": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {
@@ -2637,7 +2726,12 @@
               "radial_velocity": 0.0,
               "scalar_product_of_vector_position_with_planetary_spin": 0.0,
               "scalar_product_of_vector_position_with_stellar_spin": 0.0,
-              "scaled_dissipation_factor": 0.0
+              "scaled_dissipation_factor": 0.0,
+              "shape": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              }
             },
             "output": {
               "acceleration": {

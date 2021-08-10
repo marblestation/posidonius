@@ -54,7 +54,11 @@ def _solar_like_with_disk(mass, dissipation_factor_scale, position, velocity, ro
                     "love_number": love_number,
                 })
             )
-    rotational_flattening = posidonius.effects.rotational_flattening.CentralBody({"love_number": love_number})
+    rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(
+                                posidonius.effects.rotational_flattening.OblateSpheroid({
+                                    "love_number": love_number
+                                })
+                            )
     general_relativity = posidonius.effects.general_relativity.CentralBody(general_relativity_implementation)
     if wind_k_factor == 0:
         wind = posidonius.effects.wind.Disabled()
@@ -97,7 +101,11 @@ def m_dwarf(mass, dissipation_factor_scale, position, velocity, rotation_period,
                     "love_number": love_number,
                 })
             )
-    rotational_flattening = posidonius.effects.rotational_flattening.CentralBody({"love_number": love_number})
+    rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(
+                                posidonius.effects.rotational_flattening.OblateSpheroid({
+                                    "love_number": love_number
+                                })
+                            )
     general_relativity = posidonius.effects.general_relativity.CentralBody(general_relativity_implementation)
     if wind_k_factor == 0:
         wind = posidonius.effects.wind.Disabled()
@@ -185,7 +193,11 @@ def brown_dwarf(mass, dissipation_factor_scale, position, velocity, general_rela
                     "love_number": love_number,
                 })
             )
-    rotational_flattening = posidonius.effects.rotational_flattening.CentralBody({"love_number": love_number})
+    rotational_flattening = posidonius.effects.rotational_flattening.CentralBody(
+                                posidonius.effects.rotational_flattening.OblateSpheroid({
+                                    "love_number": love_number
+                                })
+                            )
     general_relativity = posidonius.effects.general_relativity.CentralBody(general_relativity_implementation)
     if wind_k_factor == 0:
         wind = posidonius.effects.wind.Disabled()

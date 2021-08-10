@@ -1,7 +1,7 @@
 use super::super::constants::{K2};
 use super::{Axes};
 use super::super::{Tides, RotationalFlattening, GeneralRelativity, Disk, Wind, EvolutionType};
-use super::super::{TidesEffect, RotationalFlatteningEffect, GeneralRelativityEffect, DiskEffect, WindEffect};
+use super::super::{TidesEffect, TidalModel, RotationalFlatteningEffect, RotationalFlatteningModel, GeneralRelativityEffect, DiskEffect, WindEffect};
 use time;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
@@ -53,11 +53,10 @@ impl Particle {
 
     pub fn new(mass: f64, radius: f64, radius_of_gyration: f64, position: Axes, velocity: Axes, spin: Axes) -> Particle {
         // Default effects: None
-        let love_number = 0.;
         let k_factor = 0.;
         let rotation_saturation = 0.;
         let tides = Tides::new(TidesEffect::Disabled);
-        let rotational_flattening = RotationalFlattening::new(RotationalFlatteningEffect::Disabled, love_number);
+        let rotational_flattening = RotationalFlattening::new(RotationalFlatteningEffect::Disabled);
         let general_relativity = GeneralRelativity::new(GeneralRelativityEffect::Disabled);
         let wind = Wind::new(WindEffect::Disabled, k_factor, rotation_saturation);
         let disk = Disk::new(DiskEffect::Disabled);
@@ -96,7 +95,6 @@ impl Particle {
     }
 
     pub fn new_dummy() -> Particle {
-        let love_number = 0.;
         let k_factor = 0.;
         let rotation_saturation = 0.;
         Particle { 
@@ -122,7 +120,7 @@ impl Particle {
             moment_of_inertia: 0.,
             reference: Reference::MostMassiveParticle,
             tides: Tides::new(TidesEffect::Disabled),
-            rotational_flattening: RotationalFlattening::new(RotationalFlatteningEffect::Disabled, love_number),
+            rotational_flattening: RotationalFlattening::new(RotationalFlatteningEffect::Disabled),
             general_relativity: GeneralRelativity::new(GeneralRelativityEffect::Disabled),
             wind: Wind::new(WindEffect::Disabled, k_factor, rotation_saturation),
             disk: Disk::new(DiskEffect::Disabled),
@@ -132,10 +130,65 @@ impl Particle {
 
     pub fn set_tides(&mut self, tides: Tides) {
         self.tides = tides;
+        self.check_uniform_viscosity_coefficient();
+        if let TidesEffect::CentralBody(tidal_model) = self.tides.effect {
+            if let TidalModel::CreepCoplanar(_) = tidal_model {
+                panic!("[ERROR {} UTC] Creep coplanar not implemented for central body.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap());
+            }
+        }
     }
 
     pub fn set_rotational_flattening(&mut self, rotational_flattening: RotationalFlattening) {
         self.rotational_flattening = rotational_flattening;
+        self.check_uniform_viscosity_coefficient();
+        if let RotationalFlatteningEffect::CentralBody(rotational_flattening_model) = self.rotational_flattening.effect {
+            if let RotationalFlatteningModel::CreepCoplanar(_) = rotational_flattening_model {
+                panic!("[ERROR {} UTC] Creep coplanar not implemented for central body.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap());
+            }
+        }
+    }
+
+    pub fn check_uniform_viscosity_coefficient(&mut self) {
+        // If creep coplanar tides and rotational flattening are set, both need to have the same
+        // uniform viscosity coefficient parameter
+        let disabled_tides = match self.tides.effect {
+            TidesEffect::Disabled => true,
+            _ => false
+        };
+        let disabled_rotational_flattening = match self.rotational_flattening.effect {
+            RotationalFlatteningEffect::Disabled => true,
+            _ => false
+        };
+        if !disabled_tides && !disabled_rotational_flattening {
+            let (creep_coplanar_tides, particle_uniform_viscosity_coefficient_for_tides) = match self.tides.effect {
+                TidesEffect::CentralBody(tidal_model) | TidesEffect::OrbitingBody(tidal_model) => {
+                    if let TidalModel::CreepCoplanar(params) = tidal_model {
+                        (true, params.uniform_viscosity_coefficient)
+                    } else {
+                        (false, 0.)
+                    }
+                },
+                _ => (false, 0.)
+            };
+            let (creep_coplanar_rotational_flattening, particle_uniform_viscosity_coefficient_for_rotational_flattenning) = match self.rotational_flattening.effect {
+                RotationalFlatteningEffect::CentralBody(rotational_flattening_model) | RotationalFlatteningEffect::OrbitingBody(rotational_flattening_model) => {
+                    if let RotationalFlatteningModel::CreepCoplanar(params) = rotational_flattening_model {
+                        (true, params.uniform_viscosity_coefficient)
+                    } else {
+                        (false, 0.)
+                    }
+                },
+                _ => (false, 0.),
+            };
+            if (creep_coplanar_tides && !creep_coplanar_rotational_flattening) || (!creep_coplanar_tides && creep_coplanar_rotational_flattening) {
+                panic!("[ERROR {} UTC] When using Creep Coplanar Tidal or rotational flattening effects, both effects need to be Creep Coplanar and not just one of them (e.g., it cannot be mixed with ConstantTimeLag or OblateSpheroid).", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap());
+            } else if creep_coplanar_tides && creep_coplanar_rotational_flattening {
+                let diff_uniform_viscosity_coefficient = (particle_uniform_viscosity_coefficient_for_tides - particle_uniform_viscosity_coefficient_for_rotational_flattenning).abs();
+                if diff_uniform_viscosity_coefficient > 1.0e-16 {
+                    panic!("[ERROR {} UTC] When using Creep Coplanar Tidal and rotational flattening effects, the uniform viscosity coefficient must be identical {:.16}.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap(), diff_uniform_viscosity_coefficient);
+                }
+            }
+        }
     }
 
     pub fn set_general_relativity(&mut self, general_relativity: GeneralRelativity) {
