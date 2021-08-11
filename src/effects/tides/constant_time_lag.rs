@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use super::super::super::tools;
-use super::super::super::constants::{K2, SMOOTHING_FACTOR_DYN_TIDE_COROTATION};
+use super::super::super::constants::{K2, SMOOTHING_FACTOR_DYN_TIDE_COROTATION, MAX_PARTICLES};
 use super::super::super::{Particle};
 use super::super::super::{Axes};
 use super::super::{EvolutionType};
@@ -16,10 +16,15 @@ pub struct ConstantTimeLagParameters {
                             // susceptibility of its shape to change in response to a tidal potential.
 }
 
-pub fn calculate_planet_dependent_dissipation_factors(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], star_planet_dependent_dissipation_factors: &mut HashMap<usize, f64>) {
+pub fn calculate_pair_dependent_scaled_dissipation_factors(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], pair_dependent_scaled_dissipation_factor: &mut HashMap<usize, f64>) {
+    calculate_planet_dependent_scaled_dissipation_factors(tidal_host_particle, particles, more_particles, pair_dependent_scaled_dissipation_factor);
+    calculate_host_dependent_scaled_dissipation_factors(tidal_host_particle, particles, more_particles, pair_dependent_scaled_dissipation_factor);
+}
+
+fn calculate_planet_dependent_scaled_dissipation_factors(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], pair_dependent_scaled_dissipation_factor: &mut HashMap<usize, f64>) {
     match tidal_host_particle.evolution {
         EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
-            let star_norm_spin_vector = tidal_host_particle.norm_spin_vector_2.sqrt();
+            let host_norm_spin_vector = tidal_host_particle.norm_spin_vector_2.sqrt();
             for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
                 if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
                     if let TidalModel::ConstantTimeLag(_) = tidal_model {
@@ -51,10 +56,10 @@ pub fn calculate_planet_dependent_dissipation_factors(tidal_host_particle: &mut 
                         let gm = tidal_host_particle.mass_g+particle.mass_g;
                         let (perihelion_distance, eccentricity) = tools::calculate_perihelion_distance_and_eccentricity(gm, particle.tides.coordinates.position, particle.tides.coordinates.velocity);
                         let mean_motion = gm.sqrt() * (perihelion_distance/(1.0 - eccentricity)).powf(-1.5);
-                        let mut half_the_excitation_frequency = (star_norm_spin_vector - mean_motion).abs();
+                        let mut half_the_excitation_frequency = (host_norm_spin_vector - mean_motion).abs();
                         // If the dynamical tide is excited, compute the planet-dependent stellar dissipation
                         // If the dynamical tide is not excited (i.e., equilibrium tide), do nothing since the default value corresponds to the planet scaled dissipation factor
-                        if half_the_excitation_frequency < star_norm_spin_vector { 
+                        if half_the_excitation_frequency < host_norm_spin_vector { 
                             // The dynamical tide is excited
                             if half_the_excitation_frequency < SMOOTHING_FACTOR_DYN_TIDE_COROTATION {
                                 half_the_excitation_frequency = SMOOTHING_FACTOR_DYN_TIDE_COROTATION;
@@ -65,12 +70,12 @@ pub fn calculate_planet_dependent_dissipation_factors(tidal_host_particle: &mut 
                             // Bolmont 2017. The lag angle has a 1/k2, but here we should *k2, that is why
                             // k2 does not appear here
                             // We add here the dissipation from the equilibrium tide to the dynamical tide one
-                            let planet_dependent_dissipation_factor = tidal_host_particle_dissipation_factor_scale
+                            let particle_dependent_scaled_dissipation_factor = tidal_host_particle_dissipation_factor_scale
                                 * (2.0 * K2 / (3.0*tidal_host_particle.radius.powi(5))
                                 * tidal_host_particle.tides.parameters.internal.lag_angle * inverse_of_half_the_excitation_frequency
                                 + tidal_host_particle_dissipation_factor);
 
-                            star_planet_dependent_dissipation_factors.insert(particle.id.clone(), planet_dependent_dissipation_factor);
+                            set_pair_dependent_scaled_dissipation_factor(pair_dependent_scaled_dissipation_factor, tidal_host_particle.id, particle.id, particle_dependent_scaled_dissipation_factor);
                         }
                     }
                 }
@@ -82,10 +87,63 @@ pub fn calculate_planet_dependent_dissipation_factors(tidal_host_particle: &mut 
 
 }
 
-pub fn planet_dependent_dissipation_factor(star_planet_dependent_dissipation_factors: &HashMap<usize, f64>,  id: &usize, evolution: EvolutionType, scaled_dissipation_factor: f64) -> f64 {
+fn calculate_host_dependent_scaled_dissipation_factors(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], pair_dependent_scaled_dissipation_factor: &mut HashMap<usize, f64>) {
+    for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
+        match particle.evolution {
+            EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
+                if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
+                    if let TidalModel::ConstantTimeLag(params) = tidal_model {
+                        let particle_norm_spin_vector = particle.norm_spin_vector_2.sqrt();
+                        //// Excitation frequency needed by the model based on the
+                        // mean frequency (using mean motion and spin). 
+                        //
+                        // NOTE: The model is already here being used outside the 
+                        // validity domain, it seems not justified to use an 
+                        // instantaneous frequency.
+                        let gm = tidal_host_particle.mass_g+particle.mass_g;
+                        let (perihelion_distance, eccentricity) = tools::calculate_perihelion_distance_and_eccentricity(gm, particle.tides.coordinates.position, particle.tides.coordinates.velocity);
+                        let mean_motion = gm.sqrt() * (perihelion_distance/(1.0 - eccentricity)).powf(-1.5);
+                        let mut half_the_excitation_frequency = (particle_norm_spin_vector - mean_motion).abs();
+                        // If the dynamical tide is excited, compute the planet-dependent stellar dissipation
+                        // If the dynamical tide is not excited (i.e., equilibrium tide), do nothing since the default value corresponds to the planet scaled dissipation factor
+                        if half_the_excitation_frequency < particle_norm_spin_vector { 
+                            // The dynamical tide is excited
+                            if half_the_excitation_frequency < SMOOTHING_FACTOR_DYN_TIDE_COROTATION {
+                                half_the_excitation_frequency = SMOOTHING_FACTOR_DYN_TIDE_COROTATION;
+                            }
+                            let inverse_of_half_the_excitation_frequency = 1./half_the_excitation_frequency;
+
+                            // Eq. 4 and Eq.10 of Bolmont & Mathis have a typo, see page 5 of Gallet &
+                            // Bolmont 2017. The lag angle has a 1/k2, but here we should *k2, that is why
+                            // k2 does not appear here
+                            // We add here the dissipation from the equilibrium tide to the dynamical tide one
+                            let host_dependent_scaled_dissipation_factor = params.dissipation_factor_scale
+                                * (2.0 * K2 / (3.0*particle.radius.powi(5))
+                                * particle.tides.parameters.internal.lag_angle * inverse_of_half_the_excitation_frequency
+                                + params.dissipation_factor);
+
+                            set_pair_dependent_scaled_dissipation_factor(pair_dependent_scaled_dissipation_factor, particle.id, tidal_host_particle.id, host_dependent_scaled_dissipation_factor);
+                        }
+                    }
+                }
+            },
+            _ => {},
+        }
+    }
+            //panic!("Please, contact Posidonius authors before using BolmontMathis2016/GalletBolmont2017/LeconteChabrier2013(true) evolutionary models. They may not be ready yet for scientific explotation.")
+
+}
+
+pub fn set_pair_dependent_scaled_dissipation_factor(pair_dependent_scaled_dissipation_factor: &mut HashMap<usize, f64>, id: usize, depends_on_id: usize, scaled_dissipation_factor: f64) {
+    let key = id * MAX_PARTICLES + depends_on_id;
+    pair_dependent_scaled_dissipation_factor.insert(key, scaled_dissipation_factor);
+}
+
+pub fn get_pair_dependent_scaled_dissipation_factor_or_else(pair_dependent_scaled_dissipation_factor: &HashMap<usize, f64>, id: usize, depends_on_id: usize, evolution: EvolutionType, scaled_dissipation_factor: f64) -> f64 {
+    let key = id * MAX_PARTICLES + depends_on_id;
     match evolution {
         EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
-            match star_planet_dependent_dissipation_factors.get(id) {
+            match pair_dependent_scaled_dissipation_factor.get(&key) {
                 Some(&value) => value,
                 _ => scaled_dissipation_factor // This should not happen
             }
@@ -133,17 +191,17 @@ pub fn calculate_torque_due_to_tides(tidal_host_particle: &Particle, particle: &
     Axes{x: torque_due_to_tides_x, y: torque_due_to_tides_y, z: torque_due_to_tides_z}
 }
 
-pub fn calculate_orthogonal_component_of_the_tidal_force(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], star_planet_dependent_dissipation_factors: &mut HashMap<usize, f64>) {
+pub fn calculate_orthogonal_component_of_the_tidal_force(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], pair_dependent_scaled_dissipation_factor: &mut HashMap<usize, f64>) {
     let mut tidal_host_particle = tidal_host_particle;
     let mut particles = particles;
     let mut more_particles = more_particles;
-    let mut star_planet_dependent_dissipation_factors = star_planet_dependent_dissipation_factors;
+    let mut pair_dependent_scaled_dissipation_factor = pair_dependent_scaled_dissipation_factor;
     let central_body = true;
-    calculate_orthogonal_component_of_the_tidal_force_for(central_body, &mut tidal_host_particle, &mut particles, &mut more_particles, &mut star_planet_dependent_dissipation_factors);
-    calculate_orthogonal_component_of_the_tidal_force_for(!central_body, &mut tidal_host_particle, &mut particles, &mut more_particles, &mut star_planet_dependent_dissipation_factors);
+    calculate_orthogonal_component_of_the_tidal_force_for(central_body, &mut tidal_host_particle, &mut particles, &mut more_particles, &mut pair_dependent_scaled_dissipation_factor);
+    calculate_orthogonal_component_of_the_tidal_force_for(!central_body, &mut tidal_host_particle, &mut particles, &mut more_particles, &mut pair_dependent_scaled_dissipation_factor);
 }
 
-fn calculate_orthogonal_component_of_the_tidal_force_for(central_body:bool, tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], star_planet_dependent_dissipation_factors: &mut HashMap<usize, f64>) {
+fn calculate_orthogonal_component_of_the_tidal_force_for(central_body:bool, tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], pair_dependent_scaled_dissipation_factor: &mut HashMap<usize, f64>) {
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
         if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
             if let TidalModel::ConstantTimeLag(_) = tidal_model {
@@ -161,10 +219,10 @@ fn calculate_orthogonal_component_of_the_tidal_force_for(central_body:bool, tida
                     //   and not k2$\Delta$t (between k2$\Delta$t and sigma 
                     //   there is a R**5 factor as shown in Equation 28)
                     //   - k2 is love number
-                    let star_scaled_dissipation_factor = planet_dependent_dissipation_factor(&star_planet_dependent_dissipation_factors, &particle.id, tidal_host_particle.evolution, tidal_host_particle.tides.parameters.internal.scaled_dissipation_factor);
+                    let host_scaled_dissipation_factor = get_pair_dependent_scaled_dissipation_factor_or_else(&pair_dependent_scaled_dissipation_factor, tidal_host_particle.id, particle.id, tidal_host_particle.evolution, tidal_host_particle.tides.parameters.internal.scaled_dissipation_factor);
                     particle.tides.parameters.internal.orthogonal_component_of_the_tidal_force_due_to_stellar_tide = 4.5 * (particle.mass.powi(2))
                                                     * (tidal_host_particle.radius.powi(10)) 
-                                                    * star_scaled_dissipation_factor / distance_7;
+                                                    * host_scaled_dissipation_factor / distance_7;
                 } else {
                     // - Second line of Equation 5 from Bolmont et al. 2015
                     //   This expression has R**10 (instead of R**5 in Eq. 5) 
@@ -172,9 +230,10 @@ fn calculate_orthogonal_component_of_the_tidal_force_for(central_body:bool, tida
                     //   and not k2$\Delta$t (between k2$\Delta$t and sigma 
                     //   there is a R**5 factor as shown in Equation 28)
                     //   - k2 is love number
+                    let particle_scaled_dissipation_factor = get_pair_dependent_scaled_dissipation_factor_or_else(&pair_dependent_scaled_dissipation_factor, particle.id, tidal_host_particle.id, particle.evolution, particle.tides.parameters.internal.scaled_dissipation_factor);
                     particle.tides.parameters.internal.orthogonal_component_of_the_tidal_force_due_to_planetary_tide = 4.5 * (tidal_host_particle.mass.powi(2))
                                                     * (particle.radius.powi(10))
-                                                    * particle.tides.parameters.internal.scaled_dissipation_factor / distance_7;
+                                                    * particle_scaled_dissipation_factor / distance_7;
 
                     // SBC
                     //println!("> {:e} {:e} {:e} {:e}", tidal_host_particle.mass_g, particle.radius.powi(10), particle.scaled_dissipation_factor, distance_7);
@@ -192,8 +251,8 @@ fn calculate_orthogonal_component_of_the_tidal_force_for(central_body:bool, tida
     }
 }
 
-pub fn calculate_radial_component_of_the_tidal_force(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], star_planet_dependent_dissipation_factors: &mut HashMap<usize, f64>) {
-    let star_mass_2 = tidal_host_particle.mass * tidal_host_particle.mass;
+pub fn calculate_radial_component_of_the_tidal_force(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], pair_dependent_scaled_dissipation_factor: &mut HashMap<usize, f64>) {
+    let host_mass_2 = tidal_host_particle.mass * tidal_host_particle.mass;
 
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
         if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
@@ -207,21 +266,22 @@ pub fn calculate_radial_component_of_the_tidal_force(tidal_host_particle: &mut P
                     },
                     _ => 0.
                 };
-                let planet_mass_2 = particle.mass * particle.mass;
+                let particle_mass_2 = particle.mass * particle.mass;
                 // Conservative part of the radial tidal force
                 let radial_component_of_the_tidal_force_conservative_part = -3.0 * K2 / particle.tides.parameters.internal.distance.powi(7)
-                            * (planet_mass_2 * tidal_host_particle.radius.powi(5) * tidal_host_particle_love_number
-                            + star_mass_2 * particle.radius.powi(5) * params.love_number);
+                            * (particle_mass_2 * tidal_host_particle.radius.powi(5) * tidal_host_particle_love_number
+                            + host_mass_2 * particle.radius.powi(5) * params.love_number);
 
                 // Dissipative part of the radial tidal force:
                 let factor1 = -13.5 * particle.tides.parameters.internal.radial_velocity / particle.tides.parameters.internal.distance.powi(8);
-                let star_scaled_dissipation_factor = planet_dependent_dissipation_factor(&star_planet_dependent_dissipation_factors, &particle.id, tidal_host_particle.evolution, tidal_host_particle.tides.parameters.internal.scaled_dissipation_factor);
-                let term1 = planet_mass_2
+                let host_scaled_dissipation_factor = get_pair_dependent_scaled_dissipation_factor_or_else(&pair_dependent_scaled_dissipation_factor, tidal_host_particle.id, particle.id, tidal_host_particle.evolution, tidal_host_particle.tides.parameters.internal.scaled_dissipation_factor);
+                let particle_scaled_dissipation_factor = get_pair_dependent_scaled_dissipation_factor_or_else(&pair_dependent_scaled_dissipation_factor, particle.id, tidal_host_particle.id, particle.evolution, particle.tides.parameters.internal.scaled_dissipation_factor);
+                let term1 = particle_mass_2
                             * tidal_host_particle.radius.powi(10)
-                            * star_scaled_dissipation_factor;
-                let term2 = star_mass_2
+                            * host_scaled_dissipation_factor;
+                let term2 = host_mass_2
                             * particle.radius.powi(10)
-                            * particle.tides.parameters.internal.scaled_dissipation_factor;
+                            * particle_scaled_dissipation_factor;
                 // If we consider the star as a point mass (used for denergy_dt calculation):
                 particle.tides.parameters.internal.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass = factor1 * term2;
                 let radial_component_of_the_tidal_force_dissipative_part = particle.tides.parameters.internal.radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass + factor1 * term1;

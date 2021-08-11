@@ -335,6 +335,7 @@
     },
     "initial_time": 58440000000.0,
     "n_particles": 4,
+    "pair_dependent_scaled_dissipation_factor": {},
     "particles": [
       {
         "angular_momentum": {
@@ -26016,7 +26017,6 @@
         0.0
       ]
     ],
-    "star_planet_dependent_dissipation_factors": {},
     "time_limit": 16.0
   }
 }

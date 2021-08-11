@@ -53,7 +53,7 @@ pub struct Universe {
     pub consider_effects: ConsiderEffects,
     pub general_relativity_implementation: GeneralRelativityImplementation, // Optimization: fast access to GR implementation for integrators
     pub hosts: Hosts,
-    star_planet_dependent_dissipation_factors : HashMap<usize, f64>, // Central body specific
+    pair_dependent_scaled_dissipation_factor : HashMap<usize, f64>, // Central body specific
     roche_radiuses : [[f64; MAX_PARTICLES]; MAX_PARTICLES],
 }
 
@@ -162,7 +162,7 @@ impl Universe {
                     consider_effects: consider_effects,
                     general_relativity_implementation: general_relativity_implementation,
                     hosts: hosts,
-                    star_planet_dependent_dissipation_factors:HashMap::new(),
+                    pair_dependent_scaled_dissipation_factor:HashMap::new(),
                     roche_radiuses: roche_radiuses,
                     };
         universe
@@ -437,10 +437,10 @@ impl Universe {
                     {
                         //// calculate_orthogonal_components
 
-                        tides::calculate_planet_dependent_dissipation_factors(&mut tidal_host_particle, &mut particles_left, &mut particles_right, &mut self.star_planet_dependent_dissipation_factors); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if BolmontMathis2016/GalletBolmont2017/LeconteChabrier2013(true)
+                        tides::calculate_pair_dependent_scaled_dissipation_factors(&mut tidal_host_particle, &mut particles_left, &mut particles_right, &mut self.pair_dependent_scaled_dissipation_factor); // Needed by calculate_orthogonal_component_of_the_tidal_force and calculate_orthogonal_component_of_the_tidal_force if BolmontMathis2016/GalletBolmont2017/LeconteChabrier2013(true)
                         
                         if self.consider_effects.tides {
-                            tides::calculate_orthogonal_component_of_the_tidal_force(&mut tidal_host_particle, &mut particles_left, &mut particles_right, &mut self.star_planet_dependent_dissipation_factors);
+                            tides::calculate_orthogonal_component_of_the_tidal_force(&mut tidal_host_particle, &mut particles_left, &mut particles_right, &mut self.pair_dependent_scaled_dissipation_factor);
                             tides::calculate_creep_coplanar_shapes(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
                         }
 
@@ -470,7 +470,7 @@ impl Universe {
 
                     if accelerations && (self.consider_effects.tides || self.consider_effects.rotational_flattening) {
                         if self.consider_effects.tides {
-                            tides::calculate_radial_component_of_the_tidal_force(&mut tidal_host_particle, &mut particles_left, &mut particles_right, &mut self.star_planet_dependent_dissipation_factors);  // Needed for calculate_tidal_acceleration
+                            tides::calculate_radial_component_of_the_tidal_force(&mut tidal_host_particle, &mut particles_left, &mut particles_right, &mut self.pair_dependent_scaled_dissipation_factor);  // Needed for calculate_tidal_acceleration
                             tides::calculate_tidal_acceleration(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
                         }
 
