@@ -70,7 +70,7 @@ if __name__ == "__main__":
     star_spin = posidonius.Axes(0., 0., star_angular_frequency)
 
     star_tides_parameters = {
-        "dissipation_factor_scale": 1.0,
+        "dissipation_factor_scale": 100.0,
         "dissipation_factor": 2.006*3.845764e4,
         "love_number": 0.307,
     }
