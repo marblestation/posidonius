@@ -137,7 +137,13 @@ if __name__ == "__main__":
             # The tidal heat flux depends on the eccentricity and on the obliquity of the planet.
             # If the planet has no obliquity, no eccentricity and if its rotation is synchronized, the tidal heat flux is zero.
             mean_tidal_flux = gravitational_energy_lost / (4 * np.pi * np.power(planet_data['radius'] * posidonius.constants.AU, 2))
-            dissipation_factor_scale = universe_integrator_json['universe']['particles'][int(key)]['tides']['parameters']['input']['dissipation_factor_scale']
+            tidal_effect = universe_integrator_json['universe']['particles'][int(key)]['tides']['effect']
+            if 'OrbitingBody' in tidal_effect:
+                dissipation_factor_scale = tidal_effect.get('ConstantTimeLag', {}).get('dissipation_factor_scale', 0.)
+            elif 'CentralBody' in tidal_effect:
+                dissipation_factor_scale = tidal_effect.get('ConstantTimeLag', {}).get('dissipation_factor_scale', 0.)
+            else:
+                dissipation_factor_scale = 0.
             mean_tidal_flux *= dissipation_factor_scale
             planet_computed_data['mean_tidal_flux'] = mean_tidal_flux
 
