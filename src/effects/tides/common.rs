@@ -185,35 +185,41 @@ pub fn copy_heliocentric_coordinates(host_particle: &mut Particle, particles: &m
 
 //////////////////////////////////////////////////////////////////////////////
 //// TIDES
-pub fn calculate_dangular_momentum_dt_due_to_tides(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], central_body:bool) {
-    let mut dangular_momentum_dt = Axes{x: 0., y: 0., z:0.};
+pub fn calculate_dangular_momentum_dt_due_to_tides(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle]) {
+    let factor = -1.0;
 
+    let central_body = false;
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
         if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
             let torque_due_to_tides = match tidal_model {
                 TidalModel::ConstantTimeLag(_) => constant_time_lag::calculate_torque_due_to_tides(tidal_host_particle, particle, central_body),
                 TidalModel::CreepCoplanar(_) => creep_coplanar::calculate_torque_due_to_tides(tidal_host_particle, particle, central_body),
             };
-            let factor = -1.0;
-            if central_body {
-                // Integration of the spin (total torque tides):
-                dangular_momentum_dt.x += factor * torque_due_to_tides.x;
-                dangular_momentum_dt.y += factor * torque_due_to_tides.y;
-                dangular_momentum_dt.z += factor * torque_due_to_tides.z;
-            } else {
-                particle.tides.parameters.output.dangular_momentum_dt.x = factor * torque_due_to_tides.x;
-                particle.tides.parameters.output.dangular_momentum_dt.y = factor * torque_due_to_tides.y;
-                particle.tides.parameters.output.dangular_momentum_dt.z = factor * torque_due_to_tides.z;
-            }
+            // Integration of the spin (total torque tides):
+            particle.tides.parameters.output.dangular_momentum_dt.x = factor * torque_due_to_tides.x;
+            particle.tides.parameters.output.dangular_momentum_dt.y = factor * torque_due_to_tides.y;
+            particle.tides.parameters.output.dangular_momentum_dt.z = factor * torque_due_to_tides.z;
         }
     }
 
-    if central_body {
-        // - Equation 25 from Bolmont et al. 2015
-        tidal_host_particle.tides.parameters.output.dangular_momentum_dt.x = dangular_momentum_dt.x;
-        tidal_host_particle.tides.parameters.output.dangular_momentum_dt.y = dangular_momentum_dt.y;
-        tidal_host_particle.tides.parameters.output.dangular_momentum_dt.z = dangular_momentum_dt.z;
+    let central_body = true;
+    let mut dangular_momentum_dt = Axes{x: 0., y: 0., z:0.};
+    for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
+        if let TidesEffect::CentralBody(tidal_model) = tidal_host_particle.tides.effect {
+            let torque_due_to_tides = match tidal_model {
+                TidalModel::ConstantTimeLag(_) => constant_time_lag::calculate_torque_due_to_tides(tidal_host_particle, particle, central_body),
+                TidalModel::CreepCoplanar(_) => creep_coplanar::calculate_torque_due_to_tides(tidal_host_particle, particle, central_body),
+            };
+            // Integration of the spin (total torque tides):
+            dangular_momentum_dt.x += factor * torque_due_to_tides.x;
+            dangular_momentum_dt.y += factor * torque_due_to_tides.y;
+            dangular_momentum_dt.z += factor * torque_due_to_tides.z;
+        }
     }
+    // - Equation 25 from Bolmont et al. 2015
+    tidal_host_particle.tides.parameters.output.dangular_momentum_dt.x = dangular_momentum_dt.x;
+    tidal_host_particle.tides.parameters.output.dangular_momentum_dt.y = dangular_momentum_dt.y;
+    tidal_host_particle.tides.parameters.output.dangular_momentum_dt.z = dangular_momentum_dt.z;
 
 }
 

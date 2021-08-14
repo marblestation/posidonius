@@ -13,25 +13,39 @@ pub struct CreepCoplanarParameters {
 }
 
 pub fn calculate_torque_due_to_tides(tidal_host_particle: &Particle, particle: &Particle, central_body:bool) -> Axes {
-    if central_body {
-        // TODO: Creep coplanar not implemented for central body
-        return Axes{x: 0., y: 0., z: 0.}
-    } 
-
     let torque_due_to_tides_x: f64 = 0.;
     let torque_due_to_tides_y: f64 = 0.;
     //let torque_due_to_tides_z: f64 = 0.0;
 
     // Torque expression for studying creep tide tidal despinning (use torque = 0 as above to study stat. rotation, makes code run faster)
 
-    let torque_due_to_tides_z: f64 = 3.0 / 5.0
-        * K2
-        * particle.mass
-        * tidal_host_particle.mass
-        * particle.radius
-        * particle.radius
-        * particle.tides.parameters.internal.shape.y
-        / particle.tides.parameters.internal.distance.powi(3);
+    let torque_due_to_tides_z = match central_body {
+        true => {
+            // Host shape is planet dependent, it needs to be computed for each
+            let consider_tides = true;
+            let consider_rotational_flattening = false;
+            let tidal_host_shape = calculate_creep_coplanar_shape(&tidal_host_particle, &particle, consider_tides, consider_rotational_flattening, central_body);
+            3.0 / 5.0
+            * K2
+            * tidal_host_particle.mass
+            * particle.mass
+            * tidal_host_particle.radius
+            * tidal_host_particle.radius
+            * tidal_host_shape.y
+            / particle.tides.parameters.internal.distance.powi(3)
+        },
+        false => {
+            // Planet shape is host dependent and it was already computed
+            3.0 / 5.0
+            * K2
+            * particle.mass
+            * tidal_host_particle.mass
+            * particle.radius
+            * particle.radius
+            * particle.tides.parameters.internal.shape.y
+            / particle.tides.parameters.internal.distance.powi(3)
+        }
+    };
     
     Axes{x: torque_due_to_tides_x, y: torque_due_to_tides_y, z: torque_due_to_tides_z}
 }
@@ -103,6 +117,8 @@ pub fn calculate_tidal_force(tidal_host_particle: &Particle, particle: &Particle
 // Creep coplanar tools
 ////////////////////////////////////////////////////////////////////////////////
 pub fn calculate_creep_coplanar_shapes(tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle]) {
+    // It does not compute the host shape since it is planet dependent
+    // and it will be computed later when it is needed
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
         let particle_uniform_viscosity_coefficient = match particle.tides.effect {
             TidesEffect::CentralBody(tidal_model) | TidesEffect::OrbitingBody(tidal_model) => {
@@ -119,12 +135,13 @@ pub fn calculate_creep_coplanar_shapes(tidal_host_particle: &mut Particle, parti
         }
         let consider_tides = true;
         let consider_rotational_flattening = false;
-        let shape = calculate_creep_coplanar_shape(&tidal_host_particle, &particle, particle_uniform_viscosity_coefficient, consider_tides, consider_rotational_flattening);
+        let central_body = false;
+        let shape = calculate_creep_coplanar_shape(&tidal_host_particle, &particle, consider_tides, consider_rotational_flattening, central_body);
         particle.tides.parameters.internal.shape = shape;
     }
 }
 
-pub fn calculate_creep_coplanar_shape(tidal_host_particle: &Particle, particle: &Particle, particle_uniform_viscosity_coefficient: f64, consider_tides: bool, consider_rotational_flattening: bool) -> Axes {
+pub fn calculate_creep_coplanar_shape(tidal_host_particle: &Particle, particle: &Particle, consider_tides: bool, consider_rotational_flattening: bool, central_body: bool) -> Axes {
     let gm = tidal_host_particle.mass_g + particle.mass_g;
     let (
         semimajor_axis,
@@ -144,19 +161,58 @@ pub fn calculate_creep_coplanar_shape(tidal_host_particle: &Particle, particle: 
 
     //     println!("{} {}", perihelion_longitude, true_anomaly);
 
-    let shape = calculate_particle_shape(
-        semimajor_axis,
-        eccentricity,
-        mean_anomaly,
-        orbital_period,
-        particle.mass,
-        tidal_host_particle.mass,
-        particle.radius,
-        particle_uniform_viscosity_coefficient,
-        particle.spin.z,
-        consider_tides,
-        consider_rotational_flattening,
-    );
+    let shape = match central_body {
+        false => {
+            let particle_uniform_viscosity_coefficient = match particle.tides.effect {
+                TidesEffect::OrbitingBody(tidal_model) => {
+                    if let TidalModel::CreepCoplanar(params) = tidal_model {
+                        params.uniform_viscosity_coefficient
+                    } else {
+                        0.
+                    }
+                },
+                _ => 0.,
+            };
+            calculate_particle_shape(
+                semimajor_axis,
+                eccentricity,
+                mean_anomaly,
+                orbital_period,
+                particle.mass,
+                tidal_host_particle.mass,
+                particle.radius,
+                particle_uniform_viscosity_coefficient,
+                particle.spin.z,
+                consider_tides,
+                consider_rotational_flattening,
+            )
+        },
+        true => {
+            let tidal_host_particle_uniform_viscosity_coefficient = match tidal_host_particle.tides.effect {
+                TidesEffect::CentralBody(tidal_model) => {
+                    if let TidalModel::CreepCoplanar(params) = tidal_model {
+                        params.uniform_viscosity_coefficient
+                    } else {
+                        0.
+                    }
+                },
+                _ => 0.,
+            };
+            calculate_particle_shape(
+                semimajor_axis,
+                eccentricity,
+                mean_anomaly,
+                orbital_period,
+                tidal_host_particle.mass,
+                particle.mass,
+                tidal_host_particle.radius,
+                tidal_host_particle_uniform_viscosity_coefficient,
+                tidal_host_particle.spin.z,
+                consider_tides,
+                consider_rotational_flattening,
+            )
+        }
+    };
     shape
 }
 

@@ -33,8 +33,6 @@ class Tides(object):
         }
         if variant in ("CentralBody", "OrbitingBody", ):
             self._data["effect"] = {variant: tidal_model.get()}
-            if variant == "CentralBody" and isinstance(tidal_model, CreepCoplanar):
-                raise Exception("Creep coplanar not implemented for central body.")
             if isinstance(tidal_model, ConstantTimeLag):
                 self._data["parameters"]["internal"]["scaled_dissipation_factor"] = self._data["effect"][variant]["ConstantTimeLag"]["dissipation_factor"] * self._data["effect"][variant]["ConstantTimeLag"]["dissipation_factor_scale"]
         elif variant in ("Disabled", ):

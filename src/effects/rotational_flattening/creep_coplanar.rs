@@ -29,32 +29,47 @@ pub fn calculate_creep_coplanar_shapes(rotational_flattening_host_particle: &mut
         }
         let consider_tides = false;
         let consider_rotational_flattening = true;
-        let shape = calculate_creep_coplanar_shape(&rotational_flattening_host_particle, &particle, particle_uniform_viscosity_coefficient, consider_tides, consider_rotational_flattening);
+        let central_body = false;
+        let shape = calculate_creep_coplanar_shape(&rotational_flattening_host_particle, &particle, consider_tides, consider_rotational_flattening, central_body);
         particle.rotational_flattening.parameters.internal.shape = shape;
     }
 }
 
 
 pub fn calculate_torque_induced_by_rotational_flattening(rotational_flattening_host_particle: &Particle, particle: &Particle, central_body:bool) -> Axes {
-    if central_body {
-        // TODO: Creep coplanar not implemented for central body
-        return Axes{x: 0., y: 0., z: 0.}
-    } 
-
     let torque_induced_by_rotational_flattening_x: f64 = 0.;
     let torque_induced_by_rotational_flattening_y: f64 = 0.;
     //let torque_induced_by_rotational_flattening_z: f64 = 0.0;
 
     // Torque expression for studying creep tide tidal despinning (use torque = 0 as above to study stat. rotation, makes code run faster)
 
-    let torque_induced_by_rotational_flattening_z: f64 = 3.0 / 5.0
-        * K2
-        * particle.mass
-        * rotational_flattening_host_particle.mass
-        * particle.radius
-        * particle.radius
-        * particle.rotational_flattening.parameters.internal.shape.y
-        / particle.rotational_flattening.parameters.internal.distance.powi(3);
+    let torque_induced_by_rotational_flattening_z = match central_body {
+        true => {
+            // Host shape is planet dependent, it needs to be computed for each
+            let consider_tides = false;
+            let consider_rotational_flattening = true;
+            let rotational_flattening_host_shape = calculate_creep_coplanar_shape(&rotational_flattening_host_particle, &particle, consider_tides, consider_rotational_flattening, central_body);
+            3.0 / 5.0
+            * K2
+            * rotational_flattening_host_particle.mass
+            * particle.mass
+            * rotational_flattening_host_particle.radius
+            * rotational_flattening_host_particle.radius
+            * rotational_flattening_host_shape.y
+            / particle.rotational_flattening.parameters.internal.distance.powi(3)
+        },
+        false => {
+            // Planet shape is host dependent and it was already computed
+            3.0 / 5.0
+            * K2
+            * particle.mass
+            * rotational_flattening_host_particle.mass
+            * particle.radius
+            * particle.radius
+            * particle.rotational_flattening.parameters.internal.shape.y
+            / particle.rotational_flattening.parameters.internal.distance.powi(3)
+        }
+    };
     
     Axes{x: torque_induced_by_rotational_flattening_x, y: torque_induced_by_rotational_flattening_y, z: torque_induced_by_rotational_flattening_z}
 }

@@ -131,21 +131,11 @@ impl Particle {
     pub fn set_tides(&mut self, tides: Tides) {
         self.tides = tides;
         self.check_uniform_viscosity_coefficient();
-        if let TidesEffect::CentralBody(tidal_model) = self.tides.effect {
-            if let TidalModel::CreepCoplanar(_) = tidal_model {
-                panic!("[ERROR {} UTC] Creep coplanar not implemented for central body.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap());
-            }
-        }
     }
 
     pub fn set_rotational_flattening(&mut self, rotational_flattening: RotationalFlattening) {
         self.rotational_flattening = rotational_flattening;
         self.check_uniform_viscosity_coefficient();
-        if let RotationalFlatteningEffect::CentralBody(rotational_flattening_model) = self.rotational_flattening.effect {
-            if let RotationalFlatteningModel::CreepCoplanar(_) = rotational_flattening_model {
-                panic!("[ERROR {} UTC] Creep coplanar not implemented for central body.", time::now_utc().strftime("%Y.%m.%d %H:%M%S").unwrap());
-            }
-        }
     }
 
     pub fn check_uniform_viscosity_coefficient(&mut self) {
