@@ -198,14 +198,14 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
     u = np.asarray((u,)) if type(u) is float else u
     v = np.asarray((v,)) if type(v) is float else v
     w = np.asarray((w,)) if type(w) is float else w
-    # Output
-    #a # semi-major axis (in AU)
-    #q # perihelion distance
-    #eccentricity # eccentricity
-    #i = 0. # inclination
-    #p # longitude of perihelion (NOT argument of perihelion!!)
-    #n # longitude of ascending node
-    #l # mean anomaly (or mean longitude if eccentricity < 1.e-8)
+    # --- Output
+    # a # semi-major axis (in AU)
+    # q # perihelion distance
+    # ecc # eccentricity
+    # i = 0. # inclination
+    # p # longitude of perihelion (NOT argument of perihelion!!)
+    # n # longitude of ascending node
+    # l # mean anomaly (or mean longitude if eccentricity < 1.e-8)
     # Local
     hx = y * w  -  z * v
     hy = z * u  -  x * w
@@ -277,6 +277,9 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
         eccentricity[positive_temp] = np.sqrt(temp[positive_temp])
     q = s / (1. + eccentricity)
 
+    small_eccentricity = eccentricity < 3.0e-8
+    big_eccentricity = np.logical_not(small_eccentricity)
+
     ###-------------------------------------------------------------------------
     ### True longitude
     # Algorithm:
@@ -337,11 +340,9 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
 
             #l = eccentricity * np.sinh(bige) - bige
     l = np.zeros(len(true_longitude))
-    small_eccentricity = eccentricity < 3.0e-8
     if np.any(small_eccentricity):
         l[small_eccentricity] = true_longitude[small_eccentricity]
 
-    big_eccentricity = np.logical_not(small_eccentricity)
     if np.any(big_eccentricity):
         ce = np.zeros(len(true_longitude))
         ce[big_eccentricity] = (v2[big_eccentricity]*r[big_eccentricity] - gm[big_eccentricity]) / (eccentricity[big_eccentricity]*gm[big_eccentricity])
@@ -415,6 +416,8 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
             f[negative_rv] = TWO_PI - f[negative_rv]
         p[big_eccentricity] = true_longitude[big_eccentricity] - f[big_eccentricity]
         p[big_eccentricity] = modulus((p[big_eccentricity] + TWO_PI + TWO_PI), TWO_PI)
+
+    ###-------------------------------------------------------------------------
 
     if len(a) == 1:
         return (a[0], q[0], eccentricity[0], i[0], p[0], n[0], l[0])
@@ -824,7 +827,7 @@ def kepler_solution_for_a_hyperbola_hybrid_approach_for_low_n(e, capn0):
     # If capn is tiny (or zero) no need to go further than cubic even for
     # e =1.
     if capn >= tiny:
-        converge = false
+        converge = False
         for ignore in np.arange(imax)+1:
            x2 = x*x
            f = a0 +x*(a1+x2*(a3+x2*(a5+x2*(a7+x2*(a9+x2*(a11+x2))))))
@@ -833,7 +836,7 @@ def kepler_solution_for_a_hyperbola_hybrid_approach_for_low_n(e, capn0):
            orbel_flon = x + dx
            #   If we have converged here there's no point in going on
            if dx.abs() < tiny:
-                converge = true
+                converge = True
                 break
 
            x = orbel_flon
@@ -892,7 +895,7 @@ def kepler_solution_for_a_hyperbola_hybrid_approach(e, capn):
 
     orbel_fget = x
 
-    for _ in 1..imax:
+    for _ in range(imax):
        shx = np.sinh(x)
        chx = np.cosh(x)
        esh = e*shx
@@ -906,7 +909,7 @@ def kepler_solution_for_a_hyperbola_hybrid_approach(e, capn):
        dx = -f/(fp + dx*fpp/2. + dx*dx*fppp/6.)
        orbel_fget = x + dx
        #   If we have converged here there's no point in going on
-       if dx.abs() <= tiny:
+       if np.abs(dx) <= tiny:
         return orbel_fget
 
        x = orbel_fget
