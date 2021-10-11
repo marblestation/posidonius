@@ -3,6 +3,31 @@ import numpy as np
 from posidonius.constants import *
 from posidonius.particles.axes import Axes
 
+def _calculate_eccentricity_vector(reduced_masse, position, velocity):
+
+    x = position.x()
+    y = position.y()
+    z = position.z()
+    u = velocity.x()
+    v = velocity.y()
+    w = velocity.z()
+
+    hx = y * w  -  z * v
+    hy = z * u  -  x * w
+    hz = x * v  -  y * u
+
+    v_vect_h_x = v * hz - w * hy
+    v_vect_h_y = w * hx - u * hz
+    v_vect_h_z = u * hy - v * hx
+
+    r = np.sqrt(x*x + y*y + z*z)
+
+    ex = (v_vect_h_x / reduced_masse) - (x / r)
+    ey = (v_vect_h_y / reduced_masse) - (y / r)
+    ez = (v_vect_h_z / reduced_masse) - (z / r)
+
+    return (ex, ey, ez)
+
 def _find_indices_around_target_value(target_x, x):
     positions = np.where(x >= np.asarray(target_x))[0]
     if len(positions) > 0:
@@ -207,12 +232,14 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
     # n # longitude of ascending node
     # l # mean anomaly (or mean longitude if eccentricity < 1.e-8)
     # Local
+    ex, ey, ez = _calculate_eccentricity_vector(gm, position, velocity)
+    e_scal_r = ex*x + ey*y + ez*z
     hx = y * w  -  z * v
     hy = z * u  -  x * w
     hz = x * v  -  y * u
     h2 = np.power(hx, 2) + np.power(hy, 2) + np.power(hz, 2)
     v2 = u * u  +  v * v  +  w * w
-    rv = x * u  +  y * v  +  z * w
+    r_scal_v = x * u  +  y * v  +  z * w
     r = np.sqrt(x*x + y*y + z*z)
     h = np.sqrt(h2)
     s = h2 / gm
@@ -281,7 +308,32 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
     big_eccentricity = np.logical_not(small_eccentricity)
 
     ###-------------------------------------------------------------------------
-    ### True longitude
+    ### p: longitude_of_perihelion
+    ### l: mean_anomaly
+    # Algorithm:
+    #if eccentricity < 3.0e-8:
+        #p = 0.
+    #else:
+        ## Longitude of perihelion
+        #cf = (s - r) / (eccentricity*r)
+        #if abs(cf) > 1.:
+            ##cf = cf.signum()
+            #cf = np.sign(cf)
+
+        #f = np.arccos(cf)
+        #if r_scal_v < 0.:
+            #f = TWO_PI - f
+
+        #p = true_longitude - f
+        #p = modulus((p + TWO_PI + TWO_PI), TWO_PI)
+    p = np.zeros(len(eccentricity))
+    big_eccentricity = eccentricity >= 3.0e-8
+    if np.any(big_eccentricity):
+        p = np.arctan2(ey,ex)
+        # print("longitude of perihelion ", p, p/posidonius.constants.DEG2RAD)
+
+    ###-------------------------------------------------------------------------
+    ### True anomaly
     # Algorithm:
     #if hy != 0.:
         #to = -hx/hy
@@ -293,22 +345,26 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
 
     #if ci < 0.:
         #true_longitude = true_longitude + PI
-    true_longitude = np.zeros(len(ci))
-    non_zero = hy != 0.
-    if np.any(non_zero):
-        to = -hx[non_zero]/hy[non_zero]
-        temp = (1. - ci[non_zero]) * to
-        tmp2 = to * to
-        true_longitude[non_zero] = np.arctan2(y[non_zero]*(1.+tmp2*ci[non_zero])-x[non_zero]*temp, (x[non_zero]*(tmp2+ci[non_zero])-y[non_zero]*temp))
+    f = np.zeros(len(ci))
+    cosf_cal = np.zeros(len(ci))
+    if np.any(small_eccentricity):
+        cosf_cal[small_eccentricity] = x[small_eccentricity] / r[small_eccentricity]
+        cosf_cal = np.clip(cosf_cal, -1., 1.)
+        f[small_eccentricity] = np.arccos(cosf_cal[small_eccentricity])
+    if np.any(big_eccentricity):
+        cosf_cal = e_scal_r[big_eccentricity] / (eccentricity[big_eccentricity]*r[big_eccentricity])
+        cosf_cal = np.clip(cosf_cal, -1., 1.)
+        ellipse = np.logical_and(big_eccentricity, eccentricity < 1.)
 
-        zero = np.logical_not(non_zero)
-        if np.any(zero):
-            true_longitude[zero] = np.arctan2(y[zero]*ci[zero], x[zero])
+        f[big_eccentricity] = np.arccos(cosf_cal[big_eccentricity])
+        negative_r_scal_v = r_scal_v < 0.
+        if np.any(negative_r_scal_v):
+            f[negative_r_scal_v] = TWO_PI -f[negative_r_scal_v]
 
-    negative_ci = ci < 0.
-    if np.any(negative_ci):
-        true_longitude[negative_ci] += PI
-
+        # print("True ano cal {} rad and {} deg".format( f, f/posidonius.constants.DEG2RAD))
+        # cosf_cal = (1/e_cal)*( (a_cal*(1-e_cal*e_cal)/r_cal) -1.)
+        # f = np.arccos(cosf_cal)
+        # print("True ano cal {} rad and {} deg".format( f, f/posidonius.constants.DEG2RAD))
 
     ###-------------------------------------------------------------------------
     ### l: mean_anomaly
@@ -325,7 +381,7 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
                 #ce = np.sign(ce)
 
             #bige = np.arccos(ce)
-            #if rv < 0.:
+            #if r_scal_v < 0.:
                 #bige = TWO_PI - bige
 
             #l = bige - eccentricity*np.sin(bige)
@@ -335,17 +391,19 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
                 #ce = 1.
 
             #bige = np.log(ce + np.sqrt(ce*ce-1.))
-            #if rv < 0.:
+            #if r_scal_v < 0.:
                 #bige = - bige
 
             #l = eccentricity * np.sinh(bige) - bige
-    l = np.zeros(len(true_longitude))
-    if np.any(small_eccentricity):
-        l[small_eccentricity] = true_longitude[small_eccentricity]
+    l = np.zeros(len(ci))
+    if np.any(small_eccentricity): #mean_anomaly = true_longitude = true_anomaly + long_pericentre
+        l[small_eccentricity] = f[small_eccentricity]
 
     if np.any(big_eccentricity):
-        ce = np.zeros(len(true_longitude))
-        ce[big_eccentricity] = (v2[big_eccentricity]*r[big_eccentricity] - gm[big_eccentricity]) / (eccentricity[big_eccentricity]*gm[big_eccentricity])
+        # ce = np.zeros(len(true_longitude))
+        # ce[big_eccentricity] = (v2[big_eccentricity]*r[big_eccentricity] - gm[big_eccentricity]) / (eccentricity[big_eccentricity]*gm[big_eccentricity])
+        ce = np.zeros(len(ci))
+        ce[big_eccentricity] = (1./eccentricity[big_eccentricity])*(1.-(r[big_eccentricity]/a[big_eccentricity]))
         ellipse = np.logical_and(big_eccentricity, eccentricity < 1.)
         if np.any(ellipse):
             change_sign = np.logical_and(eccentricity, np.abs(ce) > 1.)
@@ -353,7 +411,7 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
                 ce[change_sign] = np.sign(ce[change_sign])
             bige = np.zeros(len(ce))
             bige[ellipse] = np.arccos(ce[ellipse])
-            negative_rv = np.logical_and(ellipse, rv < 0.)
+            negative_rv = np.logical_and(ellipse, r_scal_v < 0.)
             if np.any(negative_rv):
                 bige[negative_rv] = TWO_PI - bige[negative_rv]
             l[ellipse] = bige[ellipse] - eccentricity[ellipse]*np.sin(bige[ellipse])
@@ -365,7 +423,7 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
                 ce[negative_ce] = 1.
             bige = np.zeros(len(ce))
             bige[hyperbola] = np.log(ce[hyperbola] + np.sqrt(ce[hyperbola]*ce[hyperbola]-1.))
-            negative_rv = np.logical_and(hyperbola, rv < 0.)
+            negative_rv = np.logical_and(hyperbola, r_scal_v < 0.)
             if np.any(negative_rv):
                 bige[negative_rv] = - bige[negative_rv]
             l[hyperbola] = eccentricity[hyperbola] * np.sinh(bige[hyperbola]) - bige[hyperbola]
@@ -382,40 +440,6 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
     bigger_than_two_pi = l > TWO_PI
     if np.any(bigger_than_two_pi):
         l[bigger_than_two_pi] = modulus(l[bigger_than_two_pi], TWO_PI)
-
-    ###-------------------------------------------------------------------------
-    ### p: longitude_of_perihelion
-    ### l: mean_anomaly
-    # Algorithm:
-    #if eccentricity < 3.0e-8:
-        #p = 0.
-    #else:
-        ## Longitude of perihelion
-        #cf = (s - r) / (eccentricity*r)
-        #if abs(cf) > 1.:
-            ##cf = cf.signum()
-            #cf = np.sign(cf)
-
-        #f = np.arccos(cf)
-        #if rv < 0.:
-            #f = TWO_PI - f
-
-        #p = true_longitude - f
-        #p = modulus((p + TWO_PI + TWO_PI), TWO_PI)
-    p = np.zeros(len(eccentricity))
-    big_eccentricity = eccentricity >= 3.0e-8
-    if np.any(big_eccentricity):
-        cf = np.zeros(len(eccentricity))
-        cf[big_eccentricity] = (s[big_eccentricity] - r[big_eccentricity]) / (eccentricity[big_eccentricity]*r[big_eccentricity])
-        change_sign = np.abs(cf) > 1.
-        if np.any(change_sign):
-            cf[change_sign] = np.sign(cf[change_sign])
-        f = np.arccos(cf)
-        negative_rv = rv < 0.
-        if np.any(negative_rv):
-            f[negative_rv] = TWO_PI - f[negative_rv]
-        p[big_eccentricity] = true_longitude[big_eccentricity] - f[big_eccentricity]
-        p[big_eccentricity] = modulus((p[big_eccentricity] + TWO_PI + TWO_PI), TWO_PI)
 
     ###-------------------------------------------------------------------------
 

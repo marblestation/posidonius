@@ -4,28 +4,64 @@ use super::constants::*;
 use super::particles::Axes;
 //use std::cmp::Ord;
 
-pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: Axes) -> (f64, f64, f64, f64, f64, f64, f64, f64) {
-    // ! Based on the implementation of Chambers in Mercury
-    // Calculates Keplerian orbital elements given relative coordinates and
-    // velocities, and GM = G times the sum of the masses.
-
-    // Input
+pub fn calculate_eccentricity_vector(gm: f64, position: Axes, velocity: Axes) -> Axes {
+    // --- Input --- //
     let x = position.x;
     let y = position.y;
     let z = position.z;
     let u = velocity.x;
     let v = velocity.y;
     let w = velocity.z;
-    // Output
+    
+    // --- Output --- //
+    let mut eccentricity_vector = Axes{x:0., y:0., z:0. };
+    
+    // --- Local --- //
+    // Angular momentum
+    let hx = y * w  -  z * v;
+    let hy = z * u  -  x * w;
+    let hz = x * v  -  y * u;
+    // v vectorial h
+    let v_vect_h_x = v * hz - w * hy;
+    let v_vect_h_y = w * hx - u * hz;
+    let v_vect_h_z = u * hy - v * hx;
+    // distance
+    let r = (x*x + y*y + z*z).sqrt();
+    // eccentricity componant
+    eccentricity_vector.x = (v_vect_h_x / gm) - (x / r);
+    eccentricity_vector.y = (v_vect_h_y / gm) - (y / r);
+    eccentricity_vector.z = (v_vect_h_z / gm) - (z / r);
+
+    eccentricity_vector
+}
+
+pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: Axes) -> (f64, f64, f64, f64, f64, f64, f64, f64) {
+    // ! Based on the implementation of Chambers in Mercury
+    // Calculates Keplerian orbital elements given relative coordinates and
+    // velocities, and GM = G times the sum of the masses.
+
+    // --- Input
+    let x = position.x;
+    let y = position.y;
+    let z = position.z;
+    let u = velocity.x;
+    let v = velocity.y;
+    let w = velocity.z;
+    // --- Output
     let a: f64; // semi-major axis (in AU)
     let q: f64; // perihelion distance
     let eccentricity: f64; // eccentricity
     let mut i: f64 = 0.; // inclination
-    let mut p: f64; // longitude of perihelion (NOT argument of perihelion!!)
-    let mut n: f64; // longitude of ascending node
-    let mut l: f64; // mean anomaly (or mean longitude if eccentricity < 1.e-8)
+    let mut _p: f64; // longitude of perihelion (NOT argument of perihelion!!)
+    let mut _n: f64; // longitude of ascending node
+    let mut _l: f64; // mean anomaly (or mean longitude if eccentricity < 1.e-8)
     let orbital_period: f64; // orbital_period (in days)
-    // Local
+    // --- Local
+    let eccentricity_vector = calculate_eccentricity_vector(gm, position, velocity);
+    let ex = eccentricity_vector.x;
+    let ey = eccentricity_vector.y;
+    let ez = eccentricity_vector.z;
+    let e_scal_r = ex*x + ey*y + ez*z;
     let hx = y * w  -  z * v;
     let hy = z * u  -  x * w;
     let hz = x * v  -  y * u;
@@ -36,29 +72,30 @@ pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: A
     let h = h2.sqrt();
     let s = h2 / gm;
 
-    // Semi-major axis
+    // --- Semi-major axis
     a  = gm * r / (2.0 * gm  -  r * v2);
 
   
-    // Inclination and node
-    let ci = hz / h;
-    if ci.abs() < 1. {
-        i = ci.acos();
-        n = hx.atan2(-hy);
-        if n < 0. {
-            n = n + TWO_PI;
+    // --- Inclination and longitude of ascending node
+    let mut longitude_of_ascending_node:f64;
+    let cos_i = hz / h;
+    if cos_i.abs() < 1. {
+        i = cos_i.acos();
+        longitude_of_ascending_node = hx.atan2(-hy);
+        if longitude_of_ascending_node < 0. {
+            longitude_of_ascending_node = longitude_of_ascending_node + TWO_PI;
         }
     } else {
-        if ci > 0. {
+        if cos_i > 0. {
             i = 0.;
         }
-        if ci < 0. { 
+        if cos_i < 0. { 
             i = PI;
         }
-        n = 0.;
+        longitude_of_ascending_node = 0.;
     }
   
-    // Eccentricity and perihelion distance
+    // --- Eccentricity and perihelion distance
     let temp = 1.  +  s * (v2 / gm  -  2. / r);
     if temp <= 0. {
         eccentricity = 0.;
@@ -66,74 +103,82 @@ pub fn calculate_keplerian_orbital_elements(gm: f64, position: Axes, velocity: A
         eccentricity = temp.sqrt();
     }
     q = s / (1. + eccentricity);
-  
-    // True longitude
-    let mut true_longitude: f64;
-    if hy != 0. {
-        let to = -hx/hy;
-        let temp = (1. - ci) * to;
-        let tmp2 = to * to;
-        true_longitude = (y*(1.+tmp2*ci)-x*temp).atan2(x*(tmp2+ci)-y*temp);
-    } else {
-        true_longitude = (y * ci).atan2(x);
-    }
-    if ci < 0. {
-        true_longitude = true_longitude + PI;
-    }
-  
+
+    // --- Longitude of perihelion
+    let longitude_perihelion:f64;
     if eccentricity < 3.0e-8 {
-        p = 0.;
-        l = true_longitude;
+        longitude_perihelion= 0.;
     } else {
-        let mut ce = (v2*r - gm) / (eccentricity*gm);
+        longitude_perihelion = modulus(ey.atan2(ex) + TWO_PI + TWO_PI, TWO_PI);
+    }
+
+    // --- True anomaly
+    let mut true_anomaly:f64;
+    let cos_f:f64;
+    if eccentricity < 3.0e-8 {
+        cos_f = (x / r).clamp(-1., 1.);
+        true_anomaly = cos_f.acos();
+    } else {
+        cos_f = (e_scal_r / (eccentricity * r)).clamp(-1., 1.);
+        true_anomaly = cos_f.acos();
+        if rv < 0. {
+            true_anomaly = TWO_PI - true_anomaly;
+        }
+    }
+
+    
+    // --- Mean anomaly
+    let mut mean_anomaly:f64;
+    if eccentricity < 3.0e-8 {
+        mean_anomaly = true_anomaly;
+    } else {
+        let mut cos_bige = (1./eccentricity)*( 1. - (r / a) );
 
         // Mean anomaly for ellipse
         if eccentricity < 1. {
-            if ce.abs() > 1. {
-                ce = ce.signum();
+            if cos_bige.abs() > 1. {
+                cos_bige = cos_bige.signum();
             }
-            let mut bige = ce.acos();
+            let mut bige = cos_bige.acos();
             if rv < 0. {
                 bige = TWO_PI - bige;
             }
-            l = bige - eccentricity*bige.sin();
+            mean_anomaly = bige - eccentricity*bige.sin();
         } else {
             // Mean anomaly for hyperbola
-            if ce < 1. {
-                ce = 1.
+            if cos_bige < 1. {
+                cos_bige = 1.;
             }
-            let mut bige = (ce + (ce*ce-1.).sqrt()).log(std::f64::consts::E);
+            let mut bige = (cos_bige + (cos_bige*cos_bige-1.).sqrt()).log(std::f64::consts::E);
             if rv < 0. {
                 bige = - bige;
             }
-            l = eccentricity * bige.sinh() - bige
+            mean_anomaly = eccentricity * bige.sinh() - bige;
         }
 
-        // Longitude of perihelion
-        let mut cf = (s - r) / (eccentricity*r);
-        if cf.abs() > 1. {
-            cf = cf.signum();
-        }
-        let mut f: f64 = cf.acos();
-        if rv < 0. {
-            f = TWO_PI - f;
-        }
-        p = true_longitude - f;
-        p = modulus(p + TWO_PI + TWO_PI, TWO_PI);
     }
   
-    if l < 0. {
-        l = l + TWO_PI;
+    if mean_anomaly < 0. {
+        mean_anomaly = mean_anomaly + TWO_PI;
     }
-    if l > TWO_PI {
-        l = modulus(l, TWO_PI);
+    if mean_anomaly > TWO_PI {
+        mean_anomaly = modulus(mean_anomaly, TWO_PI);
     }
 
     // Given relative coordinates and velocities (of the body 1 respect to body 2),
     // and GM = G times the sum of the masses (body 1 + body 2)
     orbital_period = (TWO_PI / gm.sqrt()) * a.powf(3./2.); // in days
 
-    return (a, q, eccentricity, i, p, n, l, orbital_period)
+    // a Semimajor axis
+    // q perihelion distance
+    // e eccentricity
+    // i inclination
+    // p longitude of perihelion (! not the argument of perihelion)
+    // n longitude of ascending node
+    // l mean anomaly
+    // orbital period bah...
+
+    return (a, q, eccentricity, i,longitude_perihelion , longitude_of_ascending_node, mean_anomaly, orbital_period)
 }
 
 pub fn calculate_perihelion_distance_and_eccentricity(gm: f64, position: Axes, velocity: Axes) -> (f64, f64) {
