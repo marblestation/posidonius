@@ -21,7 +21,12 @@ pub fn calculate_torque_due_to_tides(tidal_host_particle: &Particle, particle: &
 
     let torque_due_to_tides_z = match central_body {
         true => {
-            // Host shape is planet dependent, it needs to be computed for each
+            // Host shape is planet dependent, it needs to be computed for each.
+            // For (mainly) co-orbital and circumbinary systems, planet shape cannot be linearly added.
+            // The resulting shape is a combination of the shapes caused by each planet, but the
+            // way of implementation is not a direct sum of the force components, but actually a
+            // composition of the figures of equilibrium caused by each planet.
+            // See more discussions in https://arxiv.org/abs/2105.02336
             let consider_tides = true;
             let consider_rotational_flattening = false;
             let tidal_host_shape = calculate_creep_coplanar_shape(&tidal_host_particle, &particle, consider_tides, consider_rotational_flattening, central_body);
