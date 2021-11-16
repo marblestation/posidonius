@@ -207,14 +207,6 @@ pub fn calculate_acceleration_induced_by_rotational_flattering(rotational_flatte
 
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
         if let RotationalFlatteningEffect::OrbitingBody(rotational_flattening_model) = particle.rotational_flattening.effect {
-            // Optimization: If particle has creep coplanar tidal model, skip rotational flatenning
-            // since its computation was already considered when computing the tidal acceelration
-            if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
-                if let TidalModel::CreepCoplanar(_) = tidal_model {
-                    continue;
-                }
-            }
-            //
             let force_induced_by_rotation = match rotational_flattening_model {
                 RotationalFlatteningModel::OblateSpheroid(_) => oblate_spheroid::calculate_acceleration_induced_by_rotational_flattering(&rotational_flattening_host_particle, &particle),
                 RotationalFlatteningModel::CreepCoplanar(_) => creep_coplanar::calculate_acceleration_induced_by_rotational_flattering(&rotational_flattening_host_particle, &particle),
