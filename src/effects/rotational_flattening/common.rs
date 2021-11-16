@@ -1,6 +1,5 @@
 use super::super::super::{Particle};
 use super::super::super::{Axes};
-use super::super::tides::{TidesEffect, TidalModel};
 use super::oblate_spheroid;
 use super::creep_coplanar;
 
