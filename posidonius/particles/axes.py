@@ -3,7 +3,7 @@ import numpy as np
 class Axes(object):
     def __init__(self, x, y, z):
         if type(x) is np.ndarray:
-            if len(x) != len(y) or len(x) != len(y):
+            if len(x) != len(y) or len(x) != len(z):
                 raise Exception("Arrays length do not match!")
             self._data = {u'x': x, u'y': y, u'z': z}
         else:
@@ -23,7 +23,7 @@ class Axes(object):
 
     def set_x(self, x):
         if type(x) is np.ndarray:
-            if len(x) != len(self._data['y']) or len(x) != len(self._data['y']):
+            if len(x) != len(self._data['y']) or len(x) != len(self._data['z']):
                 raise Exception("Arrays length do not match!")
             self._data['x'] = x
         else:
