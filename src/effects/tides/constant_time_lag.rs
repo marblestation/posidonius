@@ -76,6 +76,9 @@ fn calculate_planet_dependent_scaled_dissipation_factors(tidal_host_particle: &m
                                 + tidal_host_particle_dissipation_factor);
 
                             set_pair_dependent_scaled_dissipation_factor(pair_dependent_scaled_dissipation_factor, tidal_host_particle.id, particle.id, particle_dependent_scaled_dissipation_factor);
+                        } else {
+                            // Equilibrium regime (not dynamical tide)
+                            remove_pair_dependent_scaled_dissipation_factor(pair_dependent_scaled_dissipation_factor, tidal_host_particle.id, particle.id);
                         }
                     }
                 }
@@ -123,6 +126,9 @@ fn calculate_host_dependent_scaled_dissipation_factors(tidal_host_particle: &mut
                                 + params.dissipation_factor);
 
                             set_pair_dependent_scaled_dissipation_factor(pair_dependent_scaled_dissipation_factor, particle.id, tidal_host_particle.id, host_dependent_scaled_dissipation_factor);
+                        } else {
+                            // Equilibrium regime (not dynamical tide)
+                            remove_pair_dependent_scaled_dissipation_factor(pair_dependent_scaled_dissipation_factor, tidal_host_particle.id, particle.id);
                         }
                     }
                 }
@@ -139,13 +145,18 @@ pub fn set_pair_dependent_scaled_dissipation_factor(pair_dependent_scaled_dissip
     pair_dependent_scaled_dissipation_factor.insert(key, scaled_dissipation_factor);
 }
 
+pub fn remove_pair_dependent_scaled_dissipation_factor(pair_dependent_scaled_dissipation_factor: &mut HashMap<usize, f64>, id: usize, depends_on_id: usize) {
+    let key = id * MAX_PARTICLES + depends_on_id;
+    pair_dependent_scaled_dissipation_factor.remove(&key);
+}
+
 pub fn get_pair_dependent_scaled_dissipation_factor_or_else(pair_dependent_scaled_dissipation_factor: &HashMap<usize, f64>, id: usize, depends_on_id: usize, evolution: EvolutionType, scaled_dissipation_factor: f64) -> f64 {
     let key = id * MAX_PARTICLES + depends_on_id;
     match evolution {
         EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
             match pair_dependent_scaled_dissipation_factor.get(&key) {
                 Some(&value) => value,
-                _ => scaled_dissipation_factor // This should not happen
+                _ => scaled_dissipation_factor // This happens if it goes out of the dynamical regime into the equilibrium regime
             }
         },
         _ => scaled_dissipation_factor,
