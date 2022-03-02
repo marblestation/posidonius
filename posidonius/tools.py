@@ -275,7 +275,7 @@ def _calculate_keplerian_orbital_elements(gm, position, velocity):
         i[less_than_one] = np.arccos(ci[less_than_one])
         #n[less_than_one] = np.arctan(hx[less_than_one] / -hy[less_than_one])
         n[less_than_one] = np.arctan2(hx[less_than_one], -hy[less_than_one])
-        positive_hy = hy[less_than_one] > 0.
+        positive_hy = np.logical_and(less_than_one, hy > 0.)
         if np.any(positive_hy):
             i[positive_hy] = TWO_PI - i[positive_hy]
     negative_n = np.logical_and(n < 0, less_than_one)
