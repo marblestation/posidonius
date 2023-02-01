@@ -61,7 +61,7 @@ class Universe(object):
             "particles": [],
             "particles_evolvers": [],
             "pair_dependent_scaled_dissipation_factor": {},
-            "roche_radiuses": [[0.,] *  MAX_PARTICLES,] * MAX_PARTICLES,
+            "roche_radiuses": [0.,] *  MAX_PARTICLES * MAX_PARTICLES,
             "time_limit": float(time_limit),
         }
 

@@ -2,6 +2,7 @@ extern crate serde;
 //#[macro_use]
 //extern crate serde_derive;
 extern crate serde_json;
+extern crate serde_big_array;
 extern crate bincode;
 extern crate csv;
 extern crate time;

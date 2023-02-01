@@ -3,6 +3,7 @@ use std::iter;
 use std::io::{Write, BufWriter};
 use std::fs::File;
 use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
 use super::Integrator;
 use super::super::{Particle};
 use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES, G, DBL_EPSILON_2, IMPLICIT_MIDPOINT_MIN_ITER, IMPLICIT_MIDPOINT_MAX_ITER};
@@ -107,10 +108,13 @@ pub struct WHFast {
     pub n_historic_snapshots: usize,
     pub hash: u64,
     /// Internal data structures below. Nothing to be changed by the user.
+    #[serde(with = "BigArray")]
     particles_alternative_coordinates: [AlternativeCoordinates; MAX_PARTICLES], // Jacobi, democractic-heliocentric or WHDS
     alternative_coordinates_type: CoordinatesType,
     timestep_warning: usize ,
+    #[serde(with = "BigArray")]
     inertial_velocity_errors: [Axes; MAX_PARTICLES], // A running compensation for lost low-order bits (Kahan 1965; Higham 2002; Hairer et al. 2006) 
+    #[serde(with = "BigArray")]
     particle_angular_momentum_errors: [Axes; MAX_PARTICLES], // A running compensation for lost low-order bits (Kahan 1965; Higham 2002; Hairer et al. 2006) 
 }
 

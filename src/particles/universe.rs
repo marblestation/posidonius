@@ -1,6 +1,7 @@
 extern crate time;
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
 use super::super::constants::{G, MAX_PARTICLES, MAX_DISTANCE_2};
 use super::super::{Evolver, EvolutionType};
 use super::{Particle};
@@ -48,6 +49,7 @@ pub struct ConsiderEffects {
 pub struct Universe {
     pub initial_time: f64,
     pub time_limit: f64,
+    #[serde(with = "BigArray")]
     pub particles: [Particle; MAX_PARTICLES],
     pub particles_evolvers: Vec<Evolver>,
     pub n_particles: usize,
@@ -55,7 +57,8 @@ pub struct Universe {
     pub general_relativity_implementation: GeneralRelativityImplementation, // Optimization: fast access to GR implementation for integrators
     pub hosts: Hosts,
     pair_dependent_scaled_dissipation_factor : HashMap<usize, f64>, // Central body specific
-    roche_radiuses : [[f64; MAX_PARTICLES]; MAX_PARTICLES],
+    #[serde(with = "BigArray")]
+    roche_radiuses : [f64; MAX_PARTICLES * MAX_PARTICLES],
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
@@ -152,7 +155,8 @@ impl Universe {
             }
         }
 
-        let roche_radiuses : [[f64; MAX_PARTICLES]; MAX_PARTICLES] = [[0.; MAX_PARTICLES]; MAX_PARTICLES];
+        let roche_radiuses : [f64; MAX_PARTICLES * MAX_PARTICLES] = [0.; MAX_PARTICLES * MAX_PARTICLES];
+
 
         let universe = Universe {
                     initial_time: initial_time,
@@ -168,11 +172,11 @@ impl Universe {
                     };
         universe
     }
-
+    
     pub fn calculate_roche_radiuses(&mut self) {
         let (particles, _) = self.particles.split_at_mut(self.n_particles);
-        let (roche_radiuses, _) = self.roche_radiuses.split_at_mut(self.n_particles);
-        for (i, (particle_a, roche_radiuses)) in particles.iter().zip(roche_radiuses.iter_mut()).enumerate() {
+        let (roche_radiuses, _) = self.roche_radiuses.split_at_mut(self.n_particles*self.n_particles);
+        for (i, (particle_a, roche_radiuses)) in particles.iter().zip(roche_radiuses.chunks_mut(self.n_particles)).enumerate() {
             for (j, (particle_b, roche_radius)) in particles.iter().zip(roche_radiuses.iter_mut()).enumerate() {
                 // Roche radius calculation
                 if i == j {
@@ -192,7 +196,8 @@ impl Universe {
 
     pub fn gravity_calculate_acceleration(&mut self, ignore_terms: IgnoreGravityTerms) {
         let (particles, _) = self.particles.split_at_mut(self.n_particles);
-        let (roche_radiuses, _) = self.roche_radiuses.split_at_mut(self.n_particles);
+        //let (roche_radiuses, _) = self.roche_radiuses.split_at_mut(self.n_particles*);
+        let (roche_radiuses, _) = self.roche_radiuses.split_at_mut(self.n_particles*self.n_particles);
 
         let mut newtonian_inertial_accelerations = [Axes{x:0., y:0., z:0. }; MAX_PARTICLES]; 
         let (newtonian_inertial_accelerations, _) = newtonian_inertial_accelerations.split_at_mut(self.n_particles);
@@ -203,7 +208,7 @@ impl Universe {
 
         //// For compensated summation:
         //for (i, (particle_a, (newtonian_inertial_acceleration, (newtonian_inertial_acceleration_error, roche_radiuses)))) in particles.iter().zip(newtonian_inertial_accelerations.iter_mut().zip(newtonian_inertial_acceleration_errors.iter_mut().zip(roche_radiuses.iter()))).enumerate() {
-        for (i, (particle_a, (newtonian_inertial_acceleration, roche_radiuses))) in particles.iter().zip(newtonian_inertial_accelerations.iter_mut().zip(roche_radiuses.iter())).enumerate() {
+        for (i, (particle_a, (newtonian_inertial_acceleration, roche_radiuses))) in particles.iter().zip(newtonian_inertial_accelerations.iter_mut().zip(roche_radiuses.chunks_mut(self.n_particles))).enumerate() {
             for (j, (particle_b, roche_radius)) in particles.iter().zip(roche_radiuses.iter()).enumerate() {
                 if i == j {
                     continue;
