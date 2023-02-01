@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use super::super::constants::{K2};
 use super::{Axes};
 use super::super::{Tides, RotationalFlattening, GeneralRelativity, Disk, Wind, EvolutionType};

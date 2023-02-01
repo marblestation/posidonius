@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use super::super::constants::{R_SUN};
 use super::super::{Particle};
 use super::super::{Axes};

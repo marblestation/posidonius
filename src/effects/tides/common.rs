@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use super::super::super::{Particle};
 use super::super::super::{Axes};
 use super::constant_time_lag;

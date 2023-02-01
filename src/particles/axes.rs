@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Axes {

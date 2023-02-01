@@ -9,7 +9,7 @@ use super::super::{Axes, TidesEffect, TidalModel};
 use super::super::tools::calculate_keplerian_orbital_elements;
 use bincode;
 use time;
-use serde::ser::Serialize;
+use serde::{Serialize};
 use serde_json;
 use std::path::Path;
 use std::fs;

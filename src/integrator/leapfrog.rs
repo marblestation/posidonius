@@ -1,6 +1,7 @@
 use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
+use serde::{Serialize, Deserialize};
 use super::Integrator;
 use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;

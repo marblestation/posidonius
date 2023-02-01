@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde::{Serialize, Deserialize};
 use super::super::super::tools;
 use super::super::super::constants::{K2, SMOOTHING_FACTOR_DYN_TIDE_COROTATION, MAX_PARTICLES};
 use super::super::super::{Particle};

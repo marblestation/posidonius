@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use super::super::constants::{BOLTZMANN_CONSTANT, MASS_HYDROGEN_ATOM};
 use super::super::{Particle};
 use super::super::{Axes};

@@ -1,6 +1,7 @@
 use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
+use serde::{Serialize, Deserialize};
 use super::Integrator;
 use super::super::constants::{INTEGRATOR_FORCE_IS_VELOCITYDEPENDENT, INTEGRATOR_EPSILON, INTEGRATOR_EPSILON_GLOBAL, INTEGRATOR_MIN_DT, INTEGRATOR_MAX_DT, SAFETY_FACTOR, MAX_PARTICLES};
 use super::super::particles::Universe;

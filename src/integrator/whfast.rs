@@ -2,6 +2,7 @@ use std;
 use std::iter;
 use std::io::{Write, BufWriter};
 use std::fs::File;
+use serde::{Serialize, Deserialize};
 use super::Integrator;
 use super::super::{Particle};
 use super::super::constants::{PI, WHFAST_NMAX_QUART, WHFAST_NMAX_NEWT, MAX_PARTICLES, G, DBL_EPSILON_2, IMPLICIT_MIDPOINT_MIN_ITER, IMPLICIT_MIDPOINT_MAX_ITER};

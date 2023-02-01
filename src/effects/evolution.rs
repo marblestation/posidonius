@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use super::super::{Particle, TidesEffect, TidalModel};
 use super::super::constants::{SUN_DYN_FREQ_2};
 use super::super::tools::{linear_interpolation};

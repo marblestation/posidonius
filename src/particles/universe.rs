@@ -1,5 +1,6 @@
 extern crate time;
 use std::collections::HashMap;
+use serde::{Serialize, Deserialize};
 use super::super::constants::{G, MAX_PARTICLES, MAX_DISTANCE_2};
 use super::super::{Evolver, EvolutionType};
 use super::{Particle};
