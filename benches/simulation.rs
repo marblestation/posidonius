@@ -40,8 +40,10 @@ fn create_universe() -> posidonius::Universe {
     let mut universe = posidonius::Universe::new(initial_time, time_limit, particles, consider_effects);
     let current_time = 0.;
     // initialize_physical_values
-    universe.calculate_norm_spin(); // Needed for evolution
-    universe.calculate_particles_evolving_quantities(current_time); // Make sure we start with the good initial values
+    let evolution = true;
+    universe.calculate_spin_and_evolving_quantities(current_time, evolution); // Make sure we start with the good initial values
+    universe.calculate_roche_radiuses(); // Needed for collision detection
+    //
     universe.inertial_to_heliocentric();
 
     universe

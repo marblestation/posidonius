@@ -231,18 +231,18 @@ The flame graph allows the developer to identify parts of the code to be optimiz
 Install cargo-flamegraph and its system dependencies in GNU/Linux:
 
 ```
-sudo apt install linux-tools-common linux-tools-generic 
+sudo apt install linux-tools-common linux-tools-generic # only in GNU/Linux (debian-based)
 cargo install flamegraph --force
 ```
 
-Setup the system to allow performance measurement for non-root users:
+Setup the system to allow performance measurement for non-root users (only for GNU/Linux):
 
 ```
 sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
 sudo sysctl -w kernel.perf_event_paranoid=-1
 ```
 
-Run an example to build a flame graph:
+Run an example to build a flame graph (add `--root` after `cargo flamegraph` if this is run on a system different from GNU/Linux, and it will ask for your user password):
 
 ```
 python cases/example.py target/example.json
@@ -250,6 +250,6 @@ rm -f target/example*bin
 cargo flamegraph --bin posidonius -- start target/example.json target/example.bin target/example_history.bin
 ```
 
-The previous command will generate the files `perf.data` and `flamegraph.svg`, the former can be inspected with the `perf` command while the latter is better visualized in a browser (it allows easy interaction to explore the graph and expand the function names).
+The previous command will generate the files `perf.data` and `flamegraph.svg`, the former can be inspected with the `perf` command (only in GNU/Linux) while the latter is better visualized in a browser (it allows easy interaction to explore the graph and expand the function names).
 
 
