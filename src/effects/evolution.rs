@@ -191,6 +191,7 @@ impl Evolver {
                     panic!("The evolution type Baraffe1998 does not support a mass of {} Msun!", mass);
                 }
             },
+
             EvolutionType::BolmontMathis2016(mass) => {
                 if mass <= 0.401 && mass >= 0.399 {
                     String::from("input/Bolmont_Mathis_2016/L04Z02r.dat")
@@ -210,11 +211,11 @@ impl Evolver {
                     String::from("input/Bolmont_Mathis_2016/L11Z02r.dat")
                 } else if mass <= 1.201 && mass >= 1.199 {
                     String::from("input/Bolmont_Mathis_2016/L12Z02r.dat")
-                } else if mass <= 1.201 && mass >= 1.499 {
-                    String::from("input/Bolmont_Mathis_2016/L13Z02r.dat")
                 } else if mass <= 1.301 && mass >= 1.299 {
-                    String::from("input/Bolmont_Mathis_2016/L14Z02r.dat")
+                    String::from("input/Bolmont_Mathis_2016/L13Z02r.dat")
                 } else if mass <= 1.401 && mass >= 1.399 {
+                    String::from("input/Bolmont_Mathis_2016/L14Z02r.dat")
+                } else if mass <= 1.501 && mass >= 1.499 {
                     String::from("input/Bolmont_Mathis_2016/L15Z02r.dat")
                 } else {
                     panic!("The evolution type BolmontMathis2016 does not support a mass of {} Msun!", mass);
