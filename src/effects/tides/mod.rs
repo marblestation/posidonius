@@ -15,5 +15,4 @@ pub use self::constant_time_lag::calculate_pair_dependent_scaled_dissipation_fac
 pub use self::constant_time_lag::ConstantTimeLagParameters;
 pub use self::constant_time_lag::calculate_radial_component_of_the_tidal_force;
 pub use self::constant_time_lag::calculate_orthogonal_component_of_the_tidal_force;
-pub use self::creep_coplanar::CreepCoplanarParameters;
 pub use self::creep_coplanar::calculate_creep_coplanar_shapes;

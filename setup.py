@@ -20,13 +20,22 @@ except (IOError, ImportError):
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
-def get_git_version(default="v0.0.1"):
+def get_git_version(default="0.0.1"):
     try:
-        p = Popen(['git', 'describe', '--tags'], stdout=PIPE, stderr=PIPE)
+        # Get the latest tag, number of commits since that tag, and the short hash
+        p = Popen(['git', 'describe', '--tags', '--long'], stdout=PIPE, stderr=PIPE)
         p.stderr.close()
-        line = p.stdout.readlines()[0]
-        line = line.strip()
-        return line.decode('utf-8')
+        line = p.stdout.readlines()[0].strip().decode('utf-8')
+
+        # Parse the output of git describe
+        tag, commits_since_tag, commit_hash = line.rsplit('-', 2)
+
+        # Replace '-' with '.' for the version format
+        # For example: v2020.05.23-41-g8427a2c -> 2020.5.23+41.g8427a2c (which adheres to PEP 440)
+        tag = tag.lstrip('v').replace('-', '.')  # Remove 'v' and replace '-' with '.'
+        version = f"{tag}+{commits_since_tag}.g{commit_hash}"
+
+        return version
     except:
         return default
 
