@@ -1,4 +1,6 @@
+extern crate time;
 use std::iter;
+use time::{OffsetDateTime, format_description};
 use serde::{Serialize, Deserialize};
 use super::super::constants::{G, SPEED_OF_LIGHT_2, MAX_PARTICLES, DBL_EPSILON_2};
 use super::super::{Particle};
@@ -495,7 +497,7 @@ pub fn calculate_anderson1975_general_relativity_acceleration(host_particle: &mu
                 if (dvx*dvx + dvy*dvy + dvz*dvz)/vi2 < DBL_EPSILON_2 {
                     break;
                 } else if q == max_iterations {
-                    println!("[WARNING {} UTC] {} iterations in general relativity failed to converge. This is typically because the perturbation is too strong for the current implementation.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), max_iterations);
+                    println!("[WARNING {} UTC] {} iterations in general relativity failed to converge. This is typically because the perturbation is too strong for the current implementation.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), max_iterations);
                 }
             }
 
@@ -869,7 +871,7 @@ pub fn calculate_newhall1983_general_relativity_acceleration(host_particle: &mut
         if maxdev < dev_limit {
             break;
         } else if k == max_iterations {
-            println!("[WARNING {} UTC] {} iterations in general relativity failed to converge.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), max_iterations);
+            println!("[WARNING {} UTC] {} iterations in general relativity failed to converge.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), max_iterations);
         }
 
     }

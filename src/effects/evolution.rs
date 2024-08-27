@@ -229,7 +229,7 @@ impl Evolver {
         };
         //println!("Filename {}", filename);
         
-        let mut rdr = csv::Reader::from_file(&filename).unwrap().has_headers(false).delimiter(b' ').flexible(true);
+        let mut rdr = csv::ReaderBuilder::new().has_headers(false).delimiter(b' ').flexible(true).from_path(&filename).unwrap();
         for (i, row) in rdr.records().map(|r| r.unwrap()).enumerate() {
             let raw_time = row[0].parse::<f64>().unwrap_or(-1.);
             if i == 0 && raw_time < 0. {
@@ -395,7 +395,7 @@ impl Evolver {
                     panic!("The evolution type Leconte2011 does not support a mass of {} Msun!", mass);
                 }
             };
-            let mut rdr = csv::Reader::from_file("input/Leconte_2011/rg2BD.dat").unwrap().has_headers(false).delimiter(b' ').flexible(true);
+            let mut rdr = csv::ReaderBuilder::new().has_headers(false).delimiter(b' ').flexible(true).from_path("input/Leconte_2011/rg2BD.dat").unwrap();
             for row in rdr.records().map(|r| r.unwrap()) {
                 let raw_time = row[0].parse::<f64>().unwrap();
                 let raw_radius_of_gyration_2 = row[aux_column].parse::<f64>().unwrap();

@@ -1,5 +1,6 @@
 extern crate time;
 use std;
+use time::{OffsetDateTime, format_description};
 use super::constants::*;
 use super::particles::Axes;
 //use std::cmp::Ord;
@@ -676,7 +677,7 @@ fn kepler_solution_for_a_hyperbola_hybrid_approach_for_low_n(e: f64, capn0: f64)
                orbel_flon = -orbel_flon;
                capn = -capn;
             }
-            println!("[WARNING {} UTC] FLON : RETURNING WITHOUT COMPLETE CONVERGENCE", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[WARNING {} UTC] FLON : RETURNING WITHOUT COMPLETE CONVERGENCE", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
             diff = e * orbel_flon.sinh()  - orbel_flon - capn;
             println!("N, F, ecc * F.sinh() - F - N : ");
             println!("{} {} {}", capn,orbel_flon,diff);
@@ -758,7 +759,7 @@ fn kepler_solution_for_a_hyperbola_hybrid_approach(e: f64, capn: f64) -> f64 {
        x = orbel_fget;
     }
   
-    println!("[WARNING {} UTC] FGET : RETURNING WITHOUT COMPLETE CONVERGENCE", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+    println!("[WARNING {} UTC] FGET : RETURNING WITHOUT COMPLETE CONVERGENCE", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
     return orbel_fget;
 }
 

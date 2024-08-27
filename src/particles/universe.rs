@@ -1,4 +1,5 @@
 extern crate time;
+use time::{OffsetDateTime, format_description};
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_big_array::BigArray;
@@ -135,18 +136,18 @@ impl Universe {
                 let current_time = 0.;
                 let new_radius = evolver.radius(current_time, particle.radius);
                 if (new_radius - particle.radius).abs() > 1e-6 {
-                    println!("[WARNING {} UTC] Changed radius value from '{:.6}' to '{:.6}' to match expected state following the selected evolving body model", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), particle.radius, new_radius);
+                    println!("[WARNING {} UTC] Changed radius value from '{:.6}' to '{:.6}' to match expected state following the selected evolving body model", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), particle.radius, new_radius);
                     particle.radius = new_radius;
                     update_angular_momentum = true;
                 }
                 let new_radius_of_gyration_2 = evolver.radius_of_gyration_2(current_time, particle.radius_of_gyration_2);
                 if (new_radius_of_gyration_2 - particle.radius_of_gyration_2).abs() > 1e-6 {
-                    println!("[WARNING {} UTC] Changed radius of gyration value from '{:.6}' to '{:.6}' to match expected state following the selected evolving body model", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), particle.radius_of_gyration_2.sqrt(), new_radius_of_gyration_2.sqrt());
+                    println!("[WARNING {} UTC] Changed radius of gyration value from '{:.6}' to '{:.6}' to match expected state following the selected evolving body model", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), particle.radius_of_gyration_2.sqrt(), new_radius_of_gyration_2.sqrt());
                     particle.radius_of_gyration_2 = new_radius_of_gyration_2;
                     update_angular_momentum = true;
                 }
                 if update_angular_momentum {
-                    println!("[WARNING {} UTC] Recomputed moment of inertia and angular momentum to match expected state following the selected evolving body model", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                    println!("[WARNING {} UTC] Recomputed moment of inertia and angular momentum to match expected state following the selected evolving body model", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
                     particle.moment_of_inertia = particle.mass * particle.radius_of_gyration_2 * particle.radius.powi(2);
                     particle.angular_momentum.x = particle.spin.x * particle.moment_of_inertia;
                     particle.angular_momentum.y = particle.spin.y * particle.moment_of_inertia;
@@ -223,16 +224,16 @@ impl Universe {
                 if i < j {
                     if distance_2 <= roche_radius.powi(2) {
                         println!("\n");
-                        panic!("[PANIC {} UTC] Particle {} was destroyed by particle {} due to close encounter!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
+                        panic!("[PANIC {} UTC] Particle {} was destroyed by particle {} due to close encounter!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i, j);
                     }
                     // Check if particles are overlapping
                     if distance_2 <= (particle_a.radius + particle_b.radius).powi(2) {
                         println!("\n");
-                        panic!("[PANIC {} UTC] Collision between particle {} and {}!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i, j);
+                        panic!("[PANIC {} UTC] Collision between particle {} and {}!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i, j);
                     }
                     if MAX_DISTANCE_2 > 0. && i == self.hosts.index.most_massive && distance_2 > MAX_DISTANCE_2 {
                         println!("\n");
-                        panic!("[PANIC {} UTC] Particle {} has been ejected!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), j);
+                        panic!("[PANIC {} UTC] Particle {} has been ejected!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), j);
                     }
                 }
                 //////////////////////////////////////////////////////////////////////
@@ -705,27 +706,27 @@ fn disable_unnecessary_effects(consider_effects: &mut ConsiderEffects, particles
     for particle in particles.iter() {
         if let TidesEffect::CentralBody(_) = particle.tides.effect {
             if found_central_body_tides {
-                panic!("[PANIC {} UTC] Only one central body is allowed for tidal effect!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                panic!("[PANIC {} UTC] Only one central body is allowed for tidal effect!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
             }
             found_central_body_tides = true;
         }
         if let RotationalFlatteningEffect::CentralBody(_) = particle.rotational_flattening.effect {
             if found_central_body_rotational_flattening {
-                panic!("[PANIC {} UTC] Only one central body is allowed for rotational flattening effects!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                panic!("[PANIC {} UTC] Only one central body is allowed for rotational flattening effects!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
             }
             found_central_body_rotational_flattening = true;
         }
         if let GeneralRelativityEffect::CentralBody(implementation) = particle.general_relativity.effect {
             if implementation != GeneralRelativityImplementation::Disabled {
                 if found_central_body_general_relativity {
-                    panic!("[PANIC {} UTC] Only one central body is allowed for general relativity effects!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                    panic!("[PANIC {} UTC] Only one central body is allowed for general relativity effects!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
                 }
                 found_central_body_general_relativity = true;
             }
         }
         if let DiskEffect::CentralBody(_) = particle.disk.effect {
             if found_central_body_disk {
-                panic!("[PANIC {} UTC] Only one central body is allowed for disk effects!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                panic!("[PANIC {} UTC] Only one central body is allowed for disk effects!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
             }
             found_central_body_disk = true;
         }
@@ -737,27 +738,27 @@ fn disable_unnecessary_effects(consider_effects: &mut ConsiderEffects, particles
         }
     }
     if consider_effects.tides && !found_central_body_tides {
-        println!("[WARNING {} UTC] Disabled tides because no central host was included!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        println!("[WARNING {} UTC] Disabled tides because no central host was included!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         consider_effects.tides = false;
     }
     if consider_effects.rotational_flattening && !found_central_body_rotational_flattening {
-        println!("[WARNING {} UTC] Disabled rotational flattening because no central host was included!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        println!("[WARNING {} UTC] Disabled rotational flattening because no central host was included!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         consider_effects.rotational_flattening = false;
     }
     if consider_effects.general_relativity && !found_central_body_general_relativity {
-        println!("[WARNING {} UTC] Disabled general relativity because no central host was included!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        println!("[WARNING {} UTC] Disabled general relativity because no central host was included!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         consider_effects.general_relativity = false;
     }
     if consider_effects.disk && !found_central_body_disk {
-        println!("[WARNING {} UTC] Disabled disk because no central host was included!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        println!("[WARNING {} UTC] Disabled disk because no central host was included!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         consider_effects.disk = false;
     }
     if consider_effects.wind && !found_wind {
-        println!("[WARNING {} UTC] Disabled wind because no wind was included!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        println!("[WARNING {} UTC] Disabled wind because no wind was included!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         consider_effects.wind = false;
     }
     if consider_effects.evolution && !found_evolving_body {
-        println!("[WARNING {} UTC] Disabled evolution because no evolving body was included!", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+        println!("[WARNING {} UTC] Disabled evolution because no evolving body was included!", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         consider_effects.evolution = false;
     }
 }
@@ -769,22 +770,22 @@ fn check_effects_vs_central_and_orbiting(particles: &Vec<Particle>, consider_eff
         if let TidesEffect::CentralBody(_) = particle.tides.effect {
             found_tides_central_body = true;
             if !consider_effects.tides {
-                println!("[WARNING {} UTC] Particle {} has tidal effect (central body) but the tidal effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                println!("[WARNING {} UTC] Particle {} has tidal effect (central body) but the tidal effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
             }
         }
         if let TidesEffect::OrbitingBody(_) = particle.tides.effect {
             found_tides_orbiting_body = true;
             if !consider_effects.tides {
-                println!("[WARNING {} UTC] Particle {} has tidal effect (orbiting body) but the tidal effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                println!("[WARNING {} UTC] Particle {} has tidal effect (orbiting body) but the tidal effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
             }
         }
     }
     if consider_effects.tides {
         if !found_tides_central_body {
-            println!("[INFO {} UTC] No central body for tidal effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No central body for tidal effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         } 
         if !found_tides_orbiting_body {
-            println!("[INFO {} UTC] No orbiting body for tidal effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No orbiting body for tidal effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         }
     }
 
@@ -794,22 +795,22 @@ fn check_effects_vs_central_and_orbiting(particles: &Vec<Particle>, consider_eff
         if let RotationalFlatteningEffect::CentralBody(_) = particle.rotational_flattening.effect {
             found_rotational_flattening_central_body = true;
             if !consider_effects.rotational_flattening {
-                println!("[WARNING {} UTC] Particle {} has rotational flattening effect (central body) but the rotational flattening effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                println!("[WARNING {} UTC] Particle {} has rotational flattening effect (central body) but the rotational flattening effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
             }
         }
         if let RotationalFlatteningEffect::OrbitingBody(_) = particle.rotational_flattening.effect {
             found_rotational_flattening_orbiting_body = true;
             if !consider_effects.rotational_flattening {
-                println!("[WARNING {} UTC] Particle {} has rotatial flattening effect (orbiting body) but the rotatial flattening effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                println!("[WARNING {} UTC] Particle {} has rotatial flattening effect (orbiting body) but the rotatial flattening effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
             }
         }
     }
     if consider_effects.rotational_flattening {
         if !found_rotational_flattening_central_body {
-            println!("[INFO {} UTC] No central body for rotational flattening effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No central body for rotational flattening effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         } 
         if !found_rotational_flattening_orbiting_body {
-            println!("[INFO {} UTC] No orbiting body for rotational flattening effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No orbiting body for rotational flattening effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         }
     }
 
@@ -820,23 +821,23 @@ fn check_effects_vs_central_and_orbiting(particles: &Vec<Particle>, consider_eff
             if implementation != GeneralRelativityImplementation::Disabled {
                 found_general_relativity_central_body = true;
                 if !consider_effects.general_relativity {
-                    println!("[WARNING {} UTC] Particle {} has general relativity effect (central body) but the general relativity effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                    println!("[WARNING {} UTC] Particle {} has general relativity effect (central body) but the general relativity effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
                 }
             }
         }
         if let GeneralRelativityEffect::OrbitingBody = particle.general_relativity.effect {
             found_general_relativity_orbiting_body = true;
             if !consider_effects.general_relativity {
-                println!("[WARNING {} UTC] Particle {} has general relativity effect (orbiting body) but the general relativity effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                println!("[WARNING {} UTC] Particle {} has general relativity effect (orbiting body) but the general relativity effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
             }
         }
     }
     if consider_effects.general_relativity {
         if !found_general_relativity_central_body {
-            println!("[INFO {} UTC] No central body for general relativity effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No central body for general relativity effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         } 
         if !found_general_relativity_orbiting_body {
-            println!("[INFO {} UTC] No orbiting body for general relativity effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No orbiting body for general relativity effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         }
     }
 
@@ -846,22 +847,22 @@ fn check_effects_vs_central_and_orbiting(particles: &Vec<Particle>, consider_eff
         if let DiskEffect::CentralBody( _disk ) = particle.disk.effect {
             found_disk_central_body = true;
             if !consider_effects.disk {
-                println!("[WARNING {} UTC] Particle {} has disk effect (central body) but the disk effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                println!("[WARNING {} UTC] Particle {} has disk effect (central body) but the disk effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
             }
         }
         if let DiskEffect::OrbitingBody = particle.disk.effect {
             found_disk_orbiting_body = true;
             if !consider_effects.disk {
-                println!("[WARNING {} UTC] Particle {} has disk effect (orbiting body) but the disk effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                println!("[WARNING {} UTC] Particle {} has disk effect (orbiting body) but the disk effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
             }
         }
     }
     if consider_effects.disk {
         if !found_disk_central_body {
-            println!("[INFO {} UTC] No central body for disk effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No central body for disk effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         } 
         if !found_disk_orbiting_body {
-            println!("[INFO {} UTC] No orbiting body for disk effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No orbiting body for disk effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         }
     }
 
@@ -870,13 +871,13 @@ fn check_effects_vs_central_and_orbiting(particles: &Vec<Particle>, consider_eff
         if let WindEffect::Interaction = particle.wind.effect {
             found_wind = true;
             if !consider_effects.wind {
-                println!("[WARNING {} UTC] Particle {} has wind effect (central body) but the wind effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                println!("[WARNING {} UTC] Particle {} has wind effect (central body) but the wind effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
             }
         }
     }
     if consider_effects.wind {
         if !found_wind {
-            println!("[INFO {} UTC] No wind effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No wind effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         } 
     }
 
@@ -885,13 +886,13 @@ fn check_effects_vs_central_and_orbiting(particles: &Vec<Particle>, consider_eff
         if particle.evolution != EvolutionType::NonEvolving {
             found_evolution = true;
             if !consider_effects.evolution {
-                println!("[WARNING {} UTC] Particle {} has evolution effect but the evolution effect is disabled for this simulation", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), i);
+                println!("[WARNING {} UTC] Particle {} has evolution effect but the evolution effect is disabled for this simulation", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), i);
             }
         }
     }
     if consider_effects.evolution {
         if !found_evolution {
-            println!("[INFO {} UTC] No evolution effects", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] No evolution effects", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         } 
     }
 }

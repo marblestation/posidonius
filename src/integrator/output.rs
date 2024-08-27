@@ -1,3 +1,4 @@
+extern crate time;
 use std::fs::File;
 use std::fs::{OpenOptions};
 use std::io::{Write, BufWriter};
@@ -8,7 +9,7 @@ use super::super::particles::Reference;
 use super::super::{Axes, TidesEffect, TidalModel};
 use super::super::tools::calculate_keplerian_orbital_elements;
 use bincode;
-use time;
+use time::{OffsetDateTime, format_description};
 use serde::{Serialize};
 use serde_json;
 use std::path::Path;
@@ -33,9 +34,9 @@ pub fn write_recovery_snapshot<I: Serialize>(snapshot_path: &Path, universe_inte
 
     if snapshot_path.exists() {
         //// Backup (keep only 1 per hour thanks to filename collision)
-        //let new_extension = format!("{0}.bin", time::now().strftime("%Y-%m-%dT%Hh").unwrap());
+        //let new_extension = format!("{0}.bin", OffsetDateTime::now_utc().format(&format_description::parse("[year][month][day]T[hour]h)).unwrap());
         // Backup (keep only 1 every 12 hours thanks to filename collision)
-        let new_extension = format!("{0}.bin", time::now().strftime("%Y%m%dT%p").unwrap());
+        let new_extension = format!("{0}.bin", OffsetDateTime::now_utc().format(&format_description::parse("[year][month][day]T[period]").unwrap()).unwrap());
         fs::rename(snapshot_path, snapshot_path.with_extension(new_extension)).unwrap();
     }
 
@@ -47,7 +48,7 @@ pub fn write_recovery_snapshot<I: Serialize>(snapshot_path: &Path, universe_inte
         writer.write(json_encoded.as_bytes()).unwrap();
     } else {
         // Binary
-        bincode::serialize_into(&mut writer, &universe_integrator, bincode::Infinite).unwrap(); // bin
+        bincode::serialize_into(&mut writer, &universe_integrator).unwrap(); // bin
     }
 
 }
@@ -70,13 +71,13 @@ pub fn get_universe_history_writer(universe_history_path: &Path, expected_n_byte
 
     let universe_history_file = match options_bin.open(&universe_history_path) {
         Ok(f) => f,
-        Err(e) => panic!("[PANIC {} UTC] File error: {}", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), e),
+        Err(e) => panic!("[PANIC {} UTC] File error: {}", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), e),
     };
 
     let metadata = universe_history_file.metadata().unwrap();
     let current_n_bytes = metadata.len();
     if current_n_bytes < expected_n_bytes {
-        panic!("[PANIC {} UTC] Historic snapshots do not contain all the expected history ({} bytes) as indicated by the recovery snapshot ({} bytes)", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), current_n_bytes, expected_n_bytes);
+        panic!("[PANIC {} UTC] Historic snapshots do not contain all the expected history ({} bytes) as indicated by the recovery snapshot ({} bytes)", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), current_n_bytes, expected_n_bytes);
     }
 
     // Keep only historic data that saved until the restored snapshot (if there it is the case)
@@ -123,7 +124,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
             },
             _ => 0.
         };
-        bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
+        bincode::serialize_into(&mut *universe_history_writer, &output).unwrap();
         let output = (
                         love_number,
                         particle.tides.parameters.internal.scaled_dissipation_factor,
@@ -131,7 +132,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         particle.tides.parameters.internal.denergy_dt,                // Msun.AU^2.day^-3
                         particle.disk.parameters.internal.migration_timescale,
                     );
-        bincode::serialize_into(universe_history_writer, &output, bincode::Infinite).unwrap();
+        bincode::serialize_into(&mut *universe_history_writer, &output).unwrap();
 
         if MIN_ORBITAL_PERIOD_TIME_STEP_RATIO > 0. {
             let reference_particle_index;
@@ -162,7 +163,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
             // time step is small enough to correctly integrate an orbit
             if current_particle_index != reference_particle_index && orbital_period <= time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO {
                 println!("\n");
-                panic!("[PANIC {} UTC] Time step is too large! Particle {} has an orbital period around particle {} of {:0.3} days which is less than the recommended limit ({:0.3} days) based on the current time step ({:0.3} days).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), current_particle_index, reference_particle_index, orbital_period, time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO, time_step);
+                panic!("[PANIC {} UTC] Time step is too large! Particle {} has an orbital period around particle {} of {:0.3} days which is less than the recommended limit ({:0.3} days) based on the current time step ({:0.3} days).", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), current_particle_index, reference_particle_index, orbital_period, time_step*MIN_ORBITAL_PERIOD_TIME_STEP_RATIO, time_step);
             }
         }
 
@@ -188,12 +189,12 @@ pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<Box<
             universe_integrator = deserialize_bin_snapshot(&universe_integrator_snapshot_path).unwrap();
         }
         if universe_integrator.get_current_time() == 0. {
-            println!("[INFO {} UTC] Created new simulation based on '{}'.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
+            println!("[INFO {} UTC] Created new simulation based on '{}'.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), universe_integrator_snapshot_path.display());
             universe_integrator.initialize_physical_values();
         } else {
-            println!("[INFO {} UTC] Restored previous simulation from '{}'.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), universe_integrator_snapshot_path.display());
+            println!("[INFO {} UTC] Restored previous simulation from '{}'.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), universe_integrator_snapshot_path.display());
             let current_time_years = universe_integrator.get_current_time()/365.25;
-            println!("[INFO {} UTC] Continuing from year {:0.0} ({:0.1e}).", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), current_time_years, current_time_years);
+            println!("[INFO {} UTC] Continuing from year {:0.0} ({:0.1e}).", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), current_time_years, current_time_years);
         }
         return Ok(universe_integrator);
     } else {
@@ -214,21 +215,21 @@ fn deserialize_json_snapshot(snapshot_path: &Path) -> Result<Box<dyn Integrator>
     let wrapped_universe_integrator: Result<WHFast, serde_json::Error> = serde_json::from_str(&json_encoded);
     match wrapped_universe_integrator {
         Ok(universe_integrator) => {
-            println!("[INFO {} UTC] WHFAST Integrator.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] WHFAST Integrator.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
             Ok(Box::new(universe_integrator))
         },
         Err(_) => {
             let wrapped_universe_integrator: Result<Ias15, serde_json::Error> = serde_json::from_str(&json_encoded);
             match wrapped_universe_integrator {
                 Ok(universe_integrator) => {
-                    println!("[INFO {} UTC] IAS15 Integrator.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                    println!("[INFO {} UTC] IAS15 Integrator.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
                     Ok(Box::new(universe_integrator))
                 },
                 Err(_) => {
                     let wrapped_universe_integrator: Result<LeapFrog, serde_json::Error> = serde_json::from_str(&json_encoded);
                     match wrapped_universe_integrator {
                         Ok(universe_integrator) => {
-                            println!("[INFO {} UTC] LeapFrog Integrator.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                            println!("[INFO {} UTC] LeapFrog Integrator.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
                             Ok(Box::new(universe_integrator))
                         },
                         Err(_) => Err(format!("Unknown integrator!")),
@@ -243,30 +244,30 @@ fn deserialize_bin_snapshot(snapshot_path: &Path) -> Result<Box<dyn Integrator>,
     // Open the path in read-only mode, returns `io::Result<File>`
     let snapshot_file = File::open(&snapshot_path).unwrap();
     let mut reader = BufReader::new(&snapshot_file);
-    let wrapped_universe_integrator: Result<WHFast, bincode::Error> = bincode::deserialize_from(&mut reader, bincode::Infinite);
+    let wrapped_universe_integrator: Result<WHFast, bincode::Error> = bincode::deserialize_from(&mut reader);
     match wrapped_universe_integrator {
         Ok(universe_integrator) => {
-            println!("[INFO {} UTC] WHFAST Integrator.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[INFO {} UTC] WHFAST Integrator.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
             Ok(Box::new(universe_integrator))
         },
         Err(_) => {
             // Re-open file because the previous File/BufReader was already consumed
             let snapshot_file = File::open(&snapshot_path).unwrap();
             let mut reader = BufReader::new(&snapshot_file);
-            let wrapped_universe_integrator: Result<Ias15, bincode::Error> = bincode::deserialize_from(&mut reader, bincode::Infinite);
+            let wrapped_universe_integrator: Result<Ias15, bincode::Error> = bincode::deserialize_from(&mut reader);
             match wrapped_universe_integrator {
                 Ok(universe_integrator) => {
-                    println!("[INFO {} UTC] IAS15 Integrator.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                    println!("[INFO {} UTC] IAS15 Integrator.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
                     Ok(Box::new(universe_integrator))
                 },
                 Err(_) => {
                     // Re-open file because the previous File/BufReader was already consumed
                     let snapshot_file = File::open(&snapshot_path).unwrap();
                     let mut reader = BufReader::new(&snapshot_file);
-                    let wrapped_universe_integrator: Result<LeapFrog, bincode::Error> = bincode::deserialize_from(&mut reader, bincode::Infinite);
+                    let wrapped_universe_integrator: Result<LeapFrog, bincode::Error> = bincode::deserialize_from(&mut reader);
                     match wrapped_universe_integrator {
                         Ok(universe_integrator) => {
-                            println!("[INFO {} UTC] LeapFrog Integrator.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                            println!("[INFO {} UTC] LeapFrog Integrator.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
                             Ok(Box::new(universe_integrator))
                         },
                         Err(_) => Err(format!("Unknown integrator!")),

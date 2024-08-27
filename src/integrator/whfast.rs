@@ -1,3 +1,4 @@
+extern crate time;
 use std;
 use std::iter;
 use std::io::{Write, BufWriter};
@@ -13,7 +14,7 @@ use super::super::effects::GeneralRelativityImplementation;
 use super::super::effects::EvolutionType;
 use super::super::particles::Axes;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
-use time;
+use time::{OffsetDateTime, format_description};
 use std::path::Path;
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
@@ -201,24 +202,24 @@ impl Integrator for WHFast {
                     panic!("Your new time limit ({} days) is smaller than the current time ({} days)", time_limit, self.current_time);
                 }
             }
-            println!("[INFO {} UTC] The time limit changed from {} to {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.universe.time_limit, time_limit);
+            println!("[INFO {} UTC] The time limit changed from {} to {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.universe.time_limit, time_limit);
             self.universe.time_limit = time_limit;
         }
     }
 
     fn set_snapshot_periods(&mut self, historic_snapshot_period: f64, recovery_snapshot_period: f64) {
         if historic_snapshot_period > 0. && self.historic_snapshot_period != historic_snapshot_period {
-            println!("[INFO {} UTC] The historic snapshot period changed from {} to {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.historic_snapshot_period, historic_snapshot_period);
+            println!("[INFO {} UTC] The historic snapshot period changed from {} to {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.historic_snapshot_period, historic_snapshot_period);
             self.historic_snapshot_period = historic_snapshot_period;
         } else {
-            println!("[INFO {} UTC] A historic snapshot will be saved every {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.historic_snapshot_period);
+            println!("[INFO {} UTC] A historic snapshot will be saved every {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.historic_snapshot_period);
         }
         
         if recovery_snapshot_period > 0. && self.recovery_snapshot_period != recovery_snapshot_period {
-            println!("[INFO {} UTC] The recovery snapshot period changed from {} to {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.recovery_snapshot_period, recovery_snapshot_period);
+            println!("[INFO {} UTC] The recovery snapshot period changed from {} to {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.recovery_snapshot_period, recovery_snapshot_period);
             self.recovery_snapshot_period = recovery_snapshot_period;
         } else {
-            println!("[INFO {} UTC] A recovery snapshot will be saved every {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.recovery_snapshot_period);
+            println!("[INFO {} UTC] A recovery snapshot will be saved every {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.recovery_snapshot_period);
         }
     }
 
@@ -380,7 +381,7 @@ impl WHFast {
             self.average_particles_for_velocity_dependent_forces_integration(&particles_orig, &particles_final, integrate_spin);
         }
         if !converged {
-            println!("[WARNING {} UTC] WHFast convergence issue with the integration of the additional forces. Most probably the perturbation is too strong.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+            println!("[WARNING {} UTC] WHFast convergence issue with the integration of the additional forces. Most probably the perturbation is too strong.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
         }
         // 
         for ((((((particle, particle_final), particle_orig), inertial_velocity_error), angular_momentum_error), inertial_velocity_change), angular_momentum_change) in self.universe.particles[..self.universe.n_particles].iter_mut().zip(particles_final[..self.universe.n_particles].iter()).zip(particles_orig[..self.universe.n_particles].iter()).zip(self.inertial_velocity_errors[..self.universe.n_particles].iter_mut()).zip(self.particle_angular_momentum_errors[..self.universe.n_particles].iter_mut()).zip(inertial_velocity_changes[..self.universe.n_particles].iter()).zip(angular_momentum_changes[..self.universe.n_particles].iter_mut()) {
@@ -695,7 +696,7 @@ impl WHFast {
             if _dt.abs()*invperiod > 1. && self.timestep_warning == 0 {
                 // Ignoring const qualifiers. This warning should not have any effect on
                 // other parts of the code, nor is it vital to show it.
-                println!("[WARNING {} UTC] WHFast convergence issue. Timestep is larger than at least one orbital period.", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap());
+                println!("[WARNING {} UTC] WHFast convergence issue. Timestep is larger than at least one orbital period.", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap());
                 self.timestep_warning += 1;
             }
             //x = _dt*invperiod*x_per_period; // first order guess 

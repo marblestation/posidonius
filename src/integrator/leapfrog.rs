@@ -1,3 +1,4 @@
+extern crate time;
 use std;
 use std::io::{Write, BufWriter};
 use std::fs::File;
@@ -7,7 +8,7 @@ use super::super::particles::Universe;
 use super::super::particles::IgnoreGravityTerms;
 use super::super::effects::EvolutionType;
 use super::output::{write_recovery_snapshot, write_historic_snapshot};
-use time;
+use time::{OffsetDateTime, format_description};
 use std::path::Path;
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
@@ -117,24 +118,24 @@ impl Integrator for LeapFrog {
                     panic!("Your new time limit ({} days) is smaller than the current time ({} days)", time_limit, self.current_time);
                 }
             }
-            println!("[INFO {} UTC] The time limit changed from {} to {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.universe.time_limit, time_limit);
+            println!("[INFO {} UTC] The time limit changed from {} to {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.universe.time_limit, time_limit);
             self.universe.time_limit = time_limit;
         }
     }
 
     fn set_snapshot_periods(&mut self, historic_snapshot_period: f64, recovery_snapshot_period: f64) {
         if historic_snapshot_period > 0. && self.historic_snapshot_period != historic_snapshot_period {
-            println!("[INFO {} UTC] The historic snapshot period changed from {} to {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.historic_snapshot_period, historic_snapshot_period);
+            println!("[INFO {} UTC] The historic snapshot period changed from {} to {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.historic_snapshot_period, historic_snapshot_period);
             self.historic_snapshot_period = historic_snapshot_period;
         } else {
-            println!("[INFO {} UTC] A historic snapshot will be saved every {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.historic_snapshot_period);
+            println!("[INFO {} UTC] A historic snapshot will be saved every {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.historic_snapshot_period);
         }
         
         if recovery_snapshot_period > 0. && self.recovery_snapshot_period != recovery_snapshot_period {
-            println!("[INFO {} UTC] The recovery snapshot period changed from {} to {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.recovery_snapshot_period, recovery_snapshot_period);
+            println!("[INFO {} UTC] The recovery snapshot period changed from {} to {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.recovery_snapshot_period, recovery_snapshot_period);
             self.recovery_snapshot_period = recovery_snapshot_period;
         } else {
-            println!("[INFO {} UTC] A recovery snapshot will be saved every {} days", time::now_utc().strftime("%Y.%m.%d %H:%M:%S").unwrap(), self.recovery_snapshot_period);
+            println!("[INFO {} UTC] A recovery snapshot will be saved every {} days", OffsetDateTime::now_utc().format(&format_description::parse("[year].[month].[day] [hour]:[minute]:[second]").unwrap()).unwrap(), self.recovery_snapshot_period);
         }
     }
 
