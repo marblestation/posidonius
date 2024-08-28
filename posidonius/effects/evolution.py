@@ -16,23 +16,23 @@ class EvolutionType(object):
             raise Exception("Unknown variant '{}'".format(variant))
 
         if variant == "GalletBolmont2017":
-            print("[WARNING {} UTC] Bodies with GalletBolmont2017 evolution will ignore initial radius and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
-            print("[WARNING {} UTC] GalletBolmont2017 prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] Bodies with GalletBolmont2017 evolution will ignore initial radius and dissipation factor.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] GalletBolmont2017 prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if variant == "BolmontMathis2016":
-            print("[WARNING {} UTC] Bodies with BolmontMathis2016 evolution will ignore initial radius and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
-            print("[WARNING {} UTC] BolmontMathis2016 prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] Bodies with BolmontMathis2016 evolution will ignore initial radius and dissipation factor.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] BolmontMathis2016 prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "Baraffe2015":
-            print("[WARNING {} UTC] Bodies with Baraffe2015 evolution will ignore initial radius and radius of gyration.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] Bodies with Baraffe2015 evolution will ignore initial radius and radius of gyration.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "Leconte2011":
-            print("[WARNING {} UTC] Bodies with Leconte2011 evolution will ignore initial radius and radius of gyration.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] Bodies with Leconte2011 evolution will ignore initial radius and radius of gyration.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "Baraffe1998":
-            print("[WARNING {} UTC] Bodies with Baraffe1998 evolution will ignore initial radius.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] Bodies with Baraffe1998 evolution will ignore initial radius.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         elif variant == "LeconteChabrier2013":
             if dissipation_of_dynamical_tides:
-                print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration, love number and dissipation factor.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
-                print("[WARNING {} UTC] LeconteChabrier2013(true) prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration, love number and dissipation factor.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] LeconteChabrier2013(true) prescription theoretically only works for circular orbits and non inclined orbits, use carefully.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             else:
-                print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration and love number.".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] Bodies with Jupiter evolution will ignore initial radius, radius of gyration and love number.".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
 
     def get(self):
         if type(self._data) == str:

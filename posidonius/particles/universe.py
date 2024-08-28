@@ -81,9 +81,9 @@ class Universe(object):
                 else:
                     raise Exception("There can only be one central body for tidal effects!")
             else:
-                print("[WARNING {} UTC] Added a particle with tidal effect (central body) but the tidal effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] Added a particle with tidal effect (central body) but the tidal effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if not self._data["consider_effects"]["tides"] and effects.tides.OrbitingBody in particle.effects():
-            print("[WARNING {} UTC] Added a particle with tidal effect (orbiting body) but the tidal effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] Added a particle with tidal effect (orbiting body) but the tidal effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
 
         if effects.rotational_flattening.CentralBody in particle.effects():
             if self._data["consider_effects"]["rotational_flattening"]:
@@ -92,9 +92,9 @@ class Universe(object):
                 else:
                     raise Exception("There can only be one central body for rotational flattening effects!")
             else:
-                print("[WARNING {} UTC] Added a particle with rotational flattening effect (central body) but the rotational flattening effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] Added a particle with rotational flattening effect (central body) but the rotational flattening effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if not self._data["consider_effects"]["rotational_flattening"] and effects.rotational_flattening.OrbitingBody in particle.effects():
-            print("[WARNING {} UTC] Added a particle with rotational flattening effect (orbiting body) but the rotational flattening effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] Added a particle with rotational flattening effect (orbiting body) but the rotational flattening effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
 
         if effects.general_relativity.CentralBody in particle.effects():
             if self._data["consider_effects"]["general_relativity"]:
@@ -104,9 +104,9 @@ class Universe(object):
                     raise Exception("There can only be one central body for rotational flattening effects!")
                 self._data['general_relativity_implementation'] = particle.general_relativity_implementation()
             else:
-                print("[WARNING {} UTC] Added a particle with general relativity effect (central body) but the general relativity effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] Added a particle with general relativity effect (central body) but the general relativity effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if not self._data["consider_effects"]["general_relativity"] and effects.general_relativity.OrbitingBody in particle.effects():
-            print("[WARNING {} UTC] Added a particle with general relativity effect (orbiting body) but the general relativity effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] Added a particle with general relativity effect (orbiting body) but the general relativity effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
 
         if effects.disk.CentralBody in particle.effects():
             if self._data["consider_effects"]["disk"]:
@@ -115,17 +115,17 @@ class Universe(object):
                 else:
                     raise Exception("Only one body with a disk is allowed!")
             else:
-                print("[WARNING {} UTC] Added a particle with disk effect (central body) but the disk effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] Added a particle with disk effect (central body) but the disk effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if not self._data["consider_effects"]["disk"] and effects.disk.OrbitingBody in particle.effects():
-            print("[WARNING {} UTC] Added a particle with disk effect (orbiting body) but the disk effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] Added a particle with disk effect (orbiting body) but the disk effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
 
         if effects.wind.Interaction in particle.effects():
             if not self._data["consider_effects"]["wind"]:
-                print("[WARNING {} UTC] Added a particle with wind effect but the wind effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] Added a particle with wind effect but the wind effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
 
         if particle.evolution() != effects.evolution.NonEvolving:
             if not self._data["consider_effects"]["evolution"]:
-                print("[WARNING {} UTC] Added a particle with evolution effect but the evolution effect is disabled for this simulation".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] Added a particle with evolution effect but the evolution effect is disabled for this simulation".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
 
         evolver = particle.get_evolver(self._data['initial_time'])
         if len(evolver['time']) > 0 and evolver['time'][0] > 0.:
@@ -141,18 +141,18 @@ class Universe(object):
                 # Scipy's spline interpolation of first order is the closest to current rust spline interpolation implementation
                 radius = linear_interpolation(current_time, evolver['time'], evolver['radius'])
                 if abs(radius - particle._data["radius"]) > 1e-6:
-                    print("[WARNING {} UTC] Changed radius value from '{:.6f}' to '{:.6f}' to match expected state following the selected evolving body model".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S"), particle._data["radius"], radius))
+                    print("[WARNING {} UTC] Changed radius value from '{:.6f}' to '{:.6f}' to match expected state following the selected evolving body model".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S"), particle._data["radius"], radius))
                     particle._data["radius"] = radius
                     update_angular_momentum = True
             if len(evolver.get("radius_of_gyration_2", [])) > 0:
                 # Scipy's spline interpolation of first order is the closest to current rust spline interpolation implementation
                 radius_of_gyration_2 = linear_interpolation(current_time, evolver['time'], evolver['radius_of_gyration_2'])
                 if abs(radius_of_gyration_2 - particle._data["radius_of_gyration_2"]) > 1e-6:
-                    print("[WARNING {} UTC] Changed radius of gyration value from '{:.6f}' to '{:.6f}' to match expected state following the selected evolving body model".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S"), math.sqrt(particle._data["radius_of_gyration_2"]), math.sqrt(radius_of_gyration_2)))
+                    print("[WARNING {} UTC] Changed radius of gyration value from '{:.6f}' to '{:.6f}' to match expected state following the selected evolving body model".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S"), math.sqrt(particle._data["radius_of_gyration_2"]), math.sqrt(radius_of_gyration_2)))
                     particle._data["radius_of_gyration_2"] = radius_of_gyration_2
                     update_angular_momentum = True
             if update_angular_momentum:
-                print("[WARNING {} UTC] Recomputed moment of inertia and angular momentum to match expected state following the selected evolving body model".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[WARNING {} UTC] Recomputed moment of inertia and angular momentum to match expected state following the selected evolving body model".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
                 particle._data["moment_of_inertia"] = float(particle._data["mass"])*float(particle._data["radius_of_gyration_2"])*float(particle._data["radius"])*float(particle._data["radius"])
                 particle._data["angular_momentum"] = Axes(particle._data["spin"]["x"]*particle._data["moment_of_inertia"],
                                                           particle._data["spin"]["y"]*particle._data["moment_of_inertia"],
@@ -231,43 +231,43 @@ class Universe(object):
                 found_evolution = True
         if self._data["consider_effects"]["tides"]:
             if not found_tides_central_body:
-                print("[INFO {} UTC] No central body for tidal effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No central body for tidal effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             if not found_tides_orbiting_body:
-                print("[INFO {} UTC] No orbiting body for tidal effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No orbiting body for tidal effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if self._data["consider_effects"]["rotational_flattening"]:
             if not found_rotational_flattening_central_body:
-                print("[INFO {} UTC] No central body for rotational flattening effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No central body for rotational flattening effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             if not found_rotational_flattening_orbiting_body:
-                print("[INFO {} UTC] No orbiting body for rotational flattening effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No orbiting body for rotational flattening effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if self._data["consider_effects"]["general_relativity"]:
             if not found_general_relativity_central_body:
-                print("[INFO {} UTC] No central body for general relativity effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No central body for general relativity effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             if not found_general_relativity_orbiting_body:
-                print("[INFO {} UTC] No orbiting body for general relativity effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No orbiting body for general relativity effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if self._data["consider_effects"]["disk"]:
             if not found_disk_central_body:
-                print("[INFO {} UTC] No central body for disk effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No central body for disk effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             if not found_disk_orbiting_body:
-                print("[INFO {} UTC] No orbiting body for disk effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No orbiting body for disk effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if self._data["consider_effects"]["wind"]:
             if not found_wind:
-                print("[INFO {} UTC] No wind effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No wind effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         if self._data["consider_effects"]["evolution"]:
             if not found_evolution:
-                print("[INFO {} UTC] No evolution effects".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+                print("[INFO {} UTC] No evolution effects".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
 
     def disable_unnecessary_effects(self):
         if self._data["consider_effects"]["tides"] and self._data['hosts']['index']['tides'] == MAX_PARTICLES+1:
-            print("[INFO {} UTC] Disabled tides because no central host was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[INFO {} UTC] Disabled tides because no central host was included".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             self._data["consider_effects"]["tides"] = False
         if self._data["consider_effects"]["rotational_flattening"] and self._data['hosts']['index']['rotational_flattening'] == MAX_PARTICLES+1:
-            print("[INFO {} UTC] Disabled rotational flattening because no central host was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[INFO {} UTC] Disabled rotational flattening because no central host was included".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             self._data["consider_effects"]["rotational_flattening"] = False
         if self._data["consider_effects"]["general_relativity"] and self._data['hosts']['index']['general_relativity'] == MAX_PARTICLES+1:
-            print("[INFO {} UTC] Disabled general relativity because no central host was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[INFO {} UTC] Disabled general relativity because no central host was included".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             self._data["consider_effects"]["general_relativity"] = False
         if self._data["consider_effects"]["disk"] and self._data['hosts']['index']['disk'] == MAX_PARTICLES+1:
-            print("[INFO {} UTC] Disabled disk because no central host was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[INFO {} UTC] Disabled disk because no central host was included".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             self._data["consider_effects"]["disk"] = False
         found_evolving_body = False
         found_wind = False
@@ -277,10 +277,10 @@ class Universe(object):
             if particle["wind"]["effect"] != "Disabled":
                 found_wind = True
         if self._data["consider_effects"]["wind"] and not found_wind:
-            print("[INFO {} UTC] Disabled wind because no wind was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[INFO {} UTC] Disabled wind because no wind was included".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             self._data["consider_effects"]["wind"] = False
         if self._data["consider_effects"]["evolution"] and not found_evolving_body:
-            print("[INFO {} UTC] Disabled evolution because no evolving body was included".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[INFO {} UTC] Disabled evolution because no evolving body was included".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             self._data["consider_effects"]["evolution"] = False
 
 
@@ -360,7 +360,7 @@ class Universe(object):
         else:
             raise Exception("Unknown integtrator '{}'".format(integrator))
         base_filename = os.path.splitext(filename)[0]
-        print("[INFO {} UTC] Start the simulation with:".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+        print("[INFO {} UTC] Start the simulation with:".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
         print("posidonius start {} {} {}".format(filename, base_filename+".bin", base_filename+"_history.bin"))
 
 

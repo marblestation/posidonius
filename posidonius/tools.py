@@ -916,7 +916,7 @@ def kepler_solution_for_a_hyperbola_hybrid_approach_for_low_n(e, capn0):
                orbel_flon = -orbel_flon
                capn = -capn
 
-            print("[WARNING {} UTC] FLON : RETURNING WITHOUT COMPLETE CONVERGENCE".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+            print("[WARNING {} UTC] FLON : RETURNING WITHOUT COMPLETE CONVERGENCE".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
             diff = e * np.sinh(orbel_flon)  - orbel_flon - capn
             print("N, F, ecc * F.sinh() - F - N : ")
             print("{}, {}, {}".format(capn,orbel_flon,diff))
@@ -983,7 +983,7 @@ def kepler_solution_for_a_hyperbola_hybrid_approach(e, capn):
        x = orbel_fget
 
 
-    print("[WARNING {} UTC] FGET : RETURNING WITHOUT COMPLETE CONVERGENCE".format(datetime.datetime.utcnow().strftime("%Y.%m.%d %H:%M:%S")))
+    print("[WARNING {} UTC] FGET : RETURNING WITHOUT COMPLETE CONVERGENCE".format(datetime.datetime.now(datetime.UTC).strftime("%Y.%m.%d %H:%M:%S")))
     return orbel_fget
 
 
