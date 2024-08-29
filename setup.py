@@ -2,70 +2,50 @@ import os
 import glob
 import shutil
 from subprocess import Popen, PIPE
+from setuptools import setup
+from setuptools.command.install import install
 
-try:
-    from setuptools import setup
-except:
-    from distutils.core import setup
+class CustomInstallCommand(install):
+    """
+    Copy input/ into the package. This is necessary because `package_data` or
+    `include_package_data` (with `MANIFEST.in`) expect the data to be within the
+    posidonius python package and not in the root. On the other hand, data_files
+    can copy files outside the posidonius python package but they are copied
+    directly at the "venv/" and not within the installed posidonius package.
+    """
+    def run(self):
+        install.run(self)
+        # Copy the input directory to the desired location
+        src_dir = 'input'
+        dst_dir = os.path.join(self.install_lib, 'posidonius', 'input')
+        shutil.copytree(src_dir, dst_dir)
 
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+def remove_building_dirs(building_dirs):
+    for dirname in ["build/", "posidonius.egg-info/"]:
+        print("Removing {}".format(dirname))
+        try:
+            shutil.rmtree(dirname)
+        except OSError:
+            pass
 
-try:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
-except (IOError, ImportError):
-    long_description = read('README.md')
+def remove_older_wheels(dist_dir="dist"):
+    # Get the list of wheel files and source files in the dist directory
+    for pattern in ("*.whl", "*.tar.gz",):
+        wheel_files = glob.glob(os.path.join(dist_dir, pattern))
 
-with open('requirements.txt') as f:
-    required = f.read().splitlines()
+        # Sort the wheel files by modification time, newest first
+        wheel_files.sort(key=os.path.getmtime, reverse=True)
 
-def get_git_version(default="0.0.1"):
-    try:
-        # Get the latest tag, number of commits since that tag, and the short hash
-        p = Popen(['git', 'describe', '--tags', '--long'], stdout=PIPE, stderr=PIPE)
-        p.stderr.close()
-        line = p.stdout.readlines()[0].strip().decode('utf-8')
+        # Keep the latest wheel and remove the older ones
+        for wheel_file in wheel_files[1:]:
+            print(f"Removing older wheel: {wheel_file}")
+            os.remove(wheel_file)
 
-        # Parse the output of git describe
-        tag, commits_since_tag, commit_hash = line.rsplit('-', 2)
-
-        # Replace '-' with '.' for the version format
-        # For example: v2020.05.23-41-g8427a2c -> 2020.5.23+41.g8427a2c (which adheres to PEP 440)
-        tag = tag.lstrip('v').replace('-', '.')  # Remove 'v' and replace '-' with '.'
-        version = f"{tag}+{commits_since_tag}.g{commit_hash}"
-
-        return version
-    except:
-        return default
-
+# Setup configuration
 setup(
-    name = "posidonius",
-    version = get_git_version(default="v0.0.1"),
-    author = "Sergi Blanco-Cuaresma",
-    author_email = "marblestation@users.noreply.github.com",
-    description = ("Case generator for Posidonius."),
-    license = "GNU Affero General Public License",
-    keywords = "N-Body simulations exoplanets tides",
-    url = "http://www.blancocuaresma.com/s/",
-    packages=['posidonius', 'posidonius.analysis', 'posidonius.effects', 'posidonius.particles', 'posidonius.integrator' ],
-    data_files=[(basedir, [filename for filename in glob.iglob('{}/*.*'.format(basedir))]) for basedir in glob.iglob("input/*")],
-    long_description=long_description,
-    classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "Programming Language :: Rust",
-        "Programming Language :: Python",
-        "Intended Audience :: Science/Research",
-        "Environment :: Console",
-        "Topic :: Scientific/Engineering :: Astronomy",
-        "License :: OSI Approved :: GNU Affero General Public License v3",
-    ],
-    install_requires=required,
+    cmdclass={'install': CustomInstallCommand}, # <= necessary to include "input/" given that it is outside the "posidonius/" package
 )
 
-for dirname in ["build/", "dist/", "posidonius.egg-info/"]:
-    print("Removing {}".format(dirname))
-    try:
-        shutil.rmtree(dirname)
-    except OSError:
-        pass
+# Cleanup (it will only work with `pip install .`, since `python -m build` uses an isolated environment)
+remove_building_dirs(["build/", "posidonius.egg-info/"])
+remove_older_wheels("dist/")

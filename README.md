@@ -22,17 +22,16 @@ The executable will be copied into `$HOME/.cargo/bin/`. Then, install the python
 ```bash
 curl -O https://www.cfa.harvard.edu/~sblancoc/posidonius/input.tar.gz
 tar -zxvf input.tar.gz && rm -f input.tar.gz
-python setup.py install --user
+pip install .
 ```
 
-The `--user` flag will install the package in your `$HOME/.local/lib/python2.7/site-packages/`.
+The `--user` flag can be used with `pip` to install the package in your `$HOME/.local/lib/python3.*/site-packages/`.
 
 Both tools can be uninstalled by executing:
 
 ```
 cargo uninstall posidonius
-python setup.py install --user --record files.txt
-cat files.txt | xargs rm -rf && rm -f files.txt
+pip uninstall posidonius
 ```
 
 ## Usage
@@ -123,8 +122,15 @@ Prepare a python environment:
 ```
 python3 -m venv venv # or "virtualenv venv" if still using Python 2
 source venv/bin/activate
-pip install -r requirements.txt
-pip install -r dev-requirements.txt
+pip install .[dev]
+```
+
+Optionally, if you need to build a posidonius wheel, as well as install it, you can do it with:
+
+```bash
+rm -rf dist/
+python -m build --wheel
+pip install dist/posidonius-*whl
 ```
 
 Run the python tests:

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dynamic = ["version", "dependencies", "optional-dependencies"]
+name = "posidonius"
+description = "Posidonius is a N-body code for simulating planetary and/or binary systems which implements the WHFAST integrator (Rein & Tamayo 2015), the IAS15 integrator (Rein & Spiegel, 2015) and the tidal model used in Mercury-T (Bolmont et al. 2015) plus newer effects. This Python package is the case generator for the Rust-based posidonius to run."
+license = {text = "GNU Affero General Public License v3"}
+authors = [
+    {name = "Sergi Blanco-Cuaresma", email = "marblestation@users.noreply.github.com"},
+]
+keywords = ["N-Body simulations", "exoplanets", "tides"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Rust",
+    "Programming Language :: Python",
+    "Intended Audience :: Science/Research",
+    "Environment :: Console",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+]
+urls = {homepage = "https://www.blancocuaresma.com/s/"}
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+optional-dependencies = {dev = { file = ["dev-requirements.txt"] }}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["posidonius", ]
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "node-and-date"
+
