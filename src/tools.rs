@@ -5,6 +5,44 @@ use super::constants::*;
 use super::particles::Axes;
 //use std::cmp::Ord;
 
+pub fn calculate_inclination_orbital_equatorial_plane(position: Axes, velocity: Axes, spin: Axes) -> f64 {
+    // Calculate the spin axis inclination described as
+    // the inclination of the orbit plane with respect to the equatorial plane
+    // --- Input
+    let x = position.x;
+    let y = position.y;
+    let z = position.z;
+    let u = velocity.x;
+    let v = velocity.y;
+    let w = velocity.z;
+    let sx = spin.x;
+    let sy = spin.y;
+    let sz = spin.z;
+    let s = (sx.powi(2) + sy.powi(2) + sz.powi(2)).sqrt();
+
+    // --- Calculate the component of the orbital angular momentum
+    let hx = y * w - z * v;
+    let hy = z * u - x * w;
+    let hz = x * v - y * u;
+    let h = (hx.powi(2) + hy.powi(2) + hz.powi(2)).sqrt();
+
+    let hx_rel = hx / h;
+    let hy_rel = hy / h;
+    let hz_rel = hz / h;
+    let h_rel = (hx_rel.powi(2) + hy_rel.powi(2) + hz_rel.powi(2)).sqrt();
+
+    let numerator = hx_rel * sx + hy_rel * sy + hz_rel * sz;
+    let denominator = h_rel * s;
+    //
+    // println!("F1: {:?}, {:?}, {:?}", position, velocity, spin);
+    // println!("F2: {:?}, {:?}, {:?}, {:?}", hx, hy, hz, h);
+    // println!("F3: {:?}, {:?}", numerator, denominator);
+
+    let cos_inclination = (numerator / denominator).clamp(-1., 1.);
+
+    cos_inclination.acos()
+}
+
 pub fn calculate_eccentricity_vector(gm: f64, position: Axes, velocity: Axes) -> Axes {
     // --- Input --- //
     let x = position.x;

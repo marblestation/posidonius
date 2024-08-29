@@ -1,6 +1,7 @@
 pub mod common;
 pub mod constant_time_lag;
 pub mod creep_coplanar;
+pub mod kaula;
 
 pub use self::common::Tides;
 pub use self::common::TidesEffect;
