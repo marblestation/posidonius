@@ -4,7 +4,9 @@ import os
 MAX_PARTICLES = 10
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 if not os.path.exists(BASE_DIR+"/input/"):
-    raise Exception("Input directory with stellar models not found!")
+    BASE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../"
+    if not os.path.exists(BASE_DIR+"/input/"):
+        raise Exception("Input directory with stellar models not found!")
 
 PI = np.pi
 TWO_PI = PI*2.
