@@ -122,7 +122,7 @@ Prepare a python environment:
 ```
 python3 -m venv venv # or "virtualenv venv" if still using Python 2
 source venv/bin/activate
-pip install .[dev]
+pip install '.[dev]'
 ```
 
 Optionally, if you need to build a posidonius wheel, as well as install it, you can do it with:
