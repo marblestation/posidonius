@@ -1,5 +1,6 @@
 extern crate time;
 use time::{OffsetDateTime, format_description};
+use std::array;
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_big_array::BigArray;
@@ -112,10 +113,10 @@ impl Universe {
         if n_particles > MAX_PARTICLES {
             panic!("Only {} bodies are allowed, you need to increase the MAX_PARTICLE constant.", MAX_PARTICLES);
         }
-        let mut transformed_particles = [Particle::new_dummy(); MAX_PARTICLES];
+        let mut transformed_particles: [Particle; MAX_PARTICLES] = array::from_fn(|_| Particle::new_dummy());
         let mut particles_evolvers : Vec<Evolver> = Vec::with_capacity(n_particles);
         for i in 0..n_particles {
-            transformed_particles[i] = particles[i];
+            transformed_particles[i] = particles[i].clone();
             transformed_particles[i].id = i;
             particles_evolvers.push(Evolver::new(transformed_particles[i].evolution, initial_time, time_limit));
         }

@@ -12,7 +12,7 @@ pub enum Reference {
     Particle(usize), // Index
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Particle {
     pub id: usize, // Unique internal identifier
     pub mass: f64,
@@ -152,7 +152,7 @@ impl Particle {
             _ => false
         };
         if !disabled_tides && !disabled_rotational_flattening {
-            let (creep_coplanar_tides, particle_uniform_viscosity_coefficient_for_tides) = match self.tides.effect {
+            let (creep_coplanar_tides, particle_uniform_viscosity_coefficient_for_tides) = match &self.tides.effect {
                 TidesEffect::CentralBody(tidal_model) | TidesEffect::OrbitingBody(tidal_model) => {
                     if let TidalModel::CreepCoplanar(params) = tidal_model {
                         (true, params.uniform_viscosity_coefficient)

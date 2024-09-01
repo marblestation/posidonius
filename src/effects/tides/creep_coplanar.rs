@@ -126,7 +126,7 @@ pub fn calculate_creep_coplanar_shapes(tidal_host_particle: &mut Particle, parti
     // It does not compute the host shape since it is planet dependent
     // and it will be computed later when it is needed
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-        let particle_uniform_viscosity_coefficient = match particle.tides.effect {
+        let particle_uniform_viscosity_coefficient = match &particle.tides.effect {
             TidesEffect::CentralBody(tidal_model) | TidesEffect::OrbitingBody(tidal_model) => {
                 if let TidalModel::CreepCoplanar(params) = tidal_model {
                     params.uniform_viscosity_coefficient
@@ -169,7 +169,7 @@ pub fn calculate_creep_coplanar_shape(tidal_host_particle: &Particle, particle: 
 
     let shape = match central_body {
         false => {
-            let particle_uniform_viscosity_coefficient = match particle.tides.effect {
+            let particle_uniform_viscosity_coefficient = match &particle.tides.effect {
                 TidesEffect::OrbitingBody(tidal_model) => {
                     if let TidalModel::CreepCoplanar(params) = tidal_model {
                         params.uniform_viscosity_coefficient
@@ -194,7 +194,7 @@ pub fn calculate_creep_coplanar_shape(tidal_host_particle: &Particle, particle: 
             )
         },
         true => {
-            let tidal_host_particle_uniform_viscosity_coefficient = match tidal_host_particle.tides.effect {
+            let tidal_host_particle_uniform_viscosity_coefficient = match &tidal_host_particle.tides.effect {
                 TidesEffect::CentralBody(tidal_model) => {
                     if let TidalModel::CreepCoplanar(params) = tidal_model {
                         params.uniform_viscosity_coefficient

@@ -31,7 +31,7 @@ fn enabled_flattening_case() -> posidonius::WHFast {
     //let star_evolution = posidonius::EvolutionType::NonEvolving;
     let star = common::stars::brown_dwarf(star_mass, star_evolution, general_relativity_implementation);
 
-    let mut particles = vec![star];
+    let mut particles = vec![star.clone()];
     particles.extend(common::planets::basic_configuration(&star));
     let universe = posidonius::Universe::new(initial_time, time_limit, particles, consider_effects);
 
@@ -96,7 +96,7 @@ fn disabled_flattening_case() -> posidonius::WHFast {
     //let star_evolution = posidonius::EvolutionType::NonEvolving;
     let star = common::stars::brown_dwarf(star_mass, star_evolution, general_relativity_implementation);
 
-    let mut particles = vec![star];
+    let mut particles = vec![star.clone()];
     particles.extend(common::planets::basic_configuration(&star));
     let universe = posidonius::Universe::new(initial_time, time_limit, particles, consider_effects);
 

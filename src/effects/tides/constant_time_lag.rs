@@ -27,9 +27,9 @@ fn calculate_planet_dependent_scaled_dissipation_factors(tidal_host_particle: &m
         EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
             let host_norm_spin_vector = tidal_host_particle.norm_spin_vector_2.sqrt();
             for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-                if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
+                if let TidesEffect::OrbitingBody(tidal_model) = &particle.tides.effect {
                     if let TidalModel::ConstantTimeLag(_) = tidal_model {
-                        let (tidal_host_particle_dissipation_factor_scale, tidal_host_particle_dissipation_factor) = match tidal_host_particle.tides.effect {
+                        let (tidal_host_particle_dissipation_factor_scale, tidal_host_particle_dissipation_factor) = match &tidal_host_particle.tides.effect {
                             TidesEffect::CentralBody(tidal_model) => {
                                 match tidal_model {
                                     TidalModel::ConstantTimeLag(params) => (params.dissipation_factor_scale, params.dissipation_factor),
@@ -95,7 +95,7 @@ fn calculate_host_dependent_scaled_dissipation_factors(tidal_host_particle: &mut
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
         match particle.evolution {
             EvolutionType::BolmontMathis2016(_) | EvolutionType::GalletBolmont2017(_) | EvolutionType::LeconteChabrier2013(true) => {
-                if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
+                if let TidesEffect::OrbitingBody(tidal_model) = &particle.tides.effect {
                     if let TidalModel::ConstantTimeLag(params) = tidal_model {
                         let particle_norm_spin_vector = particle.norm_spin_vector_2.sqrt();
                         //// Excitation frequency needed by the model based on the
@@ -215,7 +215,7 @@ pub fn calculate_orthogonal_component_of_the_tidal_force(tidal_host_particle: &m
 
 fn calculate_orthogonal_component_of_the_tidal_force_for(central_body:bool, tidal_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle], pair_dependent_scaled_dissipation_factor: &mut HashMap<usize, f64>) {
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-        if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
+        if let TidesEffect::OrbitingBody(tidal_model) = &particle.tides.effect {
             if let TidalModel::ConstantTimeLag(_) = tidal_model {
                 //// Only calculate tides if planet is not in disk
                 //if particle.disk_interaction_time == 0.0 {
@@ -267,9 +267,9 @@ pub fn calculate_radial_component_of_the_tidal_force(tidal_host_particle: &mut P
     let host_mass_2 = tidal_host_particle.mass * tidal_host_particle.mass;
 
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-        if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
+        if let TidesEffect::OrbitingBody(tidal_model) = &particle.tides.effect {
             if let TidalModel::ConstantTimeLag(params) = tidal_model {
-                let tidal_host_particle_love_number = match tidal_host_particle.tides.effect {
+                let tidal_host_particle_love_number = match &tidal_host_particle.tides.effect {
                     TidesEffect::CentralBody(tidal_model) => {
                         match tidal_model {
                             TidalModel::ConstantTimeLag(params) => params.love_number,

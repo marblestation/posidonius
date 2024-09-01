@@ -35,7 +35,7 @@ fn create_universe() -> posidonius::Universe {
     //let star_evolution = posidonius::EvolutionType::NonEvolving;
     let star = common::stars::solar_like_with_disk(star_mass, star_evolution, general_relativity_implementation);
 
-    let mut particles = vec![star];
+    let mut particles = vec![star.clone()];
     particles.extend(common::planets::basic_configuration(&star));
     let mut universe = posidonius::Universe::new(initial_time, time_limit, particles, consider_effects);
     let current_time = 0.;

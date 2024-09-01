@@ -53,8 +53,6 @@ pub struct TidesParticleInternalParameters {
     //
     // Creep coplanar specific:
     pub shape: Axes,
-    // Kaula tidal force:
-    pub kaula_tidal_force: Axes, // TODO: Cannot this go inside KaulaParameters ?
     //
     pub denergy_dt: f64, // Only for history output
     pub lag_angle: f64, // Used by EvolutionType::BolmontMathis2016, EvolutionType::GalletBolmont2017 and EvolutionType::LeconteChabrier2013(true)
@@ -80,21 +78,21 @@ pub struct TidesParticleCoordinates {
     pub velocity: Axes,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TidalModel {
     ConstantTimeLag(constant_time_lag::ConstantTimeLagParameters),
     CreepCoplanar(creep_coplanar::CreepCoplanarParameters),
     Kaula(kaula::KaulaParameters),
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TidesEffect {
     CentralBody(TidalModel),
     OrbitingBody(TidalModel),
     Disabled,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Tides {
     pub effect: TidesEffect,
     pub parameters: TidesParticleParameters,
@@ -104,7 +102,7 @@ pub struct Tides {
 impl Tides {
     pub fn new(effect: TidesEffect) -> Tides {
         let scaled_dissipation_factor = match effect {
-            TidesEffect::CentralBody(tidal_model) | TidesEffect::OrbitingBody(tidal_model) => {
+            TidesEffect::CentralBody(ref tidal_model) | TidesEffect::OrbitingBody(ref tidal_model) => {
                 match tidal_model {
                     TidalModel::ConstantTimeLag(params) => params.dissipation_factor_scale * params.dissipation_factor,
                     _ => 0.,
@@ -126,7 +124,6 @@ impl Tides {
                     radial_component_of_the_tidal_force: 0.,
                     radial_component_of_the_tidal_force_dissipative_part_when_star_as_point_mass: 0.,
                     shape: Axes{x: 0., y: 0., z: 0.},
-                    kaula_tidal_force: Axes {x: 0., y: 0., z: 0.},
                     denergy_dt: 0., // Only for history output
                     lag_angle: 0., // It will be initialized the first time the evolver is called
                 },
@@ -228,7 +225,7 @@ pub fn calculate_dangular_momentum_dt_due_to_tides(tidal_host_particle: &mut Par
 
     let central_body = false;
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-        if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
+        if let TidesEffect::OrbitingBody(tidal_model) = &particle.tides.effect {
             let torque_due_to_tides = match tidal_model {
                 TidalModel::ConstantTimeLag(_) => constant_time_lag::calculate_torque_due_to_tides(tidal_host_particle, particle, central_body),
                 TidalModel::CreepCoplanar(_) => creep_coplanar::calculate_torque_due_to_tides(tidal_host_particle, particle, central_body),
@@ -244,7 +241,7 @@ pub fn calculate_dangular_momentum_dt_due_to_tides(tidal_host_particle: &mut Par
     let central_body = true;
     let mut dangular_momentum_dt = Axes{x: 0., y: 0., z:0.};
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-        if let TidesEffect::CentralBody(tidal_model) = tidal_host_particle.tides.effect {
+        if let TidesEffect::CentralBody(tidal_model) = &tidal_host_particle.tides.effect {
             let torque_due_to_tides = match tidal_model {
                 TidalModel::ConstantTimeLag(_) => constant_time_lag::calculate_torque_due_to_tides(tidal_host_particle, particle, central_body),
                 TidalModel::CreepCoplanar(_) => creep_coplanar::calculate_torque_due_to_tides(tidal_host_particle, particle, central_body),
@@ -318,7 +315,7 @@ pub fn calculate_tidal_acceleration(tidal_host_particle: &mut Particle, particle
 
     let central_body = false;
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-        if let TidesEffect::OrbitingBody(tidal_model) = particle.tides.effect {
+        if let TidesEffect::OrbitingBody(tidal_model) = &particle.tides.effect {
             let tidal_force = match tidal_model {
                 TidalModel::ConstantTimeLag(_) => constant_time_lag::calculate_tidal_force(tidal_host_particle, particle),
                 TidalModel::CreepCoplanar(_) => creep_coplanar::calculate_tidal_force(tidal_host_particle, particle),

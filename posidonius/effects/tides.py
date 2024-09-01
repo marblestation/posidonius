@@ -20,7 +20,6 @@ class Tides(object):
                     "scalar_product_of_vector_position_with_stellar_spin": 0.0,
                     "scaled_dissipation_factor": 0.0,
                     "shape": Axes(0.0, 0.0, 0.0).get(),
-                    "kaula_tidal_force": Axes( 0.0, 0.0, 0.0).get(),
                 },
                 "output": {
                     "acceleration": Axes(0.0, 0.0, 0.0).get(),
@@ -109,6 +108,7 @@ class Kaula(object):
                 "imaginary_part_love_number": [0.] * 1024,
                 "real_part_love_number": [0.] * 1024,
                 "num_datapoints": 0.0,
+                "kaula_tidal_force": Axes( 0.0, 0.0, 0.0).get(),
             },
         }
         # Update default values, ignore non-recognised keys

@@ -531,7 +531,7 @@ pub fn calculate_particles_non_spin_dependent_evolving_quantities(current_time: 
         ////////////////////////////////////////////////////////////////////
         // Love number
         ////////////////////////////////////////////////////////////////////
-        match particle.tides.effect {
+        match &particle.tides.effect {
             TidesEffect::CentralBody(tidal_model) | TidesEffect::OrbitingBody(tidal_model) => {
                 if let TidalModel::ConstantTimeLag(mut params) = tidal_model {
                     params.love_number = evolver.love_number(current_time, params.love_number);

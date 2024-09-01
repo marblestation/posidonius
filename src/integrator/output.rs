@@ -115,7 +115,7 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
                         particle.radius,                        // Rsun
                         particle.radius_of_gyration_2,
                     );
-        let love_number = match particle.tides.effect {
+        let love_number = match &particle.tides.effect {
             TidesEffect::CentralBody(tidal_model) | TidesEffect::OrbitingBody(tidal_model) => {
                 match tidal_model {
                     TidalModel::ConstantTimeLag(params) => params.love_number,
@@ -139,12 +139,12 @@ pub fn write_historic_snapshot<T: Write>(universe_history_writer: &mut BufWriter
             let (_semimajor_axis, _perihelion_distance, _eccentricity, _inclination, _longitude_of_perihelion, _longitude_of_ascending_node, _mean_anomaly, orbital_period) = match particle.reference {
                 Reference::MostMassiveParticle => {
                     reference_particle_index = universe.hosts.index.most_massive;
-                    let reference_particle = universe.particles[reference_particle_index];
+                    let reference_particle = &universe.particles[reference_particle_index];
                     calculate_keplerian_orbital_elements(reference_particle.mass_g+particle.mass_g, particle.heliocentric_position, particle.heliocentric_velocity)
                 },
                 Reference::Particle(index) => {
                     reference_particle_index = index;
-                    let reference_particle = universe.particles[reference_particle_index];
+                    let reference_particle = &universe.particles[reference_particle_index];
                     let position = Axes{
                         x: particle.inertial_position.x - reference_particle.inertial_position.x,
                         y: particle.inertial_position.y - reference_particle.inertial_position.y,
@@ -184,7 +184,7 @@ pub fn restore_snapshot(universe_integrator_snapshot_path: &Path) -> Result<Box<
         }
 
         if universe_integrator_snapshot_path.extension().unwrap() == "json" { 
-            universe_integrator = deserialize_json_snapshot(&universe_integrator_snapshot_path).unwrap()
+            universe_integrator = deserialize_json_snapshot(&universe_integrator_snapshot_path).unwrap();
         } else {
             universe_integrator = deserialize_bin_snapshot(&universe_integrator_snapshot_path).unwrap();
         }
