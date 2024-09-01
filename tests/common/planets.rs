@@ -84,10 +84,41 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
     //// Terrestrial:
     let k2pdelta: f64 = 2.465278e-3; // Terrestrial planets (no gas)
     let planet_dissipation_factor: f64 = 2. * posidonius::constants::K2 * k2pdelta/(3. * planet_radius.powi(5));
+    /////////////////////////////////////////////////////////////////////////////////
+    // Constant Time Lag
     let planet_tidal_model_params = posidonius::ConstantTimeLagParameters{dissipation_factor: planet_dissipation_factor,
                                                                         dissipation_factor_scale: planet_dissipation_factor_scale, 
                                                                         love_number: planet_love_number};
     let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::ConstantTimeLag(planet_tidal_model_params)));
+    ///////////////////////////////////////////////////////////////////////////////////
+    //// Creep
+    // TODO:
+    //let planet_tidal_model_params = posidonius::CreepCoplanarParameters{uniform_viscosity_coefficient: 1.0e22 posidonius::constants::AU * posidonius::constants::DAY / posidonius::constants::M_SUN}; // value in kg s^-1 m^-1 => M_SUN day^-1 AU^-1 for the viscosity
+    //let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::CreepCoplanar(planet_tidal_model_params)));
+    ///////////////////////////////////////////////////////////////////////////////////
+    //// Kaula
+    //TODO:
+    //let planet_tidal_model_params = posidonius::KaulaParameters {
+        //love_number_excitation_frequency: [0.0; 32 * 32],
+        //real_part_love_number: [0.0; 32 * 32],
+        //imaginary_part_love_number: [0.0; 32 * 32],
+        //num_datapoints: 1024.0,
+        //polynomials: Polynomials {
+            //eccentricity_function_g_2pq: [[0.0; 15]; 3],
+            //eccentricity_function_g_20q: [0.0; 15],
+            //eccentricity_function_g_21q: [0.0; 15],
+            //eccentricity_function_g_3pq: [[0.0; 15]; 4],
+            //inclination_function_f_20p: [0.0; 3],
+            //inclination_function_f_21p: [0.0; 3],
+            //inclination_function_f_22p: [0.0; 3],
+            //inclination_function_f_30p: [0.0; 4],
+            //inclination_function_f_31p: [0.0; 4],
+            //inclination_function_f_32p: [0.0; 4],
+            //inclination_function_f_33p: [0.0; 4],
+        //},
+        //kaula_tidal_force: posidonius::Axes{ x: 0.0, y: 0.0, z: 0.0 },
+    //};
+    //let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::Kaula(planet_tidal_model_params)));
     let planet_rotational_flattening_oblate_spheroid_params = posidonius::OblateSpheroidParameters{love_number: planet_fluid_love_number};
     let planet_rotational_flattening = posidonius::RotationalFlattening::new(posidonius::RotationalFlatteningEffect::OrbitingBody(posidonius::RotationalFlatteningModel::OblateSpheroid(planet_rotational_flattening_oblate_spheroid_params)));
     let planet_general_relativity = posidonius::GeneralRelativity::new(posidonius::GeneralRelativityEffect::OrbitingBody);
