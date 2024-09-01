@@ -154,10 +154,10 @@ pytest
 
 ### Rust
 
-Run the rust tests:
+Run the rust tests (the stack size needs to be increased since Kaula was integrated):
 
 ```
-cargo test
+RUST_MIN_STACK=33554432 cargo test
 ```
 
 #### Rust

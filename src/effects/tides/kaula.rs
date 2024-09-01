@@ -25,7 +25,7 @@ use crate::TidesEffect;
 
 use serde_big_array::BigArray;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct KaulaParameters {
     // The tidal Love numbers function of the excitation frequency
     // the data are stored in 2d array 32 by 32.
@@ -36,10 +36,6 @@ pub struct KaulaParameters {
     #[serde(with = "BigArray")]
     pub imaginary_part_love_number: [f64; 32 * 32], // The imaginary part of the complex love number
     pub num_datapoints: f64, // The number of point stored in the 32 by 32 array
-    //pub love_number_excitation_frequency: Vec<f64>,
-    //pub real_part_love_number: Vec<f64>,
-    //pub imaginary_part_love_number: Vec<f64>,
-    //pub num_datapoints: f64, // The number of point stored in the 32 by 32 array
     #[serde(default)]
     pub polynomials: Polynomials,
     pub kaula_tidal_force: Axes,
@@ -1658,7 +1654,7 @@ fn calculate_kaula_numbers(
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct Polynomials {
     eccentricity_function_g_2pq: [[f64; 15]; 3],
     eccentricity_function_g_20q: [f64; 15],

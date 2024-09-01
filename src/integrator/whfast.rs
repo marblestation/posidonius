@@ -331,13 +331,13 @@ impl WHFast {
         };
 
         let mut particles_orig = self.universe.particles.clone();
-        let mut particles_final: [Particle; MAX_PARTICLES] = particles_orig.clone();
+        let mut particles_final: [Particle; MAX_PARTICLES] = particles_orig;
         let mut particles_prev: [Particle; MAX_PARTICLES];
         let mut inertial_velocity_changes: [Axes; MAX_PARTICLES] = [Axes{x:0., y:0., z:0.}; MAX_PARTICLES];
         let mut angular_momentum_changes: [Axes; MAX_PARTICLES] = [Axes{x:0., y:0., z:0.}; MAX_PARTICLES];
         let mut converged = false;
         for i in 0..IMPLICIT_MIDPOINT_MAX_ITER {
-            particles_prev = particles_final.clone();
+            particles_prev = particles_final;
             // To calculate non-gravity/additional accelerations:
             // - Positions and velocities are needed in heliocentric
             // - But additional accelerations are computed in inertial (i.e., barycentric)

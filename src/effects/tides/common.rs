@@ -78,21 +78,21 @@ pub struct TidesParticleCoordinates {
     pub velocity: Axes,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TidalModel {
     ConstantTimeLag(constant_time_lag::ConstantTimeLagParameters),
     CreepCoplanar(creep_coplanar::CreepCoplanarParameters),
     Kaula(kaula::KaulaParameters),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TidesEffect {
     CentralBody(TidalModel),
     OrbitingBody(TidalModel),
     Disabled,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Tides {
     pub effect: TidesEffect,
     pub parameters: TidesParticleParameters,
