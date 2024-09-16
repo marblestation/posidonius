@@ -1,17 +1,11 @@
 // Implemented by Gabriel Oliveira Gomes
 // Described in Gomes et al (2021): https://ui.adsabs.harvard.edu/abs/2021A%26A...651A..23G/abstract
-use serde::{Serialize, Deserialize};
 use super::super::super::constants::{K2};
 use super::super::super::{Particle};
 use super::super::super::{Axes};
 use super::super::tides::creep_coplanar::calculate_creep_coplanar_shape;
 use super::super::rotational_flattening::RotationalFlatteningEffect;
 use super::super::rotational_flattening::RotationalFlatteningModel;
-
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
-pub struct CreepCoplanarParameters {
-    pub uniform_viscosity_coefficient: f64,
-}
 
 pub fn calculate_creep_coplanar_shapes(rotational_flattening_host_particle: &mut Particle, particles: &mut [Particle], more_particles: &mut [Particle]) {
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {

@@ -166,7 +166,7 @@ If the test results for a case differ from previous executions and the differenc
 
 ```
 find tests/data/ -name 'particle_*.json' -delete
-cargo test
+RUST_MIN_STACK=33554432 cargo test
 ```
 
 But if the difference is not expected, then the changes made to the code have affected the expected behavior of posidonius and the changes you have made to your code to identify the reason/bug.
@@ -184,7 +184,7 @@ If it is necessary to recreate all the rust test's `case.json`, it is enough to 
 
 ```
 find tests/data/ -name 'case.json' -delete
-cargo test --no-fail-fast
+RUST_MIN_STACK=33554432 cargo test --no-fail-fast
 python scripts/clean_json.py
 ```
 

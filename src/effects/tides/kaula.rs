@@ -1671,6 +1671,24 @@ pub struct Polynomials {
 }
 
 impl Polynomials {
+    // Constructor function that creates a Polynomials instance with all values set to 0.0
+    pub fn new() -> Self {
+        Polynomials {
+            eccentricity_function_g_2pq: [[0.0; 15]; 3],
+            eccentricity_function_g_20q: [0.0; 15],
+            eccentricity_function_g_21q: [0.0; 15],
+            eccentricity_function_g_3pq: [[0.0; 15]; 4],
+
+            inclination_function_f_20p: [0.0; 3],
+            inclination_function_f_21p: [0.0; 3],
+            inclination_function_f_22p: [0.0; 3],
+            inclination_function_f_30p: [0.0; 4],
+            inclination_function_f_31p: [0.0; 4],
+            inclination_function_f_32p: [0.0; 4],
+            inclination_function_f_33p: [0.0; 4],
+        }
+    }
+
     #[allow(dead_code)]
     // --- The inclination function of the Kaula 1961 developpement Flmp(i)
     fn calculate_inclination_function_f_2mp(inclination: f64) -> [[f64; 3]; 3] {

@@ -3,6 +3,7 @@ use super::super::super::{Particle};
 use super::super::super::{Axes};
 use super::oblate_spheroid;
 use super::creep_coplanar;
+use super::super::tides::creep_coplanar::CreepCoplanarParameters;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RotationalFlatteningParticleInternalParameters {
@@ -43,7 +44,7 @@ pub struct RotationalFlatteningParticleCoordinates {
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum RotationalFlatteningModel {
     OblateSpheroid(oblate_spheroid::OblateSpheroidParameters),
-    CreepCoplanar(creep_coplanar::CreepCoplanarParameters),
+    CreepCoplanar(CreepCoplanarParameters),
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
