@@ -1097,7 +1097,7 @@ def calculate_pseudo_synchronization_period(semi_major_axis, eccentricity, star_
     return pseudo_synchronization_period # days
 
 
-def calculate_spin(angular_frequency, inclination, obliquity, long_asc_node=0):
+def calculate_spin(angular_frequency, inclination, obliquity, longitude_ascending_node=0):
     """Compute the spin vector.
 
     This function calculates the spin vector given its angular frequency,
@@ -1107,13 +1107,13 @@ def calculate_spin(angular_frequency, inclination, obliquity, long_asc_node=0):
         angular_frequency (float): The angular frequency representing the magnitude of the spin.
         inclination (float): The orbital inclination of the orbit with respect to the reference plane (usually the xy-plane).
         obliquity (float): The obliquity, which is the angle between the body's rotational axis and its orbital axis.
-        long_asc_node (float, optional): The longitude of the ascending node of the orbit, which is the angle from the reference direction (e.g., the vernal equinox) to the point where the orbit crosses the reference plane. Defaults to 0.
+        longitude_ascending_node (float, optional): The longitude of the ascending node of the orbit, which is the angle from the reference direction (e.g., the vernal equinox) to the point where the orbit crosses the reference plane. Defaults to 0.
 
     Returns:
         Axes: A vector representing the spin, with components along the x, y, and z axes.
     """
-    x = angular_frequency * np.sin(obliquity+inclination) * np.sin(long_asc_node)
-    y = -1. * angular_frequency * np.sin(obliquity+inclination) * np.cos(long_asc_node)
+    x = angular_frequency * np.sin(obliquity+inclination) * np.sin(longitude_ascending_node)
+    y = -1. * angular_frequency * np.sin(obliquity+inclination) * np.cos(longitude_ascending_node)
     z = angular_frequency * np.cos(obliquity+inclination)
     return Axes(x, y, z)
 

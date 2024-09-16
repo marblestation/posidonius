@@ -73,7 +73,8 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
     //
     let planet_keplerian_orbital_elements = posidonius::tools::calculate_keplerian_orbital_elements(posidonius::constants::G*star.mass*planet_mass, planet_position, planet_velocity);
     let planet_inclination = planet_keplerian_orbital_elements.3;
-    let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity);
+    let planet_longitude_ascending_node = 0.;
+    let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity, planet_longitude_ascending_node);
 
     let planet_love_number: f64 = 0.299; // Earth
     let planet_fluid_love_number: f64 = 0.9532; // Earth
@@ -156,7 +157,8 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
     //
     let planet_keplerian_orbital_elements = posidonius::tools::calculate_keplerian_orbital_elements(posidonius::constants::G*star.mass*planet_mass, planet_position, planet_velocity);
     let planet_inclination = planet_keplerian_orbital_elements.3;
-    let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity);
+    let planet_longitude_ascending_node = 0.;
+    let planet_spin = posidonius::tools::calculate_spin(planet_angular_frequency, planet_inclination, planet_obliquity, planet_longitude_ascending_node);
 
     let planet_love_number: f64 = 0.380; // Gas
     // Disipation factor (sigma)
