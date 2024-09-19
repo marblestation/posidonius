@@ -82,8 +82,8 @@ def classify(n_particles, data, reference_particle_index=0, discard_first_hundre
         positions.insert(0, zeros) # Star is at the center
         velocities = [Axes(planets_data[k]['velocity_x'], planets_data[k]['velocity_y'], planets_data[k]['velocity_z']) for k in planets_keys if k != key]
         velocities.insert(0, zeros) # Star is resting
-        a, q, e, i, p, n, l = posidonius.tools.calculate_keplerian_orbital_elements(target_mass, target_position, target_velocity, masses=masses, positions=positions, velocities=velocities)
-        #a, q, e, i, p, n, l = posidonius.tools.calculate_keplerian_orbital_elements(target_mass+star_data['mass'], target_position, target_velocity)
+        a, q, e, i, p, n, l, f = posidonius.tools.calculate_keplerian_orbital_elements(target_mass, target_position, target_velocity, masses=masses, positions=positions, velocities=velocities)
+        #a, q, e, i, p, n, l, f = posidonius.tools.calculate_keplerian_orbital_elements(target_mass+star_data['mass'], target_position, target_velocity)
         planets_data[key] = append_fields(planets_data[key], ('semi-major_axis', 'eccentricity', 'inclination'), (a, e, i), usemask=False)
     star_data['position_x'] = 0.
     star_data['position_y'] = 0.

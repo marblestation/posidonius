@@ -154,7 +154,7 @@ def calculate_resonance_data(star_data, planets_keys, planets_data):
         target_mass = star_data['mass'] + planet_data['mass']
         target_position = Axes(planet_data['position_x'], planet_data['position_y'], planet_data['position_z'])
         target_velocity = Axes(planet_data['velocity_x'], planet_data['velocity_y'], planet_data['velocity_z'])
-        _a, _q, _e, _i, _p, _n, _l = calculate_keplerian_orbital_elements(target_mass, target_position, target_velocity)
+        _a, _q, _e, _i, _p, _n, _l, _f = calculate_keplerian_orbital_elements(target_mass, target_position, target_velocity)
         t.append(planet_data['current_time']) # Years
         a.append(_a) # AU
         e.append(_e)
