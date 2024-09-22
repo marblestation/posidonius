@@ -313,13 +313,12 @@ pub fn calculate_tidal_acceleration(tidal_host_particle: &mut Particle, particle
     let factor2 = 1. / tidal_host_particle.mass;
     let mut sum_tidal_force = Axes{x:0., y:0., z:0.};
 
-    let central_body = false;
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
         if let TidesEffect::OrbitingBody(tidal_model) = &particle.tides.effect {
             let tidal_force = match tidal_model {
                 TidalModel::ConstantTimeLag(_) => constant_time_lag::calculate_tidal_force(tidal_host_particle, particle),
                 TidalModel::CreepCoplanar(_) => creep_coplanar::calculate_tidal_force(tidal_host_particle, particle),
-                TidalModel::Kaula(_) => kaula::calculate_tidal_force(tidal_host_particle, particle, central_body),
+                TidalModel::Kaula(_) => kaula::calculate_tidal_force(tidal_host_particle, particle),
             };
             let factor1 = 1. / particle.mass;
             sum_tidal_force.x += tidal_force.x;
@@ -343,39 +342,6 @@ pub fn calculate_tidal_acceleration(tidal_host_particle: &mut Particle, particle
     tidal_host_particle.tides.parameters.output.acceleration.x = -1.0 * factor2 * sum_tidal_force.x;
     tidal_host_particle.tides.parameters.output.acceleration.y = -1.0 * factor2 * sum_tidal_force.y;
     tidal_host_particle.tides.parameters.output.acceleration.z = -1.0 * factor2 * sum_tidal_force.z;
-
-    // Explanation for the adding the forces:
-    // Each tidal_force.xyz should be added to the tidally perturbed object, and then the same forces
-    // with negative sign on the tidally perturbing object.
-    // Also be aware of the difference between the call of function kaula::calculate_tidal_force
-    // above (planetary tide) and below (stellar tide), i.e. the switch between "tidal_host_particle"
-    // and "particle".
-    // To be more explicit, the first and second input correspond to the pertuber and pertured body
-    // respectively.
-
-    // Stellar tides begin
-    let central_body = true;
-
-    if matches!(
-        tidal_host_particle.tides.effect,
-        TidesEffect::CentralBody(TidalModel::Kaula(_))
-    ) {
-        for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
-            let tidal_force =
-                kaula::calculate_tidal_force(particle, tidal_host_particle, central_body);
-            let factor1 = 1. / particle.mass;
-
-            // This code is similar to the code above, except that the acceleration is being added up
-            // thus the "+=" sign instead of "="
-            tidal_host_particle.tides.parameters.output.acceleration.x += factor2 * tidal_force.x;
-            tidal_host_particle.tides.parameters.output.acceleration.y += factor2 * tidal_force.y;
-            tidal_host_particle.tides.parameters.output.acceleration.z += factor2 * tidal_force.z;
-
-            particle.tides.parameters.output.acceleration.x += -1.0 * factor1 * tidal_force.x;
-            particle.tides.parameters.output.acceleration.y += -1.0 * factor1 * tidal_force.y;
-            particle.tides.parameters.output.acceleration.z += -1.0 * factor1 * tidal_force.z;
-        }
-    }
 }
 
 

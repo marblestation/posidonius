@@ -919,8 +919,7 @@ pub fn calculate_pseudo_synchronization_period(semi_major_axis: f64, eccentricit
 pub fn calculate_spin(angular_frequency: f64, inclination: f64, obliquity: f64, longitude_ascending_node: f64) -> Axes {
     let mut spin = Axes{x:0., y:0., z:0. };
     // Spin taking into consideration the inclination:
-    spin.x = 0.;
-    spin.x = angular_frequency * (obliquity+inclination).sin() * (longitude_ascending_node).sin() ;
+    spin.x = angular_frequency * (obliquity+inclination).sin() * (longitude_ascending_node).sin();
     spin.y = -angular_frequency * (obliquity+inclination).sin() * (longitude_ascending_node).cos();
     spin.z = angular_frequency * (obliquity+inclination).cos();
 
