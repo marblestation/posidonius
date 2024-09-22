@@ -20,7 +20,7 @@ cargo install --path . --force
 The executable will be copied into `$HOME/.cargo/bin/`. Then, install the python package to create cases by running:
 
 ```bash
-curl -O https://www.cfa.harvard.edu/~sblancoc/posidonius/input.tar.gz
+curl -O https://www.blancocuaresma.com/s/repository/posidonius/input.tar.gz
 tar -zxvf input.tar.gz && rm -f input.tar.gz
 pip install .
 ```

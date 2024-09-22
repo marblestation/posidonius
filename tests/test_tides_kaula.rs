@@ -9,33 +9,34 @@ use std::path::Path;
 
 use std::error::Error;
 use std::fs::File;
-use std::io::BufReader;
-use csv::ReaderBuilder;
+use std::io::{BufReader, BufRead};
 
 fn load_kaula_parameters(file_path: &str) -> Result<posidonius::KaulaParameters, Box<dyn Error>> {
     // Open the file
     let file = File::open(file_path)?;
     let reader = BufReader::new(file);
 
-    // Configure the CSV reader: using space as the delimiter and skipping comments (lines starting with '#')
-    let mut rdr = ReaderBuilder::new()
-        .delimiter(b' ') // Space-separated values
-        .comment(Some(b'#')) // Skip comment lines starting with '#'
-        .from_reader(reader);
-
     // Temporary vectors to hold the columns before assigning them to the struct
     let mut w_lm: Vec<f64> = Vec::new();
     let mut im_k2: Vec<f64> = Vec::new();
     let mut re_k2: Vec<f64> = Vec::new();
 
-    for result in rdr.records() {
-        let record = result?;
+    for line in reader.lines() {
+        let line = line?;
 
-        // Assuming the file has at least 3 columns
-        if let (Some(w_lm_val), Some(im_k2_val), Some(re_k2_val)) = (record.get(0), record.get(1), record.get(2)) {
-            w_lm.push(w_lm_val.parse()?);    // Column 0
-            im_k2.push(im_k2_val.parse()?);  // Column 1
-            re_k2.push(re_k2_val.parse()?);  // Column 2
+        // Skip lines that are comments (starting with '#')
+        if line.starts_with('#') {
+            continue;
+        }
+
+        // Use split_whitespace() to handle any number of spaces between columns
+        let parts: Vec<&str> = line.split_whitespace().collect();
+
+        // Ensure we have at least 3 columns
+        if parts.len() >= 3 {
+            w_lm.push(parts[0].parse()?);    // Column 0
+            im_k2.push(parts[1].parse()?);  // Column 1
+            re_k2.push(parts[2].parse()?);  // Column 2
         }
     }
 
@@ -54,12 +55,12 @@ fn load_kaula_parameters(file_path: &str) -> Result<posidonius::KaulaParameters,
 
     // Build and return the KaulaParameters struct
     Ok(posidonius::KaulaParameters {
-        love_number_excitation_frequency: love_number_excitation_frequency,
-        real_part_love_number: real_part_love_number,
-        imaginary_part_love_number: imaginary_part_love_number,
+        love_number_excitation_frequency,
+        real_part_love_number,
+        imaginary_part_love_number,
         num_datapoints: num_datapoints as f64,
         polynomials: posidonius::Polynomials::new(),
-        kaula_tidal_force: posidonius::Axes{ x: 0.0, y: 0.0, z: 0.0 },
+        kaula_tidal_force: posidonius::Axes { x: 0.0, y: 0.0, z: 0.0 },
     })
 }
 
@@ -101,7 +102,7 @@ fn enabled_planet_tides_case() -> posidonius::WHFast {
     //////////////////////////////////////////////////////////////////////////////////
     let star_tides = disabled_tides;
     // Load planet data
-    let planet_file = "./input/kaula/love_number_data/planet_kaula_test.txt";
+    let planet_file = "./input/love_numbers/TRAPPIST-1_Earth-like/Results_Trappist1_b_Fe_90_Si_02_670K_freq_Imk2_posidonius.txt";
     let planet_tidal_model_params = load_kaula_parameters(planet_file).unwrap();
     let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::Kaula(planet_tidal_model_params)));
     //
@@ -189,11 +190,11 @@ fn enabled_both_tides_case() -> posidonius::WHFast {
     }
     //////////////////////////////////////////////////////////////////////////////////
     // Load star data
-    let star_file = "./input/kaula/Aurelie_imk2/alpha0.51600_P1p2_Ek1p5em6.txt";
+    let star_file = "./input/love_numbers/Aurelie_Stellar/alpha0.51600_P1p2_Ek1p5em6.txt";
     let star_tidal_model_params = load_kaula_parameters(star_file).unwrap();
     let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::Kaula(star_tidal_model_params)));
     // Load planet data
-    let planet_file = "./input/kaula/love_number_data/planet_kaula_test.txt";
+    let planet_file = "./input/love_numbers/TRAPPIST-1_Earth-like/Results_Trappist1_b_Fe_90_Si_02_670K_freq_Imk2_posidonius.txt";
     let planet_tidal_model_params = load_kaula_parameters(planet_file).unwrap();
     let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::Kaula(planet_tidal_model_params)));
     //
