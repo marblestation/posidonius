@@ -7,63 +7,6 @@ extern crate serde_json;
 mod common;
 use std::path::Path;
 
-use std::error::Error;
-use std::fs::File;
-use std::io::{BufReader, BufRead};
-
-fn load_kaula_parameters(file_path: &str) -> Result<posidonius::KaulaParameters, Box<dyn Error>> {
-    // Open the file
-    let file = File::open(file_path)?;
-    let reader = BufReader::new(file);
-
-    // Temporary vectors to hold the columns before assigning them to the struct
-    let mut w_lm: Vec<f64> = Vec::new();
-    let mut im_k2: Vec<f64> = Vec::new();
-    let mut re_k2: Vec<f64> = Vec::new();
-
-    for line in reader.lines() {
-        let line = line?;
-
-        // Skip lines that are comments (starting with '#')
-        if line.starts_with('#') {
-            continue;
-        }
-
-        // Use split_whitespace() to handle any number of spaces between columns
-        let parts: Vec<&str> = line.split_whitespace().collect();
-
-        // Ensure we have at least 3 columns
-        if parts.len() >= 3 {
-            w_lm.push(parts[0].parse()?);    // Column 0
-            im_k2.push(parts[1].parse()?);  // Column 1
-            re_k2.push(parts[2].parse()?);  // Column 2
-        }
-    }
-
-    // Create a zeroed out array for the Kaula parameters (size: 32*32 = 1024)
-    let mut love_number_excitation_frequency = [0.0; 32 * 32];
-    let mut real_part_love_number = [0.0; 32 * 32];
-    let mut imaginary_part_love_number = [0.0; 32 * 32];
-
-    // Fill the arrays with data from the vectors, up to the size of 1024 or the length of the data
-    let num_datapoints = w_lm.len().min(32 * 32);  // Use the minimum of the two lengths
-
-    // Copy data from the vectors into the fixed-size arrays
-    love_number_excitation_frequency[..num_datapoints].copy_from_slice(&w_lm[..num_datapoints]);
-    real_part_love_number[..num_datapoints].copy_from_slice(&re_k2[..num_datapoints]);
-    imaginary_part_love_number[..num_datapoints].copy_from_slice(&im_k2[..num_datapoints]);
-
-    // Build and return the KaulaParameters struct
-    Ok(posidonius::KaulaParameters {
-        love_number_excitation_frequency,
-        real_part_love_number,
-        imaginary_part_love_number,
-        num_datapoints: num_datapoints as f64,
-        polynomials: posidonius::Polynomials::new(),
-        kaula_tidal_force: posidonius::Axes { x: 0.0, y: 0.0, z: 0.0 },
-    })
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 fn enabled_planet_tides_case() -> posidonius::WHFast {
     let (time_step, time_limit, initial_time, historic_snapshot_period, recovery_snapshot_period) = common::simulation_properties();
@@ -103,7 +46,7 @@ fn enabled_planet_tides_case() -> posidonius::WHFast {
     let star_tides = disabled_tides;
     // Load planet data
     let planet_file = "./input/love_numbers/TRAPPIST-1_Earth-like/Results_Trappist1_b_Fe_90_Si_02_670K_freq_Imk2_posidonius.txt";
-    let planet_tidal_model_params = load_kaula_parameters(planet_file).unwrap();
+    let planet_tidal_model_params = common::load_kaula_parameters(planet_file).unwrap();
     let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::Kaula(planet_tidal_model_params)));
     //
     if let Some((star, planets)) = particles.split_first_mut() {
@@ -191,11 +134,11 @@ fn enabled_both_tides_case() -> posidonius::WHFast {
     //////////////////////////////////////////////////////////////////////////////////
     // Load star data
     let star_file = "./input/love_numbers/Aurelie_Stellar/alpha0.51600_P1p2_Ek1p5em6.txt";
-    let star_tidal_model_params = load_kaula_parameters(star_file).unwrap();
+    let star_tidal_model_params = common::load_kaula_parameters(star_file).unwrap();
     let star_tides = posidonius::Tides::new(posidonius::TidesEffect::CentralBody(posidonius::TidalModel::Kaula(star_tidal_model_params)));
     // Load planet data
     let planet_file = "./input/love_numbers/TRAPPIST-1_Earth-like/Results_Trappist1_b_Fe_90_Si_02_670K_freq_Imk2_posidonius.txt";
-    let planet_tidal_model_params = load_kaula_parameters(planet_file).unwrap();
+    let planet_tidal_model_params = common::load_kaula_parameters(planet_file).unwrap();
     let planet_tides = posidonius::Tides::new(posidonius::TidesEffect::OrbitingBody(posidonius::TidalModel::Kaula(planet_tidal_model_params)));
     //
     if let Some((star, planets)) = particles.split_first_mut() {

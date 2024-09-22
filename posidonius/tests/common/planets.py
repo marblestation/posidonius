@@ -1,12 +1,12 @@
 import posidonius
 import numpy as np
 
-def _posvel(star_mass, planet_mass, a):
+def _posvel(star_mass, planet_mass, a, e):
     zeros = posidonius.Axes(0., 0., 0.)
     #////////// Specify initial position and velocity for a stable orbit
     #////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     #a = 0.018;                             # semi-major axis (in AU)
-    e = 0.1;                               # eccentricity
+    #e = 0.1;                               # eccentricity
     i = 5. * posidonius.constants.DEG2RAD;                      # inclination (degrees)
     p = 0. * posidonius.constants.DEG2RAD;                                # argument of pericentre (degrees)
     n = 0. * posidonius.constants.DEG2RAD;                      # longitude of the ascending node (degrees)
@@ -35,7 +35,8 @@ def basic_configuration(universe):
 
     planet1_dissipation_factor_scale = 1.0
     planet1_semimajoraxis = 0.5
-    planet1_position, planet1_velocity = _posvel(star_mass, planet1_mass, planet1_semimajoraxis)
+    planet1_eccentricity = 0.1
+    planet1_position, planet1_velocity = _posvel(star_mass, planet1_mass, planet1_semimajoraxis, planet1_eccentricity)
 
     planet1_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
     planet1_rotation_period = 24. # hours
@@ -51,9 +52,10 @@ def basic_configuration(universe):
 
     planet2_dissipation_factor_scale = 1.0
     planet2_semimajoraxis = 5.0
-    planet2_position, planet2_velocity = _posvel(star_mass, planet2_mass, planet2_semimajoraxis)
+    planet2_eccentricity = 0.1
+    planet2_position, planet2_velocity = _posvel(star_mass, planet2_mass, planet2_semimajoraxis, planet2_eccentricity)
 
-    planet2_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
+    planet2_obliquity = 45.0 * posidonius.constants.DEG2RAD
     planet2_rotation_period = 24. # hours
     planet2_spin = _spin(planet2_obliquity, planet2_rotation_period, star_mass, planet2_mass, planet2_position, planet2_velocity)
 
@@ -67,15 +69,34 @@ def basic_configuration(universe):
 
     planet3_dissipation_factor_scale = 1.0
     planet3_semimajoraxis = 10.0
-    planet3_position, planet3_velocity = _posvel(star_mass, planet3_mass, planet3_semimajoraxis)
+    planet3_eccentricity = 0.1 # this helps testing Kaula special case for small obliquities & eccentricity different than zero
+    planet3_position, planet3_velocity = _posvel(star_mass, planet3_mass, planet3_semimajoraxis, planet3_eccentricity)
 
-    planet3_obliquity = 11.459156 * posidonius.constants.DEG2RAD # 0.2 rad
+    planet3_obliquity = 0. * posidonius.constants.DEG2RAD # 0.0 rad => this helps testing Kaula special case for small obliquities
     planet3_rotation_period = 24. # hours
     planet3_spin = _spin(planet3_obliquity, planet3_rotation_period, star_mass, planet3_mass, planet3_position, planet3_velocity)
 
     planet3_evolution = posidonius.NonEvolving()
     planet3 = jupiter_like(planet3_mass, planet3_dissipation_factor_scale, planet3_position, planet3_velocity, planet3_spin, planet3_evolution)
     universe.add_particle(planet3)
+
+    ############################################################################
+    planet4_mass_factor = 0.00095
+    planet4_mass = planet4_mass_factor * posidonius.constants.M_EARTH # Solar masses (3.0e-6 solar masses = 1 earth mass)
+
+    planet4_dissipation_factor_scale = 1.0
+    planet4_semimajoraxis = 15.0
+    planet4_eccentricity = 0.0 # this helps testing Kaula special case for small obliquities & eccentricity exactly zero
+    planet4_position, planet4_velocity = _posvel(star_mass, planet4_mass, planet4_semimajoraxis, planet4_eccentricity)
+
+    planet4_obliquity = 0. * posidonius.constants.DEG2RAD # 0.0 rad => this helps testing Kaula special case for small obliquities
+    planet4_rotation_period = 24. # hours
+    planet4_spin = _spin(planet4_obliquity, planet4_rotation_period, star_mass, planet4_mass, planet4_position, planet4_velocity)
+
+    planet4_evolution = posidonius.NonEvolving()
+    planet4 = jupiter_like(planet4_mass, planet4_dissipation_factor_scale, planet4_position, planet4_velocity, planet4_spin, planet4_evolution)
+    universe.add_particle(planet4)
+
 
 def earth_like(mass, dissipation_factor_scale, position, velocity, spin, evolution):
     if type(evolution) not in (posidonius.NonEvolving,):

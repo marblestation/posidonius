@@ -6,24 +6,38 @@ pub fn basic_configuration(star: &posidonius::Particle) -> Vec<posidonius::Parti
     let planet1_mass: f64 = planet1_mass_factor * posidonius::constants::M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
     let planet1_evolution = posidonius::EvolutionType::NonEvolving;
     let planet1_semimajor_axis = 0.5;
-    let planet1 = earth_like(&star, planet1_mass, planet1_evolution, planet1_semimajor_axis);
+    let planet1_eccentricity = 0.1;
+    let planet1_obliquity: f64 = 11.459156 * posidonius::constants::DEG2RAD; // 0.2 rad
+    let planet1 = earth_like(&star, planet1_mass, planet1_evolution, planet1_semimajor_axis, planet1_eccentricity, planet1_obliquity);
 
     let planet2_mass_factor: f64 = 0.00095; // Earth masses
     let planet2_mass: f64 = planet2_mass_factor * posidonius::constants::M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
     let planet2_evolution = posidonius::EvolutionType::LeconteChabrier2013(false); // Jupiter without dissipation of dynamical tides
     let planet2_semimajor_axis = 5.0;
-    let planet2 = jupiter_like(&star, planet2_mass, planet2_evolution, planet2_semimajor_axis);
+    let planet2_eccentricity = 0.1;
+    let planet2_obliquity: f64 = 45.0 * posidonius::constants::DEG2RAD;
+    let planet2 = jupiter_like(&star, planet2_mass, planet2_evolution, planet2_semimajor_axis, planet2_eccentricity, planet2_obliquity);
 
     let planet3_mass_factor: f64 = 0.00095; // Earth masses
     let planet3_mass: f64 = planet3_mass_factor * posidonius::constants::M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
     let planet3_evolution = posidonius::EvolutionType::NonEvolving;
     let planet3_semimajor_axis = 10.0;
-    let planet3 = jupiter_like(&star, planet3_mass, planet3_evolution, planet3_semimajor_axis);
-    return vec![planet1, planet2, planet3];
+    let planet3_eccentricity = 0.1; // this helps testing Kaula special case for small obliquities & eccentricity different than zero
+    let planet3_obliquity: f64 = 0.0 * posidonius::constants::DEG2RAD; // 0.0 rad => this helps testing Kaula special case for small obliquities
+    let planet3 = jupiter_like(&star, planet3_mass, planet3_evolution, planet3_semimajor_axis, planet3_eccentricity, planet3_obliquity);
+
+    let planet4_mass_factor: f64 = 0.00095; // Earth masses
+    let planet4_mass: f64 = planet4_mass_factor * posidonius::constants::M_EARTH; // Solar masses (3.0e-6 solar masses = 1 earth mass)
+    let planet4_evolution = posidonius::EvolutionType::NonEvolving;
+    let planet4_semimajor_axis = 15.0;
+    let planet4_eccentricity = 0.0; // this helps testing Kaula special case for small obliquities & eccentricity exactly zero
+    let planet4_obliquity: f64 = 0.0 * posidonius::constants::DEG2RAD; // 0.0 rad => this helps testing Kaula special case for small obliquities
+    let planet4 = jupiter_like(&star, planet4_mass, planet4_evolution, planet4_semimajor_axis, planet4_eccentricity, planet4_obliquity);
+    return vec![planet1, planet2, planet3, planet4];
 }
 
 #[allow(dead_code)]
-pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolution: posidonius::EvolutionType, semimajor_axis: f64) -> posidonius::Particle {
+pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolution: posidonius::EvolutionType, semimajor_axis: f64, eccentricity: f64, planet_obliquity: f64) -> posidonius::Particle {
     match planet_evolution {
         posidonius::EvolutionType::NonEvolving => { },
         _ => { panic!("Evolution type should be non evolving to create a terrestrial/earth-like planet!"); }
@@ -44,7 +58,8 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
     ////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     //let a: f64 = 0.018;                             // semi-major axis (in AU)
     let a: f64 = semimajor_axis;                             // semi-major axis (in AU)
-    let e: f64 = 0.1;                               // eccentricity
+    //let e: f64 = 0.1;                               // eccentricity
+    let e: f64 = eccentricity;                               // eccentricity
     let i: f64 = 5. * posidonius::constants::DEG2RAD;                      // inclination (degrees)
     let mut p: f64 = 0. * posidonius::constants::DEG2RAD;                            // argument of pericentre (degrees)
     let n: f64 = 0. * posidonius::constants::DEG2RAD;                      // longitude of the ascending node (degrees)
@@ -67,7 +82,7 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
     let planet_velocity = posidonius::Axes{x:vx, y:vy, z:vz};
 
     ////// Initialization of planetary spin
-    let planet_obliquity: f64 = 11.459156 * posidonius::constants::DEG2RAD; // 0.2 rad
+    //let planet_obliquity: f64 = 11.459156 * posidonius::constants::DEG2RAD; // 0.2 rad
     let planet_rotation_period: f64 = 24.; // hours
     let planet_angular_frequency = posidonius::constants::TWO_PI/(planet_rotation_period/24.); // days^-1
     //
@@ -111,7 +126,7 @@ pub fn earth_like(star: &posidonius::Particle, planet_mass: f64, planet_evolutio
 }
 
 #[allow(dead_code)]
-pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolution: posidonius::EvolutionType, semimajor_axis: f64) -> posidonius::Particle {
+pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolution: posidonius::EvolutionType, semimajor_axis: f64, eccentricity: f64, planet_obliquity: f64) -> posidonius::Particle {
     match planet_evolution {
         posidonius::EvolutionType::LeconteChabrier2013(_) => { },
         posidonius::EvolutionType::NonEvolving => { },
@@ -128,7 +143,8 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
     ////// Keplerian orbital elements, in the `asteroidal' format of Mercury code
     //let a: f64 = 0.018;                             // semi-major axis (in AU)
     let a: f64 = semimajor_axis;                             // semi-major axis (in AU)
-    let e: f64 = 0.1;                               // eccentricity
+    //let e: f64 = 0.1;                               // eccentricity
+    let e: f64 = eccentricity;                               // eccentricity
     let i: f64 = 5. * posidonius::constants::DEG2RAD;                      // inclination (degrees)
     let mut p: f64 = 0. * posidonius::constants::DEG2RAD;                            // argument of pericentre (degrees)
     let n: f64 = 0. * posidonius::constants::DEG2RAD;                      // longitude of the ascending node (degrees)
@@ -151,7 +167,7 @@ pub fn jupiter_like(star: &posidonius::Particle, planet_mass: f64, planet_evolut
     let planet_velocity = posidonius::Axes{x:vx, y:vy, z:vz};
     
     ////// Initialization of planetary spin
-    let planet_obliquity: f64 = 11.459156 * posidonius::constants::DEG2RAD; // 0.2 rad
+    //let planet_obliquity: f64 = 11.459156 * posidonius::constants::DEG2RAD; // 0.2 rad
     let planet_rotation_period: f64 = 24.; // hours
     let planet_angular_frequency = posidonius::constants::TWO_PI/(planet_rotation_period/24.); // days^-1
     //

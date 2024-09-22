@@ -1456,6 +1456,7 @@ impl Polynomials {
         self.eccentricity_function_g_3pq[3][13] = self.eccentricity_function_g_3pq[0][1];
         self.eccentricity_function_g_3pq[3][14] = self.eccentricity_function_g_3pq[0][0];
     }
+
     #[allow(dead_code)]
     // --- The eccentricity function of the Kaula 1961 developpement G30q(e) from the Hensen coeff [?] (see Cayley table [?])
     fn calculate_eccentricity_function_g_30q(eccentricity: f64) -> [f64; 15] {
@@ -1503,6 +1504,7 @@ impl Polynomials {
 
         eccentricity_function
     }
+
     #[allow(dead_code)]
     // --- The eccentricity function of the Kaula 1961 developpement G31q(e) from the Hensen coeff [?] (see Cayley table [?])
     fn calculate_eccentricity_function_g_31q(eccentricity: f64) -> [f64; 15] {
