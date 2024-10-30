@@ -25,20 +25,22 @@ pub struct KaulaParameters {
     pub kaula_tidal_force: Axes,
 }
 
-pub fn calculate_tidal_force(tidal_host_particle: &mut Particle, particle: &mut Particle) -> Axes {
-    // Planetary tide component
-    let central_body = false;
+pub fn calculate_tidal_force(tidal_host_particle: &mut Particle, particle: &mut Particle, central_body: bool) -> Axes {
+    //// Planetary tide component
+    //let central_body = false;
     let tidal_force_due_to_planetary_tide = calculate_tidal_force_component(tidal_host_particle, particle, central_body);
-    let mut tidal_force = tidal_force_due_to_planetary_tide;
-    if matches!(tidal_host_particle.tides.effect, TidesEffect::CentralBody(TidalModel::Kaula(_))) {
-        // Stellar tide component
-        let central_body = true;
-        let tidal_force_due_to_stellar_tide = calculate_tidal_force_component(particle, tidal_host_particle, central_body);
-        tidal_force.x -= tidal_force_due_to_stellar_tide.x;
-        tidal_force.y -= tidal_force_due_to_stellar_tide.y;
-        tidal_force.z -= tidal_force_due_to_stellar_tide.z;
-    }
-    tidal_force
+    //// TODO: Reconsider how to compute teh stellar tide here instead of 'src/effects/tides/common.rs' while allowing a mixture of tidal models
+    //let mut tidal_force = tidal_force_due_to_planetary_tide;
+    //if matches!(tidal_host_particle.tides.effect, TidesEffect::CentralBody(TidalModel::Kaula(_))) {
+        //// Stellar tide component
+        //let central_body = true;
+        //let tidal_force_due_to_stellar_tide = calculate_tidal_force_component(particle, tidal_host_particle, central_body);
+        //tidal_force.x -= tidal_force_due_to_stellar_tide.x;
+        //tidal_force.y -= tidal_force_due_to_stellar_tide.y;
+        //tidal_force.z -= tidal_force_due_to_stellar_tide.z;
+    //}
+    //tidal_force
+    tidal_force_due_to_planetary_tide
 }
 
 fn calculate_tidal_force_component(tidal_host_particle: &mut Particle, particle: &mut Particle, central_body: bool) -> Axes {

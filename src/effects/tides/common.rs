@@ -313,12 +313,13 @@ pub fn calculate_tidal_acceleration(tidal_host_particle: &mut Particle, particle
     let factor2 = 1. / tidal_host_particle.mass;
     let mut sum_tidal_force = Axes{x:0., y:0., z:0.};
 
+    let central_body = false;
     for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
         if let TidesEffect::OrbitingBody(tidal_model) = &particle.tides.effect {
             let tidal_force = match tidal_model {
                 TidalModel::ConstantTimeLag(_) => constant_time_lag::calculate_tidal_force(tidal_host_particle, particle),
                 TidalModel::CreepCoplanar(_) => creep_coplanar::calculate_tidal_force(tidal_host_particle, particle),
-                TidalModel::Kaula(_) => kaula::calculate_tidal_force(tidal_host_particle, particle),
+                TidalModel::Kaula(_) => kaula::calculate_tidal_force(tidal_host_particle, particle, central_body),
             };
             let factor1 = 1. / particle.mass;
             sum_tidal_force.x += tidal_force.x;
@@ -342,6 +343,30 @@ pub fn calculate_tidal_acceleration(tidal_host_particle: &mut Particle, particle
     tidal_host_particle.tides.parameters.output.acceleration.x = -1.0 * factor2 * sum_tidal_force.x;
     tidal_host_particle.tides.parameters.output.acceleration.y = -1.0 * factor2 * sum_tidal_force.y;
     tidal_host_particle.tides.parameters.output.acceleration.z = -1.0 * factor2 * sum_tidal_force.z;
+
+    //// TODO: Reconsider how to move this stellar tides calculation into calculate_tidal_force while allowing a mixture of tidal models
+    // Stellar tides begin
+    let central_body = true;
+
+    if matches!(
+        tidal_host_particle.tides.effect,
+        TidesEffect::CentralBody(TidalModel::Kaula(_))
+    ) {
+        for particle in particles.iter_mut().chain(more_particles.iter_mut()) {
+            let tidal_force = kaula::calculate_tidal_force(particle, tidal_host_particle, central_body);
+            let factor1 = 1. / particle.mass;
+
+            // This code is similar to the code above, except that the acceleration is being added up
+            // thus the "+=" sign instead of "="
+            tidal_host_particle.tides.parameters.output.acceleration.x += factor2 * tidal_force.x;
+            tidal_host_particle.tides.parameters.output.acceleration.y += factor2 * tidal_force.y;
+            tidal_host_particle.tides.parameters.output.acceleration.z += factor2 * tidal_force.z;
+
+            particle.tides.parameters.output.acceleration.x += -1.0 * factor1 * tidal_force.x;
+            particle.tides.parameters.output.acceleration.y += -1.0 * factor1 * tidal_force.y;
+            particle.tides.parameters.output.acceleration.z += -1.0 * factor1 * tidal_force.z;
+        }
+    }
 }
 
 
