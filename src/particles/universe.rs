@@ -457,20 +457,6 @@ impl Universe {
                         }
                     }
 
-                    if dangular_momentum_dt && (self.consider_effects.tides || self.consider_effects.rotational_flattening) {
-                        // Not needed for additional accelerations
-                        {
-                            //// calculate_torques // Needed for dangular_momentum_dt
-                            if self.consider_effects.tides {
-                                tides::calculate_dangular_momentum_dt_due_to_tides(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
-                            }
-
-                            if self.consider_effects.rotational_flattening {
-                                rotational_flattening::calculate_dangular_momentum_dt_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
-                            }
-                        }
-                    }
-
                     if accelerations && (self.consider_effects.tides || self.consider_effects.rotational_flattening) {
                         if self.consider_effects.tides {
                             tides::calculate_radial_component_of_the_tidal_force(&mut tidal_host_particle, &mut particles_left, &mut particles_right, &mut self.pair_dependent_scaled_dissipation_factor);  // Needed for calculate_tidal_acceleration
@@ -483,6 +469,20 @@ impl Universe {
                         }
 
 
+                    }
+
+                    if dangular_momentum_dt && (self.consider_effects.tides || self.consider_effects.rotational_flattening) {
+                        // Not needed for additional accelerations
+                        {
+                            //// calculate_torques // Needed for dangular_momentum_dt
+                            if self.consider_effects.tides {
+                                tides::calculate_dangular_momentum_dt_due_to_tides(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
+                            }
+
+                            if self.consider_effects.rotational_flattening {
+                                rotational_flattening::calculate_dangular_momentum_dt_induced_by_rotational_flattening(&mut tidal_host_particle, &mut particles_left, &mut particles_right);
+                            }
+                        }
                     }
                 }
             }
